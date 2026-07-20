@@ -9,10 +9,29 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function logout() {
-  await supabase.auth.signOut();
-  localStorage.clear();
-  sessionStorage.clear();
-  window.location.href = "/";
+  try {
+    await supabase.auth.signOut({ scope: "global" });
+  } catch (error) {
+    console.error("Erro ao sair:", error);
+  }
+
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.includes("supabase") ||
+        key.includes("sb-") ||
+        key.includes("auth")
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    sessionStorage.clear();
+  } catch (error) {
+    console.error("Erro ao limpar sessão:", error);
+  }
+
+  window.location.replace("/");
 }
 
 const allowedByPlan = {
