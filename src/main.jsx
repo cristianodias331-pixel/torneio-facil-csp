@@ -80,9 +80,11 @@ function berger(n) {
 
   for (let r = 0; r < n - 1; r++) {
     const games = [];
+
     for (let i = 0; i < n / 2; i++) {
       games.push([arr[i], arr[n - 1 - i]]);
     }
+
     rounds.push(games);
     arr = [arr[0], arr[n - 1], ...arr.slice(1, n - 1)];
   }
@@ -529,12 +531,29 @@ function createInitialData(type, config) {
   };
 }
 
+function getShuffleNames(data, config) {
+  if (!data?.players) return [];
+
+  if (config.type === "mixed12" || config.type === "mixed16") {
+    return [...data.players.men, ...data.players.women];
+  }
+
+  if (config.type === "fixed") {
+    return data.players.teams.map(
+      (team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`
+    );
+  }
+
+  return data.players || [];
+}
+
 function TournamentScreen({ tournament, onBack, onSave }) {
   const config = modalityConfig[tournament.type];
   const [data, setData] = useState(
     tournament.data || createInitialData(tournament.type, config)
   );
   const [saving, setSaving] = useState(false);
+  const [shuffleOverlay, setShuffleOverlay] = useState(null);
 
   const ranking = useMemo(
     () => calculateRanking(data, tournament.type),
@@ -552,7 +571,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     setData(copy);
   }
 
-  function shuffleNames() {
+  function finishShuffle() {
     const copy = structuredClone(data);
 
     if (config.type === "mixed12" || config.type === "mixed16") {
@@ -566,7 +585,56 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
     copy.schedule = [];
     setData(copy);
-    alert("Nomes sorteados. Agora clique em Gerar tabela.");
+    setShuffleOverlay(null);
+  }
+
+  function shuffleNames() {
+    const names = getShuffleNames(data, config);
+
+    if (names.length === 0) {
+      alert("Não há nomes para sortear.");
+      return;
+    }
+
+    let seconds = 10;
+    let animationNames = shuffleArray(names);
+
+    setShuffleOverlay({
+      seconds,
+      names: animationNames,
+    });
+
+    const interval = setInterval(() => {
+      animationNames = shuffleArray(names);
+
+      setShuffleOverlay((prev) => {
+        if (!prev) return null;
+
+        return {
+          ...prev,
+          names: animationNames,
+        };
+      });
+    }, 250);
+
+    const countdown = setInterval(() => {
+      seconds -= 1;
+
+      setShuffleOverlay((prev) => {
+        if (!prev) return null;
+
+        return {
+          ...prev,
+          seconds,
+        };
+      });
+
+      if (seconds <= 0) {
+        clearInterval(interval);
+        clearInterval(countdown);
+        finishShuffle();
+      }
+    }, 1000);
   }
 
   async function saveData(showAlert = true) {
@@ -589,51 +657,96 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   }
 
   return (
-    <div className="appPage">
-      <header>
-        <div>
-          <h1>{tournament.name}</h1>
-          <p>{tournament.type}</p>
+    <>
+      {shuffleOverlay && (
+        <div className="shuffleOverlay">
+          <div className="shuffleBox">
+            <div className="shuffleHeader">
+              <div>
+                <h2>Sorteando nomes...</h2>
+                <p>Os participantes estão sendo embaralhados.</p>
+              </div>
+
+              <div className="shuffleTimer">{shuffleOverlay.seconds}s</div>
+            </div>
+
+            <div className="shuffleStage">
+              {shuffleOverlay.names.map((name, index) => (
+                <div
+                  className="floatingName"
+                  key={index + "-" + name}
+                  style={{
+                    left: `${8 + ((index * 17) % 76)}%`,
+                    top: `${12 + ((index * 29) % 70)}%`,
+                    animationDelay: `${(index % 6) * 0.08}s`,
+                  }}
+                >
+                  {name}
+                </div>
+              ))}
+            </div>
+
+            <div className="shuffleProgress">
+              <div
+                style={{
+                  width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
         </div>
+      )}
 
-        <div className="actions">
-          <button onClick={onBack}>Voltar</button>
-          <button onClick={() => saveData(true)} disabled={saving}>
-            {saving ? "Salvando..." : "Salvar"}
-          </button>
-        </div>
-      </header>
+      <div className="appPage">
+        <header>
+          <div>
+            <h1>{tournament.name}</h1>
+            <p>{tournament.type}</p>
+          </div>
 
-      <section className="card">
-        <h2>Participantes</h2>
+          <div className="actions">
+            <button onClick={onBack}>Voltar</button>
+            <button onClick={() => saveData(true)} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </header>
 
-        <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} />
+        <section className="card">
+          <h2>Participantes</h2>
 
-        <div className="actions">
-          <button onClick={shuffleNames}>Sortear nomes</button>
-          <button onClick={generate}>Gerar tabela</button>
-          <button onClick={() => saveData(true)}>Salvar participantes</button>
-        </div>
-      </section>
+          <PlayerInputs
+            type={tournament.type}
+            data={data}
+            updatePlayer={updatePlayer}
+          />
 
-      <section className="card">
-        <h2>Rodadas</h2>
+          <div className="actions">
+            <button onClick={shuffleNames}>Sortear nomes</button>
+            <button onClick={generate}>Gerar tabela</button>
+            <button onClick={() => saveData(true)}>Salvar participantes</button>
+          </div>
+        </section>
 
-        {!data.schedule || data.schedule.length === 0 ? (
-          <p>Clique em “Gerar tabela” para montar os jogos.</p>
-        ) : (
-          <>
-            <ScheduleView schedule={data.schedule} updateScore={updateScore} />
-            <button onClick={() => saveData(true)}>Salvar placares</button>
-          </>
-        )}
-      </section>
+        <section className="card">
+          <h2>Rodadas</h2>
 
-      <section className="card">
-        <h2>Ranking</h2>
-        <RankingView ranking={ranking} type={tournament.type} />
-      </section>
-    </div>
+          {!data.schedule || data.schedule.length === 0 ? (
+            <p>Clique em “Gerar tabela” para montar os jogos.</p>
+          ) : (
+            <>
+              <ScheduleView schedule={data.schedule} updateScore={updateScore} />
+              <button onClick={() => saveData(true)}>Salvar placares</button>
+            </>
+          )}
+        </section>
+
+        <section className="card">
+          <h2>Ranking</h2>
+          <RankingView ranking={ranking} type={tournament.type} />
+        </section>
+      </div>
+    </>
   );
 }
 
