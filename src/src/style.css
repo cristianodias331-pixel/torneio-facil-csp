@@ -1,0 +1,157 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, system-ui, sans-serif;
+  background: linear-gradient(135deg, #0f172a, #063b55, #0f172a);
+  color: #0f172a;
+}
+
+button {
+  border: 0;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-weight: 800;
+  cursor: pointer;
+  background: #2783de;
+  color: white;
+}
+
+input {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  padding: 12px;
+  margin: 6px 0 14px;
+  font-size: 15px;
+}
+
+label {
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.loginPage {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.loginCard {
+  width: min(430px, 100%);
+  background: white;
+  border-radius: 24px;
+  padding: 28px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+}
+
+.logo {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #22c55e, #38bdf8);
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  margin-bottom: 16px;
+}
+
+.loginCard h1 {
+  margin: 0 0 8px;
+}
+
+.loginCard p {
+  color: #64748b;
+}
+
+.linkBtn {
+  margin-top: 12px;
+  width: 100%;
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.message {
+  margin-top: 14px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #fef3c7;
+  color: #92400e;
+  font-weight: 700;
+}
+
+.center {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  padding: 24px;
+  color: white;
+  text-align: center;
+}
+
+.center button {
+  margin-top: 16px;
+}
+
+.infoBox {
+  background: white;
+  color: #0f172a;
+  border-radius: 18px;
+  padding: 18px;
+  margin: 16px 0;
+  min-width: 300px;
+}
+
+.appPage {
+  max-width: 1100px;
+  margin: auto;
+  padding: 28px;
+}
+
+.appPage header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+  color: white;
+  margin-bottom: 22px;
+}
+
+.appPage header h1 {
+  margin: 0;
+}
+
+.appPage header p {
+  margin: 6px 0 0;
+  color: #cbd5e1;
+}
+
+.card {
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+}
+
+.card h2 {
+  margin-top: 0;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px;
+}
+
+.modality {
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  font-weight: 800;
+}
