@@ -607,11 +607,6 @@ function TournamentScreen({ tournament, onBack, onSave }) {
       <section className="card">
         <h2>Participantes</h2>
 
-        <p className="hint">
-          A tabela segue sempre a numeração. Use o sorteio para embaralhar os
-          nomes entre as posições numeradas.
-        </p>
-
         <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} />
 
         <div className="actions">
