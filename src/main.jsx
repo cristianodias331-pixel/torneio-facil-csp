@@ -211,6 +211,7 @@ function Dashboard({ profile, user }) {
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("Super 04");
   const [saving, setSaving] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState(null);
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
 
