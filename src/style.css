@@ -2,21 +2,59 @@
   box-sizing: border-box;
 }
 
+:root {
+  --bg-dark: #020617;
+  --bg-blue: #082f49;
+  --card: #ffffff;
+  --muted: #64748b;
+  --text: #0f172a;
+  --line: #e2e8f0;
+  --primary: #2563eb;
+  --cyan: #06b6d4;
+  --green: #22c55e;
+  --purple: #7c3aed;
+  --pink: #ec4899;
+  --gold: #f59e0b;
+  --danger: #dc2626;
+}
+
 body {
   margin: 0;
-  font-family: Arial, system-ui, sans-serif;
-  background: linear-gradient(135deg, #0f172a, #063b55, #0f172a);
-  color: #0f172a;
+  font-family: Inter, "Segoe UI", Arial, system-ui, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 34%),
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
+    linear-gradient(135deg, #020617, #082f49 48%, #020617);
+  color: var(--text);
 }
+
+/* =========================
+   BOTÕES GERAIS
+   ========================= */
 
 button {
   border: 0;
-  border-radius: 12px;
-  padding: 12px 16px;
-  font-weight: 800;
+  border-radius: 16px;
+  padding: 14px 20px;
+  font-weight: 950;
+  letter-spacing: -0.01em;
   cursor: pointer;
-  background: #2783de;
   color: white;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
+  transition:
+    transform 0.16s ease,
+    filter 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.06);
+}
+
+button:active {
+  transform: translateY(0);
 }
 
 button:disabled {
@@ -24,21 +62,88 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Botão excluir SEMPRE vermelho */
+.deleteBtn,
+button.deleteBtn,
+.danger,
+button.danger {
+  background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.36) !important;
+}
+
+.deleteBtn:hover,
+button.deleteBtn:hover,
+.danger:hover,
+button.danger:hover {
+  filter: brightness(1.08) !important;
+  transform: translateY(-2px);
+}
+
+/* Botão secundário */
+.secondaryBtn,
+button.secondaryBtn,
+.linkBtn {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+/* Botões por posição, mas sem afetar excluir */
+.actions button:not(.deleteBtn):not(.danger):nth-child(1) {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  box-shadow: 0 14px 28px rgba(236, 72, 153, 0.3);
+}
+
+.actions button:not(.deleteBtn):not(.danger):nth-child(2) {
+  background: linear-gradient(135deg, #059669, #22c55e);
+  box-shadow: 0 14px 28px rgba(34, 197, 94, 0.3);
+}
+
+.actions button:not(.deleteBtn):not(.danger):nth-child(3) {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
+}
+
+/* =========================
+   FORMULÁRIOS
+   ========================= */
+
 input,
 select {
   width: 100%;
-  border: 1px solid #d1d5db;
-  border-radius: 10px;
-  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  padding: 14px 15px;
   margin: 6px 0 14px;
   font-size: 15px;
-  background: white;
+  font-weight: 750;
+  color: #0f172a;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+  transition:
+    border 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+
+input:focus,
+select:focus {
+  outline: none;
+  border-color: #38bdf8;
+  box-shadow:
+    0 0 0 4px rgba(56, 189, 248, 0.18),
+    inset 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 label {
-  font-weight: 700;
+  font-weight: 800;
   font-size: 14px;
 }
+
+/* =========================
+   LOGIN
+   ========================= */
 
 .loginPage {
   min-height: 100vh;
@@ -50,35 +155,30 @@ label {
 .loginCard {
   width: min(430px, 100%);
   background: white;
-  border-radius: 24px;
-  padding: 28px;
+  border-radius: 28px;
+  padding: 30px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
 }
 
 .logo {
-  width: 54px;
-  height: 54px;
-  border-radius: 16px;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
   background: linear-gradient(135deg, #22c55e, #38bdf8);
   display: grid;
   place-items: center;
-  font-size: 28px;
+  font-size: 30px;
   margin-bottom: 16px;
 }
 
 .loginCard h1 {
   margin: 0 0 8px;
+  font-weight: 950;
+  letter-spacing: -0.05em;
 }
 
 .loginCard p {
   color: #64748b;
-}
-
-.linkBtn {
-  margin-top: 12px;
-  width: 100%;
-  background: #e2e8f0;
-  color: #0f172a;
 }
 
 .message {
@@ -87,8 +187,12 @@ label {
   border-radius: 12px;
   background: #fef3c7;
   color: #92400e;
-  font-weight: 700;
+  font-weight: 800;
 }
+
+/* =========================
+   TELAS CENTRAIS
+   ========================= */
 
 .center {
   min-height: 100vh;
@@ -113,63 +217,133 @@ label {
   min-width: 300px;
 }
 
+/* =========================
+   ESTRUTURA PRINCIPAL
+   ========================= */
+
 .appPage {
-  max-width: 1280px;
+  max-width: 1320px;
   margin: auto;
-  padding: 22px;
+  padding: 26px;
 }
 
 .appPage header {
+  position: relative;
+  overflow: hidden;
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: center;
   color: white;
   margin-bottom: 22px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 24px;
-  padding: 18px 22px;
+  border-radius: 30px;
+  padding: 24px 28px;
+  background:
+    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 47, 73, 0.9)),
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 32%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
   backdrop-filter: blur(12px);
+}
+
+.appPage header::after {
+  content: "";
+  position: absolute;
+  inset: auto -80px -100px auto;
+  width: 260px;
+  height: 260px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.16);
+  filter: blur(18px);
 }
 
 .appPage header h1 {
   margin: 0;
-  font-size: clamp(24px, 3vw, 38px);
-  letter-spacing: -0.04em;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1;
+  letter-spacing: -0.06em;
+  font-weight: 950;
 }
 
 .appPage header p {
   display: inline-flex;
   margin-top: 8px;
-  padding: 6px 12px;
+  padding: 7px 13px;
   border-radius: 999px;
-  background: rgba(34, 197, 94, 0.16);
-  color: #bbf7d0;
-  font-weight: 800;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(14, 165, 233, 0.18));
+  border: 1px solid rgba(187, 247, 208, 0.28);
+  color: #dcfce7;
+  font-weight: 850;
   font-size: 13px;
+  letter-spacing: 0.02em;
 }
 
+/* =========================
+   CARDS
+   ========================= */
+
 .card {
-  background: white;
-  border-radius: 24px;
-  padding: 20px;
+  position: relative;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
+  border-radius: 30px;
+  padding: 26px;
   margin-bottom: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.18);
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  box-shadow:
+    0 22px 60px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 22px;
+  right: 22px;
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #22c55e, #06b6d4, #7c3aed);
+  opacity: 0.85;
 }
 
 .card h2 {
-  font-size: 22px;
-  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 26px;
+  line-height: 1.05;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+  color: #020617;
   margin-top: 0;
-  margin-bottom: 14px;
+  margin-bottom: 20px;
+}
+
+.card h2::before {
+  content: "▸";
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  display: inline-grid;
+  place-items: center;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  font-size: 16px;
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
 }
 
 .card h3 {
   margin: 8px 0 10px;
   font-size: 16px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
 }
+
+/* =========================
+   GRID / LISTAS
+   ========================= */
 
 .grid {
   display: grid;
@@ -179,10 +353,10 @@ label {
 
 .modality {
   border: 1px solid #e5e7eb;
-  border-radius: 16px;
+  border-radius: 18px;
   padding: 16px;
   background: #f8fafc;
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .twoCols {
@@ -194,23 +368,20 @@ label {
 .miniCard {
   background: #f8fafc;
   border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  padding: 14px;
+  border-radius: 20px;
+  padding: 16px;
 }
 
 .actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   flex-wrap: wrap;
   align-items: center;
+  margin-top: 14px;
 }
 
 .actions button {
-  min-width: 110px;
-}
-
-.danger {
-  background: #dc2626;
+  min-width: 130px;
 }
 
 .tournamentList {
@@ -225,14 +396,16 @@ label {
   gap: 16px;
   border: 1px solid #e5e7eb;
   background: #f8fafc;
-  border-radius: 20px;
-  padding: 16px;
+  border-radius: 22px;
+  padding: 18px;
   box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
 }
 
 .tournamentItem strong {
   display: block;
-  font-size: 17px;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.03em;
 }
 
 .tournamentItem span {
@@ -240,63 +413,88 @@ label {
   margin-top: 4px;
   color: #64748b;
   font-size: 14px;
+  font-weight: 800;
 }
+
+/* =========================
+   PARTICIPANTES NUMERADOS
+   ========================= */
 
 .numberedInput {
   display: grid;
-  grid-template-columns: 42px 1fr;
-  gap: 8px;
+  grid-template-columns: 50px 1fr;
+  gap: 10px;
   align-items: center;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 
 .numberedInput span {
-  background: #0f172a;
+  height: 48px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #020617, #1e3a8a);
   color: white;
-  border-radius: 12px;
-  height: 42px;
   display: grid;
   place-items: center;
-  font-weight: 900;
+  font-weight: 950;
+  font-size: 16px;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
 }
 
 .numberedInput input {
   margin: 0;
 }
 
+/* =========================
+   RODADAS E JOGOS
+   ========================= */
+
 .schedule {
   display: flex !important;
   flex-direction: column !important;
-  gap: 18px !important;
+  gap: 24px !important;
 }
 
 .roundCard {
+  position: relative;
+  overflow: hidden;
   width: 100%;
+  border-radius: 28px;
+  padding: 22px;
   background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
-  padding: 18px;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+  border: 1px solid #dbe3ef;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.1);
+}
+
+.roundCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 7px;
+  background: linear-gradient(180deg, #22c55e, #06b6d4, #7c3aed);
 }
 
 .roundCard h3 {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 14px;
-  padding: 8px 12px;
+  margin: 0 0 18px 4px;
+  padding: 10px 16px;
   border-radius: 999px;
-  background: #0f172a;
+  background: linear-gradient(135deg, #020617, #1e293b);
   color: white;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: 0.01em;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.22);
 }
 
 .gameCard {
-  border: 1px solid #e5e7eb;
-  background: white;
-  border-radius: 18px;
-  padding: 14px;
-  margin-bottom: 12px;
+  border-radius: 24px;
+  padding: 18px;
+  margin-bottom: 16px;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid #dbeafe;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
 }
 
 .gameCard:last-child {
@@ -305,92 +503,128 @@ label {
 
 .gameCard strong {
   display: inline-flex;
-  padding: 5px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: #dbeafe;
+  background: linear-gradient(135deg, #dbeafe, #cffafe);
   color: #1d4ed8;
+  border: 1px solid #bfdbfe;
   font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
   margin-bottom: 10px;
 }
 
 .gameTeams {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr) !important;
-  gap: 6px !important;
+  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr) !important;
+  gap: 10px !important;
   align-items: center !important;
-  font-weight: 800;
-  color: #0f172a;
+  margin-top: 6px;
+  font-weight: 900;
 }
 
 .gameTeams div {
-  background: #f8fafc;
-  border-radius: 14px;
-  padding: 8px 10px !important;
-  min-height: 40px !important;
-  display: flex !important;
-  align-items: center !important;
+  min-height: 54px;
+  border-radius: 18px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #f8fafc, #eef6ff);
+  border: 1px solid #e2e8f0;
+  font-size: 16px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  color: #020617;
+  display: flex;
+  align-items: center;
 }
 
 .gameTeams div:first-child {
-  justify-content: flex-end !important;
-  text-align: right !important;
+  justify-content: flex-end;
+  text-align: right;
 }
 
 .gameTeams div:last-child {
-  justify-content: flex-start !important;
-  text-align: left !important;
+  justify-content: flex-start;
+  text-align: left;
 }
 
 .gameTeams span {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
-  font-weight: 900 !important;
-  color: #0f172a !important;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #020617, #1e3a8a);
+  color: white;
+  font-size: 17px;
+  font-weight: 950;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
 }
 
+/* =========================
+   PLACAR
+   ========================= */
+
 .scoreRow {
-  margin-top: 12px;
+  margin-top: 16px;
   display: grid;
-  grid-template-columns: 80px auto 80px;
+  grid-template-columns: 92px 26px 92px;
   gap: 8px;
   align-items: center;
   justify-content: center;
 }
 
 .scoreRow input {
+  height: 54px;
+  border-radius: 18px;
   margin: 0;
   text-align: center;
-  font-size: 20px;
-  font-weight: 900;
-  padding: 10px;
+  font-size: 24px;
+  font-weight: 950;
+  background: #ffffff;
+  border: 2px solid #dbeafe;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
 }
 
 .scoreRow span {
   text-align: center;
-  font-weight: 900;
-  color: #64748b;
+  font-size: 22px;
+  font-weight: 950;
+  color: #0f172a;
 }
+
+/* =========================
+   RANKING
+   ========================= */
 
 table {
   width: 100%;
   border-collapse: collapse;
   overflow: hidden;
-  border-radius: 18px;
+  border-radius: 22px;
   background: white;
   font-size: 14px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
 }
 
 thead {
-  background: #0f172a;
+  background: linear-gradient(135deg, #020617, #1e3a8a);
   color: white;
 }
 
-th,
-td {
-  padding: 11px 12px;
-  border-bottom: 1px solid #e5e7eb;
+th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 14px 12px;
   text-align: left;
+}
+
+td {
+  font-weight: 750;
+  padding: 13px 12px;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 tbody tr:nth-child(even) {
@@ -398,8 +632,12 @@ tbody tr:nth-child(even) {
 }
 
 tbody tr:hover {
-  background: #e0f2fe;
+  background: #dff6ff;
 }
+
+/* =========================
+   SORTEIO ANIMADO
+   ========================= */
 
 .shuffleOverlay {
   position: fixed;
@@ -415,13 +653,16 @@ tbody tr:hover {
 .shuffleBox {
   width: min(900px, 100%);
   height: min(620px, 88vh);
-  background: linear-gradient(135deg, #0f172a, #064e3b, #0f172a);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  border-radius: 30px;
+  border-radius: 36px;
   padding: 22px;
   color: white;
-  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.55);
   overflow: hidden;
+  background:
+    radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.2), transparent 30%),
+    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.2), transparent 30%),
+    linear-gradient(135deg, #020617, #082f49, #111827);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.55);
 }
 
 .shuffleHeader {
@@ -451,7 +692,7 @@ tbody tr:hover {
   display: grid;
   place-items: center;
   font-size: 26px;
-  font-weight: 900;
+  font-weight: 950;
   box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
 }
 
@@ -473,8 +714,9 @@ tbody tr:hover {
   color: #0f172a;
   border-radius: 999px;
   padding: 10px 14px;
-  font-weight: 900;
+  font-weight: 950;
   white-space: nowrap;
+  border: 1px solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
   animation: floatName 0.8s ease-in-out infinite alternate;
 }
@@ -504,519 +746,9 @@ tbody tr:hover {
   transition: width 0.25s linear;
 }
 
-@media (max-width: 760px) {
-  .appPage {
-    padding: 14px;
-  }
-
-  .appPage header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .twoCols {
-    grid-template-columns: 1fr;
-  }
-
-  .gameTeams {
-    grid-template-columns: 1fr !important;
-    text-align: center;
-  }
-
-  .gameTeams div:first-child,
-  .gameTeams div:last-child {
-    justify-content: center !important;
-    text-align: center !important;
-  }
-
-  .scoreRow {
-    grid-template-columns: 1fr auto 1fr;
-  }
-
-  .tournamentItem {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}
-/* Botões mais profissionais */
-
-button {
-  border: 0;
-  border-radius: 14px;
-  padding: 13px 18px;
-  font-weight: 900;
-  cursor: pointer;
-  color: white;
-  background: linear-gradient(135deg, #0f766e, #0ea5e9);
-  box-shadow: 0 10px 24px rgba(14, 165, 233, 0.28);
-  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 14px 30px rgba(14, 165, 233, 0.38);
-  filter: brightness(1.05);
-}
-
-button:active {
-  transform: translateY(0);
-  box-shadow: 0 8px 18px rgba(14, 165, 233, 0.24);
-}
-
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 14px;
-}
-
-.actions button {
-  min-width: 150px;
-}
-
-/* Cores específicas dos botões principais */
-
-.actions button:nth-child(1) {
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
-  box-shadow: 0 10px 24px rgba(236, 72, 153, 0.28);
-}
-
-.actions button:nth-child(2) {
-  background: linear-gradient(135deg, #059669, #22c55e);
-  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.28);
-}
-
-.actions button:nth-child(3) {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
-}
-
-/* Botão de excluir continua vermelho */
-
-button.danger,
-.danger {
-  background: linear-gradient(135deg, #dc2626, #f97316) !important;
-  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.28) !important;
-}
-
-/* Botão cinza secundário, se usar */
-
-.linkBtn {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
-  box-shadow: none !important;
-}
-
-/* Melhor aparência no celular */
-
-@media (max-width: 760px) {
-  .actions {
-    width: 100%;
-  }
-
-  .actions button {
-    width: 100%;
-    min-width: unset;
-  }
-}
-/* =========================================================
-   VISUAL PREMIUM — TORNEIO FÁCIL CSP
-   ========================================================= */
-
-:root {
-  --bg-dark: #020617;
-  --bg-blue: #082f49;
-  --card: #ffffff;
-  --muted: #64748b;
-  --text: #0f172a;
-  --line: #e2e8f0;
-  --primary: #2563eb;
-  --cyan: #06b6d4;
-  --green: #22c55e;
-  --purple: #7c3aed;
-  --pink: #ec4899;
-  --gold: #f59e0b;
-  --danger: #dc2626;
-}
-
-body {
-  font-family: Inter, "Segoe UI", Arial, system-ui, sans-serif !important;
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 34%),
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
-    linear-gradient(135deg, #020617, #082f49 48%, #020617) !important;
-  color: var(--text);
-}
-
-/* Cabeçalho mais premium */
-
-.appPage {
-  max-width: 1320px !important;
-  padding: 26px !important;
-}
-
-.appPage header {
-  position: relative;
-  overflow: hidden;
-  border-radius: 30px !important;
-  padding: 24px 28px !important;
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 47, 73, 0.9)),
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 32%) !important;
-  border: 1px solid rgba(255, 255, 255, 0.18) !important;
-  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42) !important;
-}
-
-.appPage header::after {
-  content: "";
-  position: absolute;
-  inset: auto -80px -100px auto;
-  width: 260px;
-  height: 260px;
-  border-radius: 999px;
-  background: rgba(56, 189, 248, 0.16);
-  filter: blur(18px);
-}
-
-.appPage header h1 {
-  font-size: clamp(30px, 4vw, 48px) !important;
-  line-height: 1 !important;
-  letter-spacing: -0.06em !important;
-  font-weight: 950 !important;
-  text-transform: none !important;
-}
-
-.appPage header p {
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(14, 165, 233, 0.18)) !important;
-  border: 1px solid rgba(187, 247, 208, 0.28);
-  color: #dcfce7 !important;
-  padding: 7px 13px !important;
-  font-size: 13px !important;
-  letter-spacing: 0.02em;
-}
-
-/* Cards mais fortes */
-
-.card {
-  position: relative;
-  overflow: hidden;
-  border-radius: 30px !important;
-  padding: 26px !important;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96)) !important;
-  border: 1px solid rgba(226, 232, 240, 0.95) !important;
-  box-shadow:
-    0 22px 60px rgba(15, 23, 42, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
-}
-
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 22px;
-  right: 22px;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #22c55e, #06b6d4, #7c3aed);
-  opacity: 0.85;
-}
-
-.card h2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 26px !important;
-  line-height: 1.05;
-  font-weight: 950 !important;
-  letter-spacing: -0.05em !important;
-  color: #020617;
-  margin-bottom: 20px !important;
-}
-
-.card h2::before {
-  content: "▸";
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  display: inline-grid;
-  place-items: center;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: white;
-  font-size: 16px;
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
-}
-
-/* Inputs mais modernos */
-
-input,
-select {
-  border-radius: 16px !important;
-  border: 1px solid #cbd5e1 !important;
-  background: #ffffff !important;
-  padding: 14px 15px !important;
-  font-size: 15px !important;
-  font-weight: 750;
-  color: #0f172a;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
-  transition: border 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-}
-
-input:focus,
-select:focus {
-  outline: none;
-  border-color: #38bdf8 !important;
-  box-shadow:
-    0 0 0 4px rgba(56, 189, 248, 0.18),
-    inset 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-/* Participantes numerados mais elegantes */
-
-.numberedInput {
-  grid-template-columns: 50px 1fr !important;
-  gap: 10px !important;
-  margin-bottom: 10px !important;
-}
-
-.numberedInput span {
-  height: 48px !important;
-  border-radius: 16px !important;
-  background:
-    linear-gradient(135deg, #020617, #1e3a8a) !important;
-  color: white !important;
-  font-weight: 950 !important;
-  font-size: 16px;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
-}
-
-/* Rodadas mais apresentáveis */
-
-.schedule {
-  gap: 24px !important;
-}
-
-.roundCard {
-  position: relative;
-  overflow: hidden;
-  border-radius: 28px !important;
-  padding: 22px !important;
-  background:
-    linear-gradient(180deg, #ffffff, #f8fafc) !important;
-  border: 1px solid #dbe3ef !important;
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.1) !important;
-}
-
-.roundCard::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 7px;
-  background: linear-gradient(180deg, #22c55e, #06b6d4, #7c3aed);
-}
-
-.roundCard h3 {
-  margin-left: 4px !important;
-  margin-bottom: 18px !important;
-  padding: 10px 16px !important;
-  border-radius: 999px !important;
-  background: linear-gradient(135deg, #020617, #1e293b) !important;
-  color: white !important;
-  font-size: 15px !important;
-  font-weight: 950 !important;
-  letter-spacing: 0.01em;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.22);
-}
-
-/* Jogos com visual mais esportivo */
-
-.gameCard {
-  border-radius: 24px !important;
-  padding: 18px !important;
-  margin-bottom: 16px !important;
-  background:
-    linear-gradient(180deg, #ffffff, #f8fafc) !important;
-  border: 1px solid #dbeafe !important;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08) !important;
-}
-
-.gameCard strong {
-  background: linear-gradient(135deg, #dbeafe, #cffafe) !important;
-  color: #1d4ed8 !important;
-  border: 1px solid #bfdbfe;
-  border-radius: 999px !important;
-  padding: 6px 12px !important;
-  font-size: 12px !important;
-  font-weight: 950 !important;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.gameTeams {
-  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr) !important;
-  gap: 10px !important;
-  margin-top: 6px;
-}
-
-.gameTeams div {
-  min-height: 54px !important;
-  border-radius: 18px !important;
-  padding: 12px 16px !important;
-  background:
-    linear-gradient(180deg, #f8fafc, #eef6ff) !important;
-  border: 1px solid #e2e8f0;
-  font-size: 16px !important;
-  font-weight: 950 !important;
-  letter-spacing: -0.02em;
-  color: #020617;
-}
-
-.gameTeams span {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #020617, #1e3a8a);
-  color: white !important;
-  font-size: 17px;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
-}
-
-/* Placar com cara de placar */
-
-.scoreRow {
-  margin-top: 16px !important;
-  grid-template-columns: 92px 26px 92px !important;
-}
-
-.scoreRow input {
-  height: 54px;
-  border-radius: 18px !important;
-  font-size: 24px !important;
-  font-weight: 950 !important;
-  background: #ffffff !important;
-  border: 2px solid #dbeafe !important;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
-}
-
-.scoreRow span {
-  font-size: 22px;
-  color: #0f172a !important;
-}
-
-/* Ranking mais forte */
-
-table {
-  border-radius: 22px !important;
-  overflow: hidden;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-}
-
-thead {
-  background: linear-gradient(135deg, #020617, #1e3a8a) !important;
-}
-
-th {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 14px 12px !important;
-}
-
-td {
-  font-weight: 750;
-  padding: 13px 12px !important;
-}
-
-tbody tr:nth-child(even) {
-  background: #f8fafc !important;
-}
-
-tbody tr:hover {
-  background: #dff6ff !important;
-}
-
-/* Botões premium */
-
-button {
-  border-radius: 16px !important;
-  padding: 14px 20px !important;
-  font-weight: 950 !important;
-  letter-spacing: -0.01em;
-  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3) !important;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
-}
-
-.actions button:nth-child(1) {
-  background: linear-gradient(135deg, #7c3aed, #ec4899) !important;
-}
-
-.actions button:nth-child(2) {
-  background: linear-gradient(135deg, #059669, #22c55e) !important;
-}
-
-.actions button:nth-child(3) {
-  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
-}
-
-.danger,
-button.danger {
-  background: linear-gradient(135deg, #dc2626, #f97316) !important;
-}
-
-/* Modal do sorteio mais chamativo */
-
-.shuffleBox {
-  border-radius: 36px !important;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.2), transparent 30%),
-    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.2), transparent 30%),
-    linear-gradient(135deg, #020617, #082f49, #111827) !important;
-}
-
-.floatingName {
-  font-size: 15px;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-}
-
-/* Mobile */
-
-@media (max-width: 760px) {
-  .appPage {
-    padding: 14px !important;
-  }
-
-  .card {
-    padding: 18px !important;
-    border-radius: 24px !important;
-  }
-
-  .gameTeams {
-    grid-template-columns: 1fr !important;
-  }
-
-  .gameTeams span {
-    margin: auto;
-  }
-  /* Excluir vermelho e confirmação profissional */
-
-.deleteBtn,
-button.deleteBtn {
-  background: linear-gradient(135deg, #dc2626, #991b1b) !important;
-  color: white !important;
-  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.32) !important;
-}
-
-.deleteBtn:hover,
-button.deleteBtn:hover {
-  filter: brightness(1.08);
-  transform: translateY(-2px);
-}
+/* =========================
+   CONFIRMAÇÃO DE EXCLUSÃO
+   ========================= */
 
 .confirmOverlay {
   position: fixed;
@@ -1025,15 +757,14 @@ button.deleteBtn:hover {
   background: rgba(2, 6, 23, 0.62);
   backdrop-filter: blur(8px);
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  padding-top: 18vh;
+  padding-top: 28vh;
 }
 
 .confirmBox {
   width: min(520px, calc(100% - 32px));
-  background:
-    linear-gradient(180deg, #ffffff, #f8fafc);
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
   border-radius: 30px;
   padding: 28px;
   border: 1px solid #e2e8f0;
@@ -1082,13 +813,6 @@ button.deleteBtn:hover {
   margin-top: 24px;
 }
 
-.secondaryBtn,
-button.secondaryBtn {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
-  box-shadow: none !important;
-}
-
 .confirmActions button {
   min-width: 150px;
 }
@@ -1105,10 +829,58 @@ button.secondaryBtn {
   }
 }
 
+/* =========================
+   RESPONSIVO
+   ========================= */
+
 @media (max-width: 760px) {
+  .appPage {
+    padding: 14px;
+  }
+
+  .appPage header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .twoCols {
+    grid-template-columns: 1fr;
+  }
+
+  .gameTeams {
+    grid-template-columns: 1fr !important;
+    text-align: center;
+  }
+
+  .gameTeams div:first-child,
+  .gameTeams div:last-child {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .gameTeams span {
+    margin: auto;
+  }
+
+  .scoreRow {
+    grid-template-columns: 1fr 26px 1fr;
+  }
+
+  .tournamentItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions {
+    width: 100%;
+  }
+
+  .actions button {
+    width: 100%;
+  }
+
   .confirmOverlay {
-    padding-top: 12vh;
-    align-items: center;
+    padding-top: 18vh;
   }
 
   .confirmActions {
@@ -1117,10 +889,5 @@ button.secondaryBtn {
 
   .confirmActions button {
     width: 100%;
-  }
-}
-
-  .scoreRow {
-    grid-template-columns: 1fr 26px 1fr !important;
   }
 }
