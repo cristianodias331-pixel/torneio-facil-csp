@@ -806,12 +806,84 @@ function PlayerInputs({ type, data, updatePlayer }) {
     </div>
   );
 }
+function getMatchIds(game) {
+  return [...(game.ids1 || []), ...(game.ids2 || [])];
+}
 
+function balanceCourts(schedule) {
+  if (!schedule || schedule.length === 0) return schedule;
+
+  const courtUsage = {};
+
+  function getUsage(playerId, court) {
+    return courtUsage[playerId]?.[court] || 0;
+  }
+
+  function addUsage(playerId, court) {
+    if (!courtUsage[playerId]) courtUsage[playerId] = {};
+    courtUsage[playerId][court] = (courtUsage[playerId][court] || 0) + 1;
+  }
+
+  function scoreGameOnCourt(game, court, availableCourts) {
+    const ids = getMatchIds(game);
+    let score = 0;
+
+    ids.forEach((id) => {
+      const alreadyUsedThisCourt = getUsage(id, court);
+
+      // Penaliza forte repetir a mesma quadra
+      score += alreadyUsedThisCourt * 100;
+
+      // Penaliza repetição acumulada
+      score += Math.pow(alreadyUsedThisCourt, 2) * 50;
+
+      // Dá preferência para quadras que o jogador ainda não usou
+      const hasUnusedCourt = availableCourts.some((c) => getUsage(id, c) === 0);
+      if (hasUnusedCourt && alreadyUsedThisCourt > 0) {
+        score += 200;
+      }
+    });
+
+    return score;
+  }
+
+  const balanced = schedule.map((round) => {
+    const availableCourts = round.map((_, index) => index + 1);
+    const gamesToPlace = [...round];
+    const newRound = [];
+
+    availableCourts.forEach((court) => {
+      let bestIndex = 0;
+      let bestScore = Infinity;
+
+      gamesToPlace.forEach((game, index) => {
+        const score = scoreGameOnCourt(game, court, availableCourts);
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
+      });
+
+      const selectedGame = gamesToPlace.splice(bestIndex, 1)[0];
+      selectedGame.court = court;
+
+      getMatchIds(selectedGame).forEach((id) => addUsage(id, court));
+
+      newRound.push(selectedGame);
+    });
+
+    return newRound.sort((a, b) => a.court - b.court);
+  });
+
+  return balanced;
+}
 function generateSchedule(type, players) {
   const config = modalityConfig[type];
+  let schedule = [];
 
   if (config.type === "super4") {
-    return super4Rounds.map((round) => [
+    schedule = super4Rounds.map((round) => [
       {
         court: 1,
         team1: [players[round[0][0]], players[round[0][1]]],
@@ -822,10 +894,12 @@ function generateSchedule(type, players) {
         s2: "",
       },
     ]);
+
+    return balanceCourts(schedule);
   }
 
   if (config.type === "super8") {
-    return berger(8).map((round) => [
+    schedule = berger(8).map((round) => [
       {
         court: 1,
         team1: [players[round[0][0]], players[round[0][1]]],
@@ -845,12 +919,14 @@ function generateSchedule(type, players) {
         s2: "",
       },
     ]);
+
+    return balanceCourts(schedule);
   }
 
   if (config.type === "fixed") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
 
-    return berger(8).map((round) =>
+    schedule = berger(8).map((round) =>
       round.map((game, index) => ({
         court: index + 1,
         team1: [teamNames[game[0]]],
@@ -861,10 +937,12 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
+
+    return balanceCourts(schedule);
   }
 
   if (config.type === "simple") {
-    return berger(config.total).map((round) =>
+    schedule = berger(config.total).map((round) =>
       round.map((game, index) => ({
         court: index + 1,
         team1: [players[game[0]]],
@@ -875,6 +953,8 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
+
+    return balanceCourts(schedule);
   }
 
   if (config.type === "mixed12" || config.type === "mixed16") {
@@ -883,7 +963,7 @@ function generateSchedule(type, players) {
     const rounds = config.type === "mixed12" ? mixed12Rounds : mixed16Rounds;
     const offset = config.men;
 
-    return rounds.map((round) =>
+    schedule = rounds.map((round) =>
       round.map((game, index) => ({
         court: index + 1,
         team1: [men[game[0]], women[game[1]]],
@@ -894,6 +974,8 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
+
+    return balanceCourts(schedule);
   }
 
   return [];
