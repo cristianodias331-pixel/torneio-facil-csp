@@ -8,6 +8,13 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+async function logout() {
+  await supabase.auth.signOut();
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = "/";
+}
+
 const allowedByPlan = {
   basic: ["Super 04", "Super 08", "Super 12 Mista", "Super 16 Mista"],
   pro: [
@@ -183,6 +190,7 @@ function App() {
   useEffect(() => {
     async function init() {
       const { data } = await supabase.auth.getSession();
+
       setSession(data.session);
 
       if (data.session?.user?.id) {
@@ -217,7 +225,7 @@ function App() {
       <div className="center">
         <h1>Torneio Fácil CSP</h1>
         <p>Perfil não encontrado.</p>
-        <button onClick={() => supabase.auth.signOut()}>Sair</button>
+        <button onClick={logout}>Sair</button>
       </div>
     );
   }
@@ -331,7 +339,7 @@ function Blocked({ profile }) {
       </div>
 
       <p>Entre em contato para regularizar seu acesso.</p>
-      <button onClick={() => supabase.auth.signOut()}>Sair</button>
+      <button onClick={logout}>Sair</button>
     </div>
   );
 }
@@ -542,7 +550,7 @@ function Dashboard({ profile, user }) {
           <p>Dashboard profissional com login real.</p>
         </div>
 
-        <button onClick={() => supabase.auth.signOut()}>Sair</button>
+        <button onClick={logout}>Sair</button>
       </header>
 
       <section className="card">
