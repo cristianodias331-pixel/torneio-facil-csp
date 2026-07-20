@@ -181,7 +181,12 @@ function Blocked({ profile }) {
   );
 }
 
-function Dashboard({ profile }) {
+function Dashboard({ profile, user }) {
+  const [tournaments, setTournaments] = useState([]);
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState("Super 04");
+  const [saving, setSaving] = useState(false);
+
   const allowed = {
     basic: ["Super 04", "Super 08", "Super 12 Mista", "Super 16 Mista"],
     pro: [
@@ -201,6 +206,89 @@ function Dashboard({ profile }) {
       "Simples 16",
     ],
   };
+
+  const allowedTypes = allowed[profile.plan] || [];
+
+  useEffect(() => {
+    loadTournaments();
+  }, []);
+
+  async function loadTournaments() {
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error(error);
+      alert("Erro ao carregar torneios.");
+      return;
+    }
+
+    setTournaments(data || []);
+  }
+
+  async function createTournament() {
+    if (!newName.trim()) {
+      alert("Digite o nome do torneio.");
+      return;
+    }
+
+    if (!allowedTypes.includes(newType)) {
+      alert("Seu plano não permite essa modalidade.");
+      return;
+    }
+
+    if (profile.plan === "basic" && tournaments.length >= 1) {
+      alert("O plano básico permite apenas 1 campeonato por vez.");
+      return;
+    }
+
+    setSaving(true);
+
+    const { error } = await supabase.from("tournaments").insert({
+      user_id: user.id,
+      name: newName.trim(),
+      type: newType,
+      data: {
+        players: [],
+        schedule: [],
+        scores: [],
+      },
+      status: "active",
+    });
+
+    setSaving(false);
+
+    if (error) {
+      console.error(error);
+      alert("Erro ao criar torneio.");
+      return;
+    }
+
+    setNewName("");
+    await loadTournaments();
+  }
+
+  async function deleteTournament(id) {
+    const ok = confirm("Tem certeza que deseja excluir este torneio?");
+    if (!ok) return;
+
+    const { error } = await supabase
+      .from("tournaments")
+      .delete()
+      .eq("id", id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error(error);
+      alert("Erro ao excluir torneio.");
+      return;
+    }
+
+    await loadTournaments();
+  }
 
   return (
     <div className="appPage">
@@ -229,7 +317,7 @@ function Dashboard({ profile }) {
       <section className="card">
         <h2>Modalidades liberadas</h2>
         <div className="grid">
-          {(allowed[profile.plan] || []).map((item) => (
+          {allowedTypes.map((item) => (
             <div className="modality" key={item}>
               🏆 {item}
             </div>
@@ -238,15 +326,49 @@ function Dashboard({ profile }) {
       </section>
 
       <section className="card">
-        <h2>Próximo passo</h2>
-        <p>
-          Agora o login e o bloqueio por plano já estão funcionando. O próximo
-          passo será conectar aqui o app dos torneios e salvar os campeonatos no
-          banco.
-        </p>
+        <h2>Criar novo torneio</h2>
+
+        <label>Nome do torneio</label>
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="Ex: Torneio de sábado"
+        />
+
+        <label>Modalidade</label>
+        <select value={newType} onChange={(e) => setNewType(e.target.value)}>
+          {allowedTypes.map((type) => (
+            <option key={type}>{type}</option>
+          ))}
+        </select>
+
+        <button onClick={createTournament} disabled={saving}>
+          {saving ? "Salvando..." : "Criar torneio"}
+        </button>
+      </section>
+
+      <section className="card">
+        <h2>Meus torneios</h2>
+
+        {tournaments.length === 0 ? (
+          <p>Nenhum torneio criado ainda.</p>
+        ) : (
+          <div className="tournamentList">
+            {tournaments.map((t) => (
+              <div className="tournamentItem" key={t.id}>
+                <div>
+                  <strong>{t.name}</strong>
+                  <span>{t.type}</span>
+                </div>
+
+                <button className="danger" onClick={() => deleteTournament(t.id)}>
+                  Excluir
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </section>
     </div>
   );
 }
-
-createRoot(document.getElementById("root")).render(<App />);
