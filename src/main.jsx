@@ -129,22 +129,100 @@ function shuffleArray(list) {
   return arr;
 }
 
-function rotateCourtsByRound(schedule) {
+function optimizeCourts(schedule) {
   if (!schedule || schedule.length === 0) return schedule;
 
+  const courtUsage = {};
+
+  function getPlayers(game) {
+    return [...(game.ids1 || []), ...(game.ids2 || [])];
+  }
+
+  function getUsage(playerId, court) {
+    return courtUsage[playerId]?.[court] || 0;
+  }
+
+  function addUsage(playerId, court) {
+    if (!courtUsage[playerId]) courtUsage[playerId] = {};
+    courtUsage[playerId][court] = (courtUsage[playerId][court] || 0) + 1;
+  }
+
+  function scoreGameOnCourt(game, court, courts) {
+    const players = getPlayers(game);
+    let score = 0;
+
+    players.forEach((playerId) => {
+      const sameCourt = getUsage(playerId, court);
+
+      // Evita fortemente repetir a mesma quadra para o mesmo jogador
+      score += sameCourt * 10000;
+
+      // Penaliza repetição acumulada
+      score += sameCourt * sameCourt * 3000;
+
+      // Se o jogador ainda tem quadra não usada, evita repetir
+      const hasUnusedCourt = courts.some((c) => getUsage(playerId, c) === 0);
+      if (hasUnusedCourt && sameCourt > 0) {
+        score += 5000;
+      }
+
+      // Penaliza desequilíbrio geral do jogador entre quadras
+      const usages = courts.map((c) => getUsage(playerId, c));
+      const max = Math.max(...usages);
+      const min = Math.min(...usages);
+      score += (max - min) * 500;
+    });
+
+    return score;
+  }
+
   return schedule.map((round, roundIndex) => {
-    const totalCourts = round.length;
+    const courts = round.map((_, index) => index + 1);
 
-    return round
-      .map((game, gameIndex) => {
-        const rotatedCourt = ((gameIndex + roundIndex) % totalCourts) + 1;
+    // Rotaciona a ordem inicial por rodada
+    const rotatedGames = round.map((game, index) => ({
+      ...game,
+      preferredCourt: ((index + roundIndex) % courts.length) + 1,
+    }));
 
-        return {
-          ...game,
-          court: rotatedCourt,
-        };
-      })
-      .sort((a, b) => a.court - b.court);
+    const remaining = [...rotatedGames];
+    const balancedRound = [];
+
+    courts.forEach((court) => {
+      let bestIndex = 0;
+      let bestScore = Infinity;
+
+      remaining.forEach((game, index) => {
+        let score = scoreGameOnCourt(game, court, courts);
+
+        // Pequeno bônus para respeitar a rotação natural
+        if (game.preferredCourt !== court) {
+          score += 100;
+        }
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
+      });
+
+      const selected = remaining.splice(bestIndex, 1)[0];
+
+      const gameWithCourt = {
+        ...selected,
+        court,
+      };
+
+      delete gameWithCourt.preferredCourt;
+
+      getPlayers(gameWithCourt).forEach((playerId) => {
+        addUsage(playerId, court);
+      });
+
+      balancedRound.push(gameWithCourt);
+    });
+
+    return balancedRound.sort((a, b) => a.court - b.court);
   });
 }
 
