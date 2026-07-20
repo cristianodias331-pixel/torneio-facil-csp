@@ -3,16 +3,16 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "vite",
-    "preview": "vite --host 0.0.0.0 --preview"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
+    "@supabase/supabase-js": "latest",
     "@vitejs/plugin-react": "latest",
     "vite": "latest",
     "react": "latest",
-    "react-dom": "latest",
-    "@supabase/supabase-js": "latest"
+    "react-dom": "latest"
   },
   "devDependencies": {}
 }
