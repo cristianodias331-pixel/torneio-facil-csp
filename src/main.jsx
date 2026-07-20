@@ -17,15 +17,10 @@ async function logout() {
 
   try {
     Object.keys(localStorage).forEach((key) => {
-      if (
-        key.includes("supabase") ||
-        key.includes("sb-") ||
-        key.includes("auth")
-      ) {
+      if (key.includes("supabase") || key.includes("sb-") || key.includes("auth")) {
         localStorage.removeItem(key);
       }
     });
-
     sessionStorage.clear();
   } catch (error) {
     console.error("Erro ao limpar sessão:", error);
@@ -35,40 +30,64 @@ async function logout() {
 }
 
 const allowedByPlan = {
-  basic: ["Super 04", "Super 08", "Super 12 Mista", "Super 16 Mista"],
-  pro: [
-    "Super 04",
+  basic: [
     "Super 08",
-    "Super 12 Mista",
-    "Super 16 Mista",
-    "Duplas Fixas",
+    "Super 12 Mista (Dupla Aleatória)",
+    "Super 16 Mista (Dupla Aleatória)",
+  ],
+  pro: [
+    "Super 08",
+    "Super 12 Mista (Dupla Aleatória)",
+    "Super 16 Mista (Dupla Aleatória)",
+    "Super 12 Mista (Dupla Fixa)",
+    "Super 16 Mista (Dupla Fixa)",
   ],
   premium: [
-    "Super 04",
     "Super 08",
-    "Super 12 Mista",
-    "Super 16 Mista",
-    "Duplas Fixas",
+    "Super 12 Mista (Dupla Aleatória)",
+    "Super 16 Mista (Dupla Aleatória)",
+    "Super 12 Mista (Dupla Fixa)",
+    "Super 16 Mista (Dupla Fixa)",
     "Simples 8",
-    "Simples 16",
   ],
 };
 
 const modalityConfig = {
-  "Super 04": { type: "super4", total: 4, label: "Participante", courts: 1 },
   "Super 08": { type: "super8", total: 8, label: "Participante", courts: 2 },
-  "Super 12 Mista": { type: "mixed12", men: 6, women: 6, courts: 3 },
-  "Super 16 Mista": { type: "mixed16", men: 8, women: 8, courts: 4 },
-  "Duplas Fixas": { type: "fixed", teams: 8, courts: 4 },
-  "Simples 8": { type: "simple", total: 8, label: "Jogador", courts: 4 },
-  "Simples 16": { type: "simple", total: 16, label: "Jogador", courts: 8 },
-};
 
-const super4Template = [
-  [[[1, 2], [3, 4]]],
-  [[[1, 3], [2, 4]]],
-  [[[1, 4], [2, 3]]],
-];
+  "Super 12 Mista (Dupla Aleatória)": {
+    type: "mixed12",
+    men: 6,
+    women: 6,
+    courts: 3,
+  },
+
+  "Super 16 Mista (Dupla Aleatória)": {
+    type: "mixed16",
+    men: 8,
+    women: 8,
+    courts: 4,
+  },
+
+  "Super 12 Mista (Dupla Fixa)": {
+    type: "fixed12",
+    teams: 6,
+    courts: 3,
+  },
+
+  "Super 16 Mista (Dupla Fixa)": {
+    type: "fixed16",
+    teams: 8,
+    courts: 4,
+  },
+
+  "Simples 8": {
+    type: "simple8",
+    total: 8,
+    label: "Jogador",
+    courts: 4,
+  },
+};
 
 const super8Template = [
   [[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
@@ -78,6 +97,15 @@ const super8Template = [
   [[[1, 6], [4, 7]], [[2, 5], [3, 8]]],
   [[[1, 7], [3, 5]], [[2, 8], [4, 6]]],
   [[[1, 8], [2, 7]], [[3, 6], [4, 5]]],
+];
+
+const super12MixedTemplate = [
+  [[1, 7, 4, 12], [2, 8, 6, 11], [3, 9, 5, 10]],
+  [[1, 8, 2, 7], [3, 10, 4, 9], [5, 12, 6, 11]],
+  [[1, 9, 6, 10], [2, 11, 5, 7], [3, 8, 4, 12]],
+  [[1, 10, 3, 12], [2, 9, 4, 11], [5, 7, 6, 8]],
+  [[1, 11, 5, 8], [2, 10, 6, 7], [3, 12, 4, 9]],
+  [[1, 12, 4, 8], [2, 7, 3, 11], [5, 9, 6, 10]],
 ];
 
 const super16MixedTemplate = [
@@ -91,13 +119,12 @@ const super16MixedTemplate = [
   [[1, 11, 2, 12], [3, 9, 4, 10], [5, 15, 7, 16], [8, 13, 6, 14]],
 ];
 
-const super12MixedTemplate = [
-  [[1, 7, 4, 12], [2, 8, 6, 11], [3, 9, 5, 10]],
-  [[1, 8, 2, 7], [3, 10, 4, 9], [5, 12, 6, 11]],
-  [[1, 9, 6, 10], [2, 11, 5, 7], [3, 8, 4, 12]],
-  [[1, 10, 3, 12], [2, 9, 4, 11], [5, 7, 6, 8]],
-  [[1, 11, 5, 8], [2, 10, 6, 7], [3, 12, 4, 9]],
-  [[1, 12, 4, 8], [2, 7, 3, 11], [5, 9, 6, 10]],
+const fixed12Template = [
+  [[1, 6], [2, 5], [3, 4]],
+  [[1, 5], [6, 4], [2, 3]],
+  [[1, 4], [5, 3], [6, 2]],
+  [[1, 3], [4, 2], [5, 6]],
+  [[1, 2], [3, 6], [4, 5]],
 ];
 
 function berger(n) {
@@ -154,22 +181,19 @@ function optimizeCourts(schedule) {
     players.forEach((playerId) => {
       const sameCourt = getUsage(playerId, court);
 
-      // Evita fortemente repetir a mesma quadra para o mesmo jogador
       score += sameCourt * 10000;
-
-      // Penaliza repetição acumulada
       score += sameCourt * sameCourt * 3000;
 
-      // Se o jogador ainda tem quadra não usada, evita repetir
       const hasUnusedCourt = courts.some((c) => getUsage(playerId, c) === 0);
+
       if (hasUnusedCourt && sameCourt > 0) {
         score += 5000;
       }
 
-      // Penaliza desequilíbrio geral do jogador entre quadras
       const usages = courts.map((c) => getUsage(playerId, c));
       const max = Math.max(...usages);
       const min = Math.min(...usages);
+
       score += (max - min) * 500;
     });
 
@@ -179,7 +203,6 @@ function optimizeCourts(schedule) {
   return schedule.map((round, roundIndex) => {
     const courts = round.map((_, index) => index + 1);
 
-    // Rotaciona a ordem inicial por rodada
     const rotatedGames = round.map((game, index) => ({
       ...game,
       preferredCourt: ((index + roundIndex) % courts.length) + 1,
@@ -195,7 +218,6 @@ function optimizeCourts(schedule) {
       remaining.forEach((game, index) => {
         let score = scoreGameOnCourt(game, court, courts);
 
-        // Pequeno bônus para respeitar a rotação natural
         if (game.preferredCourt !== court) {
           score += 100;
         }
@@ -240,11 +262,8 @@ function NoticeModal({ notice, onClose }) {
     <div className="confirmOverlay">
       <div className={`confirmBox noticeBox ${notice.type || "info"}`}>
         <div className="confirmIcon">{icon}</div>
-
         <h2>{notice.title}</h2>
-
         <p>{notice.message}</p>
-
         <div className="confirmActions">
           <button onClick={onClose}>Entendi</button>
         </div>
@@ -306,7 +325,6 @@ function App() {
   useEffect(() => {
     async function init() {
       const { data } = await supabase.auth.getSession();
-
       setSession(data.session);
 
       if (data.session?.user?.id) {
@@ -370,20 +388,12 @@ function Login() {
     e.preventDefault();
 
     if (!email.trim()) {
-      showNotice(
-        "warning",
-        "E-mail obrigatório",
-        "Informe seu e-mail para continuar."
-      );
+      showNotice("warning", "E-mail obrigatório", "Informe seu e-mail para continuar.");
       return;
     }
 
     if (!password.trim()) {
-      showNotice(
-        "warning",
-        "Senha obrigatória",
-        "Digite sua senha para continuar."
-      );
+      showNotice("warning", "Senha obrigatória", "Digite sua senha para continuar.");
       return;
     }
 
@@ -402,22 +412,14 @@ function Login() {
       }
     } else {
       if (!name.trim()) {
-        showNotice(
-          "warning",
-          "Nome obrigatório",
-          "Informe seu nome para criar a conta."
-        );
+        showNotice("warning", "Nome obrigatório", "Informe seu nome para criar a conta.");
         return;
       }
 
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: {
-          data: {
-            name: name.trim(),
-          },
-        },
+        options: { data: { name: name.trim() } },
       });
 
       if (error) {
@@ -445,59 +447,158 @@ function Login() {
     <div className="loginPage">
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
-      <div className="loginCard">
-        <div className="logo">🏆</div>
-        <h1>Torneio Fácil BT</h1>
-        <p>
-          {mode === "login"
-            ? "Entre para acessar seus torneios."
-            : "Crie sua conta para solicitar acesso."}
-        </p>
+      <div className="loginLayout">
+        <div className="loginCard">
+          <div className="logo">🏆</div>
+          <h1>Torneio Fácil BT</h1>
+          <p>
+            {mode === "login"
+              ? "Entre para acessar seus torneios."
+              : "Crie sua conta para solicitar acesso."}
+          </p>
 
-        <form onSubmit={handleSubmit}>
-          {mode === "signup" && (
-            <>
-              <label>Nome</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Seu nome"
-              />
-            </>
-          )}
+          <form onSubmit={handleSubmit}>
+            {mode === "signup" && (
+              <>
+                <label>Nome</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome"
+                />
+              </>
+            )}
 
-          <label>E-mail</label>
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="seuemail@exemplo.com"
-          />
+            <label>E-mail</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seuemail@exemplo.com"
+            />
 
-          <label>Senha</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Digite sua senha"
-          />
+            <label>Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Digite sua senha"
+            />
 
-          <button type="submit">
-            {mode === "login" ? "Entrar" : "Criar conta"}
+            <button type="submit">
+              {mode === "login" ? "Entrar" : "Criar conta"}
+            </button>
+          </form>
+
+          <button
+            className="linkBtn"
+            onClick={() => {
+              setMode(mode === "login" ? "signup" : "login");
+              setName("");
+              setEmail("");
+              setPassword("");
+            }}
+          >
+            {mode === "login" ? "Criar nova conta" : "Já tenho conta"}
           </button>
-        </form>
+        </div>
 
-        <button
-          className="linkBtn"
-          onClick={() => {
-            setMode(mode === "login" ? "signup" : "login");
-            setName("");
-            setEmail("");
-            setPassword("");
-          }}
-        >
-          {mode === "login" ? "Criar nova conta" : "Já tenho conta"}
-        </button>
+        <div className="plansPanel">
+          <div className="plansIntro">
+            <span>Planos</span>
+            <h2>Organize torneios de beach tennis com mais controle</h2>
+            <p>
+              Escolha o plano conforme as modalidades que deseja liberar para
+              seus torneios.
+            </p>
+          </div>
+
+          <div className="plansGrid">
+            <PlanCard
+              title="Basic"
+              tag="Entrada"
+              text="Ideal para começar com torneios mistos e Super 08."
+              items={[
+                "Super 08",
+                "Super 12 Mista (Dupla Aleatória)",
+                "Super 16 Mista (Dupla Aleatória)",
+                "1 campeonato ativo por vez",
+                "Sorteio de participantes",
+                "Placares e ranking automático",
+              ]}
+            />
+
+            <PlanCard
+              title="Pro"
+              tag="Organizador"
+              badge="Mais usado"
+              text="Para quem organiza torneios com frequência e precisa de duplas fixas."
+              items={[
+                "Tudo do Basic",
+                "Super 12 Mista (Dupla Fixa)",
+                "Super 16 Mista (Dupla Fixa)",
+                "Campeonatos ilimitados",
+                "Histórico salvo no sistema",
+              ]}
+            />
+
+            <PlanCard
+              title="Premium"
+              tag="Completo"
+              text="Libera todos os formatos disponíveis no sistema."
+              items={[
+                "Tudo do Pro",
+                "Simples 8",
+                "Todos os formatos liberados",
+                "Campeonatos ilimitados",
+                "Melhor opção para clubes e arenas",
+              ]}
+            />
+          </div>
+
+          <div className="modalitiesPanel">
+            <h2>Modalidades disponíveis</h2>
+
+            <div className="modalitiesGrid">
+              <Info title="Super 08" text="8 participantes, duplas variáveis e ranking individual." />
+              <Info title="Super 12 Mista (Dupla Aleatória)" text="6 homens e 6 mulheres com duplas formadas pela numeração sorteada." />
+              <Info title="Super 16 Mista (Dupla Aleatória)" text="8 homens e 8 mulheres com duplas alternadas por rodada." />
+              <Info title="Super 12 Mista (Dupla Fixa)" text="6 duplas fixas jogando entre si em 5 rodadas." />
+              <Info title="Super 16 Mista (Dupla Fixa)" text="8 duplas fixas jogando entre si em formato todos contra todos." />
+              <Info title="Simples 8" text="8 jogadores em disputa individual com ranking geral." />
+            </div>
+          </div>
+        </div>
       </div>
+    </div>
+  );
+}
+
+function PlanCard({ title, tag, badge, text, items }) {
+  return (
+    <div className="planCard">
+      {badge && <div className="planBadge">{badge}</div>}
+
+      <div className="planTop">
+        <h3>{title}</h3>
+        <span>{tag}</span>
+      </div>
+
+      <p className="planDesc">{text}</p>
+
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function Info({ title, text }) {
+  return (
+    <div>
+      <strong>{title}</strong>
+      <p>{text}</p>
     </div>
   );
 }
@@ -509,15 +610,9 @@ function Blocked({ profile }) {
       <p>Seu acesso está pendente, bloqueado ou vencido.</p>
 
       <div className="infoBox">
-        <p>
-          <strong>Plano:</strong> {profile.plan}
-        </p>
-        <p>
-          <strong>Status:</strong> {profile.status}
-        </p>
-        <p>
-          <strong>Vencimento:</strong> {profile.expires_at || "não definido"}
-        </p>
+        <p><strong>Plano:</strong> {profile.plan}</p>
+        <p><strong>Status:</strong> {profile.status}</p>
+        <p><strong>Vencimento:</strong> {profile.expires_at || "não definido"}</p>
       </div>
 
       <p>Entre em contato para regularizar seu acesso.</p>
@@ -530,7 +625,7 @@ function Dashboard({ profile, user }) {
   const [tournaments, setTournaments] = useState([]);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
-  const [newType, setNewType] = useState("Super 04");
+  const [newType, setNewType] = useState("Super 08");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -553,11 +648,7 @@ function Dashboard({ profile, user }) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao carregar",
-        "Não foi possível carregar seus torneios. Atualize a página e tente novamente."
-      );
+      showNotice("error", "Erro ao carregar", "Não foi possível carregar seus torneios.");
       console.error(error);
       return;
     }
@@ -567,29 +658,17 @@ function Dashboard({ profile, user }) {
 
   async function createTournament() {
     if (!newName.trim()) {
-      showNotice(
-        "warning",
-        "Nome obrigatório",
-        "Digite um nome para identificar este torneio antes de continuar."
-      );
+      showNotice("warning", "Nome obrigatório", "Digite um nome para este torneio.");
       return;
     }
 
     if (!allowedTypes.includes(newType)) {
-      showNotice(
-        "warning",
-        "Modalidade não liberada",
-        "Seu plano atual não permite criar torneios nessa modalidade."
-      );
+      showNotice("warning", "Modalidade não liberada", "Seu plano não permite essa modalidade.");
       return;
     }
 
     if (profile.plan === "basic" && tournaments.length >= 1) {
-      showNotice(
-        "warning",
-        "Limite do plano básico",
-        "O plano básico permite organizar apenas um campeonato por vez."
-      );
+      showNotice("warning", "Limite do plano básico", "O plano basic permite apenas 1 campeonato por vez.");
       return;
     }
 
@@ -609,23 +688,14 @@ function Dashboard({ profile, user }) {
     setSaving(false);
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao criar torneio",
-        "Não foi possível criar o torneio agora. Tente novamente em alguns instantes."
-      );
+      showNotice("error", "Erro ao criar torneio", "Tente novamente em alguns instantes.");
       console.error(error);
       return;
     }
 
     setNewName("");
     await loadTournaments();
-
-    showNotice(
-      "success",
-      "Torneio criado",
-      "O torneio foi criado e já está disponível na sua lista."
-    );
+    showNotice("success", "Torneio criado", "O torneio foi criado com sucesso.");
   }
 
   async function confirmDeleteTournament() {
@@ -638,24 +708,14 @@ function Dashboard({ profile, user }) {
       .eq("user_id", user.id);
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao excluir",
-        "Não foi possível excluir este torneio. Tente novamente."
-      );
+      showNotice("error", "Erro ao excluir", "Não foi possível excluir este torneio.");
       console.error(error);
       return;
     }
 
-    if (selected?.id === deleteTarget.id) setSelected(null);
     setDeleteTarget(null);
     await loadTournaments();
-
-    showNotice(
-      "success",
-      "Torneio excluído",
-      "O torneio e seus dados salvos foram removidos."
-    );
+    showNotice("success", "Torneio excluído", "O torneio foi removido.");
   }
 
   async function openTournament(tournament) {
@@ -667,11 +727,7 @@ function Dashboard({ profile, user }) {
       .single();
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao abrir",
-        "Não foi possível abrir este torneio agora."
-      );
+      showNotice("error", "Erro ao abrir", "Não foi possível abrir este torneio.");
       console.error(error);
       return;
     }
@@ -690,19 +746,13 @@ function Dashboard({ profile, user }) {
       .eq("user_id", user.id);
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao salvar",
-        "Não foi possível salvar as alterações deste torneio."
-      );
+      showNotice("error", "Erro ao salvar", "Não foi possível salvar as alterações.");
       console.error(error);
       return false;
     }
 
     setSelected(updated);
-    setTournaments((prev) =>
-      prev.map((t) => (t.id === updated.id ? updated : t))
-    );
+    setTournaments((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     return true;
   }
 
@@ -737,24 +787,16 @@ function Dashboard({ profile, user }) {
 
       <section className="card">
         <h2>Meu plano</h2>
-        <p>
-          <strong>Plano:</strong> {profile.plan}
-        </p>
-        <p>
-          <strong>Status:</strong> {profile.status}
-        </p>
-        <p>
-          <strong>Vencimento:</strong> {profile.expires_at}
-        </p>
+        <p><strong>Plano:</strong> {profile.plan}</p>
+        <p><strong>Status:</strong> {profile.status}</p>
+        <p><strong>Vencimento:</strong> {profile.expires_at}</p>
       </section>
 
       <section className="card">
         <h2>Modalidades liberadas</h2>
         <div className="grid">
           {allowedTypes.map((item) => (
-            <div className="modality" key={item}>
-              🏆 {item}
-            </div>
+            <div className="modality" key={item}>🏆 {item}</div>
           ))}
         </div>
       </section>
@@ -772,9 +814,7 @@ function Dashboard({ profile, user }) {
         <label>Modalidade</label>
         <select value={newType} onChange={(e) => setNewType(e.target.value)}>
           {allowedTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
+            <option key={type} value={type}>{type}</option>
           ))}
         </select>
 
@@ -799,11 +839,7 @@ function Dashboard({ profile, user }) {
 
                 <div className="actions">
                   <button onClick={() => openTournament(t)}>Abrir</button>
-
-                  <button
-                    className="deleteBtn"
-                    onClick={() => setDeleteTarget(t)}
-                  >
+                  <button className="deleteBtn" onClick={() => setDeleteTarget(t)}>
                     Excluir
                   </button>
                 </div>
@@ -821,16 +857,13 @@ function createInitialData(type, config) {
     return {
       players: {
         men: Array.from({ length: config.men }, (_, i) => `Homem ${i + 1}`),
-        women: Array.from(
-          { length: config.women },
-          (_, i) => `Mulher ${i + 1}`
-        ),
+        women: Array.from({ length: config.women }, (_, i) => `Mulher ${i + 1}`),
       },
       schedule: [],
     };
   }
 
-  if (config.type === "fixed") {
+  if (config.type === "fixed12" || config.type === "fixed16") {
     return {
       players: {
         teams: Array.from({ length: config.teams }, (_, i) => ({
@@ -843,10 +876,7 @@ function createInitialData(type, config) {
   }
 
   return {
-    players: Array.from(
-      { length: config.total },
-      (_, i) => `${config.label} ${i + 1}`
-    ),
+    players: Array.from({ length: config.total }, (_, i) => `${config.label} ${i + 1}`),
     schedule: [],
   };
 }
@@ -858,10 +888,8 @@ function getShuffleNames(data, config) {
     return [...data.players.men, ...data.players.women];
   }
 
-  if (config.type === "fixed") {
-    return data.players.teams.map(
-      (team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`
-    );
+  if (config.type === "fixed12" || config.type === "fixed16") {
+    return data.players.teams.map((team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`);
   }
 
   return data.players || [];
@@ -869,17 +897,12 @@ function getShuffleNames(data, config) {
 
 function TournamentScreen({ tournament, onBack, onSave }) {
   const config = modalityConfig[tournament.type];
-  const [data, setData] = useState(
-    tournament.data || createInitialData(tournament.type, config)
-  );
+  const [data, setData] = useState(tournament.data || createInitialData(tournament.type, config));
   const [saving, setSaving] = useState(false);
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
 
-  const ranking = useMemo(
-    () => calculateRanking(data, tournament.type),
-    [data, tournament.type]
-  );
+  const ranking = useMemo(() => calculateRanking(data, tournament.type), [data, tournament.type]);
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -902,7 +925,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     if (config.type === "mixed12" || config.type === "mixed16") {
       copy.players.men = shuffleArray(copy.players.men);
       copy.players.women = shuffleArray(copy.players.women);
-    } else if (config.type === "fixed") {
+    } else if (config.type === "fixed12" || config.type === "fixed16") {
       copy.players.teams = shuffleArray(copy.players.teams);
     } else {
       copy.players = shuffleArray(copy.players);
@@ -917,46 +940,24 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     const names = getShuffleNames(data, config);
 
     if (names.length === 0) {
-      showNotice(
-        "warning",
-        "Sem participantes",
-        "Adicione os nomes dos participantes antes de realizar o sorteio."
-      );
+      showNotice("warning", "Sem participantes", "Adicione os nomes antes do sorteio.");
       return;
     }
 
     let seconds = 10;
     let animationNames = shuffleArray(names);
 
-    setShuffleOverlay({
-      seconds,
-      names: animationNames,
-    });
+    setShuffleOverlay({ seconds, names: animationNames });
 
     const interval = setInterval(() => {
       animationNames = shuffleArray(names);
-
-      setShuffleOverlay((prev) => {
-        if (!prev) return null;
-
-        return {
-          ...prev,
-          names: animationNames,
-        };
-      });
+      setShuffleOverlay((prev) => (prev ? { ...prev, names: animationNames } : null));
     }, 250);
 
     const countdown = setInterval(() => {
       seconds -= 1;
 
-      setShuffleOverlay((prev) => {
-        if (!prev) return null;
-
-        return {
-          ...prev,
-          seconds,
-        };
-      });
+      setShuffleOverlay((prev) => (prev ? { ...prev, seconds } : null));
 
       if (seconds <= 0) {
         clearInterval(interval);
@@ -972,23 +973,14 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     setSaving(false);
 
     if (ok && showAlert) {
-      showNotice(
-        "success",
-        "Torneio salvo",
-        "As alterações foram salvas com sucesso."
-      );
+      showNotice("success", "Torneio salvo", "As alterações foram salvas.");
     }
   }
 
   function generate() {
     const schedule = generateSchedule(tournament.type, data.players);
     setData({ ...data, schedule });
-
-    showNotice(
-      "success",
-      "Tabela gerada",
-      "A tabela foi montada conforme a numeração dos participantes."
-    );
+    showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
   }
 
   function updateScore(roundIndex, gameIndex, field, value) {
@@ -1030,11 +1022,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
             </div>
 
             <div className="shuffleProgress">
-              <div
-                style={{
-                  width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%`,
-                }}
-              />
+              <div style={{ width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%` }} />
             </div>
           </div>
         </div>
@@ -1058,11 +1046,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
         <section className="card">
           <h2>Participantes</h2>
 
-          <PlayerInputs
-            type={tournament.type}
-            data={data}
-            updatePlayer={updatePlayer}
-          />
+          <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} />
 
           <div className="actions">
             <button onClick={shuffleNames}>Sortear nomes</button>
@@ -1104,12 +1088,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
           {data.players.men.map((name, i) => (
             <div className="numberedInput" key={i}>
               <span>{i + 1}</span>
-              <input
-                value={name}
-                onChange={(e) =>
-                  updatePlayer({ kind: "men", index: i }, e.target.value)
-                }
-              />
+              <input value={name} onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)} />
             </div>
           ))}
         </div>
@@ -1119,12 +1098,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
           {data.players.women.map((name, i) => (
             <div className="numberedInput" key={i}>
               <span>{config.men + i + 1}</span>
-              <input
-                value={name}
-                onChange={(e) =>
-                  updatePlayer({ kind: "women", index: i }, e.target.value)
-                }
-              />
+              <input value={name} onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)} />
             </div>
           ))}
         </div>
@@ -1132,7 +1106,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
     );
   }
 
-  if (config.type === "fixed") {
+  if (config.type === "fixed12" || config.type === "fixed16") {
     return (
       <div className="twoCols">
         {data.players.teams.map((team, i) => (
@@ -1143,23 +1117,13 @@ function PlayerInputs({ type, data, updatePlayer }) {
               <span>{i + 1}</span>
               <input
                 value={team.a}
-                onChange={(e) =>
-                  updatePlayer(
-                    { kind: "team", index: i, field: "a" },
-                    e.target.value
-                  )
-                }
+                onChange={(e) => updatePlayer({ kind: "team", index: i, field: "a" }, e.target.value)}
               />
             </div>
 
             <input
               value={team.b}
-              onChange={(e) =>
-                updatePlayer(
-                  { kind: "team", index: i, field: "b" },
-                  e.target.value
-                )
-              }
+              onChange={(e) => updatePlayer({ kind: "team", index: i, field: "b" }, e.target.value)}
             />
           </div>
         ))}
@@ -1172,12 +1136,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
       {data.players.map((name, i) => (
         <div className="numberedInput" key={i}>
           <span>{i + 1}</span>
-          <input
-            value={name}
-            onChange={(e) =>
-              updatePlayer({ kind: "normal", index: i }, e.target.value)
-            }
-          />
+          <input value={name} onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)} />
         </div>
       ))}
     </div>
@@ -1237,10 +1196,6 @@ function buildFromMixedTemplate(template, players) {
 function generateSchedule(type, players) {
   const config = modalityConfig[type];
 
-  if (config.type === "super4") {
-    return optimizeCourts(buildFromPairTemplate(super4Template, players));
-  }
-
   if (config.type === "super8") {
     return optimizeCourts(buildFromPairTemplate(super8Template, players));
   }
@@ -1253,7 +1208,25 @@ function generateSchedule(type, players) {
     return optimizeCourts(buildFromMixedTemplate(super16MixedTemplate, players));
   }
 
-  if (config.type === "fixed") {
+  if (config.type === "fixed12") {
+    const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
+
+    const schedule = fixed12Template.map((round) =>
+      round.map((game, index) => ({
+        court: index + 1,
+        team1: [teamNames[game[0] - 1]],
+        ids1: [game[0] - 1],
+        team2: [teamNames[game[1] - 1]],
+        ids2: [game[1] - 1],
+        s1: "",
+        s2: "",
+      }))
+    );
+
+    return optimizeCourts(schedule);
+  }
+
+  if (config.type === "fixed16") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
 
     const schedule = berger(8).map((round) =>
@@ -1271,8 +1244,8 @@ function generateSchedule(type, players) {
     return optimizeCourts(schedule);
   }
 
-  if (config.type === "simple") {
-    const schedule = berger(config.total).map((round) =>
+  if (config.type === "simple8") {
+    const schedule = berger(8).map((round) =>
       round.map((game, index) => ({
         court: index + 1,
         team1: [players[game[0]]],
@@ -1311,9 +1284,7 @@ function ScheduleView({ schedule, updateScore }) {
                 <input
                   type="number"
                   value={game.s1}
-                  onChange={(e) =>
-                    updateScore(roundIndex, gameIndex, "s1", e.target.value)
-                  }
+                  onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
                 />
 
                 <span>—</span>
@@ -1321,9 +1292,7 @@ function ScheduleView({ schedule, updateScore }) {
                 <input
                   type="number"
                   value={game.s2}
-                  onChange={(e) =>
-                    updateScore(roundIndex, gameIndex, "s2", e.target.value)
-                  }
+                  onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
                 />
               </div>
             </div>
@@ -1342,7 +1311,7 @@ function calculateRanking(data, type) {
 
   if (config.type === "mixed12" || config.type === "mixed16") {
     names = [...data.players.men, ...data.players.women];
-  } else if (config.type === "fixed") {
+  } else if (config.type === "fixed12" || config.type === "fixed16") {
     names = data.players.teams.map((t) => `${t.a} + ${t.b}`);
   } else {
     names = data.players;
@@ -1361,14 +1330,7 @@ function calculateRanking(data, type) {
     const s1 = Number(game.s1);
     const s2 = Number(game.s2);
 
-    if (
-      game.s1 === "" ||
-      game.s2 === "" ||
-      Number.isNaN(s1) ||
-      Number.isNaN(s2)
-    ) {
-      return;
-    }
+    if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
 
     const win1 = s1 > s2;
     const win2 = s2 > s1;
