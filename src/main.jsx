@@ -8,6 +8,26 @@ const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+const allowedByPlan = {
+  basic: ["Super 04", "Super 08", "Super 12 Mista", "Super 16 Mista"],
+  pro: [
+    "Super 04",
+    "Super 08",
+    "Super 12 Mista",
+    "Super 16 Mista",
+    "Duplas Fixas",
+  ],
+  premium: [
+    "Super 04",
+    "Super 08",
+    "Super 12 Mista",
+    "Super 16 Mista",
+    "Duplas Fixas",
+    "Simples 8",
+    "Simples 16",
+  ],
+};
+
 function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -21,16 +41,18 @@ function App() {
       .single();
 
     if (error) {
-      console.error(error);
+      console.error("Erro ao carregar perfil:", error);
       setProfile(null);
-    } else {
-      setProfile(data);
+      return;
     }
+
+    setProfile(data);
   }
 
   useEffect(() => {
     async function init() {
       const { data } = await supabase.auth.getSession();
+
       setSession(data.session);
 
       if (data.session?.user?.id) {
@@ -146,7 +168,10 @@ function Login() {
           </button>
         </form>
 
-        <button className="linkBtn" onClick={() => setMode(mode === "login" ? "signup" : "login")}>
+        <button
+          className="linkBtn"
+          onClick={() => setMode(mode === "login" ? "signup" : "login")}
+        >
           {mode === "login" ? "Criar nova conta" : "Já tenho conta"}
         </button>
 
@@ -187,27 +212,7 @@ function Dashboard({ profile, user }) {
   const [newType, setNewType] = useState("Super 04");
   const [saving, setSaving] = useState(false);
 
-  const allowed = {
-    basic: ["Super 04", "Super 08", "Super 12 Mista", "Super 16 Mista"],
-    pro: [
-      "Super 04",
-      "Super 08",
-      "Super 12 Mista",
-      "Super 16 Mista",
-      "Duplas Fixas",
-    ],
-    premium: [
-      "Super 04",
-      "Super 08",
-      "Super 12 Mista",
-      "Super 16 Mista",
-      "Duplas Fixas",
-      "Simples 8",
-      "Simples 16",
-    ],
-  };
-
-  const allowedTypes = allowed[profile.plan] || [];
+  const allowedTypes = allowedByPlan[profile.plan] || [];
 
   useEffect(() => {
     loadTournaments();
@@ -221,7 +226,7 @@ function Dashboard({ profile, user }) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      console.error(error);
+      console.error("Erro ao carregar torneios:", error);
       alert("Erro ao carregar torneios.");
       return;
     }
@@ -262,7 +267,7 @@ function Dashboard({ profile, user }) {
     setSaving(false);
 
     if (error) {
-      console.error(error);
+      console.error("Erro ao criar torneio:", error);
       alert("Erro ao criar torneio.");
       return;
     }
@@ -282,7 +287,7 @@ function Dashboard({ profile, user }) {
       .eq("user_id", user.id);
 
     if (error) {
-      console.error(error);
+      console.error("Erro ao excluir torneio:", error);
       alert("Erro ao excluir torneio.");
       return;
     }
@@ -338,7 +343,9 @@ function Dashboard({ profile, user }) {
         <label>Modalidade</label>
         <select value={newType} onChange={(e) => setNewType(e.target.value)}>
           {allowedTypes.map((type) => (
-            <option key={type}>{type}</option>
+            <option key={type} value={type}>
+              {type}
+            </option>
           ))}
         </select>
 
@@ -361,7 +368,10 @@ function Dashboard({ profile, user }) {
                   <span>{t.type}</span>
                 </div>
 
-                <button className="danger" onClick={() => deleteTournament(t.id)}>
+                <button
+                  className="danger"
+                  onClick={() => deleteTournament(t.id)}
+                >
                   Excluir
                 </button>
               </div>
@@ -372,3 +382,5 @@ function Dashboard({ profile, user }) {
     </div>
   );
 }
+
+createRoot(document.getElementById("root")).render(<App />);
