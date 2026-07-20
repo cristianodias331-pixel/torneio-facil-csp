@@ -379,6 +379,7 @@ function Login() {
   const [password, setPassword] = useState("");
   const [mode, setMode] = useState("login");
   const [notice, setNotice] = useState(null);
+  const [openInfoTab, setOpenInfoTab] = useState("plans");
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -502,76 +503,126 @@ function Login() {
           </button>
         </div>
 
-        <div className="plansPanel">
-          <div className="plansIntro">
-            <span>Planos</span>
-            <h2>Organize torneios de beach tennis com mais controle</h2>
-            <p>
-              Escolha o plano conforme as modalidades que deseja liberar para
-              seus torneios.
-            </p>
-          </div>
+        <div className="loginInfoPanel">
+  <div className="loginHeroInfo">
+    <span>Conheça os planos</span>
+    <h2>Escolha o melhor formato para seus torneios</h2>
+    <p>
+      Veja os planos e modalidades disponíveis sem poluir a tela de
+      login. Clique nas abas abaixo para expandir os detalhes.
+    </p>
+  </div>
 
-          <div className="plansGrid">
-            <PlanCard
-              title="Basic"
-              tag="Entrada"
-              text="Ideal para começar com torneios mistos e Super 08."
-              items={[
-                "Super 08",
-                "Super 12 Mista (Dupla Aleatória)",
-                "Super 16 Mista (Dupla Aleatória)",
-                "1 campeonato ativo por vez",
-                "Sorteio de participantes",
-                "Placares e ranking automático",
-              ]}
-            />
+  <div className="infoTabs">
+    <button
+      type="button"
+      className={openInfoTab === "plans" ? "active" : ""}
+      onClick={() =>
+        setOpenInfoTab(openInfoTab === "plans" ? null : "plans")
+      }
+    >
+      Planos
+    </button>
 
-            <PlanCard
-              title="Pro"
-              tag="Organizador"
-              badge="Mais usado"
-              text="Para quem organiza torneios com frequência e precisa de duplas fixas."
-              items={[
-                "Tudo do Basic",
-                "Super 12 Mista (Dupla Fixa)",
-                "Super 16 Mista (Dupla Fixa)",
-                "Campeonatos ilimitados",
-                "Histórico salvo no sistema",
-              ]}
-            />
+    <button
+      type="button"
+      className={openInfoTab === "modalities" ? "active" : ""}
+      onClick={() =>
+        setOpenInfoTab(
+          openInfoTab === "modalities" ? null : "modalities"
+        )
+      }
+    >
+      Modalidades
+    </button>
+  </div>
 
-            <PlanCard
-              title="Premium"
-              tag="Completo"
-              text="Libera todos os formatos disponíveis no sistema."
-              items={[
-                "Tudo do Pro",
-                "Simples 8",
-                "Todos os formatos liberados",
-                "Campeonatos ilimitados",
-                "Melhor opção para clubes e arenas",
-              ]}
-            />
-          </div>
+  {openInfoTab === "plans" && (
+    <div className="accordionContent">
+      <div className="plansGrid compactPlans">
+        <PlanCard
+          title="Basic"
+          tag="Entrada"
+          text="Para começar com torneios mistos e Super 08."
+          items={[
+            "Super 08",
+            "Super 12 Mista (Dupla Aleatória)",
+            "Super 16 Mista (Dupla Aleatória)",
+            "1 campeonato ativo por vez",
+            "Sorteio e ranking automático",
+          ]}
+        />
 
-          <div className="modalitiesPanel">
-            <h2>Modalidades disponíveis</h2>
+        <PlanCard
+          title="Pro"
+          tag="Organizador"
+          badge="Mais usado"
+          text="Para organizadores que precisam de duplas fixas."
+          items={[
+            "Tudo do Basic",
+            "Super 12 Mista (Dupla Fixa)",
+            "Super 16 Mista (Dupla Fixa)",
+            "Campeonatos ilimitados",
+            "Histórico salvo",
+          ]}
+        />
 
-            <div className="modalitiesGrid">
-              <Info title="Super 08" text="8 participantes, duplas variáveis e ranking individual." />
-              <Info title="Super 12 Mista (Dupla Aleatória)" text="6 homens e 6 mulheres com duplas formadas pela numeração sorteada." />
-              <Info title="Super 16 Mista (Dupla Aleatória)" text="8 homens e 8 mulheres com duplas alternadas por rodada." />
-              <Info title="Super 12 Mista (Dupla Fixa)" text="6 duplas fixas jogando entre si em 5 rodadas." />
-              <Info title="Super 16 Mista (Dupla Fixa)" text="8 duplas fixas jogando entre si em formato todos contra todos." />
-              <Info title="Simples 8" text="8 jogadores em disputa individual com ranking geral." />
-            </div>
-          </div>
-        </div>
+        <PlanCard
+          title="Premium"
+          tag="Completo"
+          text="Libera todos os formatos disponíveis."
+          items={[
+            "Tudo do Pro",
+            "Simples 8",
+            "Todos os formatos liberados",
+            "Campeonatos ilimitados",
+            "Ideal para clubes e arenas",
+          ]}
+        />
       </div>
     </div>
-  );
-}
+  )}
+
+  {openInfoTab === "modalities" && (
+    <div className="accordionContent">
+      <div className="modalitiesGrid compactModalities">
+        <Info
+          title="Super 08"
+          text="8 participantes, duplas variáveis e ranking individual."
+        />
+        <Info
+          title="Super 12 Mista (Dupla Aleatória)"
+          text="6 homens e 6 mulheres. As duplas mudam conforme a numeração sorteada."
+        />
+        <Info
+          title="Super 16 Mista (Dupla Aleatória)"
+          text="8 homens e 8 mulheres com duplas alternadas por rodada."
+        />
+        <Info
+          title="Super 12 Mista (Dupla Fixa)"
+          text="6 duplas fixas jogando entre si em 5 rodadas."
+        />
+        <Info
+          title="Super 16 Mista (Dupla Fixa)"
+          text="8 duplas fixas no formato todos contra todos."
+        />
+        <Info
+          title="Simples 8"
+          text="8 jogadores em disputa individual com ranking geral."
+        />
+      </div>
+    </div>
+  )}
+
+  <div className="learnMoreBox">
+    <strong>Quer saber qual plano escolher?</strong>
+    <p>
+      Para testes rápidos, use o Basic. Para torneios recorrentes e
+      duplas fixas, escolha o Pro. Para liberar todos os formatos, use o
+      Premium.
+    </p>
+  </div>
+</div>
 
 function PlanCard({ title, tag, badge, text, items }) {
   return (
