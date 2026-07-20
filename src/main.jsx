@@ -1,1165 +1,1827 @@
-* {
-  box-sizing: border-box;
-}
+import React, { useEffect, useMemo, useState } from "react";
+import { createRoot } from "react-dom/client";
+import { createClient } from "@supabase/supabase-js";
+import "./style.css";
 
-:root {
-  --bg-dark: #020617;
-  --bg-blue: #082f49;
-  --card: #ffffff;
-  --muted: #64748b;
-  --text: #0f172a;
-  --line: #e2e8f0;
-  --primary: #2563eb;
-  --cyan: #06b6d4;
-  --green: #22c55e;
-  --purple: #7c3aed;
-  --pink: #ec4899;
-  --gold: #f59e0b;
-  --danger: #dc2626;
-}
+const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
 
-body {
-  margin: 0;
-  font-family: Inter, "Segoe UI", Arial, system-ui, sans-serif;
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.22), transparent 34%),
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
-    linear-gradient(135deg, #020617, #082f49 48%, #020617);
-  color: var(--text);
-}
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-/* =========================
-   BOTÕES
-   ========================= */
-
-button {
-  border: 0;
-  border-radius: 16px;
-  padding: 14px 20px;
-  font-weight: 950;
-  letter-spacing: -0.01em;
-  cursor: pointer;
-  color: white;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
-  transition:
-    transform 0.16s ease,
-    filter 0.16s ease,
-    box-shadow 0.16s ease;
-}
-
-button:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
-}
-
-button:active {
-  transform: translateY(0);
-}
-
-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.deleteBtn,
-button.deleteBtn,
-.danger,
-button.danger {
-  background: linear-gradient(135deg, #dc2626, #991b1b) !important;
-  color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.36) !important;
-}
-
-.secondaryBtn,
-button.secondaryBtn,
-.linkBtn {
-  background: #e2e8f0 !important;
-  color: #0f172a !important;
-  box-shadow: none !important;
-}
-
-.actions {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  align-items: center;
-  margin-top: 14px;
-}
-
-.actions button {
-  min-width: 130px;
-}
-
-.actions button:not(.deleteBtn):not(.danger):nth-child(1) {
-  background: linear-gradient(135deg, #7c3aed, #ec4899);
-  box-shadow: 0 14px 28px rgba(236, 72, 153, 0.3);
-}
-
-.actions button:not(.deleteBtn):not(.danger):nth-child(2) {
-  background: linear-gradient(135deg, #059669, #22c55e);
-  box-shadow: 0 14px 28px rgba(34, 197, 94, 0.3);
-}
-
-.actions button:not(.deleteBtn):not(.danger):nth-child(3) {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
-}
-
-/* =========================
-   FORMULÁRIOS
-   ========================= */
-
-input,
-select {
-  width: 100%;
-  border-radius: 16px;
-  border: 1px solid #cbd5e1;
-  background: #ffffff;
-  padding: 14px 15px;
-  margin: 6px 0 14px;
-  font-size: 15px;
-  font-weight: 750;
-  color: #0f172a;
-  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
-  transition:
-    border 0.18s ease,
-    box-shadow 0.18s ease;
-}
-
-input:focus,
-select:focus {
-  outline: none;
-  border-color: #38bdf8;
-  box-shadow:
-    0 0 0 4px rgba(56, 189, 248, 0.18),
-    inset 0 1px 2px rgba(15, 23, 42, 0.04);
-}
-
-label {
-  font-weight: 850;
-  font-size: 14px;
-}
-
-/* =========================
-   LOGIN
-   ========================= */
-
-.loginPage {
-  min-height: 100vh;
-  display: grid;
-  align-items: center;
-  justify-items: center;
-  padding: 34px 22px;
-}
-
-.loginLayout {
-  width: min(1180px, 100%);
-  display: grid;
-  grid-template-columns: minmax(330px, 430px) 1fr;
-  gap: 24px;
-  align-items: center;
-}
-
-.loginCard {
-  width: 100%;
-  background: white;
-  border-radius: 30px;
-  padding: 30px;
-  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-  position: relative;
-  z-index: 2;
-}
-
-.logo {
-  width: 58px;
-  height: 58px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, #22c55e, #38bdf8);
-  display: grid;
-  place-items: center;
-  font-size: 30px;
-  margin-bottom: 16px;
-}
-
-.loginCard h1 {
-  margin: 0 0 8px;
-  font-size: 34px;
-  font-weight: 950;
-  letter-spacing: -0.06em;
-  color: #020617;
-}
-
-.loginCard p {
-  color: #64748b;
-  line-height: 1.45;
-}
-
-.linkBtn {
-  margin-top: 12px;
-  width: 100%;
-}
-
-/* =========================
-   LOGIN — PAINEL BONITO COM ABAS
-   ========================= */
-
-.loginInfoPanel {
-  display: grid;
-  gap: 16px;
-}
-
-.loginHeroInfo {
-  color: white;
-  border-radius: 30px;
-  padding: 28px;
-  background:
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.18), transparent 28%),
-    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 47, 73, 0.92));
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.35);
-}
-
-.loginHeroInfo span {
-  display: inline-flex;
-  background: rgba(34, 197, 94, 0.18);
-  color: #bbf7d0;
-  border: 1px solid rgba(187, 247, 208, 0.22);
-  padding: 7px 13px;
-  border-radius: 999px;
-  font-weight: 950;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.loginHeroInfo h2 {
-  margin: 14px 0 8px;
-  font-size: clamp(26px, 4vw, 42px);
-  line-height: 1;
-  letter-spacing: -0.06em;
-  font-weight: 950;
-}
-
-.loginHeroInfo p {
-  margin: 0;
-  color: #cbd5e1;
-  line-height: 1.55;
-  max-width: 640px;
-}
-
-.infoTabs {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.infoTabs button {
-  min-width: 150px;
-  background: rgba(255, 255, 255, 0.13) !important;
-  border: 1px solid rgba(255, 255, 255, 0.22) !important;
-  color: white !important;
-  box-shadow: none !important;
-}
-
-.infoTabs button.active {
-  background: linear-gradient(135deg, #22c55e, #06b6d4) !important;
-  box-shadow: 0 14px 32px rgba(14, 165, 233, 0.28) !important;
-}
-
-.accordionContent {
-  animation: tabOpen 0.22s ease-out;
-}
-
-@keyframes tabOpen {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
+async function logout() {
+  try {
+    await supabase.auth.signOut({ scope: "global" });
+  } catch (error) {
+    console.error("Erro ao sair:", error);
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* =========================
-   PLANOS
-   ========================= */
-
-.plansGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.planCard {
-  position: relative;
-  overflow: hidden;
-  background: rgba(255, 255, 255, 0.98);
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 18px;
-  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.12);
-}
-
-.planCard::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 5px;
-  background: linear-gradient(90deg, #22c55e, #06b6d4, #7c3aed);
-}
-
-.planBadge {
-  position: absolute;
-  right: 18px;
-  top: 18px;
-  background: linear-gradient(135deg, #22c55e, #06b6d4);
-  color: white;
-  border-radius: 999px;
-  padding: 7px 11px;
-  font-size: 12px;
-  font-weight: 950;
-  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.26);
-}
-
-.planTop h3 {
-  margin: 0;
-  font-size: 24px;
-  font-weight: 950;
-  letter-spacing: -0.05em;
-  color: #020617;
-}
-
-.planTop span {
-  display: inline-flex;
-  margin-top: 6px;
-  color: #64748b;
-  font-weight: 850;
-  font-size: 14px;
-}
-
-.planDesc {
-  color: #475569;
-  line-height: 1.45;
-  font-weight: 650;
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-
-.planCard ul {
-  list-style: none;
-  padding: 0;
-  margin: 14px 0 0;
-  display: grid;
-  gap: 9px;
-}
-
-.planCard li {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  color: #0f172a;
-  font-weight: 800;
-  line-height: 1.35;
-  font-size: 13px;
-}
-
-.planCard li::before {
-  content: "✓";
-  flex: 0 0 20px;
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: #dcfce7;
-  color: #15803d;
-  font-size: 12px;
-  font-weight: 950;
-}
-
-/* =========================
-   MODALIDADES
-   ========================= */
-
-.modalitiesGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.modalitiesGrid div {
-  border: 1px solid #e2e8f0;
-  background: rgba(255, 255, 255, 0.98);
-  border-radius: 20px;
-  padding: 16px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-}
-
-.modalitiesGrid strong {
-  display: block;
-  color: #020617;
-  font-size: 16px;
-  font-weight: 950;
-  margin-bottom: 6px;
-}
-
-.modalitiesGrid p {
-  margin: 0;
-  color: #475569;
-  line-height: 1.45;
-  font-size: 14px;
-  font-weight: 650;
-}
-
-.learnMoreBox {
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid #e2e8f0;
-  border-radius: 24px;
-  padding: 18px;
-  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.12);
-}
-
-.learnMoreBox strong {
-  display: block;
-  font-size: 17px;
-  font-weight: 950;
-  letter-spacing: -0.03em;
-  color: #020617;
-  margin-bottom: 6px;
-}
-
-.learnMoreBox p {
-  margin: 0;
-  color: #475569;
-  line-height: 1.45;
-  font-weight: 650;
-}
-
-/* =========================
-   TELAS CENTRAIS
-   ========================= */
-
-.center {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  padding: 24px;
-  color: white;
-  text-align: center;
-}
-
-.center button {
-  margin-top: 16px;
-}
-
-.infoBox {
-  background: white;
-  color: #0f172a;
-  border-radius: 18px;
-  padding: 18px;
-  margin: 16px 0;
-  min-width: 300px;
-}
-
-/* =========================
-   APP PRINCIPAL
-   ========================= */
-
-.appPage {
-  max-width: 1320px;
-  margin: auto;
-  padding: 26px;
-}
-
-.appPage header {
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  color: white;
-  margin-bottom: 22px;
-  border-radius: 30px;
-  padding: 24px 28px;
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(8, 47, 73, 0.9)),
-    radial-gradient(circle at top right, rgba(34, 197, 94, 0.22), transparent 32%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 24px 70px rgba(2, 6, 23, 0.42);
-  backdrop-filter: blur(12px);
-}
-
-.appPage header::after {
-  content: "";
-  position: absolute;
-  inset: auto -80px -100px auto;
-  width: 260px;
-  height: 260px;
-  border-radius: 999px;
-  background: rgba(56, 189, 248, 0.16);
-  filter: blur(18px);
-  pointer-events: none;
-}
-
-.appPage header > * {
-  position: relative;
-  z-index: 5;
-}
-
-.appPage header button {
-  position: relative;
-  z-index: 20;
-  pointer-events: auto;
-}
-
-.appPage header h1 {
-  margin: 0;
-  font-size: clamp(30px, 4vw, 48px);
-  line-height: 1;
-  letter-spacing: -0.06em;
-  font-weight: 950;
-}
-
-.appPage header p {
-  display: inline-flex;
-  margin-top: 8px;
-  padding: 7px 13px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(34, 197, 94, 0.22), rgba(14, 165, 233, 0.18));
-  border: 1px solid rgba(187, 247, 208, 0.28);
-  color: #dcfce7;
-  font-weight: 850;
-  font-size: 13px;
-}
-
-/* =========================
-   CARDS
-   ========================= */
-
-.card {
-  position: relative;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.96));
-  border-radius: 30px;
-  padding: 26px;
-  margin-bottom: 18px;
-  border: 1px solid rgba(226, 232, 240, 0.95);
-  box-shadow:
-    0 22px 60px rgba(15, 23, 42, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-}
-
-.card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 22px;
-  right: 22px;
-  height: 4px;
-  border-radius: 999px;
-  background: linear-gradient(90deg, #22c55e, #06b6d4, #7c3aed);
-  opacity: 0.85;
-}
-
-.card h2 {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 26px;
-  line-height: 1.05;
-  font-weight: 950;
-  letter-spacing: -0.05em;
-  color: #020617;
-  margin-top: 0;
-  margin-bottom: 20px;
-}
-
-.card h2::before {
-  content: "▸";
-  width: 30px;
-  height: 30px;
-  border-radius: 10px;
-  display: inline-grid;
-  place-items: center;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
-  color: white;
-  font-size: 16px;
-  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
-}
-
-.card h3 {
-  margin: 8px 0 10px;
-  font-size: 16px;
-  font-weight: 950;
-}
-
-/* =========================
-   LISTAS / GRID
-   ========================= */
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 12px;
-}
-
-.modality {
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  padding: 16px;
-  background: #f8fafc;
-  font-weight: 900;
-}
-
-.twoCols {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-
-.miniCard {
-  background: #f8fafc;
-  border: 1px solid #e5e7eb;
-  border-radius: 20px;
-  padding: 16px;
-}
-
-.tournamentList {
-  display: grid;
-  gap: 12px;
-}
-
-.tournamentItem {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
-  border-radius: 22px;
-  padding: 18px;
-  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
-}
-
-.tournamentItem strong {
-  display: block;
-  font-size: 18px;
-  font-weight: 950;
-}
-
-.tournamentItem span {
-  display: block;
-  margin-top: 4px;
-  color: #64748b;
-  font-size: 14px;
-  font-weight: 800;
-}
-
-/* =========================
-   PARTICIPANTES
-   ========================= */
-
-.numberedInput {
-  display: grid;
-  grid-template-columns: 50px 1fr;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.numberedInput span {
-  height: 48px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #020617, #1e3a8a);
-  color: white;
-  display: grid;
-  place-items: center;
-  font-weight: 950;
-  font-size: 16px;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
-}
-
-.numberedInput input {
-  margin: 0;
-}
-
-/* =========================
-   RODADAS
-   ========================= */
-
-.schedule {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 24px !important;
-}
-
-.roundCard {
-  position: relative;
-  overflow: hidden;
-  width: 100%;
-  border-radius: 28px;
-  padding: 22px;
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid #dbe3ef;
-  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.1);
-}
-
-.roundCard::before {
-  content: "";
-  position: absolute;
-  inset: 0 auto 0 0;
-  width: 7px;
-  background: linear-gradient(180deg, #22c55e, #06b6d4, #7c3aed);
-}
-
-.roundCard h3 {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 18px 4px;
-  padding: 10px 16px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #020617, #1e293b);
-  color: white;
-  font-size: 15px;
-  font-weight: 950;
-  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.22);
-}
-
-.gameCard {
-  border-radius: 24px;
-  padding: 18px;
-  margin-bottom: 16px;
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border: 1px solid #dbeafe;
-  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
-}
-
-.gameCard:last-child {
-  margin-bottom: 0;
-}
-
-.gameCard strong {
-  display: inline-flex;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #dbeafe, #cffafe);
-  color: #1d4ed8;
-  border: 1px solid #bfdbfe;
-  font-size: 12px;
-  font-weight: 950;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  margin-bottom: 10px;
-}
-
-.gameTeams {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr) !important;
-  gap: 10px !important;
-  align-items: center !important;
-  margin-top: 6px;
-}
-
-.gameTeams div {
-  min-height: 54px;
-  border-radius: 18px;
-  padding: 12px 16px;
-  background: linear-gradient(180deg, #f8fafc, #eef6ff);
-  border: 1px solid #e2e8f0;
-  font-size: 16px;
-  font-weight: 950;
-  color: #020617;
-  display: flex;
-  align-items: center;
-}
-
-.gameTeams div:first-child {
-  justify-content: flex-end;
-  text-align: right;
-}
-
-.gameTeams div:last-child {
-  justify-content: flex-start;
-  text-align: left;
-}
-
-.gameTeams span {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  background: linear-gradient(135deg, #020617, #1e3a8a);
-  color: white;
-  font-size: 17px;
-  font-weight: 950;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.22);
-}
-
-/* =========================
-   PLACAR
-   ========================= */
-
-.scoreRow {
-  margin-top: 16px;
-  display: grid;
-  grid-template-columns: 92px 26px 92px;
-  gap: 8px;
-  align-items: center;
-  justify-content: center;
-}
-
-.scoreRow input {
-  height: 54px;
-  border-radius: 18px;
-  margin: 0;
-  text-align: center;
-  font-size: 24px;
-  font-weight: 950;
-  background: #ffffff;
-  border: 2px solid #dbeafe;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.06);
-}
-
-.scoreRow span {
-  text-align: center;
-  font-size: 22px;
-  font-weight: 950;
-  color: #0f172a;
-}
-
-/* =========================
-   TABELAS
-   ========================= */
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  overflow: hidden;
-  border-radius: 22px;
-  background: white;
-  font-size: 14px;
-  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
-}
-
-thead {
-  background: linear-gradient(135deg, #020617, #1e3a8a);
-  color: white;
-}
-
-th {
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 14px 12px;
-  text-align: left;
-}
-
-td {
-  font-weight: 750;
-  padding: 13px 12px;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-tbody tr:nth-child(even) {
-  background: #f8fafc;
-}
-
-tbody tr:hover {
-  background: #dff6ff;
-}
-
-/* =========================
-   MODAIS
-   ========================= */
-
-.confirmOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10000;
-  background: rgba(2, 6, 23, 0.62);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 28vh;
-}
-
-.confirmBox {
-  width: min(520px, calc(100% - 32px));
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
-  border-radius: 30px;
-  padding: 28px;
-  border: 1px solid #e2e8f0;
-  box-shadow:
-    0 30px 100px rgba(2, 6, 23, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  text-align: center;
-  animation: confirmIn 0.22s ease-out;
-}
-
-.confirmIcon {
-  width: 72px;
-  height: 72px;
-  border-radius: 24px;
-  margin: 0 auto 14px;
-  display: grid;
-  place-items: center;
-  font-size: 34px;
-  background: linear-gradient(135deg, #fee2e2, #ffedd5);
-  box-shadow: 0 16px 38px rgba(220, 38, 38, 0.18);
-}
-
-.noticeBox.success .confirmIcon {
-  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-}
-
-.noticeBox.info .confirmIcon {
-  background: linear-gradient(135deg, #dbeafe, #cffafe);
-}
-
-.confirmBox h2 {
-  margin: 0 0 10px;
-  font-size: 28px;
-  font-weight: 950;
-  letter-spacing: -0.05em;
-  color: #020617;
-}
-
-.confirmBox p {
-  margin: 0;
-  color: #475569;
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.confirmActions {
-  display: flex;
-  gap: 12px;
-  justify-content: center;
-  margin-top: 24px;
-}
-
-.confirmActions button {
-  min-width: 150px;
-}
-
-@keyframes confirmIn {
-  from {
-    opacity: 0;
-    transform: translateY(28px) scale(0.96);
+  try {
+    Object.keys(localStorage).forEach((key) => {
+      if (
+        key.includes("supabase") ||
+        key.includes("sb-") ||
+        key.includes("auth")
+      ) {
+        localStorage.removeItem(key);
+      }
+    });
+
+    sessionStorage.clear();
+  } catch (error) {
+    console.error("Erro ao limpar sessão:", error);
   }
 
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  window.location.replace("/");
 }
 
-/* =========================
-   SORTEIO
-   ========================= */
+const allowedByPlan = {
+  basic: [
+    "Super 08",
+    "Super 12 Mista (Dupla Aleatória)",
+    "Super 16 Mista (Dupla Aleatória)",
+  ],
+  pro: [
+    "Super 08",
+    "Super 12 Mista (Dupla Aleatória)",
+    "Super 16 Mista (Dupla Aleatória)",
+    "Super 12 Mista (Dupla Fixa)",
+    "Super 16 Mista (Dupla Fixa)",
+  ],
+  premium: [
+    "Super 08",
+    "Super 12 Mista (Dupla Aleatória)",
+    "Super 16 Mista (Dupla Aleatória)",
+    "Super 12 Mista (Dupla Fixa)",
+    "Super 16 Mista (Dupla Fixa)",
+    "Simples 8",
+  ],
+};
 
-.shuffleOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(2, 6, 23, 0.82);
-  backdrop-filter: blur(10px);
-  display: grid;
-  place-items: center;
-  padding: 22px;
+const modalityConfig = {
+  "Super 08": {
+    type: "super8",
+    total: 8,
+    label: "Participante",
+    courts: 2,
+  },
+
+  "Super 12 Mista (Dupla Aleatória)": {
+    type: "mixed12",
+    men: 6,
+    women: 6,
+    courts: 3,
+  },
+
+  "Super 16 Mista (Dupla Aleatória)": {
+    type: "mixed16",
+    men: 8,
+    women: 8,
+    courts: 4,
+  },
+
+  "Super 12 Mista (Dupla Fixa)": {
+    type: "fixed12",
+    teams: 6,
+    courts: 3,
+  },
+
+  "Super 16 Mista (Dupla Fixa)": {
+    type: "fixed16",
+    teams: 8,
+    courts: 4,
+  },
+
+  "Simples 8": {
+    type: "simple8",
+    total: 8,
+    label: "Jogador",
+    courts: 4,
+  },
+};
+
+const super8Template = [
+  [
+    [
+      [1, 2],
+      [3, 4],
+    ],
+    [
+      [5, 6],
+      [7, 8],
+    ],
+  ],
+  [
+    [
+      [1, 3],
+      [6, 8],
+    ],
+    [
+      [2, 4],
+      [5, 7],
+    ],
+  ],
+  [
+    [
+      [1, 4],
+      [5, 8],
+    ],
+    [
+      [2, 3],
+      [6, 7],
+    ],
+  ],
+  [
+    [
+      [1, 5],
+      [2, 6],
+    ],
+    [
+      [3, 7],
+      [4, 8],
+    ],
+  ],
+  [
+    [
+      [1, 6],
+      [4, 7],
+    ],
+    [
+      [2, 5],
+      [3, 8],
+    ],
+  ],
+  [
+    [
+      [1, 7],
+      [3, 5],
+    ],
+    [
+      [2, 8],
+      [4, 6],
+    ],
+  ],
+  [
+    [
+      [1, 8],
+      [2, 7],
+    ],
+    [
+      [3, 6],
+      [4, 5],
+    ],
+  ],
+];
+
+const super12MixedTemplate = [
+  [
+    [1, 7, 4, 12],
+    [2, 8, 6, 11],
+    [3, 9, 5, 10],
+  ],
+  [
+    [1, 8, 2, 7],
+    [3, 10, 4, 9],
+    [5, 12, 6, 11],
+  ],
+  [
+    [1, 9, 6, 10],
+    [2, 11, 5, 7],
+    [3, 8, 4, 12],
+  ],
+  [
+    [1, 10, 3, 12],
+    [2, 9, 4, 11],
+    [5, 7, 6, 8],
+  ],
+  [
+    [1, 11, 5, 8],
+    [2, 10, 6, 7],
+    [3, 12, 4, 9],
+  ],
+  [
+    [1, 12, 4, 8],
+    [2, 7, 3, 11],
+    [5, 9, 6, 10],
+  ],
+];
+
+const super16MixedTemplate = [
+  [
+    [1, 9, 6, 16],
+    [2, 10, 8, 15],
+    [3, 11, 7, 14],
+    [4, 12, 5, 13],
+  ],
+  [
+    [1, 10, 2, 9],
+    [3, 12, 4, 11],
+    [5, 14, 7, 13],
+    [8, 16, 6, 15],
+  ],
+  [
+    [1, 12, 8, 14],
+    [2, 11, 6, 13],
+    [3, 10, 5, 16],
+    [4, 9, 7, 15],
+  ],
+  [
+    [1, 13, 4, 16],
+    [2, 14, 3, 15],
+    [5, 9, 6, 12],
+    [7, 10, 8, 11],
+  ],
+  [
+    [1, 14, 5, 10],
+    [2, 13, 7, 9],
+    [3, 16, 8, 12],
+    [4, 15, 6, 11],
+  ],
+  [
+    [1, 15, 3, 13],
+    [2, 16, 4, 14],
+    [5, 11, 8, 9],
+    [7, 12, 6, 10],
+  ],
+  [
+    [1, 16, 7, 11],
+    [2, 15, 5, 12],
+    [3, 14, 6, 9],
+    [4, 13, 8, 10],
+  ],
+  [
+    [1, 11, 2, 12],
+    [3, 9, 4, 10],
+    [5, 15, 7, 16],
+    [8, 13, 6, 14],
+  ],
+];
+
+const fixed12Template = [
+  [
+    [1, 6],
+    [2, 5],
+    [3, 4],
+  ],
+  [
+    [1, 5],
+    [6, 4],
+    [2, 3],
+  ],
+  [
+    [1, 4],
+    [5, 3],
+    [6, 2],
+  ],
+  [
+    [1, 3],
+    [4, 2],
+    [5, 6],
+  ],
+  [
+    [1, 2],
+    [3, 6],
+    [4, 5],
+  ],
+];
+
+function berger(n) {
+  let arr = Array.from({ length: n }, (_, i) => i);
+  const rounds = [];
+
+  for (let r = 0; r < n - 1; r++) {
+    const games = [];
+
+    for (let i = 0; i < n / 2; i++) {
+      games.push([arr[i], arr[n - 1 - i]]);
+    }
+
+    rounds.push(games);
+    arr = [arr[0], arr[n - 1], ...arr.slice(1, n - 1)];
+  }
+
+  return rounds;
 }
 
-.shuffleBox {
-  width: min(900px, 100%);
-  height: min(620px, 88vh);
-  border-radius: 36px;
-  padding: 22px;
-  color: white;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.2), transparent 30%),
-    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.2), transparent 30%),
-    linear-gradient(135deg, #020617, #082f49, #111827);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 30px 120px rgba(0, 0, 0, 0.55);
+function shuffleArray(list) {
+  const arr = [...list];
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr;
 }
 
-.shuffleHeader {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  align-items: center;
-  margin-bottom: 18px;
+function optimizeCourts(schedule) {
+  if (!schedule || schedule.length === 0) return schedule;
+
+  const courtUsage = {};
+
+  function getPlayers(game) {
+    return [...(game.ids1 || []), ...(game.ids2 || [])];
+  }
+
+  function getUsage(playerId, court) {
+    return courtUsage[playerId]?.[court] || 0;
+  }
+
+  function addUsage(playerId, court) {
+    if (!courtUsage[playerId]) courtUsage[playerId] = {};
+    courtUsage[playerId][court] = (courtUsage[playerId][court] || 0) + 1;
+  }
+
+  function scoreGameOnCourt(game, court, courts) {
+    const players = getPlayers(game);
+    let score = 0;
+
+    players.forEach((playerId) => {
+      const sameCourt = getUsage(playerId, court);
+
+      score += sameCourt * 10000;
+      score += sameCourt * sameCourt * 3000;
+
+      const hasUnusedCourt = courts.some((c) => getUsage(playerId, c) === 0);
+
+      if (hasUnusedCourt && sameCourt > 0) {
+        score += 5000;
+      }
+
+      const usages = courts.map((c) => getUsage(playerId, c));
+      const max = Math.max(...usages);
+      const min = Math.min(...usages);
+
+      score += (max - min) * 500;
+    });
+
+    return score;
+  }
+
+  return schedule.map((round, roundIndex) => {
+    const courts = round.map((_, index) => index + 1);
+
+    const rotatedGames = round.map((game, index) => ({
+      ...game,
+      preferredCourt: ((index + roundIndex) % courts.length) + 1,
+    }));
+
+    const remaining = [...rotatedGames];
+    const balancedRound = [];
+
+    courts.forEach((court) => {
+      let bestIndex = 0;
+      let bestScore = Infinity;
+
+      remaining.forEach((game, index) => {
+        let score = scoreGameOnCourt(game, court, courts);
+
+        if (game.preferredCourt !== court) {
+          score += 100;
+        }
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
+      });
+
+      const selected = remaining.splice(bestIndex, 1)[0];
+
+      const gameWithCourt = {
+        ...selected,
+        court,
+      };
+
+      delete gameWithCourt.preferredCourt;
+
+      getPlayers(gameWithCourt).forEach((playerId) => {
+        addUsage(playerId, court);
+      });
+
+      balancedRound.push(gameWithCourt);
+    });
+
+    return balancedRound.sort((a, b) => a.court - b.court);
+  });
 }
 
-.shuffleHeader h2 {
-  margin: 0;
-  font-size: 30px;
-  letter-spacing: -0.04em;
+function NoticeModal({ notice, onClose }) {
+  if (!notice) return null;
+
+  const icon =
+    {
+      success: "✅",
+      error: "⚠️",
+      info: "ℹ️",
+      warning: "⚠️",
+    }[notice.type || "info"] || "ℹ️";
+
+  return (
+    <div className="confirmOverlay">
+      <div className={`confirmBox noticeBox ${notice.type || "info"}`}>
+        <div className="confirmIcon">{icon}</div>
+
+        <h2>{notice.title}</h2>
+
+        <p>{notice.message}</p>
+
+        <div className="confirmActions">
+          <button onClick={onClose}>Entendi</button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-.shuffleHeader p {
-  margin: 6px 0 0;
-  color: #cbd5e1;
+function ConfirmModal({ target, onCancel, onConfirm }) {
+  if (!target) return null;
+
+  return (
+    <div className="confirmOverlay">
+      <div className="confirmBox">
+        <div className="confirmIcon">⚠️</div>
+
+        <h2>Excluir torneio?</h2>
+
+        <p>
+          Você está prestes a excluir <strong>{target.name}</strong>. Essa ação
+          removerá o torneio e seus dados salvos.
+        </p>
+
+        <div className="confirmActions">
+          <button className="secondaryBtn" onClick={onCancel}>
+            Cancelar
+          </button>
+
+          <button className="deleteBtn" onClick={onConfirm}>
+            Sim, excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-.shuffleTimer {
-  width: 78px;
-  height: 78px;
-  border-radius: 24px;
-  background: linear-gradient(135deg, #22c55e, #38bdf8);
-  display: grid;
-  place-items: center;
-  font-size: 26px;
-  font-weight: 950;
-  box-shadow: 0 16px 40px rgba(34, 197, 94, 0.35);
+function PlanCard({ title, tag, badge, text, items }) {
+  return (
+    <div className="planCard">
+      {badge && <div className="planBadge">{badge}</div>}
+
+      <div className="planTop">
+        <h3>{title}</h3>
+        <span>{tag}</span>
+      </div>
+
+      <p className="planDesc">{text}</p>
+
+      <ul>
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
 }
 
-.shuffleStage {
-  position: relative;
-  height: calc(100% - 140px);
-  border-radius: 24px;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.18), transparent 28%),
-    radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.18), transparent 28%),
-    rgba(255, 255, 255, 0.06);
-  overflow: hidden;
+function Info({ title, text }) {
+  return (
+    <div>
+      <strong>{title}</strong>
+      <p>{text}</p>
+    </div>
+  );
 }
 
-.floatingName {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  background: white;
-  color: #0f172a;
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-weight: 950;
-  white-space: nowrap;
-  border: 1px solid rgba(226, 232, 240, 0.9);
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
-  animation: floatName 0.8s ease-in-out infinite alternate;
+function App() {
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  async function loadProfile(userId) {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error(error);
+      setProfile(null);
+      return;
+    }
+
+    setProfile(data);
+  }
+
+  useEffect(() => {
+    async function init() {
+      const { data } = await supabase.auth.getSession();
+
+      setSession(data.session);
+
+      if (data.session?.user?.id) {
+        await loadProfile(data.session.user.id);
+      }
+
+      setLoading(false);
+    }
+
+    init();
+
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        setSession(newSession);
+
+        if (newSession?.user?.id) {
+          await loadProfile(newSession.user.id);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    return () => listener.subscription.unsubscribe();
+  }, []);
+
+  if (loading) return <div className="center">Carregando...</div>;
+
+  if (!session) return <Login />;
+
+  if (!profile) {
+    return (
+      <div className="center">
+        <h1>Torneio Fácil BT</h1>
+        <p>Perfil não encontrado.</p>
+        <button onClick={logout}>Sair</button>
+      </div>
+    );
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const expired = profile.expires_at && profile.expires_at < today;
+  const blocked = profile.status !== "active" || expired;
+
+  if (blocked) return <Blocked profile={profile} />;
+
+  return <Dashboard profile={profile} user={session.user} />;
 }
 
-@keyframes floatName {
-  from {
-    transform: translate(-50%, -50%) scale(0.9) rotate(-2deg);
+function Login() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [mode, setMode] = useState("login");
+  const [notice, setNotice] = useState(null);
+  const [openInfoTab, setOpenInfoTab] = useState("plans");
+
+  function showNotice(type, title, message) {
+    setNotice({ type, title, message });
   }
 
-  to {
-    transform: translate(-50%, -50%) scale(1.08) rotate(2deg);
+  async function handleSubmit(e) {
+    e.preventDefault();
+
+    if (!email.trim()) {
+      showNotice(
+        "warning",
+        "E-mail obrigatório",
+        "Informe seu e-mail para continuar."
+      );
+      return;
+    }
+
+    if (!password.trim()) {
+      showNotice(
+        "warning",
+        "Senha obrigatória",
+        "Digite sua senha para continuar."
+      );
+      return;
+    }
+
+    if (mode === "login") {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password,
+      });
+
+      if (error) {
+        showNotice(
+          "error",
+          "Não foi possível entrar",
+          "Confira o e-mail e a senha informados e tente novamente."
+        );
+      }
+    } else {
+      if (!name.trim()) {
+        showNotice(
+          "warning",
+          "Nome obrigatório",
+          "Informe seu nome para criar a conta."
+        );
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+          },
+        },
+      });
+
+      if (error) {
+        showNotice(
+          "error",
+          "Cadastro não concluído",
+          "Não foi possível criar sua conta agora. Verifique os dados e tente novamente."
+        );
+      } else {
+        showNotice(
+          "success",
+          "Cadastro criado",
+          "Sua conta foi criada. Aguarde a liberação do acesso pelo administrador."
+        );
+
+        setName("");
+        setEmail("");
+        setPassword("");
+        setMode("login");
+      }
+    }
   }
+
+  return (
+    <div className="loginPage">
+      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
+      <div className="loginLayout">
+        <div className="loginCard">
+          <div className="logo">🏆</div>
+
+          <h1>Torneio Fácil BT</h1>
+
+          <p>
+            {mode === "login"
+              ? "Entre para acessar seus torneios."
+              : "Crie sua conta para solicitar acesso."}
+          </p>
+
+          <form onSubmit={handleSubmit}>
+            {mode === "signup" && (
+              <>
+                <label>Nome</label>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Seu nome"
+                />
+              </>
+            )}
+
+            <label>E-mail</label>
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="seuemail@exemplo.com"
+            />
+
+            <label>Senha</label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Digite sua senha"
+            />
+
+            <button type="submit">
+              {mode === "login" ? "Entrar" : "Criar conta"}
+            </button>
+          </form>
+
+          <button
+            className="linkBtn"
+            onClick={() => {
+              setMode(mode === "login" ? "signup" : "login");
+              setName("");
+              setEmail("");
+              setPassword("");
+            }}
+          >
+            {mode === "login" ? "Criar nova conta" : "Já tenho conta"}
+          </button>
+        </div>
+
+        <div className="loginInfoPanel">
+          <div className="loginHeroInfo">
+            <span>Conheça os planos</span>
+
+            <h2>Escolha o melhor formato para seus torneios</h2>
+
+            <p>
+              Veja os planos e modalidades disponíveis sem poluir a tela de
+              login. Clique nas abas abaixo para expandir os detalhes.
+            </p>
+          </div>
+
+          <div className="infoTabs">
+            <button
+              type="button"
+              className={openInfoTab === "plans" ? "active" : ""}
+              onClick={() =>
+                setOpenInfoTab(openInfoTab === "plans" ? null : "plans")
+              }
+            >
+              Planos
+            </button>
+
+            <button
+              type="button"
+              className={openInfoTab === "modalities" ? "active" : ""}
+              onClick={() =>
+                setOpenInfoTab(
+                  openInfoTab === "modalities" ? null : "modalities"
+                )
+              }
+            >
+              Modalidades
+            </button>
+          </div>
+
+          {openInfoTab === "plans" && (
+            <div className="accordionContent">
+              <div className="plansGrid">
+                <PlanCard
+                  title="Basic"
+                  tag="Entrada"
+                  text="Para começar com torneios mistos e Super 08."
+                  items={[
+                    "Super 08",
+                    "Super 12 Mista (Dupla Aleatória)",
+                    "Super 16 Mista (Dupla Aleatória)",
+                    "1 campeonato ativo por vez",
+                    "Sorteio e ranking automático",
+                  ]}
+                />
+
+                <PlanCard
+                  title="Pro"
+                  tag="Organizador"
+                  badge="Mais usado"
+                  text="Para organizadores que precisam de duplas fixas."
+                  items={[
+                    "Tudo do Basic",
+                    "Super 12 Mista (Dupla Fixa)",
+                    "Super 16 Mista (Dupla Fixa)",
+                    "Campeonatos ilimitados",
+                    "Histórico salvo",
+                  ]}
+                />
+
+                <PlanCard
+                  title="Premium"
+                  tag="Completo"
+                  text="Libera todos os formatos disponíveis."
+                  items={[
+                    "Tudo do Pro",
+                    "Simples 8",
+                    "Todos os formatos liberados",
+                    "Campeonatos ilimitados",
+                    "Ideal para clubes e arenas",
+                  ]}
+                />
+              </div>
+            </div>
+          )}
+
+          {openInfoTab === "modalities" && (
+            <div className="accordionContent">
+              <div className="modalitiesGrid">
+                <Info
+                  title="Super 08"
+                  text="8 participantes, duplas variáveis e ranking individual."
+                />
+
+                <Info
+                  title="Super 12 Mista (Dupla Aleatória)"
+                  text="6 homens e 6 mulheres. As duplas mudam conforme a numeração sorteada."
+                />
+
+                <Info
+                  title="Super 16 Mista (Dupla Aleatória)"
+                  text="8 homens e 8 mulheres com duplas alternadas por rodada."
+                />
+
+                <Info
+                  title="Super 12 Mista (Dupla Fixa)"
+                  text="6 duplas fixas jogando entre si em 5 rodadas."
+                />
+
+                <Info
+                  title="Super 16 Mista (Dupla Fixa)"
+                  text="8 duplas fixas no formato todos contra todos."
+                />
+
+                <Info
+                  title="Simples 8"
+                  text="8 jogadores em disputa individual com ranking geral."
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="learnMoreBox">
+            <strong>Quer saber qual plano escolher?</strong>
+
+            <p>
+              Para testes rápidos, use o Basic. Para torneios recorrentes e
+              duplas fixas, escolha o Pro. Para liberar todos os formatos, use o
+              Premium.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
-.shuffleProgress {
-  height: 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.16);
-  margin-top: 18px;
-  overflow: hidden;
+function Blocked({ profile }) {
+  return (
+    <div className="center">
+      <h1>Acesso bloqueado</h1>
+
+      <p>Seu acesso está pendente, bloqueado ou vencido.</p>
+
+      <div className="infoBox">
+        <p>
+          <strong>Plano:</strong> {profile.plan}
+        </p>
+
+        <p>
+          <strong>Status:</strong> {profile.status}
+        </p>
+
+        <p>
+          <strong>Vencimento:</strong> {profile.expires_at || "não definido"}
+        </p>
+      </div>
+
+      <p>Entre em contato para regularizar seu acesso.</p>
+
+      <button onClick={logout}>Sair</button>
+    </div>
+  );
 }
 
-.shuffleProgress div {
-  height: 100%;
-  background: linear-gradient(90deg, #22c55e, #38bdf8);
-  border-radius: inherit;
-  transition: width 0.25s linear;
+function Dashboard({ profile, user }) {
+  const [tournaments, setTournaments] = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [newName, setNewName] = useState("");
+  const [newType, setNewType] = useState("Super 08");
+  const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [notice, setNotice] = useState(null);
+
+  const allowedTypes = allowedByPlan[profile.plan] || [];
+
+  function showNotice(type, title, message) {
+    setNotice({ type, title, message });
+  }
+
+  useEffect(() => {
+    loadTournaments();
+  }, []);
+
+  async function loadTournaments() {
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      showNotice(
+        "error",
+        "Erro ao carregar",
+        "Não foi possível carregar seus torneios."
+      );
+      console.error(error);
+      return;
+    }
+
+    setTournaments(data || []);
+  }
+
+  async function createTournament() {
+    if (!newName.trim()) {
+      showNotice(
+        "warning",
+        "Nome obrigatório",
+        "Digite um nome para este torneio."
+      );
+      return;
+    }
+
+    if (!allowedTypes.includes(newType)) {
+      showNotice(
+        "warning",
+        "Modalidade não liberada",
+        "Seu plano não permite essa modalidade."
+      );
+      return;
+    }
+
+    if (profile.plan === "basic" && tournaments.length >= 1) {
+      showNotice(
+        "warning",
+        "Limite do plano básico",
+        "O plano Basic permite apenas 1 campeonato por vez."
+      );
+      return;
+    }
+
+    setSaving(true);
+
+    const config = modalityConfig[newType];
+    const initialData = createInitialData(newType, config);
+
+    const { error } = await supabase.from("tournaments").insert({
+      user_id: user.id,
+      name: newName.trim(),
+      type: newType,
+      data: initialData,
+      status: "active",
+    });
+
+    setSaving(false);
+
+    if (error) {
+      showNotice(
+        "error",
+        "Erro ao criar torneio",
+        "Tente novamente em alguns instantes."
+      );
+      console.error(error);
+      return;
+    }
+
+    setNewName("");
+
+    await loadTournaments();
+
+    showNotice("success", "Torneio criado", "O torneio foi criado com sucesso.");
+  }
+
+  async function confirmDeleteTournament() {
+    if (!deleteTarget) return;
+
+    const { error } = await supabase
+      .from("tournaments")
+      .delete()
+      .eq("id", deleteTarget.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      showNotice(
+        "error",
+        "Erro ao excluir",
+        "Não foi possível excluir este torneio."
+      );
+      console.error(error);
+      return;
+    }
+
+    setDeleteTarget(null);
+
+    await loadTournaments();
+
+    showNotice("success", "Torneio excluído", "O torneio foi removido.");
+  }
+
+  async function openTournament(tournament) {
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("id", tournament.id)
+      .eq("user_id", user.id)
+      .single();
+
+    if (error) {
+      showNotice(
+        "error",
+        "Erro ao abrir",
+        "Não foi possível abrir este torneio."
+      );
+      console.error(error);
+      return;
+    }
+
+    setSelected(data);
+  }
+
+  async function saveTournament(updated) {
+    const { error } = await supabase
+      .from("tournaments")
+      .update({
+        data: updated.data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", updated.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      showNotice(
+        "error",
+        "Erro ao salvar",
+        "Não foi possível salvar as alterações."
+      );
+      console.error(error);
+      return false;
+    }
+
+    setSelected(updated);
+
+    setTournaments((prev) =>
+      prev.map((t) => (t.id === updated.id ? updated : t))
+    );
+
+    return true;
+  }
+
+  if (selected) {
+    return (
+      <TournamentScreen
+        tournament={selected}
+        onBack={() => setSelected(null)}
+        onSave={saveTournament}
+      />
+    );
+  }
+
+  return (
+    <div className="appPage">
+      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
+      <ConfirmModal
+        target={deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteTournament}
+      />
+
+      <header>
+        <div>
+          <h1>Torneio Fácil BT</h1>
+          <p>Dashboard profissional com login real.</p>
+        </div>
+
+        <button onClick={logout}>Sair</button>
+      </header>
+
+      <section className="card">
+        <h2>Meu plano</h2>
+
+        <p>
+          <strong>Plano:</strong> {profile.plan}
+        </p>
+
+        <p>
+          <strong>Status:</strong> {profile.status}
+        </p>
+
+        <p>
+          <strong>Vencimento:</strong> {profile.expires_at}
+        </p>
+      </section>
+
+      <section className="card">
+        <h2>Modalidades liberadas</h2>
+
+        <div className="grid">
+          {allowedTypes.map((item) => (
+            <div className="modality" key={item}>
+              🏆 {item}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="card">
+        <h2>Criar novo torneio</h2>
+
+        <label>Nome do torneio</label>
+
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="Ex: Torneio de sábado"
+        />
+
+        <label>Modalidade</label>
+
+        <select value={newType} onChange={(e) => setNewType(e.target.value)}>
+          {allowedTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
+          ))}
+        </select>
+
+        <button onClick={createTournament} disabled={saving}>
+          {saving ? "Salvando..." : "Criar torneio"}
+        </button>
+      </section>
+
+      <section className="card">
+        <h2>Meus torneios</h2>
+
+        {tournaments.length === 0 ? (
+          <p>Nenhum torneio criado ainda.</p>
+        ) : (
+          <div className="tournamentList">
+            {tournaments.map((t) => (
+              <div className="tournamentItem" key={t.id}>
+                <div>
+                  <strong>{t.name}</strong>
+                  <span>{t.type}</span>
+                </div>
+
+                <div className="actions">
+                  <button onClick={() => openTournament(t)}>Abrir</button>
+
+                  <button
+                    className="deleteBtn"
+                    onClick={() => setDeleteTarget(t)}
+                  >
+                    Excluir
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
-/* =========================
-   RESPONSIVO
-   ========================= */
-
-@media (max-width: 1050px) {
-  .loginLayout {
-    grid-template-columns: 1fr;
-    align-items: start;
+function createInitialData(type, config) {
+  if (config.type === "mixed12" || config.type === "mixed16") {
+    return {
+      players: {
+        men: Array.from({ length: config.men }, (_, i) => `Homem ${i + 1}`),
+        women: Array.from(
+          { length: config.women },
+          (_, i) => `Mulher ${i + 1}`
+        ),
+      },
+      schedule: [],
+    };
   }
 
-  .plansGrid {
-    grid-template-columns: 1fr;
+  if (config.type === "fixed12" || config.type === "fixed16") {
+    return {
+      players: {
+        teams: Array.from({ length: config.teams }, (_, i) => ({
+          a: `Atleta 1 da dupla ${i + 1}`,
+          b: `Atleta 2 da dupla ${i + 1}`,
+        })),
+      },
+      schedule: [],
+    };
   }
 
-  .modalitiesGrid {
-    grid-template-columns: 1fr;
-  }
+  return {
+    players: Array.from(
+      { length: config.total },
+      (_, i) => `${config.label} ${i + 1}`
+    ),
+    schedule: [],
+  };
 }
 
-@media (max-width: 760px) {
-  .loginPage {
-    padding: 18px;
-    align-items: start;
+function getShuffleNames(data, config) {
+  if (!data?.players) return [];
+
+  if (config.type === "mixed12" || config.type === "mixed16") {
+    return [...data.players.men, ...data.players.women];
   }
 
-  .loginCard,
-  .loginHeroInfo,
-  .learnMoreBox {
-    border-radius: 24px;
+  if (config.type === "fixed12" || config.type === "fixed16") {
+    return data.players.teams.map(
+      (team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`
+    );
   }
 
-  .appPage {
-    padding: 14px;
-  }
-
-  .appPage header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .twoCols {
-    grid-template-columns: 1fr;
-  }
-
-  .gameTeams {
-    grid-template-columns: 1fr !important;
-    text-align: center;
-  }
-
-  .gameTeams div:first-child,
-  .gameTeams div:last-child {
-    justify-content: center;
-    text-align: center;
-  }
-
-  .gameTeams span {
-    margin: auto;
-  }
-
-  .scoreRow {
-    grid-template-columns: 1fr 26px 1fr;
-  }
-
-  .tournamentItem {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .actions {
-    width: 100%;
-  }
-
-  .actions button {
-    width: 100%;
-  }
-
-  .confirmOverlay {
-    padding-top: 18vh;
-  }
-
-  .confirmActions {
-    flex-direction: column;
-  }
-
-  .confirmActions button {
-    width: 100%;
-  }
+  return data.players || [];
 }
+
+function TournamentScreen({ tournament, onBack, onSave }) {
+  const config = modalityConfig[tournament.type];
+
+  const [data, setData] = useState(
+    tournament.data || createInitialData(tournament.type, config)
+  );
+
+  const [saving, setSaving] = useState(false);
+  const [shuffleOverlay, setShuffleOverlay] = useState(null);
+  const [notice, setNotice] = useState(null);
+
+  const ranking = useMemo(
+    () => calculateRanking(data, tournament.type),
+    [data, tournament.type]
+  );
+
+  function showNotice(type, title, message) {
+    setNotice({ type, title, message });
+  }
+
+  function updatePlayer(path, value) {
+    const copy = structuredClone(data);
+
+    if (path.kind === "normal") copy.players[path.index] = value;
+    if (path.kind === "men") copy.players.men[path.index] = value;
+    if (path.kind === "women") copy.players.women[path.index] = value;
+
+    if (path.kind === "team") {
+      copy.players.teams[path.index][path.field] = value;
+    }
+
+    setData(copy);
+  }
+
+  function finishShuffle() {
+    const copy = structuredClone(data);
+
+    if (config.type === "mixed12" || config.type === "mixed16") {
+      copy.players.men = shuffleArray(copy.players.men);
+      copy.players.women = shuffleArray(copy.players.women);
+    } else if (config.type === "fixed12" || config.type === "fixed16") {
+      copy.players.teams = shuffleArray(copy.players.teams);
+    } else {
+      copy.players = shuffleArray(copy.players);
+    }
+
+    copy.schedule = [];
+
+    setData(copy);
+    setShuffleOverlay(null);
+  }
+
+  function shuffleNames() {
+    const names = getShuffleNames(data, config);
+
+    if (names.length === 0) {
+      showNotice(
+        "warning",
+        "Sem participantes",
+        "Adicione os nomes antes do sorteio."
+      );
+      return;
+    }
+
+    let seconds = 10;
+    let animationNames = shuffleArray(names);
+
+    setShuffleOverlay({ seconds, names: animationNames });
+
+    const interval = setInterval(() => {
+      animationNames = shuffleArray(names);
+
+      setShuffleOverlay((prev) =>
+        prev ? { ...prev, names: animationNames } : null
+      );
+    }, 250);
+
+    const countdown = setInterval(() => {
+      seconds -= 1;
+
+      setShuffleOverlay((prev) => (prev ? { ...prev, seconds } : null));
+
+      if (seconds <= 0) {
+        clearInterval(interval);
+        clearInterval(countdown);
+        finishShuffle();
+      }
+    }, 1000);
+  }
+
+  async function saveData(showAlert = true) {
+    setSaving(true);
+
+    const ok = await onSave({ ...tournament, data });
+
+    setSaving(false);
+
+    if (ok && showAlert) {
+      showNotice("success", "Torneio salvo", "As alterações foram salvas.");
+    }
+  }
+
+  function generate() {
+    const schedule = generateSchedule(tournament.type, data.players);
+
+    setData({ ...data, schedule });
+
+    showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
+  }
+
+  function updateScore(roundIndex, gameIndex, field, value) {
+    const copy = structuredClone(data);
+
+    copy.schedule[roundIndex][gameIndex][field] = value;
+
+    setData(copy);
+  }
+
+  return (
+    <>
+      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
+      {shuffleOverlay && (
+        <div className="shuffleOverlay">
+          <div className="shuffleBox">
+            <div className="shuffleHeader">
+              <div>
+                <h2>Sorteando nomes...</h2>
+                <p>Os participantes estão sendo embaralhados.</p>
+              </div>
+
+              <div className="shuffleTimer">{shuffleOverlay.seconds}s</div>
+            </div>
+
+            <div className="shuffleStage">
+              {shuffleOverlay.names.map((name, index) => (
+                <div
+                  className="floatingName"
+                  key={index + "-" + name}
+                  style={{
+                    left: `${8 + ((index * 17) % 76)}%`,
+                    top: `${12 + ((index * 29) % 70)}%`,
+                    animationDelay: `${(index % 6) * 0.08}s`,
+                  }}
+                >
+                  {name}
+                </div>
+              ))}
+            </div>
+
+            <div className="shuffleProgress">
+              <div
+                style={{
+                  width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%`,
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="appPage">
+        <header>
+          <div>
+            <h1>{tournament.name}</h1>
+            <p>{tournament.type}</p>
+          </div>
+
+          <div className="actions">
+            <button onClick={onBack}>Voltar</button>
+
+            <button onClick={() => saveData(true)} disabled={saving}>
+              {saving ? "Salvando..." : "Salvar"}
+            </button>
+          </div>
+        </header>
+
+        <section className="card">
+          <h2>Participantes</h2>
+
+          <PlayerInputs
+            type={tournament.type}
+            data={data}
+            updatePlayer={updatePlayer}
+          />
+
+          <div className="actions">
+            <button onClick={shuffleNames}>Sortear nomes</button>
+            <button onClick={generate}>Gerar tabela</button>
+            <button onClick={() => saveData(true)}>Salvar participantes</button>
+          </div>
+        </section>
+
+        <section className="card">
+          <h2>Rodadas</h2>
+
+          {!data.schedule || data.schedule.length === 0 ? (
+            <p>Clique em “Gerar tabela” para montar os jogos.</p>
+          ) : (
+            <>
+              <ScheduleView
+                schedule={data.schedule}
+                updateScore={updateScore}
+              />
+
+              <button onClick={() => saveData(true)}>Salvar placares</button>
+            </>
+          )}
+        </section>
+
+        <section className="card">
+          <h2>Ranking</h2>
+
+          <RankingView ranking={ranking} type={tournament.type} />
+        </section>
+      </div>
+    </>
+  );
+}
+
+function PlayerInputs({ type, data, updatePlayer }) {
+  const config = modalityConfig[type];
+
+  if (config.type === "mixed12" || config.type === "mixed16") {
+    return (
+      <div className="twoCols">
+        <div>
+          <h3>Homens</h3>
+
+          {data.players.men.map((name, i) => (
+            <div className="numberedInput" key={i}>
+              <span>{i + 1}</span>
+
+              <input
+                value={name}
+                onChange={(e) =>
+                  updatePlayer({ kind: "men", index: i }, e.target.value)
+                }
+              />
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <h3>Mulheres</h3>
+
+          {data.players.women.map((name, i) => (
+            <div className="numberedInput" key={i}>
+              <span>{config.men + i + 1}</span>
+
+              <input
+                value={name}
+                onChange={(e) =>
+                  updatePlayer({ kind: "women", index: i }, e.target.value)
+                }
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (config.type === "fixed12" || config.type === "fixed16") {
+    return (
+      <div className="twoCols">
+        {data.players.teams.map((team, i) => (
+          <div key={i} className="miniCard">
+            <h3>Dupla {i + 1}</h3>
+
+            <div className="numberedInput">
+              <span>{i + 1}</span>
+
+              <input
+                value={team.a}
+                onChange={(e) =>
+                  updatePlayer(
+                    { kind: "team", index: i, field: "a" },
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+
+            <input
+              value={team.b}
+              onChange={(e) =>
+                updatePlayer(
+                  { kind: "team", index: i, field: "b" },
+                  e.target.value
+                )
+              }
+            />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="twoCols">
+      {data.players.map((name, i) => (
+        <div className="numberedInput" key={i}>
+          <span>{i + 1}</span>
+
+          <input
+            value={name}
+            onChange={(e) =>
+              updatePlayer({ kind: "normal", index: i }, e.target.value)
+            }
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function buildFromPairTemplate(template, players) {
+  return template.map((round) =>
+    round.map((game, index) => {
+      const [a, b] = game[0];
+      const [c, d] = game[1];
+
+      return {
+        court: index + 1,
+        team1: [players[a - 1], players[b - 1]],
+        ids1: [a - 1, b - 1],
+        team2: [players[c - 1], players[d - 1]],
+        ids2: [c - 1, d - 1],
+        s1: "",
+        s2: "",
+      };
+    })
+  );
+}
+
+function buildFromMixedTemplate(template, players) {
+  const men = players.men;
+  const women = players.women;
+  const menCount = men.length;
+
+  function getName(num) {
+    if (num <= menCount) return men[num - 1];
+
+    return women[num - menCount - 1];
+  }
+
+  function getId(num) {
+    return num - 1;
+  }
+
+  return template.map((round) =>
+    round.map((game, index) => {
+      const [a, b, c, d] = game;
+
+      return {
+        court: index + 1,
+        team1: [getName(a), getName(b)],
+        ids1: [getId(a), getId(b)],
+        team2: [getName(c), getName(d)],
+        ids2: [getId(c), getId(d)],
+        s1: "",
+        s2: "",
+      };
+    })
+  );
+}
+
+function generateSchedule(type, players) {
+  const config = modalityConfig[type];
+
+  if (config.type === "super8") {
+    return optimizeCourts(buildFromPairTemplate(super8Template, players));
+  }
+
+  if (config.type === "mixed12") {
+    return optimizeCourts(
+      buildFromMixedTemplate(super12MixedTemplate, players)
+    );
+  }
+
+  if (config.type === "mixed16") {
+    return optimizeCourts(
+      buildFromMixedTemplate(super16MixedTemplate, players)
+    );
+  }
+
+  if (config.type === "fixed12") {
+    const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
+
+    const schedule = fixed12Template.map((round) =>
+      round.map((game, index) => ({
+        court: index + 1,
+        team1: [teamNames[game[0] - 1]],
+        ids1: [game[0] - 1],
+        team2: [teamNames[game[1] - 1]],
+        ids2: [game[1] - 1],
+        s1: "",
+        s2: "",
+      }))
+    );
+
+    return optimizeCourts(schedule);
+  }
+
+  if (config.type === "fixed16") {
+    const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
+
+    const schedule = berger(8).map((round) =>
+      round.map((game, index) => ({
+        court: index + 1,
+        team1: [teamNames[game[0]]],
+        ids1: [game[0]],
+        team2: [teamNames[game[1]]],
+        ids2: [game[1]],
+        s1: "",
+        s2: "",
+      }))
+    );
+
+    return optimizeCourts(schedule);
+  }
+
+  if (config.type === "simple8") {
+    const schedule = berger(8).map((round) =>
+      round.map((game, index) => ({
+        court: index + 1,
+        team1: [players[game[0]]],
+        ids1: [game[0]],
+        team2: [players[game[1]]],
+        ids2: [game[1]],
+        s1: "",
+        s2: "",
+      }))
+    );
+
+    return optimizeCourts(schedule);
+  }
+
+  return [];
+}
+
+function ScheduleView({ schedule, updateScore }) {
+  return (
+    <div className="schedule">
+      {schedule.map((round, roundIndex) => (
+        <div className="roundCard" key={roundIndex}>
+          <h3>Rodada {roundIndex + 1}</h3>
+
+          {round.map((game, gameIndex) => (
+            <div className="gameCard" key={gameIndex}>
+              <strong>Quadra {game.court}</strong>
+
+              <div className="gameTeams">
+                <div>{game.team1.join(" + ")}</div>
+                <span>x</span>
+                <div>{game.team2.join(" + ")}</div>
+              </div>
+
+              <div className="scoreRow">
+                <input
+                  type="number"
+                  value={game.s1}
+                  onChange={(e) =>
+                    updateScore(roundIndex, gameIndex, "s1", e.target.value)
+                  }
+                />
+
+                <span>—</span>
+
+                <input
+                  type="number"
+                  value={game.s2}
+                  onChange={(e) =>
+                    updateScore(roundIndex, gameIndex, "s2", e.target.value)
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function calculateRanking(data, type) {
+  const config = modalityConfig[type];
+
+  if (!data.players) return [];
+
+  let names = [];
+
+  if (config.type === "mixed12" || config.type === "mixed16") {
+    names = [...data.players.men, ...data.players.women];
+  } else if (config.type === "fixed12" || config.type === "fixed16") {
+    names = data.players.teams.map((t) => `${t.a} + ${t.b}`);
+  } else {
+    names = data.players;
+  }
+
+  const table = names.map((name, id) => ({
+    id,
+    name,
+    pts: 0,
+    w: 0,
+    bal: 0,
+    played: 0,
+  }));
+
+  (data.schedule || []).flat().forEach((game) => {
+    const s1 = Number(game.s1);
+    const s2 = Number(game.s2);
+
+    if (
+      game.s1 === "" ||
+      game.s2 === "" ||
+      Number.isNaN(s1) ||
+      Number.isNaN(s2)
+    ) {
+      return;
+    }
+
+    const win1 = s1 > s2;
+    const win2 = s2 > s1;
+
+    game.ids1.forEach((id) => {
+      table[id].pts += s1;
+      table[id].bal += s1 - s2;
+      table[id].played += 1;
+
+      if (win1) table[id].w += 1;
+    });
+
+    game.ids2.forEach((id) => {
+      table[id].pts += s2;
+      table[id].bal += s2 - s1;
+      table[id].played += 1;
+
+      if (win2) table[id].w += 1;
+    });
+  });
+
+  return table.sort((a, b) => b.w - a.w || b.pts - a.pts || b.bal - a.bal);
+}
+
+function podium(i) {
+  if (i === 0) return "🏆";
+  if (i === 1) return "🥈";
+  if (i === 2) return "🥉";
+
+  return i + 1;
+}
+
+function RankingView({ ranking, type }) {
+  const config = modalityConfig[type];
+
+  if (config.type === "mixed12" || config.type === "mixed16") {
+    const menLimit = config.men;
+    const men = ranking.filter((p) => p.id < menLimit);
+    const women = ranking.filter((p) => p.id >= menLimit);
+
+    return (
+      <div className="twoCols">
+        <RankingTable title="Ranking Masculino" rows={men} />
+        <RankingTable title="Ranking Feminino" rows={women} />
+      </div>
+    );
+  }
+
+  return <RankingTable title="Ranking Geral" rows={ranking} />;
+}
+
+function RankingTable({ title, rows }) {
+  return (
+    <div>
+      <h3>{title}</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Nome</th>
+            <th>Pontos</th>
+            <th>Vitórias</th>
+            <th>Saldo</th>
+            <th>Jogos</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          {rows.map((p, i) => (
+            <tr key={p.id}>
+              <td>{podium(i)}</td>
+              <td>{p.name}</td>
+              <td>{p.pts}</td>
+              <td>{p.w}</td>
+              <td>{p.bal}</td>
+              <td>{p.played}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")).render(<App />);
