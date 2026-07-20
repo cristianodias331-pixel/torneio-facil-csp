@@ -553,3 +553,73 @@ tbody tr:hover {
   font-weight: 900 !important;
   color: #0f172a !important;
 }
+
+/* Numeração dos participantes */
+
+.numberedInput {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.numberedInput span {
+  background: #0f172a;
+  color: white;
+  border-radius: 12px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+
+.numberedInput input {
+  margin: 0;
+}
+
+/* Rodadas uma embaixo da outra */
+
+.schedule {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+}
+
+.roundCard {
+  width: 100%;
+}
+
+/* Alinhar nomes próximos ao X */
+
+.gameTeams {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr) !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+.gameTeams div {
+  min-height: 40px !important;
+  padding: 8px 10px !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.gameTeams div:first-child {
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+.gameTeams div:last-child {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.gameTeams span {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+}
