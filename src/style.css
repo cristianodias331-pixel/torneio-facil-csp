@@ -1003,6 +1003,122 @@ button.danger {
   .gameTeams span {
     margin: auto;
   }
+  /* Excluir vermelho e confirmação profissional */
+
+.deleteBtn,
+button.deleteBtn {
+  background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+  color: white !important;
+  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.32) !important;
+}
+
+.deleteBtn:hover,
+button.deleteBtn:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+}
+
+.confirmOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 18vh;
+}
+
+.confirmBox {
+  width: min(520px, calc(100% - 32px));
+  background:
+    linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: 30px;
+  padding: 28px;
+  border: 1px solid #e2e8f0;
+  box-shadow:
+    0 30px 100px rgba(2, 6, 23, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  text-align: center;
+  animation: confirmIn 0.22s ease-out;
+}
+
+.confirmIcon {
+  width: 72px;
+  height: 72px;
+  border-radius: 24px;
+  margin: 0 auto 14px;
+  display: grid;
+  place-items: center;
+  font-size: 34px;
+  background: linear-gradient(135deg, #fee2e2, #ffedd5);
+  box-shadow: 0 16px 38px rgba(220, 38, 38, 0.18);
+}
+
+.confirmBox h2 {
+  margin: 0 0 10px;
+  font-size: 28px;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+  color: #020617;
+}
+
+.confirmBox p {
+  margin: 0;
+  color: #475569;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.confirmBox p strong {
+  color: #0f172a;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 24px;
+}
+
+.secondaryBtn,
+button.secondaryBtn {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+.confirmActions button {
+  min-width: 150px;
+}
+
+@keyframes confirmIn {
+  from {
+    opacity: 0;
+    transform: translateY(28px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 760px) {
+  .confirmOverlay {
+    padding-top: 12vh;
+    align-items: center;
+  }
+
+  .confirmActions {
+    flex-direction: column;
+  }
+
+  .confirmActions button {
+    width: 100%;
+  }
+}
 
   .scoreRow {
     grid-template-columns: 1fr 26px 1fr !important;
