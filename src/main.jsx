@@ -103,6 +103,62 @@ function shuffleArray(list) {
   return arr;
 }
 
+function NoticeModal({ notice, onClose }) {
+  if (!notice) return null;
+
+  const icon = {
+    success: "✅",
+    error: "⚠️",
+    info: "ℹ️",
+    warning: "⚠️",
+  }[notice.type || "info"];
+
+  return (
+    <div className="confirmOverlay">
+      <div className={`confirmBox noticeBox ${notice.type || "info"}`}>
+        <div className="confirmIcon">{icon}</div>
+
+        <h2>{notice.title}</h2>
+
+        <p>{notice.message}</p>
+
+        <div className="confirmActions">
+          <button onClick={onClose}>Entendi</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmModal({ target, onCancel, onConfirm }) {
+  if (!target) return null;
+
+  return (
+    <div className="confirmOverlay">
+      <div className="confirmBox">
+        <div className="confirmIcon">⚠️</div>
+
+        <h2>Excluir torneio?</h2>
+
+        <p>
+          Você está prestes a excluir <strong>{target.name}</strong>. Essa ação
+          removerá o torneio e seus dados salvos.
+        </p>
+
+        <div className="confirmActions">
+          <button className="secondaryBtn" onClick={onCancel}>
+            Cancelar
+          </button>
+
+          <button className="deleteBtn" onClick={onConfirm}>
+            Sim, excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -179,11 +235,14 @@ function Login() {
   const [email, setEmail] = useState("teste@torneiofacil.com");
   const [password, setPassword] = useState("123456");
   const [mode, setMode] = useState("login");
-  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState(null);
+
+  function showNotice(type, title, message) {
+    setNotice({ type, title, message });
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
-    setMessage("");
 
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({
@@ -191,15 +250,27 @@ function Login() {
         password,
       });
 
-      if (error) setMessage("Erro ao entrar: " + error.message);
+      if (error) {
+        showNotice(
+          "error",
+          "Não foi possível entrar",
+          "Confira o e-mail e a senha informados e tente novamente."
+        );
+      }
     } else {
       const { error } = await supabase.auth.signUp({ email, password });
 
       if (error) {
-        setMessage("Erro ao cadastrar: " + error.message);
+        showNotice(
+          "error",
+          "Cadastro não concluído",
+          "Não foi possível criar sua conta agora. Verifique os dados e tente novamente."
+        );
       } else {
-        setMessage(
-          "Cadastro criado. Aguarde a liberação do acesso pelo administrador."
+        showNotice(
+          "success",
+          "Cadastro criado",
+          "Sua conta foi criada. Aguarde a liberação do acesso pelo administrador."
         );
       }
     }
@@ -207,6 +278,8 @@ function Login() {
 
   return (
     <div className="loginPage">
+      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
       <div className="loginCard">
         <div className="logo">🏆</div>
         <h1>Torneio Fácil CSP</h1>
@@ -234,8 +307,6 @@ function Login() {
         >
           {mode === "login" ? "Criar nova conta" : "Já tenho conta"}
         </button>
-
-        {message && <div className="message">{message}</div>}
       </div>
     </div>
   );
@@ -272,8 +343,13 @@ function Dashboard({ profile, user }) {
   const [newType, setNewType] = useState("Super 04");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [notice, setNotice] = useState(null);
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
+
+  function showNotice(type, title, message) {
+    setNotice({ type, title, message });
+  }
 
   useEffect(() => {
     loadTournaments();
@@ -287,7 +363,11 @@ function Dashboard({ profile, user }) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      alert("Erro ao carregar torneios.");
+      showNotice(
+        "error",
+        "Erro ao carregar",
+        "Não foi possível carregar seus torneios. Atualize a página e tente novamente."
+      );
       console.error(error);
       return;
     }
@@ -297,17 +377,29 @@ function Dashboard({ profile, user }) {
 
   async function createTournament() {
     if (!newName.trim()) {
-      alert("Digite o nome do torneio.");
+      showNotice(
+        "warning",
+        "Nome obrigatório",
+        "Digite um nome para identificar este torneio antes de continuar."
+      );
       return;
     }
 
     if (!allowedTypes.includes(newType)) {
-      alert("Seu plano não permite essa modalidade.");
+      showNotice(
+        "warning",
+        "Modalidade não liberada",
+        "Seu plano atual não permite criar torneios nessa modalidade."
+      );
       return;
     }
 
     if (profile.plan === "basic" && tournaments.length >= 1) {
-      alert("O plano básico permite apenas 1 campeonato por vez.");
+      showNotice(
+        "warning",
+        "Limite do plano básico",
+        "O plano básico permite organizar apenas um campeonato por vez."
+      );
       return;
     }
 
@@ -327,13 +419,23 @@ function Dashboard({ profile, user }) {
     setSaving(false);
 
     if (error) {
+      showNotice(
+        "error",
+        "Erro ao criar torneio",
+        "Não foi possível criar o torneio agora. Tente novamente em alguns instantes."
+      );
       console.error(error);
-      alert("Erro ao criar torneio.");
       return;
     }
 
     setNewName("");
     await loadTournaments();
+
+    showNotice(
+      "success",
+      "Torneio criado",
+      "O torneio foi criado e já está disponível na sua lista."
+    );
   }
 
   async function confirmDeleteTournament() {
@@ -346,7 +448,11 @@ function Dashboard({ profile, user }) {
       .eq("user_id", user.id);
 
     if (error) {
-      alert("Erro ao excluir torneio.");
+      showNotice(
+        "error",
+        "Erro ao excluir",
+        "Não foi possível excluir este torneio. Tente novamente."
+      );
       console.error(error);
       return;
     }
@@ -354,6 +460,12 @@ function Dashboard({ profile, user }) {
     if (selected?.id === deleteTarget.id) setSelected(null);
     setDeleteTarget(null);
     await loadTournaments();
+
+    showNotice(
+      "success",
+      "Torneio excluído",
+      "O torneio e seus dados salvos foram removidos."
+    );
   }
 
   async function openTournament(tournament) {
@@ -365,7 +477,11 @@ function Dashboard({ profile, user }) {
       .single();
 
     if (error) {
-      alert("Erro ao abrir torneio.");
+      showNotice(
+        "error",
+        "Erro ao abrir",
+        "Não foi possível abrir este torneio agora."
+      );
       console.error(error);
       return;
     }
@@ -384,7 +500,11 @@ function Dashboard({ profile, user }) {
       .eq("user_id", user.id);
 
     if (error) {
-      alert("Erro ao salvar torneio.");
+      showNotice(
+        "error",
+        "Erro ao salvar",
+        "Não foi possível salvar as alterações deste torneio."
+      );
       console.error(error);
       return false;
     }
@@ -408,30 +528,13 @@ function Dashboard({ profile, user }) {
 
   return (
     <div className="appPage">
-      {deleteTarget && (
-        <div className="confirmOverlay">
-          <div className="confirmBox">
-            <div className="confirmIcon">⚠️</div>
+      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
-            <h2>Excluir torneio?</h2>
-
-            <p>
-              Você está prestes a excluir <strong>{deleteTarget.name}</strong>.
-              Essa ação removerá o torneio e seus dados salvos.
-            </p>
-
-            <div className="confirmActions">
-              <button className="secondaryBtn" onClick={() => setDeleteTarget(null)}>
-                Cancelar
-              </button>
-
-              <button className="deleteBtn" onClick={confirmDeleteTournament}>
-                Sim, excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        target={deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteTournament}
+      />
 
       <header>
         <div>
@@ -581,11 +684,16 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   );
   const [saving, setSaving] = useState(false);
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
+  const [notice, setNotice] = useState(null);
 
   const ranking = useMemo(
     () => calculateRanking(data, tournament.type),
     [data, tournament.type]
   );
+
+  function showNotice(type, title, message) {
+    setNotice({ type, title, message });
+  }
 
   function updatePlayer(path, value) {
     const copy = structuredClone(data);
@@ -619,7 +727,11 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     const names = getShuffleNames(data, config);
 
     if (names.length === 0) {
-      alert("Não há nomes para sortear.");
+      showNotice(
+        "warning",
+        "Sem participantes",
+        "Adicione os nomes dos participantes antes de realizar o sorteio."
+      );
       return;
     }
 
@@ -669,12 +781,24 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     const ok = await onSave({ ...tournament, data });
     setSaving(false);
 
-    if (ok && showAlert) alert("Torneio salvo.");
+    if (ok && showAlert) {
+      showNotice(
+        "success",
+        "Torneio salvo",
+        "As alterações foram salvas com sucesso."
+      );
+    }
   }
 
   function generate() {
     const schedule = generateSchedule(tournament.type, data.players);
     setData({ ...data, schedule });
+
+    showNotice(
+      "success",
+      "Tabela gerada",
+      "A tabela foi montada conforme a numeração dos participantes."
+    );
   }
 
   function updateScore(roundIndex, gameIndex, field, value) {
@@ -685,6 +809,8 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
   return (
     <>
+      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
       {shuffleOverlay && (
         <div className="shuffleOverlay">
           <div className="shuffleBox">
