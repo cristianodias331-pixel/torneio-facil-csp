@@ -488,3 +488,68 @@ tbody tr:hover {
   font-weight: 900 !important;
   color: #0f172a !important;
 }
+.numberedInput {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.numberedInput span {
+  background: #0f172a;
+  color: white;
+  border-radius: 12px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+
+.numberedInput input {
+  margin: 0;
+}
+
+.hint {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1e3a8a;
+  padding: 12px;
+  border-radius: 14px;
+  font-weight: 700;
+}
+
+/* Rodadas sempre uma embaixo da outra */
+
+.schedule {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+}
+
+/* Nomes próximos ao X */
+
+.gameTeams {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr) !important;
+  gap: 6px !important;
+  align-items: center !important;
+}
+
+.gameTeams div:first-child {
+  justify-content: flex-end !important;
+  text-align: right !important;
+}
+
+.gameTeams div:last-child {
+  justify-content: flex-start !important;
+  text-align: left !important;
+}
+
+.gameTeams span {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+}
