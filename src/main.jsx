@@ -403,12 +403,18 @@ function Dashboard({ profile, user }) {
                   <span>{t.type}</span>
                 </div>
 
-                <button
-                  className="danger"
-                  onClick={() => deleteTournament(t.id)}
-                >
-                  Excluir
-                </button>
+            <div className="actions">
+  <button onClick={() => setSelectedTournament(t)}>
+    Abrir
+  </button>
+
+  <button
+    className="danger"
+    onClick={() => deleteTournament(t.id)}
+  >
+    Excluir
+  </button>
+</div>
               </div>
             ))}
           </div>
