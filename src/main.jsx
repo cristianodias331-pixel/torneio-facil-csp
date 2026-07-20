@@ -271,6 +271,7 @@ function Dashboard({ profile, user }) {
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("Super 04");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
 
@@ -335,13 +336,13 @@ function Dashboard({ profile, user }) {
     await loadTournaments();
   }
 
-  async function deleteTournament(id) {
-    if (!confirm("Tem certeza que deseja excluir este torneio?")) return;
+  async function confirmDeleteTournament() {
+    if (!deleteTarget) return;
 
     const { error } = await supabase
       .from("tournaments")
       .delete()
-      .eq("id", id)
+      .eq("id", deleteTarget.id)
       .eq("user_id", user.id);
 
     if (error) {
@@ -350,7 +351,8 @@ function Dashboard({ profile, user }) {
       return;
     }
 
-    if (selected?.id === id) setSelected(null);
+    if (selected?.id === deleteTarget.id) setSelected(null);
+    setDeleteTarget(null);
     await loadTournaments();
   }
 
@@ -406,6 +408,31 @@ function Dashboard({ profile, user }) {
 
   return (
     <div className="appPage">
+      {deleteTarget && (
+        <div className="confirmOverlay">
+          <div className="confirmBox">
+            <div className="confirmIcon">⚠️</div>
+
+            <h2>Excluir torneio?</h2>
+
+            <p>
+              Você está prestes a excluir <strong>{deleteTarget.name}</strong>.
+              Essa ação removerá o torneio e seus dados salvos.
+            </p>
+
+            <div className="confirmActions">
+              <button className="secondaryBtn" onClick={() => setDeleteTarget(null)}>
+                Cancelar
+              </button>
+
+              <button className="deleteBtn" onClick={confirmDeleteTournament}>
+                Sim, excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <header>
         <div>
           <h1>Torneio Fácil CSP</h1>
@@ -481,8 +508,8 @@ function Dashboard({ profile, user }) {
                   <button onClick={() => openTournament(t)}>Abrir</button>
 
                   <button
-                    className="danger"
-                    onClick={() => deleteTournament(t.id)}
+                    className="deleteBtn"
+                    onClick={() => setDeleteTarget(t)}
                   >
                     Excluir
                   </button>
