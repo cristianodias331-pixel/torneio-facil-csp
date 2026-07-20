@@ -1238,19 +1238,19 @@ function generateSchedule(type, players) {
   const config = modalityConfig[type];
 
   if (config.type === "super4") {
-    return rotateCourtsByRound(buildFromPairTemplate(super4Template, players));
+    return optimizeCourts(buildFromPairTemplate(super4Template, players));
   }
 
   if (config.type === "super8") {
-    return rotateCourtsByRound(buildFromPairTemplate(super8Template, players));
+    return optimizeCourts(buildFromPairTemplate(super8Template, players));
   }
 
   if (config.type === "mixed12") {
-    return rotateCourtsByRound(buildFromMixedTemplate(super12MixedTemplate, players));
+    return optimizeCourts(buildFromMixedTemplate(super12MixedTemplate, players));
   }
 
   if (config.type === "mixed16") {
-    return rotateCourtsByRound(buildFromMixedTemplate(super16MixedTemplate, players));
+    return optimizeCourts(buildFromMixedTemplate(super16MixedTemplate, players));
   }
 
   if (config.type === "fixed") {
@@ -1268,7 +1268,7 @@ function generateSchedule(type, players) {
       }))
     );
 
-    return rotateCourtsByRound(schedule);
+    return optimizeCourts(schedule);
   }
 
   if (config.type === "simple") {
@@ -1284,7 +1284,7 @@ function generateSchedule(type, players) {
       }))
     );
 
-    return rotateCourtsByRound(schedule);
+    return optimizeCourts(schedule);
   }
 
   return [];
