@@ -447,7 +447,7 @@ function Login() {
 
       <div className="loginCard">
         <div className="logo">🏆</div>
-        <h1>Torneio Fácil CSP</h1>
+        <h1>Torneio Fácil BT</h1>
         <p>
           {mode === "login"
             ? "Entre para acessar seus torneios."
