@@ -538,3 +538,85 @@ tbody tr:hover {
     align-items: flex-start;
   }
 }
+/* Botões mais profissionais */
+
+button {
+  border: 0;
+  border-radius: 14px;
+  padding: 13px 18px;
+  font-weight: 900;
+  cursor: pointer;
+  color: white;
+  background: linear-gradient(135deg, #0f766e, #0ea5e9);
+  box-shadow: 0 10px 24px rgba(14, 165, 233, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(14, 165, 233, 0.38);
+  filter: brightness(1.05);
+}
+
+button:active {
+  transform: translateY(0);
+  box-shadow: 0 8px 18px rgba(14, 165, 233, 0.24);
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 14px;
+}
+
+.actions button {
+  min-width: 150px;
+}
+
+/* Cores específicas dos botões principais */
+
+.actions button:nth-child(1) {
+  background: linear-gradient(135deg, #7c3aed, #ec4899);
+  box-shadow: 0 10px 24px rgba(236, 72, 153, 0.28);
+}
+
+.actions button:nth-child(2) {
+  background: linear-gradient(135deg, #059669, #22c55e);
+  box-shadow: 0 10px 24px rgba(34, 197, 94, 0.28);
+}
+
+.actions button:nth-child(3) {
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+}
+
+/* Botão de excluir continua vermelho */
+
+button.danger,
+.danger {
+  background: linear-gradient(135deg, #dc2626, #f97316) !important;
+  box-shadow: 0 10px 24px rgba(220, 38, 38, 0.28) !important;
+}
+
+/* Botão cinza secundário, se usar */
+
+.linkBtn {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+}
+
+/* Melhor aparência no celular */
+
+@media (max-width: 760px) {
+  .actions {
+    width: 100%;
+  }
+
+  .actions button {
+    width: 100%;
+    min-width: unset;
+  }
+}
