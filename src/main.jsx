@@ -259,8 +259,9 @@ function App() {
 }
 
 function Login() {
-  const [email, setEmail] = useState("teste@torneiofacil.com");
-  const [password, setPassword] = useState("123456");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [mode, setMode] = useState("login");
   const [notice, setNotice] = useState(null);
 
@@ -271,9 +272,27 @@ function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
 
+    if (!email.trim()) {
+      showNotice(
+        "warning",
+        "E-mail obrigatório",
+        "Informe seu e-mail para continuar."
+      );
+      return;
+    }
+
+    if (!password.trim()) {
+      showNotice(
+        "warning",
+        "Senha obrigatória",
+        "Digite sua senha para continuar."
+      );
+      return;
+    }
+
     if (mode === "login") {
       const { error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -285,7 +304,24 @@ function Login() {
         );
       }
     } else {
-      const { error } = await supabase.auth.signUp({ email, password });
+      if (!name.trim()) {
+        showNotice(
+          "warning",
+          "Nome obrigatório",
+          "Informe seu nome para criar a conta."
+        );
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email: email.trim(),
+        password,
+        options: {
+          data: {
+            name: name.trim(),
+          },
+        },
+      });
 
       if (error) {
         showNotice(
@@ -299,6 +335,11 @@ function Login() {
           "Cadastro criado",
           "Sua conta foi criada. Aguarde a liberação do acesso pelo administrador."
         );
+
+        setName("");
+        setEmail("");
+        setPassword("");
+        setMode("login");
       }
     }
   }
@@ -310,17 +351,37 @@ function Login() {
       <div className="loginCard">
         <div className="logo">🏆</div>
         <h1>Torneio Fácil CSP</h1>
-        <p>Entre para acessar seus torneios.</p>
+        <p>
+          {mode === "login"
+            ? "Entre para acessar seus torneios."
+            : "Crie sua conta para solicitar acesso."}
+        </p>
 
         <form onSubmit={handleSubmit}>
+          {mode === "signup" && (
+            <>
+              <label>Nome</label>
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Seu nome"
+              />
+            </>
+          )}
+
           <label>E-mail</label>
-          <input value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="seuemail@exemplo.com"
+          />
 
           <label>Senha</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            placeholder="Digite sua senha"
           />
 
           <button type="submit">
@@ -330,7 +391,12 @@ function Login() {
 
         <button
           className="linkBtn"
-          onClick={() => setMode(mode === "login" ? "signup" : "login")}
+          onClick={() => {
+            setMode(mode === "login" ? "signup" : "login");
+            setName("");
+            setEmail("");
+            setPassword("");
+          }}
         >
           {mode === "login" ? "Criar nova conta" : "Já tenho conta"}
         </button>
