@@ -906,3 +906,20 @@ tbody tr:hover {
 .noticeBox.info .confirmIcon {
   background: linear-gradient(135deg, #dbeafe, #cffafe);
 }
+
+/* Correção: garantir que botões do cabeçalho fiquem clicáveis */
+
+.appPage header > * {
+  position: relative;
+  z-index: 5;
+}
+
+.appPage header button {
+  position: relative;
+  z-index: 20;
+  pointer-events: auto;
+}
+
+.appPage header::after {
+  pointer-events: none;
+}
