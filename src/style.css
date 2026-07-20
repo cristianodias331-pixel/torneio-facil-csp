@@ -891,3 +891,18 @@ tbody tr:hover {
     width: 100%;
   }
 }
+
+/* Modal profissional para avisos e confirmações */
+
+.noticeBox.success .confirmIcon {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+}
+
+.noticeBox.error .confirmIcon,
+.noticeBox.warning .confirmIcon {
+  background: linear-gradient(135deg, #fee2e2, #ffedd5);
+}
+
+.noticeBox.info .confirmIcon {
+  background: linear-gradient(135deg, #dbeafe, #cffafe);
+}
