@@ -588,18 +588,10 @@ function Dashboard({ profile, user }) {
 }
 
 function createInitialData(type, config) {
-  if (config.type === "mixed12" || config.type === "mixed16") {
-    return {
-      players: {
-        men: Array.from({ length: config.men }, (_, i) => `Homem ${i + 1}`),
-        women: Array.from(
-          { length: config.women },
-          (_, i) => `Mulher ${i + 1}`
-        ),
-      },
-      schedule: [],
-    };
-  }
+ if (config.type === "mixed12" || config.type === "mixed16") {
+  schedule = generateMixedSchedule(players.men, players.women);
+  return balanceCourts(schedule);
+}
 
   if (config.type === "fixed") {
     return {
@@ -877,6 +869,108 @@ function balanceCourts(schedule) {
   });
 
   return balanced;
+}
+function generateMixedSchedule(men, women) {
+  const n = men.length;
+  const rounds = [];
+
+  for (let roundIndex = 0; roundIndex < n; roundIndex++) {
+    const pairs = [];
+
+    // Cria as duplas da rodada sem repetir homem + mulher
+    for (let manIndex = 0; manIndex < n; manIndex++) {
+      const womanIndex = (manIndex + roundIndex) % n;
+
+      pairs.push({
+        manIndex,
+        womanIndex,
+        team: [men[manIndex], women[womanIndex]],
+        ids: [manIndex, n + womanIndex],
+      });
+    }
+
+    // Organiza os confrontos da rodada
+    const games = [];
+
+    for (let i = 0; i < n / 2; i++) {
+      const left = pairs[i];
+      const right = pairs[n - 1 - i];
+
+      games.push({
+        court: i + 1,
+        team1: left.team,
+        ids1: left.ids,
+        team2: right.team,
+        ids2: right.ids,
+        s1: "",
+        s2: "",
+      });
+    }
+
+    rounds.push(games);
+  }
+
+  return improveMixedOpponents(rounds);
+}
+
+function improveMixedOpponents(schedule) {
+  const opponentCount = {};
+
+  function key(a, b) {
+    return [a, b].sort((x, y) => x - y).join("-");
+  }
+
+  function gameScore(game) {
+    let score = 0;
+    const team1 = game.ids1;
+    const team2 = game.ids2;
+
+    team1.forEach((a) => {
+      team2.forEach((b) => {
+        const k = key(a, b);
+        score += (opponentCount[k] || 0) * 100;
+      });
+    });
+
+    return score;
+  }
+
+  function addGame(game) {
+    game.ids1.forEach((a) => {
+      game.ids2.forEach((b) => {
+        const k = key(a, b);
+        opponentCount[k] = (opponentCount[k] || 0) + 1;
+      });
+    });
+  }
+
+  return schedule.map((round) => {
+    const remaining = [...round];
+    const improvedRound = [];
+
+    while (remaining.length) {
+      let bestIndex = 0;
+      let bestScore = Infinity;
+
+      remaining.forEach((game, index) => {
+        const score = gameScore(game);
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
+      });
+
+      const selected = remaining.splice(bestIndex, 1)[0];
+      addGame(selected);
+      improvedRound.push(selected);
+    }
+
+    return improvedRound.map((game, index) => ({
+      ...game,
+      court: index + 1,
+    }));
+  });
 }
 function generateSchedule(type, players) {
   const config = modalityConfig[type];
