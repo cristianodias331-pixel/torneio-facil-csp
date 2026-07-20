@@ -339,7 +339,7 @@ function App() {
   if (!profile) {
     return (
       <div className="center">
-        <h1>Torneio Fácil CSP</h1>
+        <h1>Torneio Fácil BT</h1>
         <p>Perfil não encontrado.</p>
         <button onClick={logout}>Sair</button>
       </div>
@@ -728,7 +728,7 @@ function Dashboard({ profile, user }) {
 
       <header>
         <div>
-          <h1>Torneio Fácil CSP</h1>
+          <h1>Torneio Fácil BT</h1>
           <p>Dashboard profissional com login real.</p>
         </div>
 
