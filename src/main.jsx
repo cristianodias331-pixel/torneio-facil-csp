@@ -76,6 +76,16 @@ function getRankingCriteria(value) {
   );
 }
 
+function getRankingColumnLabel(key) {
+  const labels = {
+    w: "Vitórias",
+    pts: "Pontos",
+    bal: "Saldo",
+  };
+
+  return labels[key] || key;
+}
+
 const allowedByPlan = {
   basic: [
     "Super 08",
@@ -1356,7 +1366,11 @@ function TournamentScreen({ tournament, onBack, onSave }) {
         <section className="card">
           <h2>Ranking</h2>
 
-          <RankingView ranking={ranking} type={tournament.type} />
+          <RankingView
+            ranking={ranking}
+            type={tournament.type}
+            rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+          />
         </section>
       </div>
     </>
@@ -1711,7 +1725,7 @@ function podium(i) {
   return i + 1;
 }
 
-function RankingView({ ranking, type }) {
+function RankingView({ ranking, type, rankingCriteria }) {
   const config = modalityConfig[type];
 
   if (config.type === "mixed12" || config.type === "mixed16") {
@@ -1721,16 +1735,32 @@ function RankingView({ ranking, type }) {
 
     return (
       <div className="twoCols">
-        <RankingTable title="Ranking Masculino" rows={men} />
-        <RankingTable title="Ranking Feminino" rows={women} />
+        <RankingTable
+          title="Ranking Masculino"
+          rows={men}
+          rankingCriteria={rankingCriteria}
+        />
+        <RankingTable
+          title="Ranking Feminino"
+          rows={women}
+          rankingCriteria={rankingCriteria}
+        />
       </div>
     );
   }
 
-  return <RankingTable title="Ranking Geral" rows={ranking} />;
+  return (
+    <RankingTable
+      title="Ranking Geral"
+      rows={ranking}
+      rankingCriteria={rankingCriteria}
+    />
+  );
 }
 
-function RankingTable({ title, rows }) {
+function RankingTable({ title, rows, rankingCriteria }) {
+  const criteria = getRankingCriteria(rankingCriteria);
+
   return (
     <div>
       <h3>{title}</h3>
@@ -1740,9 +1770,11 @@ function RankingTable({ title, rows }) {
           <tr>
             <th>#</th>
             <th>Nome</th>
-            <th>Pontos</th>
-            <th>Vitórias</th>
-            <th>Saldo</th>
+
+            {criteria.order.map((key) => (
+              <th key={key}>{getRankingColumnLabel(key)}</th>
+            ))}
+
             <th>Jogos</th>
           </tr>
         </thead>
@@ -1752,9 +1784,11 @@ function RankingTable({ title, rows }) {
             <tr key={p.id}>
               <td>{podium(i)}</td>
               <td>{p.name}</td>
-              <td>{p.pts}</td>
-              <td>{p.w}</td>
-              <td>{p.bal}</td>
+
+              {criteria.order.map((key) => (
+                <td key={key}>{p[key]}</td>
+              ))}
+
               <td>{p.played}</td>
             </tr>
           ))}
