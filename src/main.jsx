@@ -214,40 +214,7 @@ function Dashboard({ profile, user }) {
   const [selectedTournament, setSelectedTournament] = useState(null);
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
-  if (selectedTournament) {
-  return (
-    <div className="appPage">
-      <header>
-        <div>
-          <h1>{selectedTournament.name}</h1>
-          <p>{selectedTournament.type}</p>
-        </div>
-
-        <button onClick={() => setSelectedTournament(null)}>Voltar</button>
-      </header>
-
-      <section className="card">
-        <h2>Área do torneio</h2>
-        <p>
-          Este torneio já está salvo no banco. Agora vamos colocar aqui os
-          jogadores, rodadas, placares e ranking.
-        </p>
-
-        <div className="infoBox">
-          <p>
-            <strong>ID:</strong> {selectedTournament.id}
-          </p>
-          <p>
-            <strong>Modalidade:</strong> {selectedTournament.type}
-          </p>
-          <p>
-            <strong>Status:</strong> {selectedTournament.status}
-          </p>
-        </div>
-      </section>
-    </div>
-  );
-}
+  
 
   useEffect(() => {
     loadTournaments();
@@ -404,9 +371,19 @@ function Dashboard({ profile, user }) {
                 </div>
 
             <div className="actions">
-  <button onClick={() => setSelectedTournament(t)}>
-    Abrir
-  </button>
+  <button
+  onClick={() =>
+    alert(
+      "Torneio aberto: " +
+        t.name +
+        "\nModalidade: " +
+        t.type +
+        "\n\nPróximo passo: colocar aqui a tela completa de jogadores, rodadas e placares."
+    )
+  }
+>
+  Abrir
+</button>
 
   <button
     className="danger"
