@@ -29,146 +29,49 @@ const allowedByPlan = {
 };
 
 const modalityConfig = {
-  "Super 04": {
-    type: "super4",
-    total: 4,
-    label: "Participante",
-    courts: 1,
-  },
-  "Super 08": {
-    type: "super8",
-    total: 8,
-    label: "Participante",
-    courts: 2,
-  },
-  "Super 12 Mista": {
-    type: "mixed12",
-    men: 6,
-    women: 6,
-    courts: 3,
-  },
-  "Super 16 Mista": {
-    type: "mixed16",
-    men: 8,
-    women: 8,
-    courts: 4,
-  },
-  "Duplas Fixas": {
-    type: "fixed",
-    teams: 8,
-    courts: 4,
-  },
-  "Simples 8": {
-    type: "simple",
-    total: 8,
-    label: "Jogador",
-    courts: 4,
-  },
-  "Simples 16": {
-    type: "simple",
-    total: 16,
-    label: "Jogador",
-    courts: 8,
-  },
+  "Super 04": { type: "super4", total: 4, label: "Participante", courts: 1 },
+  "Super 08": { type: "super8", total: 8, label: "Participante", courts: 2 },
+  "Super 12 Mista": { type: "mixed12", men: 6, women: 6, courts: 3 },
+  "Super 16 Mista": { type: "mixed16", men: 8, women: 8, courts: 4 },
+  "Duplas Fixas": { type: "fixed", teams: 8, courts: 4 },
+  "Simples 8": { type: "simple", total: 8, label: "Jogador", courts: 4 },
+  "Simples 16": { type: "simple", total: 16, label: "Jogador", courts: 8 },
 };
 
-const mixed16Rounds = [
-  [
-    [0, 0, 1, 1],
-    [2, 2, 3, 3],
-    [4, 4, 5, 5],
-    [6, 6, 7, 7],
-  ],
-  [
-    [0, 1, 2, 3],
-    [1, 2, 3, 4],
-    [4, 6, 6, 0],
-    [5, 7, 7, 5],
-  ],
-  [
-    [0, 2, 3, 5],
-    [1, 3, 4, 6],
-    [2, 4, 5, 7],
-    [6, 1, 7, 0],
-  ],
-  [
-    [0, 3, 4, 7],
-    [1, 4, 5, 0],
-    [2, 5, 6, 1],
-    [3, 6, 7, 2],
-  ],
-  [
-    [0, 4, 5, 1],
-    [1, 5, 6, 2],
-    [2, 6, 7, 3],
-    [3, 7, 4, 0],
-  ],
-  [
-    [0, 5, 6, 3],
-    [1, 6, 7, 4],
-    [2, 7, 4, 1],
-    [3, 0, 5, 2],
-  ],
-  [
-    [0, 6, 7, 5],
-    [1, 7, 4, 2],
-    [2, 0, 5, 3],
-    [3, 1, 6, 4],
-  ],
-  [
-    [0, 7, 4, 3],
-    [1, 0, 5, 4],
-    [2, 1, 6, 5],
-    [3, 2, 7, 6],
-  ],
+const super4Template = [
+  [[[1, 2], [3, 4]]],
+  [[[1, 3], [2, 4]]],
+  [[[1, 4], [2, 3]]],
 ];
 
-const mixed12Rounds = [
-  [
-    [0, 0, 1, 1],
-    [2, 2, 3, 3],
-    [4, 4, 5, 5],
-  ],
-  [
-    [0, 1, 2, 3],
-    [1, 2, 4, 5],
-    [3, 4, 5, 0],
-  ],
-  [
-    [0, 2, 3, 5],
-    [1, 3, 5, 1],
-    [2, 4, 4, 0],
-  ],
-  [
-    [0, 3, 4, 1],
-    [1, 4, 3, 0],
-    [2, 5, 5, 2],
-  ],
-  [
-    [0, 4, 5, 3],
-    [1, 5, 2, 0],
-    [3, 1, 4, 2],
-  ],
-  [
-    [0, 5, 4, 4],
-    [1, 0, 5, 2],
-    [2, 1, 3, 3],
-  ],
+const super8Template = [
+  [[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
+  [[[1, 3], [6, 8]], [[2, 4], [5, 7]]],
+  [[[1, 4], [5, 8]], [[2, 3], [6, 7]]],
+  [[[1, 5], [2, 6]], [[3, 7], [4, 8]]],
+  [[[1, 6], [4, 7]], [[2, 5], [3, 8]]],
+  [[[1, 7], [3, 5]], [[2, 8], [4, 6]]],
+  [[[1, 8], [2, 7]], [[3, 6], [4, 5]]],
 ];
 
-const super4Rounds = [
-  [
-    [0, 1],
-    [2, 3],
-  ],
-  [
-    [0, 2],
-    [1, 3],
-  ],
-  [
-    [0, 3],
-    [1, 2],
-  ],
+const super16MixedTemplate = [
+  [[1, 9, 6, 16], [2, 10, 8, 15], [3, 11, 7, 14], [4, 12, 5, 13]],
+  [[1, 10, 2, 9], [3, 12, 4, 11], [5, 14, 7, 13], [8, 16, 6, 15]],
+  [[1, 12, 8, 14], [2, 11, 6, 13], [3, 10, 5, 16], [4, 9, 7, 15]],
+  [[1, 13, 4, 16], [2, 14, 3, 15], [5, 9, 6, 12], [7, 10, 8, 11]],
+  [[1, 14, 5, 10], [2, 13, 7, 9], [3, 16, 8, 12], [4, 15, 6, 11]],
+  [[1, 15, 3, 13], [2, 16, 4, 14], [5, 11, 8, 9], [7, 12, 6, 10]],
+  [[1, 16, 7, 11], [2, 15, 5, 12], [3, 14, 6, 9], [4, 13, 8, 10]],
+  [[1, 11, 2, 12], [3, 9, 4, 10], [5, 15, 7, 16], [8, 13, 6, 14]],
+];
+
+const super12MixedTemplate = [
+  [[1, 7, 4, 12], [2, 8, 6, 11], [3, 9, 5, 10]],
+  [[1, 8, 2, 7], [3, 10, 4, 9], [5, 12, 6, 11]],
+  [[1, 9, 6, 10], [2, 11, 5, 7], [3, 8, 4, 12]],
+  [[1, 10, 3, 12], [2, 9, 4, 11], [5, 7, 6, 8]],
+  [[1, 11, 5, 8], [2, 10, 6, 7], [3, 12, 4, 9]],
+  [[1, 12, 4, 8], [2, 7, 3, 11], [5, 9, 6, 10]],
 ];
 
 function berger(n) {
@@ -177,16 +80,25 @@ function berger(n) {
 
   for (let r = 0; r < n - 1; r++) {
     const games = [];
-
     for (let i = 0; i < n / 2; i++) {
       games.push([arr[i], arr[n - 1 - i]]);
     }
-
     rounds.push(games);
     arr = [arr[0], arr[n - 1], ...arr.slice(1, n - 1)];
   }
 
   return rounds;
+}
+
+function shuffleArray(list) {
+  const arr = [...list];
+
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+
+  return arr;
 }
 
 function App() {
@@ -240,7 +152,6 @@ function App() {
   }, []);
 
   if (loading) return <div className="center">Carregando...</div>;
-
   if (!session) return <Login />;
 
   if (!profile) {
@@ -280,10 +191,7 @@ function Login() {
 
       if (error) setMessage("Erro ao entrar: " + error.message);
     } else {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signUp({ email, password });
 
       if (error) {
         setMessage("Erro ao cadastrar: " + error.message);
@@ -350,7 +258,6 @@ function Blocked({ profile }) {
       </div>
 
       <p>Entre em contato para regularizar seu acesso.</p>
-
       <button onClick={() => supabase.auth.signOut()}>Sair</button>
     </div>
   );
@@ -588,10 +495,18 @@ function Dashboard({ profile, user }) {
 }
 
 function createInitialData(type, config) {
- if (config.type === "mixed12" || config.type === "mixed16") {
-  schedule = generateMixedSchedule(players.men, players.women);
-  return balanceCourts(schedule);
-}
+  if (config.type === "mixed12" || config.type === "mixed16") {
+    return {
+      players: {
+        men: Array.from({ length: config.men }, (_, i) => `Homem ${i + 1}`),
+        women: Array.from(
+          { length: config.women },
+          (_, i) => `Mulher ${i + 1}`
+        ),
+      },
+      schedule: [],
+    };
+  }
 
   if (config.type === "fixed") {
     return {
@@ -616,31 +531,42 @@ function createInitialData(type, config) {
 
 function TournamentScreen({ tournament, onBack, onSave }) {
   const config = modalityConfig[tournament.type];
-  const [data, setData] = useState(tournament.data || createInitialData(tournament.type, config));
+  const [data, setData] = useState(
+    tournament.data || createInitialData(tournament.type, config)
+  );
   const [saving, setSaving] = useState(false);
 
-  const ranking = useMemo(() => calculateRanking(data, tournament.type), [data, tournament.type]);
+  const ranking = useMemo(
+    () => calculateRanking(data, tournament.type),
+    [data, tournament.type]
+  );
 
   function updatePlayer(path, value) {
     const copy = structuredClone(data);
 
-    if (path.kind === "normal") {
-      copy.players[path.index] = value;
-    }
-
-    if (path.kind === "men") {
-      copy.players.men[path.index] = value;
-    }
-
-    if (path.kind === "women") {
-      copy.players.women[path.index] = value;
-    }
-
-    if (path.kind === "team") {
-      copy.players.teams[path.index][path.field] = value;
-    }
+    if (path.kind === "normal") copy.players[path.index] = value;
+    if (path.kind === "men") copy.players.men[path.index] = value;
+    if (path.kind === "women") copy.players.women[path.index] = value;
+    if (path.kind === "team") copy.players.teams[path.index][path.field] = value;
 
     setData(copy);
+  }
+
+  function shuffleNames() {
+    const copy = structuredClone(data);
+
+    if (config.type === "mixed12" || config.type === "mixed16") {
+      copy.players.men = shuffleArray(copy.players.men);
+      copy.players.women = shuffleArray(copy.players.women);
+    } else if (config.type === "fixed") {
+      copy.players.teams = shuffleArray(copy.players.teams);
+    } else {
+      copy.players = shuffleArray(copy.players);
+    }
+
+    copy.schedule = [];
+    setData(copy);
+    alert("Nomes sorteados. Agora clique em Gerar tabela.");
   }
 
   async function saveData(showAlert = true) {
@@ -662,10 +588,6 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     setData(copy);
   }
 
-  async function saveScores() {
-    await saveData(true);
-  }
-
   return (
     <div className="appPage">
       <header>
@@ -684,9 +606,16 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
       <section className="card">
         <h2>Participantes</h2>
+
+        <p className="hint">
+          A tabela segue sempre a numeração. Use o sorteio para embaralhar os
+          nomes entre as posições numeradas.
+        </p>
+
         <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} />
 
         <div className="actions">
+          <button onClick={shuffleNames}>Sortear nomes</button>
           <button onClick={generate}>Gerar tabela</button>
           <button onClick={() => saveData(true)}>Salvar participantes</button>
         </div>
@@ -699,12 +628,8 @@ function TournamentScreen({ tournament, onBack, onSave }) {
           <p>Clique em “Gerar tabela” para montar os jogos.</p>
         ) : (
           <>
-            <ScheduleView
-              schedule={data.schedule}
-              updateScore={updateScore}
-            />
-
-            <button onClick={saveScores}>Salvar placares</button>
+            <ScheduleView schedule={data.schedule} updateScore={updateScore} />
+            <button onClick={() => saveData(true)}>Salvar placares</button>
           </>
         )}
       </section>
@@ -726,26 +651,30 @@ function PlayerInputs({ type, data, updatePlayer }) {
         <div>
           <h3>Homens</h3>
           {data.players.men.map((name, i) => (
-            <input
-              key={i}
-              value={name}
-              onChange={(e) =>
-                updatePlayer({ kind: "men", index: i }, e.target.value)
-              }
-            />
+            <div className="numberedInput" key={i}>
+              <span>{i + 1}</span>
+              <input
+                value={name}
+                onChange={(e) =>
+                  updatePlayer({ kind: "men", index: i }, e.target.value)
+                }
+              />
+            </div>
           ))}
         </div>
 
         <div>
           <h3>Mulheres</h3>
           {data.players.women.map((name, i) => (
-            <input
-              key={i}
-              value={name}
-              onChange={(e) =>
-                updatePlayer({ kind: "women", index: i }, e.target.value)
-              }
-            />
+            <div className="numberedInput" key={i}>
+              <span>{config.men + i + 1}</span>
+              <input
+                value={name}
+                onChange={(e) =>
+                  updatePlayer({ kind: "women", index: i }, e.target.value)
+                }
+              />
+            </div>
           ))}
         </div>
       </div>
@@ -759,15 +688,18 @@ function PlayerInputs({ type, data, updatePlayer }) {
           <div key={i} className="miniCard">
             <h3>Dupla {i + 1}</h3>
 
-            <input
-              value={team.a}
-              onChange={(e) =>
-                updatePlayer(
-                  { kind: "team", index: i, field: "a" },
-                  e.target.value
-                )
-              }
-            />
+            <div className="numberedInput">
+              <span>{i + 1}</span>
+              <input
+                value={team.a}
+                onChange={(e) =>
+                  updatePlayer(
+                    { kind: "team", index: i, field: "a" },
+                    e.target.value
+                  )
+                }
+              />
+            </div>
 
             <input
               value={team.b}
@@ -787,240 +719,93 @@ function PlayerInputs({ type, data, updatePlayer }) {
   return (
     <div className="twoCols">
       {data.players.map((name, i) => (
-        <input
-          key={i}
-          value={name}
-          onChange={(e) =>
-            updatePlayer({ kind: "normal", index: i }, e.target.value)
-          }
-        />
+        <div className="numberedInput" key={i}>
+          <span>{i + 1}</span>
+          <input
+            value={name}
+            onChange={(e) =>
+              updatePlayer({ kind: "normal", index: i }, e.target.value)
+            }
+          />
+        </div>
       ))}
     </div>
   );
 }
-function getMatchIds(game) {
-  return [...(game.ids1 || []), ...(game.ids2 || [])];
-}
 
-function balanceCourts(schedule) {
-  if (!schedule || schedule.length === 0) return schedule;
+function buildFromPairTemplate(template, players) {
+  return template.map((round) =>
+    round.map((game, index) => {
+      const [a, b] = game[0];
+      const [c, d] = game[1];
 
-  const courtUsage = {};
-
-  function getUsage(playerId, court) {
-    return courtUsage[playerId]?.[court] || 0;
-  }
-
-  function addUsage(playerId, court) {
-    if (!courtUsage[playerId]) courtUsage[playerId] = {};
-    courtUsage[playerId][court] = (courtUsage[playerId][court] || 0) + 1;
-  }
-
-  function scoreGameOnCourt(game, court, availableCourts) {
-    const ids = getMatchIds(game);
-    let score = 0;
-
-    ids.forEach((id) => {
-      const alreadyUsedThisCourt = getUsage(id, court);
-
-      // Penaliza forte repetir a mesma quadra
-      score += alreadyUsedThisCourt * 100;
-
-      // Penaliza repetição acumulada
-      score += Math.pow(alreadyUsedThisCourt, 2) * 50;
-
-      // Dá preferência para quadras que o jogador ainda não usou
-      const hasUnusedCourt = availableCourts.some((c) => getUsage(id, c) === 0);
-      if (hasUnusedCourt && alreadyUsedThisCourt > 0) {
-        score += 200;
-      }
-    });
-
-    return score;
-  }
-
-  const balanced = schedule.map((round) => {
-    const availableCourts = round.map((_, index) => index + 1);
-    const gamesToPlace = [...round];
-    const newRound = [];
-
-    availableCourts.forEach((court) => {
-      let bestIndex = 0;
-      let bestScore = Infinity;
-
-      gamesToPlace.forEach((game, index) => {
-        const score = scoreGameOnCourt(game, court, availableCourts);
-
-        if (score < bestScore) {
-          bestScore = score;
-          bestIndex = index;
-        }
-      });
-
-      const selectedGame = gamesToPlace.splice(bestIndex, 1)[0];
-      selectedGame.court = court;
-
-      getMatchIds(selectedGame).forEach((id) => addUsage(id, court));
-
-      newRound.push(selectedGame);
-    });
-
-    return newRound.sort((a, b) => a.court - b.court);
-  });
-
-  return balanced;
-}
-function generateMixedSchedule(men, women) {
-  const n = men.length;
-  const rounds = [];
-
-  for (let roundIndex = 0; roundIndex < n; roundIndex++) {
-    const pairs = [];
-
-    // Cria as duplas da rodada sem repetir homem + mulher
-    for (let manIndex = 0; manIndex < n; manIndex++) {
-      const womanIndex = (manIndex + roundIndex) % n;
-
-      pairs.push({
-        manIndex,
-        womanIndex,
-        team: [men[manIndex], women[womanIndex]],
-        ids: [manIndex, n + womanIndex],
-      });
-    }
-
-    // Organiza os confrontos da rodada
-    const games = [];
-
-    for (let i = 0; i < n / 2; i++) {
-      const left = pairs[i];
-      const right = pairs[n - 1 - i];
-
-      games.push({
-        court: i + 1,
-        team1: left.team,
-        ids1: left.ids,
-        team2: right.team,
-        ids2: right.ids,
+      return {
+        court: index + 1,
+        team1: [players[a - 1], players[b - 1]],
+        ids1: [a - 1, b - 1],
+        team2: [players[c - 1], players[d - 1]],
+        ids2: [c - 1, d - 1],
         s1: "",
         s2: "",
-      });
-    }
-
-    rounds.push(games);
-  }
-
-  return improveMixedOpponents(rounds);
+      };
+    })
+  );
 }
 
-function improveMixedOpponents(schedule) {
-  const opponentCount = {};
+function buildFromMixedTemplate(template, players) {
+  const men = players.men;
+  const women = players.women;
+  const menCount = men.length;
 
-  function key(a, b) {
-    return [a, b].sort((x, y) => x - y).join("-");
+  function getName(num) {
+    if (num <= menCount) return men[num - 1];
+    return women[num - menCount - 1];
   }
 
-  function gameScore(game) {
-    let score = 0;
-    const team1 = game.ids1;
-    const team2 = game.ids2;
-
-    team1.forEach((a) => {
-      team2.forEach((b) => {
-        const k = key(a, b);
-        score += (opponentCount[k] || 0) * 100;
-      });
-    });
-
-    return score;
+  function getId(num) {
+    return num - 1;
   }
 
-  function addGame(game) {
-    game.ids1.forEach((a) => {
-      game.ids2.forEach((b) => {
-        const k = key(a, b);
-        opponentCount[k] = (opponentCount[k] || 0) + 1;
-      });
-    });
-  }
+  return template.map((round) =>
+    round.map((game, index) => {
+      const [a, b, c, d] = game;
 
-  return schedule.map((round) => {
-    const remaining = [...round];
-    const improvedRound = [];
-
-    while (remaining.length) {
-      let bestIndex = 0;
-      let bestScore = Infinity;
-
-      remaining.forEach((game, index) => {
-        const score = gameScore(game);
-
-        if (score < bestScore) {
-          bestScore = score;
-          bestIndex = index;
-        }
-      });
-
-      const selected = remaining.splice(bestIndex, 1)[0];
-      addGame(selected);
-      improvedRound.push(selected);
-    }
-
-    return improvedRound.map((game, index) => ({
-      ...game,
-      court: index + 1,
-    }));
-  });
+      return {
+        court: index + 1,
+        team1: [getName(a), getName(b)],
+        ids1: [getId(a), getId(b)],
+        team2: [getName(c), getName(d)],
+        ids2: [getId(c), getId(d)],
+        s1: "",
+        s2: "",
+      };
+    })
+  );
 }
+
 function generateSchedule(type, players) {
   const config = modalityConfig[type];
-  let schedule = [];
 
   if (config.type === "super4") {
-    schedule = super4Rounds.map((round) => [
-      {
-        court: 1,
-        team1: [players[round[0][0]], players[round[0][1]]],
-        ids1: round[0],
-        team2: [players[round[1][0]], players[round[1][1]]],
-        ids2: round[1],
-        s1: "",
-        s2: "",
-      },
-    ]);
-
-    return balanceCourts(schedule);
+    return buildFromPairTemplate(super4Template, players);
   }
 
   if (config.type === "super8") {
-    schedule = berger(8).map((round) => [
-      {
-        court: 1,
-        team1: [players[round[0][0]], players[round[0][1]]],
-        ids1: round[0],
-        team2: [players[round[1][0]], players[round[1][1]]],
-        ids2: round[1],
-        s1: "",
-        s2: "",
-      },
-      {
-        court: 2,
-        team1: [players[round[2][0]], players[round[2][1]]],
-        ids1: round[2],
-        team2: [players[round[3][0]], players[round[3][1]]],
-        ids2: round[3],
-        s1: "",
-        s2: "",
-      },
-    ]);
+    return buildFromPairTemplate(super8Template, players);
+  }
 
-    return balanceCourts(schedule);
+  if (config.type === "mixed12") {
+    return buildFromMixedTemplate(super12MixedTemplate, players);
+  }
+
+  if (config.type === "mixed16") {
+    return buildFromMixedTemplate(super16MixedTemplate, players);
   }
 
   if (config.type === "fixed") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
 
-    schedule = berger(8).map((round) =>
+    return berger(8).map((round) =>
       round.map((game, index) => ({
         court: index + 1,
         team1: [teamNames[game[0]]],
@@ -1031,12 +816,10 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
-
-    return balanceCourts(schedule);
   }
 
   if (config.type === "simple") {
-    schedule = berger(config.total).map((round) =>
+    return berger(config.total).map((round) =>
       round.map((game, index) => ({
         court: index + 1,
         team1: [players[game[0]]],
@@ -1047,29 +830,6 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
-
-    return balanceCourts(schedule);
-  }
-
-  if (config.type === "mixed12" || config.type === "mixed16") {
-    const men = players.men;
-    const women = players.women;
-    const rounds = config.type === "mixed12" ? mixed12Rounds : mixed16Rounds;
-    const offset = config.men;
-
-    schedule = rounds.map((round) =>
-      round.map((game, index) => ({
-        court: index + 1,
-        team1: [men[game[0]], women[game[1]]],
-        ids1: [game[0], offset + game[1]],
-        team2: [men[game[2]], women[game[3]]],
-        ids2: [game[2], offset + game[3]],
-        s1: "",
-        s2: "",
-      }))
-    );
-
-    return balanceCourts(schedule);
   }
 
   return [];
@@ -1146,7 +906,12 @@ function calculateRanking(data, type) {
     const s1 = Number(game.s1);
     const s2 = Number(game.s2);
 
-    if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) {
+    if (
+      game.s1 === "" ||
+      game.s2 === "" ||
+      Number.isNaN(s1) ||
+      Number.isNaN(s2)
+    ) {
       return;
     }
 
