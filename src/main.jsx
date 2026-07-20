@@ -1137,54 +1137,137 @@ function buildFromMixedTemplate(template, players) {
   );
 }
 
+function getGamePlayerIds(game) {
+  return [...(game.ids1 || []), ...(game.ids2 || [])];
+}
+
+function balanceCourts(schedule) {
+  if (!schedule || schedule.length === 0) return schedule;
+
+  const usage = {};
+
+  function getUsage(playerId, court) {
+    return usage[playerId]?.[court] || 0;
+  }
+
+  function addUsage(playerId, court) {
+    if (!usage[playerId]) usage[playerId] = {};
+    usage[playerId][court] = (usage[playerId][court] || 0) + 1;
+  }
+
+  function gameCourtScore(game, court, courtsInRound) {
+    const ids = getGamePlayerIds(game);
+    let score = 0;
+
+    ids.forEach((id) => {
+      const sameCourtCount = getUsage(id, court);
+
+      // Penaliza fortemente repetir a mesma quadra
+      score += sameCourtCount * 1000;
+
+      // Penaliza repetição acumulada
+      score += sameCourtCount * sameCourtCount * 300;
+
+      // Dá preferência para quadras ainda não usadas por esse jogador
+      const hasUnusedCourt = courtsInRound.some((c) => getUsage(id, c) === 0);
+      if (hasUnusedCourt && sameCourtCount > 0) {
+        score += 500;
+      }
+
+      // Pequeno peso para distribuir uso geral
+      const totalUsage = courtsInRound.reduce(
+        (sum, c) => sum + getUsage(id, c),
+        0
+      );
+
+      score += totalUsage * 5;
+    });
+
+    return score;
+  }
+
+  return schedule.map((round) => {
+    const courts = round.map((_, index) => index + 1);
+    const remainingGames = round.map((game) => ({ ...game }));
+    const balancedRound = [];
+
+    courts.forEach((court) => {
+      let bestIndex = 0;
+      let bestScore = Infinity;
+
+      remainingGames.forEach((game, index) => {
+        const score = gameCourtScore(game, court, courts);
+
+        if (score < bestScore) {
+          bestScore = score;
+          bestIndex = index;
+        }
+      });
+
+      const selectedGame = remainingGames.splice(bestIndex, 1)[0];
+
+      selectedGame.court = court;
+
+      getGamePlayerIds(selectedGame).forEach((id) => {
+        addUsage(id, court);
+      });
+
+      balancedRound.push(selectedGame);
+    });
+
+    return balancedRound.sort((a, b) => a.court - b.court);
+  });
+}
 function generateSchedule(type, players) {
   const config = modalityConfig[type];
 
   if (config.type === "super4") {
-    return buildFromPairTemplate(super4Template, players);
+    return balanceCourts(buildFromPairTemplate(super4Template, players));
   }
 
   if (config.type === "super8") {
-    return buildFromPairTemplate(super8Template, players);
+    return balanceCourts(buildFromPairTemplate(super8Template, players));
   }
 
   if (config.type === "mixed12") {
-    return buildFromMixedTemplate(super12MixedTemplate, players);
+    return balanceCourts(buildFromMixedTemplate(super12MixedTemplate, players));
   }
 
   if (config.type === "mixed16") {
-    return buildFromMixedTemplate(super16MixedTemplate, players);
+    return balanceCourts(buildFromMixedTemplate(super16MixedTemplate, players));
   }
 
   if (config.type === "fixed") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
 
-    return berger(8).map((round) =>
-      round.map((game, index) => ({
-        court: index + 1,
-        team1: [teamNames[game[0]]],
-        ids1: [game[0]],
-        team2: [teamNames[game[1]]],
-        ids2: [game[1]],
-        s1: "",
-        s2: "",
-      }))
-    );
-  }
+   const schedule = berger(8).map((round) =>
+  round.map((game, index) => ({
+    court: index + 1,
+    team1: [teamNames[game[0]]],
+    ids1: [game[0]],
+    team2: [teamNames[game[1]]],
+    ids2: [game[1]],
+    s1: "",
+    s2: "",
+  }))
+);
+
+return balanceCourts(schedule);
 
   if (config.type === "simple") {
-    return berger(config.total).map((round) =>
-      round.map((game, index) => ({
-        court: index + 1,
-        team1: [players[game[0]]],
-        ids1: [game[0]],
-        team2: [players[game[1]]],
-        ids2: [game[1]],
-        s1: "",
-        s2: "",
-      }))
-    );
-  }
+    const schedule = berger(config.total).map((round) =>
+  round.map((game, index) => ({
+    court: index + 1,
+    team1: [players[game[0]]],
+    ids1: [game[0]],
+    team2: [players[game[1]]],
+    ids2: [game[1]],
+    s1: "",
+    s2: "",
+  }))
+);
+
+return balanceCourts(schedule);
 
   return [];
 }
