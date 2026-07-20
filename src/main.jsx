@@ -85,7 +85,7 @@ function App() {
     return <Blocked profile={profile} />;
   }
 
-  return <Dashboard profile={profile} />;
+  return <Dashboard profile={profile} user={session.user} />;
 }
 
 function Login() {
