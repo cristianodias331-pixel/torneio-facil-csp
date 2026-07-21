@@ -67,6 +67,7 @@ const allowedByPlan = {
     "Super 12 Mista (Dupla Fixa)",
     "Super 16 Mista (Dupla Fixa)",
     "Simples 8",
+    "Copa",
   ],
 };
 
@@ -77,6 +78,15 @@ const modalityConfig = {
   "Super 12 Mista (Dupla Fixa)": { type: "fixed12", teams: 6, courts: 3 },
   "Super 16 Mista (Dupla Fixa)": { type: "fixed16", teams: 8, courts: 4 },
   "Simples 8": { type: "simple8", total: 8, label: "Jogador", courts: 4 },
+  "Copa": {
+    type: "cup",
+    allowedTeamCounts: [12, 24],
+    defaultTeams: 12,
+    groupSize: 3,
+    defaultMainBracketName: "Principal",
+    defaultRepechageName: "Repescagem",
+    courts: 4,
+  },
 };
 
 const super8Template = [
@@ -215,6 +225,404 @@ function optimizeCourts(schedule) {
 
     return balanced.sort((a, b) => a.court - b.court);
   });
+}
+
+function getTeamName(team) {
+  if (!team) return "";
+  return `${team.a || ""} + ${team.b || ""}`.trim();
+}
+
+function getCupTeams(data) {
+  return data?.players?.teams || [];
+}
+
+function getCupTeamName(data, id) {
+  const team = getCupTeams(data)[id];
+  return getTeamName(team);
+}
+
+function getGroupLetter(index) {
+  return String.fromCharCode(65 + index);
+}
+
+function createCupGroups(teamCount) {
+  const groups = [];
+
+  for (let i = 0; i < teamCount / 3; i++) {
+    groups.push({
+      id: i,
+      name: `Grupo ${getGroupLetter(i)}`,
+      teamIds: [i * 3, i * 3 + 1, i * 3 + 2],
+    });
+  }
+
+  return groups;
+}
+
+function generateCupGroupSchedule(players, cupConfig) {
+  const teamCount = cupConfig.teamCount || 12;
+  const groups = createCupGroups(teamCount);
+  const teamNames = players.teams.map((t) => getTeamName(t));
+
+  const roundTemplates = [
+    [0, 1],
+    [0, 2],
+    [1, 2],
+  ];
+
+  const rounds = [[], [], []];
+
+  groups.forEach((group, groupIndex) => {
+    roundTemplates.forEach(([aIndex, bIndex], roundIndex) => {
+      const id1 = group.teamIds[aIndex];
+      const id2 = group.teamIds[bIndex];
+
+      rounds[roundIndex].push({
+        phase: "groups",
+        groupId: group.id,
+        groupName: group.name,
+        court: groupIndex + 1,
+        team1: [teamNames[id1]],
+        ids1: [id1],
+        team2: [teamNames[id2]],
+        ids2: [id2],
+        s1: "",
+        s2: "",
+      });
+    });
+  });
+
+  return rounds.map((round) => round.map((game, index) => ({ ...game, court: index + 1 })));
+}
+
+function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCriteria) {
+  const cupConfig = data.cupConfig || {};
+  const teamCount = cupConfig.teamCount || 12;
+  const groups = createCupGroups(teamCount);
+  const teamNames = data.players.teams.map((t) => getTeamName(t));
+  const criteria = getRankingCriteria(rankingCriteriaValue);
+
+  const groupRankings = groups.map((group) => {
+    const rows = group.teamIds.map((id) => ({
+      id,
+      name: teamNames[id],
+      groupId: group.id,
+      groupName: group.name,
+      pts: 0,
+      w: 0,
+      bal: 0,
+      played: 0,
+    }));
+
+    const tableById = {};
+    rows.forEach((row) => {
+      tableById[row.id] = row;
+    });
+
+    (data.schedule || [])
+      .flat()
+      .filter((game) => game.phase === "groups" && game.groupId === group.id)
+      .forEach((game) => {
+        const s1 = Number(game.s1);
+        const s2 = Number(game.s2);
+
+        if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
+
+        const win1 = s1 > s2;
+        const win2 = s2 > s1;
+
+        game.ids1.forEach((id) => {
+          tableById[id].pts += s1;
+          tableById[id].bal += s1 - s2;
+          tableById[id].played += 1;
+          if (win1) tableById[id].w += 1;
+        });
+
+        game.ids2.forEach((id) => {
+          tableById[id].pts += s2;
+          tableById[id].bal += s2 - s1;
+          tableById[id].played += 1;
+          if (win2) tableById[id].w += 1;
+        });
+      });
+
+    rows.sort((a, b) => {
+      for (const key of criteria.order) {
+        const diff = b[key] - a[key];
+        if (diff !== 0) return diff;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    return {
+      ...group,
+      rows,
+    };
+  });
+
+  return groupRankings;
+}
+
+function getCupQualified(data) {
+  const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
+  const main = [];
+  const repechage = [];
+
+  groupRankings.forEach((group) => {
+    if (group.rows[0]) main.push({ ...group.rows[0], groupPosition: 1 });
+    if (group.rows[1]) main.push({ ...group.rows[1], groupPosition: 2 });
+    if (group.rows[2]) repechage.push({ ...group.rows[2], groupPosition: 3 });
+  });
+
+  const criteria = getRankingCriteria(data.rankingCriteria || defaultRankingCriteria);
+
+  function sortGeneral(a, b) {
+    if (a.groupPosition !== b.groupPosition) return a.groupPosition - b.groupPosition;
+
+    for (const key of criteria.order) {
+      const diff = b[key] - a[key];
+      if (diff !== 0) return diff;
+    }
+
+    return a.name.localeCompare(b.name);
+  }
+
+  main.sort(sortGeneral);
+  repechage.sort(sortGeneral);
+
+  return { main, repechage };
+}
+
+function seedBracket(teamIds, bracketType) {
+  if (teamIds.length === 4) {
+    return [
+      [teamIds[0], teamIds[3]],
+      [teamIds[1], teamIds[2]],
+    ].map((pair, index) => ({
+      phase: bracketType,
+      roundName: "Semifinal",
+      matchKey: `${bracketType}_sf_${index + 1}`,
+      source1: null,
+      source2: null,
+      ids1: [pair[0]],
+      ids2: [pair[1]],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: index + 1,
+    }));
+  }
+
+  if (teamIds.length === 8) {
+    return [
+      [teamIds[0], teamIds[7]],
+      [teamIds[3], teamIds[4]],
+      [teamIds[2], teamIds[5]],
+      [teamIds[1], teamIds[6]],
+    ].map((pair, index) => ({
+      phase: bracketType,
+      roundName: "Quartas de final",
+      matchKey: `${bracketType}_qf_${index + 1}`,
+      source1: null,
+      source2: null,
+      ids1: [pair[0]],
+      ids2: [pair[1]],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: index + 1,
+    }));
+  }
+
+  if (teamIds.length === 16) {
+    return [
+      [teamIds[0], teamIds[15]],
+      [teamIds[7], teamIds[8]],
+      [teamIds[4], teamIds[11]],
+      [teamIds[3], teamIds[12]],
+      [teamIds[2], teamIds[13]],
+      [teamIds[5], teamIds[10]],
+      [teamIds[6], teamIds[9]],
+      [teamIds[1], teamIds[14]],
+    ].map((pair, index) => ({
+      phase: bracketType,
+      roundName: "Oitavas de final",
+      matchKey: `${bracketType}_r16_${index + 1}`,
+      source1: null,
+      source2: null,
+      ids1: [pair[0]],
+      ids2: [pair[1]],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: index + 1,
+    }));
+  }
+
+  return [];
+}
+
+function getGameWinnerId(game) {
+  const s1 = Number(game.s1);
+  const s2 = Number(game.s2);
+
+  if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return null;
+  if (s1 === s2) return null;
+
+  return s1 > s2 ? game.ids1?.[0] : game.ids2?.[0];
+}
+
+function resolveBracketGame(game, allGames, data) {
+  const copy = { ...game };
+
+  if (copy.source1) {
+    const sourceGame = allGames.find((item) => item.matchKey === copy.source1);
+    const winnerId = sourceGame ? getGameWinnerId(sourceGame) : null;
+    copy.ids1 = winnerId === null ? [] : [winnerId];
+  }
+
+  if (copy.source2) {
+    const sourceGame = allGames.find((item) => item.matchKey === copy.source2);
+    const winnerId = sourceGame ? getGameWinnerId(sourceGame) : null;
+    copy.ids2 = winnerId === null ? [] : [winnerId];
+  }
+
+  copy.team1 = copy.ids1?.length ? [getCupTeamName(data, copy.ids1[0])] : ["Aguardando"];
+  copy.team2 = copy.ids2?.length ? [getCupTeamName(data, copy.ids2[0])] : ["Aguardando"];
+
+  return copy;
+}
+
+function buildNextRound(previousGames, bracketType, roundName, keyPrefix) {
+  const games = [];
+
+  for (let i = 0; i < previousGames.length; i += 2) {
+    games.push({
+      phase: bracketType,
+      roundName,
+      matchKey: `${bracketType}_${keyPrefix}_${games.length + 1}`,
+      source1: previousGames[i].matchKey,
+      source2: previousGames[i + 1].matchKey,
+      ids1: [],
+      ids2: [],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: games.length + 1,
+    });
+  }
+
+  return games;
+}
+
+function generateCupBrackets(data) {
+  const qualified = getCupQualified(data);
+  const cupConfig = data.cupConfig || {};
+  const mainName = cupConfig.mainBracketName || "Principal";
+  const repechageName = cupConfig.repechageName || "Repescagem";
+
+  const mainIds = qualified.main.map((item) => item.id);
+  const repechageIds = qualified.repechage.map((item) => item.id);
+
+  const mainFirstRound = seedBracket(mainIds, "main");
+  const repechageFirstRound = seedBracket(repechageIds, "repechage");
+
+  const mainRounds = [];
+  const repechageRounds = [];
+
+  if (mainFirstRound.length) {
+    mainRounds.push({
+      title: mainFirstRound[0].roundName,
+      bracketTitle: mainName,
+      games: mainFirstRound,
+    });
+
+    if (mainIds.length === 8) {
+      const semifinals = buildNextRound(mainFirstRound, "main", "Semifinal", "sf");
+      const final = buildNextRound(semifinals, "main", "Final", "final");
+
+      mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
+      mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
+    }
+
+    if (mainIds.length === 16) {
+      const quarterfinals = buildNextRound(mainFirstRound, "main", "Quartas de final", "qf");
+      const semifinals = buildNextRound(quarterfinals, "main", "Semifinal", "sf");
+      const final = buildNextRound(semifinals, "main", "Final", "final");
+
+      mainRounds.push({ title: "Quartas de final", bracketTitle: mainName, games: quarterfinals });
+      mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
+      mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
+    }
+  }
+
+  if (repechageFirstRound.length) {
+    repechageRounds.push({
+      title: repechageFirstRound[0].roundName,
+      bracketTitle: repechageName,
+      games: repechageFirstRound,
+    });
+
+    if (repechageIds.length === 4) {
+      const final = buildNextRound(repechageFirstRound, "repechage", "Final", "final");
+      repechageRounds.push({ title: "Final", bracketTitle: repechageName, games: final });
+    }
+
+    if (repechageIds.length === 8) {
+      const semifinals = buildNextRound(repechageFirstRound, "repechage", "Semifinal", "sf");
+      const final = buildNextRound(semifinals, "repechage", "Final", "final");
+
+      repechageRounds.push({ title: "Semifinal", bracketTitle: repechageName, games: semifinals });
+      repechageRounds.push({ title: "Final", bracketTitle: repechageName, games: final });
+    }
+  }
+
+  const allGames = [...mainRounds, ...repechageRounds].flatMap((round) => round.games);
+
+  const resolvedMainRounds = mainRounds.map((round) => ({
+    ...round,
+    games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+  }));
+
+  const resolvedRepechageRounds = repechageRounds.map((round) => ({
+    ...round,
+    games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+  }));
+
+  return {
+    main: resolvedMainRounds,
+    repechage: resolvedRepechageRounds,
+  };
+}
+
+function getCupAllBracketGames(data) {
+  const brackets = generateCupBrackets(data);
+  return [...brackets.main, ...brackets.repechage].flatMap((round) => round.games);
+}
+
+function syncCupBracketScores(currentData) {
+  const copy = structuredClone(currentData);
+  const existingScores = {};
+
+  (copy.brackets || []).forEach((game) => {
+    existingScores[game.matchKey] = {
+      s1: game.s1,
+      s2: game.s2,
+    };
+  });
+
+  const freshGames = getCupAllBracketGames(copy).map((game) => ({
+    ...game,
+    s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
+    s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
+  }));
+
+  copy.brackets = freshGames;
+  return copy;
 }
 
 function NoticeModal({ notice, onClose }) {
@@ -515,9 +923,47 @@ function Login() {
           {openInfoTab === "plans" && (
             <div className="accordionContent">
               <div className="plansGrid">
-                <PlanCard title="Basic" tag="Entrada" price="R$ 19,90" text="Para começar com torneios mistos e Super 08." items={["Super 08", "Super 12 Mista (Dupla Aleatória)", "Super 16 Mista (Dupla Aleatória)", "1 campeonato ativo por vez", "Sorteio e ranking automático"]} />
-                <PlanCard title="Pro" tag="Organizador" badge="Mais usado" price="R$ 39,90" text="Para organizadores que precisam de duplas fixas." items={["Tudo do Basic", "Super 12 Mista (Dupla Fixa)", "Super 16 Mista (Dupla Fixa)", "Campeonatos ilimitados", "Histórico salvo"]} />
-                <PlanCard title="Premium" tag="Completo" price="R$ 59,90" text="Libera todos os formatos disponíveis." items={["Tudo do Pro", "Simples 8", "Todos os formatos liberados", "Campeonatos ilimitados", "Ideal para clubes e arenas"]} />
+                <PlanCard
+                  title="Basic"
+                  tag="Entrada"
+                  price="R$ 19,90"
+                  text="Para começar com torneios mistos e Super 08."
+                  items={[
+                    "Super 08",
+                    "Super 12 Mista (Dupla Aleatória)",
+                    "Super 16 Mista (Dupla Aleatória)",
+                    "1 campeonato ativo por vez",
+                    "Sorteio e ranking automático",
+                  ]}
+                />
+                <PlanCard
+                  title="Pro"
+                  tag="Organizador"
+                  badge="Mais usado"
+                  price="R$ 39,90"
+                  text="Para organizadores que precisam de duplas fixas."
+                  items={[
+                    "Tudo do Basic",
+                    "Super 12 Mista (Dupla Fixa)",
+                    "Super 16 Mista (Dupla Fixa)",
+                    "Campeonatos ilimitados",
+                    "Histórico salvo",
+                  ]}
+                />
+                <PlanCard
+                  title="Premium"
+                  tag="Completo"
+                  price="R$ 59,90"
+                  text="Libera todos os formatos disponíveis, incluindo a Copa."
+                  items={[
+                    "Tudo do Pro",
+                    "Simples 8",
+                    "Copa com 12 ou 24 duplas",
+                    "Chave principal e repescagem",
+                    "Campeonatos ilimitados",
+                    "Ideal para clubes e arenas",
+                  ]}
+                />
               </div>
             </div>
           )}
@@ -531,13 +977,14 @@ function Login() {
                 <Info title="Super 12 Mista (Dupla Fixa)" text="6 duplas fixas jogando entre si em 5 rodadas." />
                 <Info title="Super 16 Mista (Dupla Fixa)" text="8 duplas fixas no formato todos contra todos." />
                 <Info title="Simples 8" text="8 jogadores em disputa individual com ranking geral." />
+                <Info title="Copa" text="Disponível no Premium. 12 ou 24 duplas, grupos de 3, fase principal e repescagem." />
               </div>
             </div>
           )}
 
           <div className="learnMoreBox">
             <strong>Quer saber qual plano escolher?</strong>
-            <p>Para testes rápidos, use o Basic. Para torneios recorrentes e duplas fixas, escolha o Pro. Para liberar todos os formatos, use o Premium.</p>
+            <p>Para testes rápidos, use o Basic. Para torneios recorrentes e duplas fixas, escolha o Pro. Para liberar Copa e todos os formatos, use o Premium.</p>
           </div>
         </div>
       </div>
@@ -799,6 +1246,24 @@ function createInitialData(type, config) {
     };
   }
 
+  if (config.type === "cup") {
+    return {
+      ...base,
+      cupConfig: {
+        teamCount: config.defaultTeams,
+        mainBracketName: config.defaultMainBracketName,
+        repechageName: config.defaultRepechageName,
+      },
+      players: {
+        teams: Array.from({ length: config.defaultTeams }, (_, i) => ({
+          a: `Atleta 1 da dupla ${i + 1}`,
+          b: `Atleta 2 da dupla ${i + 1}`,
+        })),
+      },
+      brackets: [],
+    };
+  }
+
   return {
     ...base,
     players: Array.from({ length: config.total }, (_, i) => `${config.label} ${i + 1}`),
@@ -812,7 +1277,7 @@ function getShuffleNames(data, config) {
     return [...data.players.men, ...data.players.women];
   }
 
-  if (config.type === "fixed12" || config.type === "fixed16") {
+  if (config.type === "fixed12" || config.type === "fixed16" || config.type === "cup") {
     return data.players.teams.map((team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`);
   }
 
@@ -834,6 +1299,11 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const ranking = useMemo(
     () => calculateRanking(data, tournament.type, data.rankingCriteria),
     [data, tournament.type]
+  );
+
+  const cupGroupRankings = useMemo(
+    () => config.type === "cup" ? calculateCupGroupRankings(data, data.rankingCriteria) : [],
+    [data, config.type]
   );
 
   useEffect(() => {
@@ -872,12 +1342,44 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     setData((prev) => ({ ...prev, rankingCriteria: value }));
   }
 
+  function updateCupConfig(field, value) {
+    setData((prev) => {
+      const copy = structuredClone(prev);
+
+      copy.cupConfig = {
+        ...(copy.cupConfig || {}),
+        [field]: value,
+      };
+
+      if (field === "teamCount") {
+        const teamCount = Number(value);
+        copy.cupConfig.teamCount = teamCount;
+        copy.players.teams = Array.from({ length: teamCount }, (_, i) => {
+          return copy.players.teams[i] || {
+            a: `Atleta 1 da dupla ${i + 1}`,
+            b: `Atleta 2 da dupla ${i + 1}`,
+          };
+        });
+        copy.schedule = [];
+        copy.brackets = [];
+      }
+
+      return copy;
+    });
+  }
+
   function updatePlayer(path, value) {
     const copy = structuredClone(data);
+
     if (path.kind === "normal") copy.players[path.index] = value;
     if (path.kind === "men") copy.players.men[path.index] = value;
     if (path.kind === "women") copy.players.women[path.index] = value;
     if (path.kind === "team") copy.players.teams[path.index][path.field] = value;
+
+    if (config.type === "cup") {
+      copy.brackets = [];
+    }
+
     setData(copy);
   }
 
@@ -887,19 +1389,22 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     if (config.type === "mixed12" || config.type === "mixed16") {
       copy.players.men = shuffleArray(copy.players.men);
       copy.players.women = shuffleArray(copy.players.women);
-    } else if (config.type === "fixed12" || config.type === "fixed16") {
+    } else if (config.type === "fixed12" || config.type === "fixed16" || config.type === "cup") {
       copy.players.teams = shuffleArray(copy.players.teams);
     } else {
       copy.players = shuffleArray(copy.players);
     }
 
     copy.schedule = [];
+    if (config.type === "cup") copy.brackets = [];
+
     setData(copy);
     setShuffleOverlay(null);
   }
 
   function shuffleNames() {
     const names = getShuffleNames(data, config);
+
     if (!names.length) {
       showNotice("warning", "Sem participantes", "Adicione os nomes antes do sorteio.");
       return;
@@ -927,26 +1432,104 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   }
 
   function generate() {
+    if (config.type === "cup") {
+      const schedule = generateCupGroupSchedule(data.players, data.cupConfig || {});
+      setData((prev) => ({
+        ...prev,
+        schedule,
+        brackets: [],
+      }));
+      showNotice("success", "Tabela gerada", "A fase de grupos da Copa foi montada com sucesso.");
+      return;
+    }
+
     const schedule = generateSchedule(tournament.type, data.players);
     setData({ ...data, schedule });
     showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
   }
 
+  function generateBrackets() {
+    if (config.type !== "cup") return;
+
+    const allGroupGames = (data.schedule || []).flat();
+    const pendingGames = allGroupGames.some((game) => game.s1 === "" || game.s2 === "");
+
+    if (!data.schedule || data.schedule.length === 0) {
+      showNotice("warning", "Fase de grupos não gerada", "Gere a tabela da fase de grupos antes de montar as chaves.");
+      return;
+    }
+
+    if (pendingGames) {
+      showNotice("warning", "Placares pendentes", "Preencha todos os placares da fase de grupos antes de gerar as chaves.");
+      return;
+    }
+
+    const copy = syncCupBracketScores(data);
+    setData(copy);
+    showNotice("success", "Chaves geradas", "A chave principal e a repescagem foram montadas.");
+  }
+
   function updateScore(roundIndex, gameIndex, field, value) {
     const copy = structuredClone(data);
     copy.schedule[roundIndex][gameIndex][field] = value;
+
+    if (config.type === "cup") {
+      copy.brackets = [];
+    }
+
     setData(copy);
+  }
+
+  function updateBracketScore(matchKey, field, value) {
+    setData((prev) => {
+      const copy = structuredClone(prev);
+
+      if (!copy.brackets || copy.brackets.length === 0) {
+        copy.brackets = getCupAllBracketGames(copy);
+      }
+
+      copy.brackets = copy.brackets.map((game) => (
+        game.matchKey === matchKey ? { ...game, [field]: value } : game
+      ));
+
+      const existingScores = {};
+      copy.brackets.forEach((game) => {
+        existingScores[game.matchKey] = {
+          s1: game.s1,
+          s2: game.s2,
+        };
+      });
+
+      const fresh = getCupAllBracketGames(copy).map((game) => ({
+        ...game,
+        s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
+        s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
+      }));
+
+      copy.brackets = fresh;
+      return copy;
+    });
   }
 
   function clearScores() {
     const copy = structuredClone(data);
+
     copy.schedule = (copy.schedule || []).map((round) =>
       round.map((game) => ({ ...game, s1: "", s2: "" }))
     );
+
+    if (config.type === "cup") {
+      copy.brackets = [];
+    }
+
     setData(copy);
     setClearScoresOpen(false);
     showNotice("success", "Placares apagados", "Todos os placares foram removidos.");
   }
+
+  const currentBrackets = config.type === "cup" && data.brackets?.length
+    ? groupStoredBracketGames(data)
+    : null;
 
   return (
     <>
@@ -987,7 +1570,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
         </div>
       )}
 
-      <div className="appPage">
+            <div className="appPage">
         <header>
           <div>
             <h1>{tournament.name}</h1>
@@ -999,7 +1582,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
         </header>
 
         <section className="card">
-          <h2>Participantes</h2>
+          <h2>{config.type === "cup" ? "Configuração da Copa" : "Participantes"}</h2>
 
           <div className="rankingCriteriaBox">
             <label>Critério do ranking</label>
@@ -1010,6 +1593,14 @@ function TournamentScreen({ tournament, onBack, onSave }) {
             </select>
           </div>
 
+          {config.type === "cup" && (
+            <CupConfigPanel
+              data={data}
+              config={config}
+              updateCupConfig={updateCupConfig}
+            />
+          )}
+
           <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} />
 
           <div className="actions">
@@ -1019,13 +1610,13 @@ function TournamentScreen({ tournament, onBack, onSave }) {
         </section>
 
         <section className="card">
-          <h2>Rodadas</h2>
+          <h2>{config.type === "cup" ? "Fase de grupos" : "Rodadas"}</h2>
 
           {!data.schedule || data.schedule.length === 0 ? (
-            <p>Clique em “Gerar tabela” para montar os jogos.</p>
+            <p> Clique em “Gerar tabela” para montar os jogos.</p>
           ) : (
             <>
-              <ScheduleView schedule={data.schedule} updateScore={updateScore} />
+              <ScheduleView schedule={data.schedule} updateScore={updateScore} showGroupName={config.type === "cup"} />
               <div className="actions">
                 <button type="button" className="deleteBtn" onClick={() => setClearScoresOpen(true)}>
                   Apagar placares
@@ -1035,12 +1626,90 @@ function TournamentScreen({ tournament, onBack, onSave }) {
           )}
         </section>
 
-        <section className="card">
-          <h2>Ranking</h2>
-          <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
-        </section>
+        {config.type === "cup" ? (
+          <>
+            <section className="card">
+              <h2>Classificação dos grupos</h2>
+              <CupGroupRankingView
+                groupRankings={cupGroupRankings}
+                rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+              />
+
+              <div className="actions">
+                <button type="button" onClick={generateBrackets}>
+                  Gerar chaves finais
+                </button>
+              </div>
+            </section>
+
+            <section className="card">
+              <h2>Chaves finais</h2>
+
+              {!currentBrackets ? (
+                <p>Após preencher todos os placares da fase de grupos, clique em “Gerar chaves finais”.</p>
+              ) : (
+                <CupBracketView
+                  groupedBrackets={currentBrackets}
+                  data={data}
+                  updateBracketScore={updateBracketScore}
+                />
+              )}
+            </section>
+          </>
+        ) : (
+          <section className="card">
+            <h2>Ranking</h2>
+            <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+          </section>
+        )}
       </div>
     </>
+  );
+}
+
+function CupConfigPanel({ data, config, updateCupConfig }) {
+  const cupConfig = data.cupConfig || {};
+
+  return (
+    <div className="cupConfigBox">
+      <div className="twoCols">
+        <div>
+          <label>Quantidade de duplas</label>
+          <select
+            value={cupConfig.teamCount || config.defaultTeams}
+            onChange={(e) => updateCupConfig("teamCount", Number(e.target.value))}
+          >
+            {config.allowedTeamCounts.map((count) => (
+              <option key={count} value={count}>{count} duplas</option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label>Nome da chave principal</label>
+          <input
+            value={cupConfig.mainBracketName || config.defaultMainBracketName}
+            onChange={(e) => updateCupConfig("mainBracketName", e.target.value)}
+            placeholder="Principal"
+          />
+        </div>
+
+        <div>
+          <label>Nome da repescagem</label>
+          <input
+            value={cupConfig.repechageName || config.defaultRepechageName}
+            onChange={(e) => updateCupConfig("repechageName", e.target.value)}
+            placeholder="Repescagem"
+          />
+        </div>
+      </div>
+
+      <div className="infoBox">
+        <p><strong>Formato:</strong> grupos de 3 duplas.</p>
+        <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
+        <p><strong>Classificação:</strong> 1º e 2º de cada grupo avançam para a chave principal. O 3º vai para a repescagem.</p>
+      </div>
+    </div>
   );
 }
 
@@ -1073,7 +1742,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
     );
   }
 
-  if (config.type === "fixed12" || config.type === "fixed16") {
+  if (config.type === "fixed12" || config.type === "fixed16" || config.type === "cup") {
     return (
       <div className="twoCols">
         {data.players.teams.map((team, i) => (
@@ -1107,6 +1776,7 @@ function buildFromPairTemplate(template, players) {
     round.map((game, index) => {
       const [a, b] = game[0];
       const [c, d] = game[1];
+
       return {
         court: index + 1,
         team1: [players[a - 1], players[b - 1]],
@@ -1137,6 +1807,7 @@ function buildFromMixedTemplate(template, players) {
   return template.map((round) =>
     round.map((game, index) => {
       const [a, b, c, d] = game;
+
       return {
         court: index + 1,
         team1: [getName(a), getName(b)],
@@ -1178,6 +1849,7 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
+
     return optimizeCourts(schedule);
   }
 
@@ -1194,6 +1866,7 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
+
     return optimizeCourts(schedule);
   }
 
@@ -1209,13 +1882,14 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
+
     return optimizeCourts(schedule);
   }
 
   return [];
 }
 
-function ScheduleView({ schedule, updateScore }) {
+function ScheduleView({ schedule, updateScore, showGroupName = false }) {
   return (
     <div className="schedule">
       {schedule.map((round, roundIndex) => (
@@ -1224,7 +1898,10 @@ function ScheduleView({ schedule, updateScore }) {
 
           {round.map((game, gameIndex) => (
             <div className="gameCard" key={gameIndex}>
-              <strong>Quadra {game.court}</strong>
+              <strong>
+                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                Quadra {game.court}
+              </strong>
 
               <div className="gameTeams">
                 <div>{game.team1.join(" + ")}</div>
@@ -1247,7 +1924,13 @@ function ScheduleView({ schedule, updateScore }) {
 
 function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCriteria) {
   const config = modalityConfig[type];
+
   if (!data.players) return [];
+
+  if (config.type === "cup") {
+    const qualified = getCupQualified(data);
+    return [...qualified.main, ...qualified.repechage];
+  }
 
   let names = [];
 
@@ -1292,6 +1975,7 @@ function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCrite
       const diff = b[key] - a[key];
       if (diff !== 0) return diff;
     }
+
     return a.name.localeCompare(b.name);
   });
 }
@@ -1349,6 +2033,112 @@ function RankingTable({ title, rows, rankingCriteria }) {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+function CupGroupRankingView({ groupRankings, rankingCriteria }) {
+  return (
+    <div className="twoCols">
+      {groupRankings.map((group) => (
+        <RankingTable
+          key={group.id}
+          title={group.name}
+          rows={group.rows}
+          rankingCriteria={rankingCriteria}
+        />
+      ))}
+    </div>
+  );
+}
+
+function groupStoredBracketGames(data) {
+  const cupConfig = data.cupConfig || {};
+  const mainName = cupConfig.mainBracketName || "Principal";
+  const repechageName = cupConfig.repechageName || "Repescagem";
+
+  const mainGames = (data.brackets || []).filter((game) => game.phase === "main");
+  const repechageGames = (data.brackets || []).filter((game) => game.phase === "repechage");
+
+  function groupByRound(games, bracketTitle) {
+    const map = {};
+
+    games.forEach((game) => {
+      if (!map[game.roundName]) {
+        map[game.roundName] = [];
+      }
+      map[game.roundName].push(resolveBracketGame(game, data.brackets || [], data));
+    });
+
+    return Object.entries(map).map(([title, gamesList]) => ({
+      title,
+      bracketTitle,
+      games: gamesList,
+    }));
+  }
+
+  return {
+    main: groupByRound(mainGames, mainName),
+    repechage: groupByRound(repechageGames, repechageName),
+  };
+}
+
+function CupBracketView({ groupedBrackets, data, updateBracketScore }) {
+  return (
+    <div className="cupBrackets">
+      <BracketColumn
+        title={(data.cupConfig?.mainBracketName || "Principal")}
+        rounds={groupedBrackets.main}
+        updateBracketScore={updateBracketScore}
+      />
+
+      <BracketColumn
+        title={(data.cupConfig?.repechageName || "Repescagem")}
+        rounds={groupedBrackets.repechage}
+        updateBracketScore={updateBracketScore}
+      />
+    </div>
+  );
+}
+
+function BracketColumn({ title, rounds, updateBracketScore }) {
+  return (
+    <div className="bracketColumn">
+      <h3>{title}</h3>
+
+      {rounds.map((round, roundIndex) => (
+        <div className="roundCard" key={roundIndex}>
+          <h3>{round.title}</h3>
+
+          {round.games.map((game) => (
+            <div className="gameCard" key={game.matchKey}>
+              <strong>Quadra {game.court}</strong>
+
+              <div className="gameTeams">
+                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                <span>x</span>
+                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
+              </div>
+
+              <div className="scoreRow">
+                <input
+                  type="number"
+                  value={game.s1}
+                  onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
+                  disabled={!game.ids1?.length || !game.ids2?.length}
+                />
+                <span>—</span>
+                <input
+                  type="number"
+                  value={game.s2}
+                  onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
+                  disabled={!game.ids1?.length || !game.ids2?.length}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
