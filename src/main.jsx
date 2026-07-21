@@ -1223,13 +1223,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     };
   }, [data]);
 
- function handleBack() {
-  if (saveTimerRef.current) {
-    clearTimeout(saveTimerRef.current);
-  }
-
-  onSave({ ...tournament, data: latestDataRef.current });
-
+function handleBack() {
   onBack();
 }
 
@@ -1411,7 +1405,9 @@ function TournamentScreen({ tournament, onBack, onSave }) {
           </div>
 
           <div className="actions">
-            <button onClick={handleBack}>Voltar</button>
+            <button type="button" onClick={handleBack}>
+  Voltar
+</button>
           </div>
         </header>
 
