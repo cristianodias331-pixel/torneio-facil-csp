@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createClient } from "@supabase/supabase-js";
 import "./style.css";
@@ -367,6 +367,35 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
   );
 }
 
+function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
+  if (!open) return null;
+
+  return (
+    <div className="confirmOverlay">
+      <div className="confirmBox">
+        <div className="confirmIcon">🧹</div>
+
+        <h2>Apagar placares?</h2>
+
+        <p>
+          Todos os placares preenchidos deste campeonato serão apagados. A
+          tabela e os participantes serão mantidos.
+        </p>
+
+        <div className="confirmActions">
+          <button className="secondaryBtn" onClick={onCancel}>
+            Cancelar
+          </button>
+
+          <button className="deleteBtn" onClick={onConfirm}>
+            Sim, apagar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PlanCard({ title, tag, badge, price, text, items }) {
   return (
     <div className="planCard">
@@ -475,6 +504,7 @@ function App() {
 
   return <Dashboard profile={profile} user={session.user} />;
 }
+
 function Login() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -1139,14 +1169,73 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     tournament.data || createInitialData(tournament.type, config)
   );
 
-  const [saving, setSaving] = useState(false);
+  const [savingStatus, setSavingStatus] = useState("Salvo");
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [clearScoresOpen, setClearScoresOpen] = useState(false);
+
+  const saveTimerRef = useRef(null);
+  const latestDataRef = useRef(data);
+  const mountedRef = useRef(false);
 
   const ranking = useMemo(
     () => calculateRanking(data, tournament.type, data.rankingCriteria),
     [data, tournament.type]
   );
+
+  useEffect(() => {
+    latestDataRef.current = data;
+  }, [data]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+
+      onSave({ ...tournament, data: latestDataRef.current });
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mountedRef.current) return;
+
+    setSavingStatus("Salvando...");
+
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    saveTimerRef.current = setTimeout(async () => {
+      const ok = await onSave({ ...tournament, data: latestDataRef.current });
+
+      setSavingStatus(ok ? "Salvo automaticamente" : "Erro ao salvar");
+    }, 650);
+
+    return () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+      }
+    };
+  }, [data]);
+
+  async function handleBack() {
+    if (saveTimerRef.current) {
+      clearTimeout(saveTimerRef.current);
+    }
+
+    setSavingStatus("Salvando...");
+
+    await onSave({ ...tournament, data: latestDataRef.current });
+
+    setSavingStatus("Salvo automaticamente");
+
+    onBack();
+  }
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -1228,18 +1317,6 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     }, 1000);
   }
 
-  async function saveData(showAlert = true) {
-    setSaving(true);
-
-    const ok = await onSave({ ...tournament, data });
-
-    setSaving(false);
-
-    if (ok && showAlert) {
-      showNotice("success", "Torneio salvo", "As alterações foram salvas.");
-    }
-  }
-
   function generate() {
     const schedule = generateSchedule(tournament.type, data.players);
 
@@ -1256,9 +1333,38 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     setData(copy);
   }
 
+  function clearScores() {
+    const copy = structuredClone(data);
+
+    if (copy.schedule && copy.schedule.length > 0) {
+      copy.schedule = copy.schedule.map((round) =>
+        round.map((game) => ({
+          ...game,
+          s1: "",
+          s2: "",
+        }))
+      );
+    }
+
+    setData(copy);
+    setClearScoresOpen(false);
+
+    showNotice(
+      "success",
+      "Placares apagados",
+      "Todos os placares deste campeonato foram removidos."
+    );
+  }
+
   return (
     <>
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
+      <ConfirmClearScoresModal
+        open={clearScoresOpen}
+        onCancel={() => setClearScoresOpen(false)}
+        onConfirm={clearScores}
+      />
 
       {shuffleOverlay && (
         <div className="shuffleOverlay">
@@ -1303,15 +1409,13 @@ function TournamentScreen({ tournament, onBack, onSave }) {
         <header>
           <div>
             <h1>{tournament.name}</h1>
-            <p>{tournament.type}</p>
+            <p>
+              {tournament.type} · {savingStatus}
+            </p>
           </div>
 
           <div className="actions">
-            <button onClick={onBack}>Voltar</button>
-
-            <button onClick={() => saveData(true)} disabled={saving}>
-              {saving ? "Salvando..." : "Salvar"}
-            </button>
+            <button onClick={handleBack}>Voltar</button>
           </div>
         </header>
 
@@ -1342,7 +1446,6 @@ function TournamentScreen({ tournament, onBack, onSave }) {
           <div className="actions">
             <button onClick={shuffleNames}>Sortear nomes</button>
             <button onClick={generate}>Gerar tabela</button>
-            <button onClick={() => saveData(true)}>Salvar participantes</button>
           </div>
         </section>
 
@@ -1358,7 +1461,14 @@ function TournamentScreen({ tournament, onBack, onSave }) {
                 updateScore={updateScore}
               />
 
-              <button onClick={() => saveData(true)}>Salvar placares</button>
+              <div className="actions">
+                <button
+                  className="deleteBtn"
+                  onClick={() => setClearScoresOpen(true)}
+                >
+                  Apagar placares
+                </button>
+              </div>
             </>
           )}
         </section>
