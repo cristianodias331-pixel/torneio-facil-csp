@@ -5,85 +5,46 @@ import "./style.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
-
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 async function logout() {
   try {
     await supabase.auth.signOut({ scope: "global" });
-  } catch (error) {
-    console.error("Erro ao sair:", error);
+  } catch (e) {
+    console.error(e);
   }
 
   try {
     Object.keys(localStorage).forEach((key) => {
-      if (
-        key.includes("supabase") ||
-        key.includes("sb-") ||
-        key.includes("auth")
-      ) {
+      if (key.includes("supabase") || key.includes("sb-") || key.includes("auth")) {
         localStorage.removeItem(key);
       }
     });
-
     sessionStorage.clear();
-  } catch (error) {
-    console.error("Erro ao limpar sessão:", error);
+  } catch (e) {
+    console.error(e);
   }
 
   window.location.replace("/");
 }
 
 const rankingCriteriaOptions = [
-  {
-    value: "wins_points_balance",
-    label: "Vitórias > Pontos > Saldo",
-    order: ["w", "pts", "bal"],
-  },
-  {
-    value: "wins_balance_points",
-    label: "Vitórias > Saldo > Pontos",
-    order: ["w", "bal", "pts"],
-  },
-  {
-    value: "points_wins_balance",
-    label: "Pontos > Vitórias > Saldo",
-    order: ["pts", "w", "bal"],
-  },
-  {
-    value: "points_balance_wins",
-    label: "Pontos > Saldo > Vitórias",
-    order: ["pts", "bal", "w"],
-  },
-  {
-    value: "balance_wins_points",
-    label: "Saldo > Vitórias > Pontos",
-    order: ["bal", "w", "pts"],
-  },
-  {
-    value: "balance_points_wins",
-    label: "Saldo > Pontos > Vitórias",
-    order: ["bal", "pts", "w"],
-  },
+  { value: "wins_points_balance", label: "Vitórias > Pontos > Saldo", order: ["w", "pts", "bal"] },
+  { value: "wins_balance_points", label: "Vitórias > Saldo > Pontos", order: ["w", "bal", "pts"] },
+  { value: "points_wins_balance", label: "Pontos > Vitórias > Saldo", order: ["pts", "w", "bal"] },
+  { value: "points_balance_wins", label: "Pontos > Saldo > Vitórias", order: ["pts", "bal", "w"] },
+  { value: "balance_wins_points", label: "Saldo > Vitórias > Pontos", order: ["bal", "w", "pts"] },
+  { value: "balance_points_wins", label: "Saldo > Pontos > Vitórias", order: ["bal", "pts", "w"] },
 ];
 
 const defaultRankingCriteria = "wins_points_balance";
 
 function getRankingCriteria(value) {
-  return (
-    rankingCriteriaOptions.find((item) => item.value === value) ||
-    rankingCriteriaOptions[0]
-  );
+  return rankingCriteriaOptions.find((item) => item.value === value) || rankingCriteriaOptions[0];
 }
 
 function getRankingColumnLabel(key) {
-  const labels = {
-    w: "Vitórias",
-    pts: "Pontos",
-    bal: "Saldo",
-  };
-
-  return labels[key] || key;
+  return { w: "Vitórias", pts: "Pontos", bal: "Saldo" }[key] || key;
 }
 
 const allowedByPlan = {
@@ -110,45 +71,12 @@ const allowedByPlan = {
 };
 
 const modalityConfig = {
-  "Super 08": {
-    type: "super8",
-    total: 8,
-    label: "Participante",
-    courts: 2,
-  },
-
-  "Super 12 Mista (Dupla Aleatória)": {
-    type: "mixed12",
-    men: 6,
-    women: 6,
-    courts: 3,
-  },
-
-  "Super 16 Mista (Dupla Aleatória)": {
-    type: "mixed16",
-    men: 8,
-    women: 8,
-    courts: 4,
-  },
-
-  "Super 12 Mista (Dupla Fixa)": {
-    type: "fixed12",
-    teams: 6,
-    courts: 3,
-  },
-
-  "Super 16 Mista (Dupla Fixa)": {
-    type: "fixed16",
-    teams: 8,
-    courts: 4,
-  },
-
-  "Simples 8": {
-    type: "simple8",
-    total: 8,
-    label: "Jogador",
-    courts: 4,
-  },
+  "Super 08": { type: "super8", total: 8, label: "Participante", courts: 2 },
+  "Super 12 Mista (Dupla Aleatória)": { type: "mixed12", men: 6, women: 6, courts: 3 },
+  "Super 16 Mista (Dupla Aleatória)": { type: "mixed16", men: 8, women: 8, courts: 4 },
+  "Super 12 Mista (Dupla Fixa)": { type: "fixed12", teams: 6, courts: 3 },
+  "Super 16 Mista (Dupla Fixa)": { type: "fixed16", teams: 8, courts: 4 },
+  "Simples 8": { type: "simple8", total: 8, label: "Jogador", courts: 4 },
 };
 
 const super8Template = [
@@ -221,117 +149,92 @@ function shuffleArray(list) {
 function optimizeCourts(schedule) {
   if (!schedule || schedule.length === 0) return schedule;
 
-  const courtUsage = {};
+  const usage = {};
 
-  function getPlayers(game) {
+  function players(game) {
     return [...(game.ids1 || []), ...(game.ids2 || [])];
   }
 
-  function getUsage(playerId, court) {
-    return courtUsage[playerId]?.[court] || 0;
+  function get(id, court) {
+    return usage[id]?.[court] || 0;
   }
 
-  function addUsage(playerId, court) {
-    if (!courtUsage[playerId]) courtUsage[playerId] = {};
-    courtUsage[playerId][court] = (courtUsage[playerId][court] || 0) + 1;
+  function add(id, court) {
+    if (!usage[id]) usage[id] = {};
+    usage[id][court] = (usage[id][court] || 0) + 1;
   }
 
-  function scoreGameOnCourt(game, court, courts) {
-    const players = getPlayers(game);
-    let score = 0;
+  function score(game, court, courts) {
+    let total = 0;
 
-    players.forEach((playerId) => {
-      const sameCourt = getUsage(playerId, court);
+    players(game).forEach((id) => {
+      const same = get(id, court);
+      total += same * 10000;
+      total += same * same * 3000;
 
-      score += sameCourt * 10000;
-      score += sameCourt * sameCourt * 3000;
+      const hasUnused = courts.some((c) => get(id, c) === 0);
+      if (hasUnused && same > 0) total += 5000;
 
-      const hasUnusedCourt = courts.some((c) => getUsage(playerId, c) === 0);
-
-      if (hasUnusedCourt && sameCourt > 0) {
-        score += 5000;
-      }
-
-      const usages = courts.map((c) => getUsage(playerId, c));
-      const max = Math.max(...usages);
-      const min = Math.min(...usages);
-
-      score += (max - min) * 500;
+      const values = courts.map((c) => get(id, c));
+      total += (Math.max(...values) - Math.min(...values)) * 500;
     });
 
-    return score;
+    return total;
   }
 
   return schedule.map((round, roundIndex) => {
-    const courts = round.map((_, index) => index + 1);
-
-    const rotatedGames = round.map((game, index) => ({
+    const courts = round.map((_, i) => i + 1);
+    const remaining = round.map((game, i) => ({
       ...game,
-      preferredCourt: ((index + roundIndex) % courts.length) + 1,
+      preferredCourt: ((i + roundIndex) % courts.length) + 1,
     }));
 
-    const remaining = [...rotatedGames];
-    const balancedRound = [];
+    const balanced = [];
 
     courts.forEach((court) => {
       let bestIndex = 0;
       let bestScore = Infinity;
 
-      remaining.forEach((game, index) => {
-        let score = scoreGameOnCourt(game, court, courts);
+      remaining.forEach((game, i) => {
+        let s = score(game, court, courts);
+        if (game.preferredCourt !== court) s += 100;
 
-        if (game.preferredCourt !== court) {
-          score += 100;
-        }
-
-        if (score < bestScore) {
-          bestScore = score;
-          bestIndex = index;
+        if (s < bestScore) {
+          bestScore = s;
+          bestIndex = i;
         }
       });
 
       const selected = remaining.splice(bestIndex, 1)[0];
+      const game = { ...selected, court };
+      delete game.preferredCourt;
 
-      const gameWithCourt = {
-        ...selected,
-        court,
-      };
-
-      delete gameWithCourt.preferredCourt;
-
-      getPlayers(gameWithCourt).forEach((playerId) => {
-        addUsage(playerId, court);
-      });
-
-      balancedRound.push(gameWithCourt);
+      players(game).forEach((id) => add(id, court));
+      balanced.push(game);
     });
 
-    return balancedRound.sort((a, b) => a.court - b.court);
+    return balanced.sort((a, b) => a.court - b.court);
   });
 }
 
 function NoticeModal({ notice, onClose }) {
   if (!notice) return null;
 
-  const icon =
-    {
-      success: "✅",
-      error: "⚠️",
-      info: "ℹ️",
-      warning: "⚠️",
-    }[notice.type || "info"] || "ℹ️";
+  const icon = {
+    success: "✅",
+    error: "⚠️",
+    info: "ℹ️",
+    warning: "⚠️",
+  }[notice.type || "info"];
 
   return (
     <div className="confirmOverlay">
       <div className={`confirmBox noticeBox ${notice.type || "info"}`}>
         <div className="confirmIcon">{icon}</div>
-
         <h2>{notice.title}</h2>
-
         <p>{notice.message}</p>
-
         <div className="confirmActions">
-          <button onClick={onClose}>Entendi</button>
+          <button type="button" onClick={onClose}>Entendi</button>
         </div>
       </div>
     </div>
@@ -345,22 +248,14 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
     <div className="confirmOverlay">
       <div className="confirmBox">
         <div className="confirmIcon">⚠️</div>
-
         <h2>Excluir torneio?</h2>
-
         <p>
           Você está prestes a excluir <strong>{target.name}</strong>. Essa ação
           removerá o torneio e seus dados salvos.
         </p>
-
         <div className="confirmActions">
-          <button className="secondaryBtn" onClick={onCancel}>
-            Cancelar
-          </button>
-
-          <button className="deleteBtn" onClick={onConfirm}>
-            Sim, excluir
-          </button>
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, excluir</button>
         </div>
       </div>
     </div>
@@ -374,22 +269,14 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
     <div className="confirmOverlay">
       <div className="confirmBox">
         <div className="confirmIcon">🧹</div>
-
         <h2>Apagar placares?</h2>
-
         <p>
-          Todos os placares preenchidos deste campeonato serão apagados. A
-          tabela e os participantes serão mantidos.
+          Todos os placares preenchidos deste campeonato serão apagados. A tabela
+          e os participantes serão mantidos.
         </p>
-
         <div className="confirmActions">
-          <button className="secondaryBtn" onClick={onCancel}>
-            Cancelar
-          </button>
-
-          <button className="deleteBtn" onClick={onConfirm}>
-            Sim, apagar
-          </button>
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
         </div>
       </div>
     </div>
@@ -400,23 +287,17 @@ function PlanCard({ title, tag, badge, price, text, items }) {
   return (
     <div className="planCard">
       {badge && <div className="planBadge">{badge}</div>}
-
       <div className="planTop">
         <h3>{title}</h3>
         <span>{tag}</span>
       </div>
-
       <div className="planPrice">
         <strong>{price}</strong>
         <small>/mês</small>
       </div>
-
       <p className="planDesc">{text}</p>
-
       <ul>
-        {items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
+        {items.map((item) => <li key={item}>{item}</li>)}
       </ul>
     </div>
   );
@@ -455,7 +336,6 @@ function App() {
   useEffect(() => {
     async function init() {
       const { data } = await supabase.auth.getSession();
-
       setSession(data.session);
 
       if (data.session?.user?.id) {
@@ -483,7 +363,6 @@ function App() {
   }, []);
 
   if (loading) return <div className="center">Carregando...</div>;
-
   if (!session) return <Login />;
 
   if (!profile) {
@@ -491,7 +370,7 @@ function App() {
       <div className="center">
         <h1>Torneio Fácil BT</h1>
         <p>Perfil não encontrado.</p>
-        <button onClick={logout}>Sair</button>
+        <button type="button" onClick={logout}>Sair</button>
       </div>
     );
   }
@@ -521,20 +400,12 @@ function Login() {
     e.preventDefault();
 
     if (!email.trim()) {
-      showNotice(
-        "warning",
-        "E-mail obrigatório",
-        "Informe seu e-mail para continuar."
-      );
+      showNotice("warning", "E-mail obrigatório", "Informe seu e-mail para continuar.");
       return;
     }
 
     if (!password.trim()) {
-      showNotice(
-        "warning",
-        "Senha obrigatória",
-        "Digite sua senha para continuar."
-      );
+      showNotice("warning", "Senha obrigatória", "Digite sua senha para continuar.");
       return;
     }
 
@@ -553,22 +424,14 @@ function Login() {
       }
     } else {
       if (!name.trim()) {
-        showNotice(
-          "warning",
-          "Nome obrigatório",
-          "Informe seu nome para criar a conta."
-        );
+        showNotice("warning", "Nome obrigatório", "Informe seu nome para criar a conta.");
         return;
       }
 
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: {
-          data: {
-            name: name.trim(),
-          },
-        },
+        options: { data: { name: name.trim() } },
       });
 
       if (error) {
@@ -599,48 +462,28 @@ function Login() {
       <div className="loginLayout">
         <div className="loginCard">
           <div className="logo">🏆</div>
-
           <h1>Torneio Fácil BT</h1>
-
-          <p>
-            {mode === "login"
-              ? "Entre para acessar seus torneios."
-              : "Crie sua conta para solicitar acesso."}
-          </p>
+          <p>{mode === "login" ? "Entre para acessar seus torneios." : "Crie sua conta para solicitar acesso."}</p>
 
           <form onSubmit={handleSubmit}>
             {mode === "signup" && (
               <>
                 <label>Nome</label>
-                <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome"
-                />
+                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
               </>
             )}
 
             <label>E-mail</label>
-            <input
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="seuemail@exemplo.com"
-            />
+            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" />
 
             <label>Senha</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Digite sua senha"
-            />
+            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Digite sua senha" />
 
-            <button type="submit">
-              {mode === "login" ? "Entrar" : "Criar conta"}
-            </button>
+            <button type="submit">{mode === "login" ? "Entrar" : "Criar conta"}</button>
           </form>
 
           <button
+            type="button"
             className="linkBtn"
             onClick={() => {
               setMode(mode === "login" ? "signup" : "login");
@@ -656,35 +499,15 @@ function Login() {
         <div className="loginInfoPanel">
           <div className="loginHeroInfo">
             <span>Conheça os planos</span>
-
             <h2>Escolha o melhor formato para seus torneios</h2>
-
-            <p>
-              Veja os planos e modalidades disponíveis sem poluir a tela de
-              login. Clique nas abas abaixo para expandir os detalhes.
-            </p>
+            <p>Veja os planos e modalidades disponíveis sem poluir a tela de login. Clique nas abas abaixo para expandir os detalhes.</p>
           </div>
 
           <div className="infoTabs">
-            <button
-              type="button"
-              className={openInfoTab === "plans" ? "active" : ""}
-              onClick={() =>
-                setOpenInfoTab(openInfoTab === "plans" ? null : "plans")
-              }
-            >
+            <button type="button" className={openInfoTab === "plans" ? "active" : ""} onClick={() => setOpenInfoTab(openInfoTab === "plans" ? null : "plans")}>
               Planos
             </button>
-
-            <button
-              type="button"
-              className={openInfoTab === "modalities" ? "active" : ""}
-              onClick={() =>
-                setOpenInfoTab(
-                  openInfoTab === "modalities" ? null : "modalities"
-                )
-              }
-            >
+            <button type="button" className={openInfoTab === "modalities" ? "active" : ""} onClick={() => setOpenInfoTab(openInfoTab === "modalities" ? null : "modalities")}>
               Modalidades
             </button>
           </div>
@@ -692,48 +515,9 @@ function Login() {
           {openInfoTab === "plans" && (
             <div className="accordionContent">
               <div className="plansGrid">
-                <PlanCard
-                  title="Basic"
-                  tag="Entrada"
-                  price="R$ 19,90"
-                  text="Para começar com torneios mistos e Super 08."
-                  items={[
-                    "Super 08",
-                    "Super 12 Mista (Dupla Aleatória)",
-                    "Super 16 Mista (Dupla Aleatória)",
-                    "1 campeonato ativo por vez",
-                    "Sorteio e ranking automático",
-                  ]}
-                />
-
-                <PlanCard
-                  title="Pro"
-                  tag="Organizador"
-                  badge="Mais usado"
-                  price="R$ 39,90"
-                  text="Para organizadores que precisam de duplas fixas."
-                  items={[
-                    "Tudo do Basic",
-                    "Super 12 Mista (Dupla Fixa)",
-                    "Super 16 Mista (Dupla Fixa)",
-                    "Campeonatos ilimitados",
-                    "Histórico salvo",
-                  ]}
-                />
-
-                <PlanCard
-                  title="Premium"
-                  tag="Completo"
-                  price="R$ 59,90"
-                  text="Libera todos os formatos disponíveis."
-                  items={[
-                    "Tudo do Pro",
-                    "Simples 8",
-                    "Todos os formatos liberados",
-                    "Campeonatos ilimitados",
-                    "Ideal para clubes e arenas",
-                  ]}
-                />
+                <PlanCard title="Basic" tag="Entrada" price="R$ 19,90" text="Para começar com torneios mistos e Super 08." items={["Super 08", "Super 12 Mista (Dupla Aleatória)", "Super 16 Mista (Dupla Aleatória)", "1 campeonato ativo por vez", "Sorteio e ranking automático"]} />
+                <PlanCard title="Pro" tag="Organizador" badge="Mais usado" price="R$ 39,90" text="Para organizadores que precisam de duplas fixas." items={["Tudo do Basic", "Super 12 Mista (Dupla Fixa)", "Super 16 Mista (Dupla Fixa)", "Campeonatos ilimitados", "Histórico salvo"]} />
+                <PlanCard title="Premium" tag="Completo" price="R$ 59,90" text="Libera todos os formatos disponíveis." items={["Tudo do Pro", "Simples 8", "Todos os formatos liberados", "Campeonatos ilimitados", "Ideal para clubes e arenas"]} />
               </div>
             </div>
           )}
@@ -741,47 +525,19 @@ function Login() {
           {openInfoTab === "modalities" && (
             <div className="accordionContent">
               <div className="modalitiesGrid">
-                <Info
-                  title="Super 08"
-                  text="8 participantes, duplas variáveis e ranking individual."
-                />
-
-                <Info
-                  title="Super 12 Mista (Dupla Aleatória)"
-                  text="6 homens e 6 mulheres. As duplas mudam conforme a numeração sorteada."
-                />
-
-                <Info
-                  title="Super 16 Mista (Dupla Aleatória)"
-                  text="8 homens e 8 mulheres com duplas alternadas por rodada."
-                />
-
-                <Info
-                  title="Super 12 Mista (Dupla Fixa)"
-                  text="6 duplas fixas jogando entre si em 5 rodadas."
-                />
-
-                <Info
-                  title="Super 16 Mista (Dupla Fixa)"
-                  text="8 duplas fixas no formato todos contra todos."
-                />
-
-                <Info
-                  title="Simples 8"
-                  text="8 jogadores em disputa individual com ranking geral."
-                />
+                <Info title="Super 08" text="8 participantes, duplas variáveis e ranking individual." />
+                <Info title="Super 12 Mista (Dupla Aleatória)" text="6 homens e 6 mulheres. As duplas mudam conforme a numeração sorteada." />
+                <Info title="Super 16 Mista (Dupla Aleatória)" text="8 homens e 8 mulheres com duplas alternadas por rodada." />
+                <Info title="Super 12 Mista (Dupla Fixa)" text="6 duplas fixas jogando entre si em 5 rodadas." />
+                <Info title="Super 16 Mista (Dupla Fixa)" text="8 duplas fixas no formato todos contra todos." />
+                <Info title="Simples 8" text="8 jogadores em disputa individual com ranking geral." />
               </div>
             </div>
           )}
 
           <div className="learnMoreBox">
             <strong>Quer saber qual plano escolher?</strong>
-
-            <p>
-              Para testes rápidos, use o Basic. Para torneios recorrentes e
-              duplas fixas, escolha o Pro. Para liberar todos os formatos, use o
-              Premium.
-            </p>
+            <p>Para testes rápidos, use o Basic. Para torneios recorrentes e duplas fixas, escolha o Pro. Para liberar todos os formatos, use o Premium.</p>
           </div>
         </div>
       </div>
@@ -793,26 +549,16 @@ function Blocked({ profile }) {
   return (
     <div className="center">
       <h1>Acesso bloqueado</h1>
-
       <p>Seu acesso está pendente, bloqueado ou vencido.</p>
 
       <div className="infoBox">
-        <p>
-          <strong>Plano:</strong> {profile.plan}
-        </p>
-
-        <p>
-          <strong>Status:</strong> {profile.status}
-        </p>
-
-        <p>
-          <strong>Vencimento:</strong> {profile.expires_at || "não definido"}
-        </p>
+        <p><strong>Plano:</strong> {profile.plan}</p>
+        <p><strong>Status:</strong> {profile.status}</p>
+        <p><strong>Vencimento:</strong> {profile.expires_at || "não definido"}</p>
       </div>
 
       <p>Entre em contato para regularizar seu acesso.</p>
-
-      <button onClick={logout}>Sair</button>
+      <button type="button" onClick={logout}>Sair</button>
     </div>
   );
 }
@@ -832,10 +578,6 @@ function Dashboard({ profile, user }) {
     setNotice({ type, title, message });
   }
 
-  useEffect(() => {
-    loadTournaments();
-  }, []);
-
   async function loadTournaments() {
     const { data, error } = await supabase
       .from("tournaments")
@@ -844,11 +586,7 @@ function Dashboard({ profile, user }) {
       .order("created_at", { ascending: false });
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao carregar",
-        "Não foi possível carregar seus torneios."
-      );
+      showNotice("error", "Erro ao carregar", "Não foi possível carregar seus torneios.");
       console.error(error);
       return;
     }
@@ -856,31 +594,23 @@ function Dashboard({ profile, user }) {
     setTournaments(data || []);
   }
 
+  useEffect(() => {
+    loadTournaments();
+  }, []);
+
   async function createTournament() {
     if (!newName.trim()) {
-      showNotice(
-        "warning",
-        "Nome obrigatório",
-        "Digite um nome para este torneio."
-      );
+      showNotice("warning", "Nome obrigatório", "Digite um nome para este torneio.");
       return;
     }
 
     if (!allowedTypes.includes(newType)) {
-      showNotice(
-        "warning",
-        "Modalidade não liberada",
-        "Seu plano não permite essa modalidade."
-      );
+      showNotice("warning", "Modalidade não liberada", "Seu plano não permite essa modalidade.");
       return;
     }
 
     if (profile.plan === "basic" && tournaments.length >= 1) {
-      showNotice(
-        "warning",
-        "Limite do plano básico",
-        "O plano Basic permite apenas 1 campeonato por vez."
-      );
+      showNotice("warning", "Limite do plano básico", "O plano Basic permite apenas 1 campeonato por vez.");
       return;
     }
 
@@ -900,19 +630,13 @@ function Dashboard({ profile, user }) {
     setSaving(false);
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao criar torneio",
-        "Tente novamente em alguns instantes."
-      );
+      showNotice("error", "Erro ao criar torneio", "Tente novamente em alguns instantes.");
       console.error(error);
       return;
     }
 
     setNewName("");
-
     await loadTournaments();
-
     showNotice("success", "Torneio criado", "O torneio foi criado com sucesso.");
   }
 
@@ -926,19 +650,13 @@ function Dashboard({ profile, user }) {
       .eq("user_id", user.id);
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao excluir",
-        "Não foi possível excluir este torneio."
-      );
+      showNotice("error", "Erro ao excluir", "Não foi possível excluir este torneio.");
       console.error(error);
       return;
     }
 
     setDeleteTarget(null);
-
     await loadTournaments();
-
     showNotice("success", "Torneio excluído", "O torneio foi removido.");
   }
 
@@ -951,11 +669,7 @@ function Dashboard({ profile, user }) {
       .single();
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao abrir",
-        "Não foi possível abrir este torneio."
-      );
+      showNotice("error", "Erro ao abrir", "Não foi possível abrir este torneio.");
       console.error(error);
       return;
     }
@@ -974,21 +688,12 @@ function Dashboard({ profile, user }) {
       .eq("user_id", user.id);
 
     if (error) {
-      showNotice(
-        "error",
-        "Erro ao salvar",
-        "Não foi possível salvar as alterações."
-      );
       console.error(error);
       return false;
     }
 
     setSelected(updated);
-
-    setTournaments((prev) =>
-      prev.map((t) => (t.id === updated.id ? updated : t))
-    );
-
+    setTournaments((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     return true;
   }
 
@@ -1005,79 +710,47 @@ function Dashboard({ profile, user }) {
   return (
     <div className="appPage">
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
-
-      <ConfirmModal
-        target={deleteTarget}
-        onCancel={() => setDeleteTarget(null)}
-        onConfirm={confirmDeleteTournament}
-      />
+      <ConfirmModal target={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDeleteTournament} />
 
       <header>
         <div>
           <h1>Torneio Fácil BT</h1>
           <p>Dashboard profissional com login real.</p>
         </div>
-
-        <button onClick={logout}>Sair</button>
+        <button type="button" onClick={logout}>Sair</button>
       </header>
 
       <section className="card">
         <h2>Meu plano</h2>
-
-        <p>
-          <strong>Plano:</strong> {profile.plan}
-        </p>
-
-        <p>
-          <strong>Status:</strong> {profile.status}
-        </p>
-
-        <p>
-          <strong>Vencimento:</strong> {profile.expires_at}
-        </p>
+        <p><strong>Plano:</strong> {profile.plan}</p>
+        <p><strong>Status:</strong> {profile.status}</p>
+        <p><strong>Vencimento:</strong> {profile.expires_at}</p>
       </section>
 
       <section className="card">
         <h2>Modalidades liberadas</h2>
-
         <div className="grid">
-          {allowedTypes.map((item) => (
-            <div className="modality" key={item}>
-              🏆 {item}
-            </div>
-          ))}
+          {allowedTypes.map((item) => <div className="modality" key={item}>🏆 {item}</div>)}
         </div>
       </section>
 
       <section className="card">
         <h2>Criar novo torneio</h2>
-
         <label>Nome do torneio</label>
-
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="Ex: Torneio de sábado"
-        />
+        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex: Torneio de sábado" />
 
         <label>Modalidade</label>
-
         <select value={newType} onChange={(e) => setNewType(e.target.value)}>
-          {allowedTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
+          {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
         </select>
 
-        <button onClick={createTournament} disabled={saving}>
+        <button type="button" onClick={createTournament} disabled={saving}>
           {saving ? "Salvando..." : "Criar torneio"}
         </button>
       </section>
 
       <section className="card">
         <h2>Meus torneios</h2>
-
         {tournaments.length === 0 ? (
           <p>Nenhum torneio criado ainda.</p>
         ) : (
@@ -1088,16 +761,9 @@ function Dashboard({ profile, user }) {
                   <strong>{t.name}</strong>
                   <span>{t.type}</span>
                 </div>
-
                 <div className="actions">
-                  <button onClick={() => openTournament(t)}>Abrir</button>
-
-                  <button
-                    className="deleteBtn"
-                    onClick={() => setDeleteTarget(t)}
-                  >
-                    Excluir
-                  </button>
+                  <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+                  <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                 </div>
               </div>
             ))}
@@ -1109,40 +775,33 @@ function Dashboard({ profile, user }) {
 }
 
 function createInitialData(type, config) {
+  const base = { rankingCriteria: defaultRankingCriteria, schedule: [] };
+
   if (config.type === "mixed12" || config.type === "mixed16") {
     return {
-      rankingCriteria: defaultRankingCriteria,
+      ...base,
       players: {
         men: Array.from({ length: config.men }, (_, i) => `Homem ${i + 1}`),
-        women: Array.from(
-          { length: config.women },
-          (_, i) => `Mulher ${i + 1}`
-        ),
+        women: Array.from({ length: config.women }, (_, i) => `Mulher ${i + 1}`),
       },
-      schedule: [],
     };
   }
 
   if (config.type === "fixed12" || config.type === "fixed16") {
     return {
-      rankingCriteria: defaultRankingCriteria,
+      ...base,
       players: {
         teams: Array.from({ length: config.teams }, (_, i) => ({
           a: `Atleta 1 da dupla ${i + 1}`,
           b: `Atleta 2 da dupla ${i + 1}`,
         })),
       },
-      schedule: [],
     };
   }
 
   return {
-    rankingCriteria: defaultRankingCriteria,
-    players: Array.from(
-      { length: config.total },
-      (_, i) => `${config.label} ${i + 1}`
-    ),
-    schedule: [],
+    ...base,
+    players: Array.from({ length: config.total }, (_, i) => `${config.label} ${i + 1}`),
   };
 }
 
@@ -1154,9 +813,7 @@ function getShuffleNames(data, config) {
   }
 
   if (config.type === "fixed12" || config.type === "fixed16") {
-    return data.players.teams.map(
-      (team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`
-    );
+    return data.players.teams.map((team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`);
   }
 
   return data.players || [];
@@ -1164,11 +821,7 @@ function getShuffleNames(data, config) {
 
 function TournamentScreen({ tournament, onBack, onSave }) {
   const config = modalityConfig[tournament.type];
-
-  const [data, setData] = useState(
-    tournament.data || createInitialData(tournament.type, config)
-  );
-
+  const [data, setData] = useState(tournament.data || createInitialData(tournament.type, config));
   const [savingStatus, setSavingStatus] = useState("Salvo");
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -1176,7 +829,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
   const saveTimerRef = useRef(null);
   const latestDataRef = useRef(data);
-  const mountedRef = useRef(false);
+  const firstRenderRef = useRef(true);
 
   const ranking = useMemo(
     () => calculateRanking(data, tournament.type, data.rankingCriteria),
@@ -1188,66 +841,43 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   }, [data]);
 
   useEffect(() => {
-    mountedRef.current = true;
-
-    return () => {
-      mountedRef.current = false;
-
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-      }
-
-      onSave({ ...tournament, data: latestDataRef.current });
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mountedRef.current) return;
+    if (firstRenderRef.current) {
+      firstRenderRef.current = false;
+      return;
+    }
 
     setSavingStatus("Salvando...");
 
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
+    if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
     saveTimerRef.current = setTimeout(async () => {
       const ok = await onSave({ ...tournament, data: latestDataRef.current });
-
       setSavingStatus(ok ? "Salvo automaticamente" : "Erro ao salvar");
-    }, 650);
+    }, 500);
 
     return () => {
-      if (saveTimerRef.current) {
-        clearTimeout(saveTimerRef.current);
-      }
+      if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [data]);
 
-function handleBack() {
-  onBack();
-}
+  function handleBack() {
+    onBack();
+  }
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
   }
 
   function updateRankingCriteria(value) {
-    const copy = structuredClone(data);
-    copy.rankingCriteria = value;
-    setData(copy);
+    setData((prev) => ({ ...prev, rankingCriteria: value }));
   }
 
   function updatePlayer(path, value) {
     const copy = structuredClone(data);
-
     if (path.kind === "normal") copy.players[path.index] = value;
     if (path.kind === "men") copy.players.men[path.index] = value;
     if (path.kind === "women") copy.players.women[path.index] = value;
-
-    if (path.kind === "team") {
-      copy.players.teams[path.index][path.field] = value;
-    }
-
+    if (path.kind === "team") copy.players.teams[path.index][path.field] = value;
     setData(copy);
   }
 
@@ -1264,39 +894,28 @@ function handleBack() {
     }
 
     copy.schedule = [];
-
     setData(copy);
     setShuffleOverlay(null);
   }
 
   function shuffleNames() {
     const names = getShuffleNames(data, config);
-
-    if (names.length === 0) {
-      showNotice(
-        "warning",
-        "Sem participantes",
-        "Adicione os nomes antes do sorteio."
-      );
+    if (!names.length) {
+      showNotice("warning", "Sem participantes", "Adicione os nomes antes do sorteio.");
       return;
     }
 
     let seconds = 10;
     let animationNames = shuffleArray(names);
-
     setShuffleOverlay({ seconds, names: animationNames });
 
     const interval = setInterval(() => {
       animationNames = shuffleArray(names);
-
-      setShuffleOverlay((prev) =>
-        prev ? { ...prev, names: animationNames } : null
-      );
+      setShuffleOverlay((prev) => (prev ? { ...prev, names: animationNames } : null));
     }, 250);
 
     const countdown = setInterval(() => {
       seconds -= 1;
-
       setShuffleOverlay((prev) => (prev ? { ...prev, seconds } : null));
 
       if (seconds <= 0) {
@@ -1309,52 +928,30 @@ function handleBack() {
 
   function generate() {
     const schedule = generateSchedule(tournament.type, data.players);
-
     setData({ ...data, schedule });
-
     showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
   }
 
   function updateScore(roundIndex, gameIndex, field, value) {
     const copy = structuredClone(data);
-
     copy.schedule[roundIndex][gameIndex][field] = value;
-
     setData(copy);
   }
 
   function clearScores() {
     const copy = structuredClone(data);
-
-    if (copy.schedule && copy.schedule.length > 0) {
-      copy.schedule = copy.schedule.map((round) =>
-        round.map((game) => ({
-          ...game,
-          s1: "",
-          s2: "",
-        }))
-      );
-    }
-
+    copy.schedule = (copy.schedule || []).map((round) =>
+      round.map((game) => ({ ...game, s1: "", s2: "" }))
+    );
     setData(copy);
     setClearScoresOpen(false);
-
-    showNotice(
-      "success",
-      "Placares apagados",
-      "Todos os placares deste campeonato foram removidos."
-    );
+    showNotice("success", "Placares apagados", "Todos os placares foram removidos.");
   }
 
   return (
     <>
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
-
-      <ConfirmClearScoresModal
-        open={clearScoresOpen}
-        onCancel={() => setClearScoresOpen(false)}
-        onConfirm={clearScores}
-      />
+      <ConfirmClearScoresModal open={clearScoresOpen} onCancel={() => setClearScoresOpen(false)} onConfirm={clearScores} />
 
       {shuffleOverlay && (
         <div className="shuffleOverlay">
@@ -1364,7 +961,6 @@ function handleBack() {
                 <h2>Sorteando nomes...</h2>
                 <p>Os participantes estão sendo embaralhados.</p>
               </div>
-
               <div className="shuffleTimer">{shuffleOverlay.seconds}s</div>
             </div>
 
@@ -1385,11 +981,7 @@ function handleBack() {
             </div>
 
             <div className="shuffleProgress">
-              <div
-                style={{
-                  width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%`,
-                }}
-              />
+              <div style={{ width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%` }} />
             </div>
           </div>
         </div>
@@ -1399,15 +991,10 @@ function handleBack() {
         <header>
           <div>
             <h1>{tournament.name}</h1>
-            <p>
-              {tournament.type} · {savingStatus}
-            </p>
+            <p>{tournament.type} · {savingStatus}</p>
           </div>
-
           <div className="actions">
-            <button type="button" onClick={handleBack}>
-  Voltar
-</button>
+            <button type="button" onClick={handleBack}>Voltar</button>
           </div>
         </header>
 
@@ -1416,28 +1003,18 @@ function handleBack() {
 
           <div className="rankingCriteriaBox">
             <label>Critério do ranking</label>
-
-            <select
-              value={data.rankingCriteria || defaultRankingCriteria}
-              onChange={(e) => updateRankingCriteria(e.target.value)}
-            >
+            <select value={data.rankingCriteria || defaultRankingCriteria} onChange={(e) => updateRankingCriteria(e.target.value)}>
               {rankingCriteriaOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
+                <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
           </div>
 
-          <PlayerInputs
-            type={tournament.type}
-            data={data}
-            updatePlayer={updatePlayer}
-          />
+          <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} />
 
           <div className="actions">
-            <button onClick={shuffleNames}>Sortear nomes</button>
-            <button onClick={generate}>Gerar tabela</button>
+            <button type="button" onClick={shuffleNames}>Sortear nomes</button>
+            <button type="button" onClick={generate}>Gerar tabela</button>
           </div>
         </section>
 
@@ -1448,16 +1025,9 @@ function handleBack() {
             <p>Clique em “Gerar tabela” para montar os jogos.</p>
           ) : (
             <>
-              <ScheduleView
-                schedule={data.schedule}
-                updateScore={updateScore}
-              />
-
+              <ScheduleView schedule={data.schedule} updateScore={updateScore} />
               <div className="actions">
-                <button
-                  className="deleteBtn"
-                  onClick={() => setClearScoresOpen(true)}
-                >
+                <button type="button" className="deleteBtn" onClick={() => setClearScoresOpen(true)}>
                   Apagar placares
                 </button>
               </div>
@@ -1467,12 +1037,7 @@ function handleBack() {
 
         <section className="card">
           <h2>Ranking</h2>
-
-          <RankingView
-            ranking={ranking}
-            type={tournament.type}
-            rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-          />
+          <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
         </section>
       </div>
     </>
@@ -1487,34 +1052,20 @@ function PlayerInputs({ type, data, updatePlayer }) {
       <div className="twoCols">
         <div>
           <h3>Homens</h3>
-
           {data.players.men.map((name, i) => (
             <div className="numberedInput" key={i}>
               <span>{i + 1}</span>
-
-              <input
-                value={name}
-                onChange={(e) =>
-                  updatePlayer({ kind: "men", index: i }, e.target.value)
-                }
-              />
+              <input value={name} onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)} />
             </div>
           ))}
         </div>
 
         <div>
           <h3>Mulheres</h3>
-
           {data.players.women.map((name, i) => (
             <div className="numberedInput" key={i}>
               <span>{config.men + i + 1}</span>
-
-              <input
-                value={name}
-                onChange={(e) =>
-                  updatePlayer({ kind: "women", index: i }, e.target.value)
-                }
-              />
+              <input value={name} onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)} />
             </div>
           ))}
         </div>
@@ -1528,30 +1079,11 @@ function PlayerInputs({ type, data, updatePlayer }) {
         {data.players.teams.map((team, i) => (
           <div key={i} className="miniCard">
             <h3>Dupla {i + 1}</h3>
-
             <div className="numberedInput">
               <span>{i + 1}</span>
-
-              <input
-                value={team.a}
-                onChange={(e) =>
-                  updatePlayer(
-                    { kind: "team", index: i, field: "a" },
-                    e.target.value
-                  )
-                }
-              />
+              <input value={team.a} onChange={(e) => updatePlayer({ kind: "team", index: i, field: "a" }, e.target.value)} />
             </div>
-
-            <input
-              value={team.b}
-              onChange={(e) =>
-                updatePlayer(
-                  { kind: "team", index: i, field: "b" },
-                  e.target.value
-                )
-              }
-            />
+            <input value={team.b} onChange={(e) => updatePlayer({ kind: "team", index: i, field: "b" }, e.target.value)} />
           </div>
         ))}
       </div>
@@ -1563,13 +1095,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
       {data.players.map((name, i) => (
         <div className="numberedInput" key={i}>
           <span>{i + 1}</span>
-
-          <input
-            value={name}
-            onChange={(e) =>
-              updatePlayer({ kind: "normal", index: i }, e.target.value)
-            }
-          />
+          <input value={name} onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)} />
         </div>
       ))}
     </div>
@@ -1581,7 +1107,6 @@ function buildFromPairTemplate(template, players) {
     round.map((game, index) => {
       const [a, b] = game[0];
       const [c, d] = game[1];
-
       return {
         court: index + 1,
         team1: [players[a - 1], players[b - 1]],
@@ -1602,7 +1127,6 @@ function buildFromMixedTemplate(template, players) {
 
   function getName(num) {
     if (num <= menCount) return men[num - 1];
-
     return women[num - menCount - 1];
   }
 
@@ -1613,7 +1137,6 @@ function buildFromMixedTemplate(template, players) {
   return template.map((round) =>
     round.map((game, index) => {
       const [a, b, c, d] = game;
-
       return {
         court: index + 1,
         team1: [getName(a), getName(b)],
@@ -1635,20 +1158,15 @@ function generateSchedule(type, players) {
   }
 
   if (config.type === "mixed12") {
-    return optimizeCourts(
-      buildFromMixedTemplate(super12MixedTemplate, players)
-    );
+    return optimizeCourts(buildFromMixedTemplate(super12MixedTemplate, players));
   }
 
   if (config.type === "mixed16") {
-    return optimizeCourts(
-      buildFromMixedTemplate(super16MixedTemplate, players)
-    );
+    return optimizeCourts(buildFromMixedTemplate(super16MixedTemplate, players));
   }
 
   if (config.type === "fixed12") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
-
     const schedule = fixed12Template.map((round) =>
       round.map((game, index) => ({
         court: index + 1,
@@ -1660,13 +1178,11 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
-
     return optimizeCourts(schedule);
   }
 
   if (config.type === "fixed16") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
-
     const schedule = berger(8).map((round) =>
       round.map((game, index) => ({
         court: index + 1,
@@ -1678,7 +1194,6 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
-
     return optimizeCourts(schedule);
   }
 
@@ -1694,7 +1209,6 @@ function generateSchedule(type, players) {
         s2: "",
       }))
     );
-
     return optimizeCourts(schedule);
   }
 
@@ -1719,23 +1233,9 @@ function ScheduleView({ schedule, updateScore }) {
               </div>
 
               <div className="scoreRow">
-                <input
-                  type="number"
-                  value={game.s1}
-                  onChange={(e) =>
-                    updateScore(roundIndex, gameIndex, "s1", e.target.value)
-                  }
-                />
-
+                <input type="number" value={game.s1} onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)} />
                 <span>—</span>
-
-                <input
-                  type="number"
-                  value={game.s2}
-                  onChange={(e) =>
-                    updateScore(roundIndex, gameIndex, "s2", e.target.value)
-                  }
-                />
+                <input type="number" value={game.s2} onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)} />
               </div>
             </div>
           ))}
@@ -1745,13 +1245,8 @@ function ScheduleView({ schedule, updateScore }) {
   );
 }
 
-function calculateRanking(
-  data,
-  type,
-  rankingCriteriaValue = defaultRankingCriteria
-) {
+function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCriteria) {
   const config = modalityConfig[type];
-
   if (!data.players) return [];
 
   let names = [];
@@ -1764,27 +1259,13 @@ function calculateRanking(
     names = data.players;
   }
 
-  const table = names.map((name, id) => ({
-    id,
-    name,
-    pts: 0,
-    w: 0,
-    bal: 0,
-    played: 0,
-  }));
+  const table = names.map((name, id) => ({ id, name, pts: 0, w: 0, bal: 0, played: 0 }));
 
   (data.schedule || []).flat().forEach((game) => {
     const s1 = Number(game.s1);
     const s2 = Number(game.s2);
 
-    if (
-      game.s1 === "" ||
-      game.s2 === "" ||
-      Number.isNaN(s1) ||
-      Number.isNaN(s2)
-    ) {
-      return;
-    }
+    if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
 
     const win1 = s1 > s2;
     const win2 = s2 > s1;
@@ -1793,7 +1274,6 @@ function calculateRanking(
       table[id].pts += s1;
       table[id].bal += s1 - s2;
       table[id].played += 1;
-
       if (win1) table[id].w += 1;
     });
 
@@ -1801,7 +1281,6 @@ function calculateRanking(
       table[id].pts += s2;
       table[id].bal += s2 - s1;
       table[id].played += 1;
-
       if (win2) table[id].w += 1;
     });
   });
@@ -1811,10 +1290,8 @@ function calculateRanking(
   return table.sort((a, b) => {
     for (const key of criteria.order) {
       const diff = b[key] - a[key];
-
       if (diff !== 0) return diff;
     }
-
     return a.name.localeCompare(b.name);
   });
 }
@@ -1823,7 +1300,6 @@ function podium(i) {
   if (i === 0) return "🏆";
   if (i === 1) return "🥈";
   if (i === 2) return "🥉";
-
   return i + 1;
 }
 
@@ -1837,27 +1313,13 @@ function RankingView({ ranking, type, rankingCriteria }) {
 
     return (
       <div className="twoCols">
-        <RankingTable
-          title="Ranking Masculino"
-          rows={men}
-          rankingCriteria={rankingCriteria}
-        />
-        <RankingTable
-          title="Ranking Feminino"
-          rows={women}
-          rankingCriteria={rankingCriteria}
-        />
+        <RankingTable title="Ranking Masculino" rows={men} rankingCriteria={rankingCriteria} />
+        <RankingTable title="Ranking Feminino" rows={women} rankingCriteria={rankingCriteria} />
       </div>
     );
   }
 
-  return (
-    <RankingTable
-      title="Ranking Geral"
-      rows={ranking}
-      rankingCriteria={rankingCriteria}
-    />
-  );
+  return <RankingTable title="Ranking Geral" rows={ranking} rankingCriteria={rankingCriteria} />;
 }
 
 function RankingTable({ title, rows, rankingCriteria }) {
@@ -1866,17 +1328,12 @@ function RankingTable({ title, rows, rankingCriteria }) {
   return (
     <div>
       <h3>{title}</h3>
-
       <table>
         <thead>
           <tr>
             <th>#</th>
             <th>Nome</th>
-
-            {criteria.order.map((key) => (
-              <th key={key}>{getRankingColumnLabel(key)}</th>
-            ))}
-
+            {criteria.order.map((key) => <th key={key}>{getRankingColumnLabel(key)}</th>)}
             <th>Jogos</th>
           </tr>
         </thead>
@@ -1886,11 +1343,7 @@ function RankingTable({ title, rows, rankingCriteria }) {
             <tr key={p.id}>
               <td>{podium(i)}</td>
               <td>{p.name}</td>
-
-              {criteria.order.map((key) => (
-                <td key={key}>{p[key]}</td>
-              ))}
-
+              {criteria.order.map((key) => <td key={key}>{p[key]}</td>)}
               <td>{p.played}</td>
             </tr>
           ))}
