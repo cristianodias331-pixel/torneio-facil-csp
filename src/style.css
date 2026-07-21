@@ -1220,3 +1220,37 @@ tbody tr:hover {
   z-index: 60;
   pointer-events: auto;
 }
+
+/* Correções do salvamento automático e botão voltar */
+
+.rankingCriteriaBox {
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 18px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.06);
+}
+
+.rankingCriteriaBox label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 950;
+  color: #0f172a;
+}
+
+.rankingCriteriaBox select {
+  margin-bottom: 0;
+}
+
+.appPage header .actions {
+  position: relative;
+  z-index: 80;
+  pointer-events: auto;
+}
+
+.appPage header .actions button {
+  position: relative;
+  z-index: 90;
+  pointer-events: auto;
+}
