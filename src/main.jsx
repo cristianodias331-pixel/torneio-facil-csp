@@ -1223,19 +1223,15 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     };
   }, [data]);
 
-  async function handleBack() {
-    if (saveTimerRef.current) {
-      clearTimeout(saveTimerRef.current);
-    }
-
-    setSavingStatus("Salvando...");
-
-    await onSave({ ...tournament, data: latestDataRef.current });
-
-    setSavingStatus("Salvo automaticamente");
-
-    onBack();
+ function handleBack() {
+  if (saveTimerRef.current) {
+    clearTimeout(saveTimerRef.current);
   }
+
+  onSave({ ...tournament, data: latestDataRef.current });
+
+  onBack();
+}
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
