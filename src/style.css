@@ -1207,3 +1207,16 @@ tbody tr:hover {
 .rankingCriteriaBox select {
   margin-bottom: 0;
 }
+
+/* Correção botão Voltar dentro do torneio */
+
+.appPage header .actions {
+  position: relative;
+  z-index: 50;
+}
+
+.appPage header .actions button {
+  position: relative;
+  z-index: 60;
+  pointer-events: auto;
+}
