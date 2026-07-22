@@ -105,13 +105,15 @@ function getRankingColumnLabel(key) {
   return { w: "Vitórias", pts: "Pontos", bal: "Saldo" }[key] || key;
 }
 
-function normalizeScoreInput(value) {
+function normalizeScoreInput(value, winningScore = 4) {
   if (value === "") return "";
 
   const number = Number(value);
+  const maxScore = Number(winningScore || 4);
 
   if (Number.isNaN(number)) return "";
   if (number < 0) return "0";
+  if (number > maxScore) return String(maxScore);
 
   return String(Math.floor(number));
 }
@@ -2659,8 +2661,9 @@ function generateBrackets() {
 
 function updateScore(roundIndex, gameIndex, field, value) {
   const copy = structuredClone(data);
+  const winningScore = getWinningScore(copy);
 
-  copy.schedule[roundIndex][gameIndex][field] = normalizeScoreInput(value);
+  copy.schedule[roundIndex][gameIndex][field] = normalizeScoreInput(value, winningScore);
 
   if (isCupType(config)) {
     copy.brackets = [];
@@ -2687,11 +2690,13 @@ function updateBracketScore(matchKey, field, value) {
       return copy;
     }
 
-    copy.brackets = copy.brackets.map((game) =>
-      game.matchKey === matchKey
-        ? { ...game, [field]: normalizeScoreInput(value) }
-        : game
-    );
+  const winningScore = getWinningScore(copy);
+
+copy.brackets = copy.brackets.map((game) =>
+  game.matchKey === matchKey
+    ? { ...game, [field]: normalizeScoreInput(value, winningScore) }
+    : game
+);
 
     const existingScores = {};
 
@@ -2911,13 +2916,14 @@ return (
             <p>Clique em “Gerar tabela” para montar os jogos.</p>
           ) : (
             <>
-              <ScheduleView
-                schedule={data.schedule}
-                updateScore={updateScore}
-                showGroupName={isCupType(config)}
-                voiceRepeat={voiceRepeat}
-                setVoiceRepeat={setVoiceRepeat}
-              />
+             <ScheduleView
+  schedule={data.schedule}
+  updateScore={updateScore}
+  showGroupName={isCupType(config)}
+  voiceRepeat={voiceRepeat}
+  setVoiceRepeat={setVoiceRepeat}
+  winningScore={getWinningScore(data)}
+/>
 
               <div className="actions">
                 <button
@@ -2959,13 +2965,14 @@ return (
                 </p>
               ) : (
                 <>
-                  <CupBracketView
-                    groupedBrackets={currentBrackets}
-                    data={data}
-                    updateBracketScore={updateBracketScore}
-                    voiceRepeat={voiceRepeat}
-                    setVoiceRepeat={setVoiceRepeat}
-                  />
+                <CupBracketView
+  groupedBrackets={currentBrackets}
+  data={data}
+  updateBracketScore={updateBracketScore}
+  voiceRepeat={voiceRepeat}
+  setVoiceRepeat={setVoiceRepeat}
+  winningScore={getWinningScore(data)}
+/>
 
                   <CupPodiumView podium={mainCupPodium} />
 
@@ -3279,6 +3286,7 @@ function ScheduleView({
   showGroupName = false,
   voiceRepeat = 1,
   setVoiceRepeat,
+  winningScore = 4,
 }) {
   return (
     <div className="schedule">
@@ -3330,25 +3338,27 @@ function ScheduleView({
               </div>
 
               <div className="scoreRow">
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={game.s1}
-                  onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
-                />
+           <input
+  type="number"
+  min="0"
+ max={winningScore}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s1}
+  onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
+/>
 
                 <span>—</span>
 
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
-                  pattern="[0-9]*"
-                  value={game.s2}
-                  onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
-                />
+               <input
+  type="number"
+  min="0"
+  max={winningScore}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s2}
+  onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
+/>
               </div>
 
               <div className="voiceActions gameVoiceActions">
@@ -3572,6 +3582,7 @@ function CupBracketView({
   updateBracketScore,
   voiceRepeat = 1,
   setVoiceRepeat,
+  winningScore = 4,
 }) {
   return (
     <div>
@@ -3582,18 +3593,20 @@ function CupBracketView({
 
       <div className="cupBrackets">
         <BracketColumn
-          title={data.cupConfig?.mainBracketName || "Principal"}
-          rounds={groupedBrackets.main}
-          updateBracketScore={updateBracketScore}
-          voiceRepeat={voiceRepeat}
-        />
+  title={data.cupConfig?.mainBracketName || "Principal"}
+  rounds={groupedBrackets.main}
+  updateBracketScore={updateBracketScore}
+  voiceRepeat={voiceRepeat}
+  winningScore={winningScore}
+/>
 
         <BracketColumn
-          title={data.cupConfig?.repechageName || "Repescagem"}
-          rounds={groupedBrackets.repechage}
-          updateBracketScore={updateBracketScore}
-          voiceRepeat={voiceRepeat}
-        />
+  title={data.cupConfig?.repechageName || "Repescagem"}
+  rounds={groupedBrackets.repechage}
+  updateBracketScore={updateBracketScore}
+  voiceRepeat={voiceRepeat}
+  winningScore={winningScore}
+/>
       </div>
     </div>
   );
@@ -3604,6 +3617,7 @@ function BracketColumn({
   rounds,
   updateBracketScore,
   voiceRepeat = 1,
+  winningScore = 4,
 }) {
   return (
     <div className="bracketColumn">
@@ -3652,26 +3666,28 @@ function BracketColumn({
 
                 <div className="scoreRow">
                   <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={game.s1}
-                    onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
-                    disabled={blocked}
-                  />
+  type="number"
+  min="0"
+  max={winningScore}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s1}
+  onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
+  disabled={blocked}
+/>
 
                   <span>—</span>
 
-                  <input
-                    type="number"
-                    min="0"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    value={game.s2}
-                    onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
-                    disabled={blocked}
-                  />
+            <input
+  type="number"
+  min="0"
+  max={winningScore}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s2}
+  onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
+  disabled={blocked}
+/>
                 </div>
 
                 <div className="voiceActions gameVoiceActions">
