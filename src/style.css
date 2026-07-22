@@ -1418,3 +1418,482 @@ tbody tr:hover {
     width: 100%;
   }
 }
+
+.landingPage {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(34, 197, 94, 0.16), transparent 30%),
+    radial-gradient(circle at top right, rgba(59, 130, 246, 0.18), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #fff7ed 48%, #eff6ff 100%);
+  color: #0f172a;
+}
+
+.landingHeader {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 18px clamp(18px, 4vw, 56px);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+}
+
+.landingBrand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.landingBrand strong {
+  display: block;
+  font-size: 18px;
+  color: #0f172a;
+}
+
+.landingBrand span {
+  display: block;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.beachLogo {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+  box-shadow: 0 14px 28px rgba(14, 165, 233, 0.25);
+  flex: 0 0 auto;
+}
+
+.beachLogoSand {
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  bottom: -8px;
+  height: 24px;
+  background: #facc15;
+  border-radius: 50% 50% 0 0;
+}
+
+.beachLogoBall {
+  position: absolute;
+  right: 9px;
+  top: 8px;
+  width: 14px;
+  height: 14px;
+  color: #fef08a;
+  font-size: 22px;
+  line-height: 14px;
+}
+
+.beachLogoRacket {
+  position: absolute;
+  width: 15px;
+  height: 24px;
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+  transform: rotate(-32deg);
+}
+
+.beachLogoRacket::after {
+  content: "";
+  position: absolute;
+  width: 4px;
+  height: 16px;
+  background: #ffffff;
+  left: 50%;
+  bottom: -16px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+}
+
+.racketOne {
+  left: 14px;
+  top: 12px;
+}
+
+.racketTwo {
+  left: 24px;
+  top: 18px;
+  transform: rotate(28deg);
+  opacity: 0.9;
+}
+
+.landingNav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.landingNav a {
+  color: #334155;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.landingNav a:hover {
+  color: #2563eb;
+}
+
+.landingHeaderActions,
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.landingHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
+  gap: 40px;
+  align-items: center;
+  padding: 72px clamp(18px, 5vw, 70px) 56px;
+}
+
+.heroContent h1 {
+  margin: 18px 0 18px;
+  font-size: clamp(38px, 5.5vw, 72px);
+  line-height: 0.95;
+  letter-spacing: -0.06em;
+  color: #0f172a;
+}
+
+.heroContent p {
+  max-width: 680px;
+  color: #475569;
+  font-size: 18px;
+  line-height: 1.7;
+}
+
+.heroBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: #ecfeff;
+  border: 1px solid #bae6fd;
+  color: #0369a1;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.heroHighlights {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.heroHighlights span {
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.heroVisual {
+  min-height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sandCard {
+  position: relative;
+  width: min(100%, 460px);
+  min-height: 440px;
+  border-radius: 36px;
+  overflow: hidden;
+  padding: 30px;
+  background:
+    radial-gradient(circle at 85% 14%, #fde68a 0 36px, transparent 37px),
+    linear-gradient(180deg, #7dd3fc 0%, #bae6fd 40%, #fde68a 41%, #fbbf24 100%);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.22);
+}
+
+.sandSun {
+  position: absolute;
+  right: 34px;
+  top: 32px;
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: #fef3c7;
+  box-shadow: 0 0 0 14px rgba(254, 243, 199, 0.32);
+}
+
+.racketMark {
+  position: absolute;
+  left: 28px;
+  top: 28px;
+  width: 78px;
+  height: 78px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.74);
+  display: grid;
+  place-items: center;
+  font-size: 40px;
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+}
+
+.mockPanel {
+  position: absolute;
+  left: 28px;
+  right: 28px;
+  bottom: 28px;
+  padding: 18px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 22px 50px rgba(15, 23, 42, 0.18);
+}
+
+.mockTop {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.mockTop span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #cbd5e1;
+}
+
+.mockTitle {
+  font-weight: 900;
+  font-size: 20px;
+  margin-bottom: 12px;
+}
+
+.mockGame {
+  padding: 12px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 10px;
+}
+
+.mockGame strong {
+  color: #2563eb;
+}
+
+.mockGame p {
+  margin: 4px 0 0;
+  color: #334155;
+  font-size: 14px;
+}
+
+.mockVoiceBtn {
+  width: 100%;
+  margin-top: 4px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+}
+
+.landingSection {
+  padding: 58px clamp(18px, 5vw, 70px);
+}
+
+.sectionIntro {
+  max-width: 780px;
+  margin-bottom: 28px;
+}
+
+.sectionIntro span,
+.accessText span {
+  display: inline-block;
+  margin-bottom: 8px;
+  color: #2563eb;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
+.sectionIntro h2,
+.accessText h2 {
+  margin: 0;
+  font-size: clamp(28px, 4vw, 46px);
+  letter-spacing: -0.04em;
+  color: #0f172a;
+}
+
+.sectionIntro p,
+.accessText p {
+  color: #64748b;
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+.stepsGrid,
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.featuresGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.stepCard,
+.featureCard {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #e2e8f0;
+  border-radius: 24px;
+  padding: 22px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.07);
+}
+
+.stepCard div {
+  width: 38px;
+  height: 38px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: #2563eb;
+  color: #ffffff;
+  font-weight: 900;
+  margin-bottom: 14px;
+}
+
+.stepCard h3,
+.featureCard h3 {
+  margin: 0 0 8px;
+  color: #0f172a;
+}
+
+.stepCard p,
+.featureCard p {
+  color: #64748b;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.featureCard span {
+  display: inline-block;
+  font-size: 30px;
+  margin-bottom: 10px;
+}
+
+.landingPlans {
+  align-items: stretch;
+}
+
+.landingModalities {
+  align-items: start;
+}
+
+.landingAccessSection {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(320px, 0.75fr);
+  gap: 34px;
+  align-items: start;
+  padding: 66px clamp(18px, 5vw, 70px) 90px;
+}
+
+.accessCard {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #e2e8f0;
+  border-radius: 28px;
+  padding: 24px;
+  box-shadow: 0 25px 70px rgba(15, 23, 42, 0.14);
+}
+
+.accessToggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 6px;
+  background: #f1f5f9;
+  border-radius: 16px;
+  margin-bottom: 18px;
+}
+
+.accessToggle button {
+  background: transparent;
+  color: #334155;
+  box-shadow: none;
+}
+
+.accessToggle button.active {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.formTwoCols {
+  gap: 12px;
+}
+
+.formTwoCols > div {
+  min-width: 0;
+}
+
+@media (max-width: 1080px) {
+  .landingNav {
+    display: none;
+  }
+
+  .landingHero,
+  .landingAccessSection {
+    grid-template-columns: 1fr;
+  }
+
+  .heroVisual {
+    min-height: auto;
+  }
+
+  .stepsGrid,
+  .featuresGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .landingHeader {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .landingHeaderActions {
+    width: 100%;
+  }
+
+  .landingHeaderActions button,
+  .heroActions button {
+    flex: 1;
+  }
+
+  .landingHero {
+    padding-top: 42px;
+  }
+
+  .heroActions,
+  .heroHighlights {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .stepsGrid,
+  .featuresGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sandCard {
+    min-height: 390px;
+  }
+
+  .landingAccessSection {
+    padding-bottom: 54px;
+  }
+}
