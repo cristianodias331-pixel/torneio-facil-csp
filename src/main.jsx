@@ -642,11 +642,11 @@ function speakText(text) {
 
   window.speechSynthesis.cancel();
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "pt-BR";
-  utterance.rate = 0.92;
-  utterance.pitch = 1;
-  utterance.volume = 1;
+ const utterance = new SpeechSynthesisUtterance(text);
+utterance.lang = "pt-BR";
+utterance.rate = 1.05;
+utterance.pitch = 1;
+utterance.volume = 1;
 
   window.speechSynthesis.speak(utterance);
 }
