@@ -2032,13 +2032,13 @@ function generateSchedule(type, players) {
 function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
   return (
     <div className="voiceRepeatBox">
-      <span>Repetir cada jogo:</span>
+      <span>🔊 Chamada de Jogos</span>
 
       <select
         value={voiceRepeat}
         onChange={(e) => setVoiceRepeat(Number(e.target.value))}
       >
-        <option value={1}>1 vez</option>
+        <option value={1}>Apenas 1 vez</option>
         <option value={2}>2 vezes</option>
       </select>
     </div>
