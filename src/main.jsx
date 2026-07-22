@@ -2326,14 +2326,10 @@ setNewLocation("");
     ))}
   </select>
 
-  <button type="button" onClick={createTournament} disabled={saving}>
-    {saving ? "Salvando..." : "Criar torneio"}
-  </button>
-</section>
-
-        <button type="button" onClick={createTournament} disabled={saving}>
-          {saving ? "Salvando..." : "Criar torneio"}
-        </header>
+ <button type="button" onClick={createTournament} disabled={saving}>
+  {saving ? "Salvando..." : "Criar torneio"}
+</button>
+      </section>
 
 <section className="card">
         <h2>Meus torneios</h2>
@@ -4047,6 +4043,4 @@ function PublicBracketColumn({ rounds }) {
 }
 
 createRoot(document.getElementById("root")).render(<App />);
-
-    Atualiza formulário e pontuação dos torneios
 
