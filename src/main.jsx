@@ -39,6 +39,39 @@ const rankingCriteriaOptions = [
 
 const defaultRankingCriteria = "wins_points_balance";
 
+function generatePublicId() {
+  return `tfbt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function getPublicUrl(publicId) {
+  return `${window.location.origin}${window.location.pathname}?public=${publicId}`;
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch (e) {
+    console.error(e);
+
+    try {
+      const textarea = document.createElement("textarea");
+      textarea.value = text;
+      textarea.style.position = "fixed";
+      textarea.style.opacity = "0";
+      document.body.appendChild(textarea);
+      textarea.focus();
+      textarea.select();
+      document.execCommand("copy");
+      document.body.removeChild(textarea);
+      return true;
+    } catch (err) {
+      console.error(err);
+      return false;
+    }
+  }
+}
+
 function getRankingCriteria(value) {
   return rankingCriteriaOptions.find((item) => item.value === value) || rankingCriteriaOptions[0];
 }
@@ -869,6 +902,8 @@ function Info({ title, text }) {
 }
 
 function App() {
+  const publicId = new URLSearchParams(window.location.search).get("public");
+
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -918,8 +953,10 @@ function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  if (loading) return <div className="center">Carregando...</div>;
-  if (!session) return <Login />;
+ if (publicId) return <PublicTournamentPage publicId={publicId} />;
+
+if (loading) return <div className="center">Carregando...</div>;
+if (!session) return <Login />;
 
   if (!profile) {
     return (
@@ -1746,6 +1783,12 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
 const [clearScoresOpen, setClearScoresOpen] = useState(false);
+const [shareOpen, setShareOpen] = useState(false);
+const [shareLoading, setShareLoading] = useState(false);
+const [shareInfo, setShareInfo] = useState({
+  public_id: tournament.public_id || null,
+  is_public: tournament.is_public || false,
+});
 const [voiceRepeat, setVoiceRepeat] = useState(1);
 
   const saveTimerRef = useRef(null);
@@ -2027,15 +2070,62 @@ const [voiceRepeat, setVoiceRepeat] = useState(1);
       )}
 
             <div className="appPage">
-        <header>
-          <div>
-            <h1>{tournament.name}</h1>
-            <p>{tournament.type} · {savingStatus}</p>
-          </div>
-          <div className="actions">
-            <button type="button" onClick={handleBack}>Voltar</button>
-          </div>
-        </header>
+    <header>
+  <div>
+    <h1>{tournament.name}</h1>
+    <p>{tournament.type} · {savingStatus}</p>
+  </div>
+
+  <div className="actions">
+    <button
+      type="button"
+      className="secondaryBtn"
+      onClick={() => setShareOpen((prev) => !prev)}
+    >
+      🔗 Compartilhar tabela
+    </button>
+
+    <button type="button" onClick={handleBack}>Voltar</button>
+  </div>
+</header>
+
+              {shareOpen && (
+  <section className="card shareCard">
+    <h2>Compartilhar tabela</h2>
+
+    <p>
+      Gere um link público para os participantes acompanharem jogos, placares e ranking
+      sem poder editar nada.
+    </p>
+
+    {!shareInfo.is_public ? (
+      <button type="button" onClick={enablePublicShare} disabled={shareLoading}>
+        {shareLoading ? "Gerando..." : "Ativar link público"}
+      </button>
+    ) : (
+      <>
+        <label>Link público</label>
+        <div className="shareLinkBox">
+          <input
+            readOnly
+            value={getPublicUrl(shareInfo.public_id)}
+            onFocus={(e) => e.target.select()}
+          />
+
+          <button type="button" onClick={copyPublicLink}>
+            Copiar
+          </button>
+        </div>
+
+        <div className="actions">
+          <button type="button" className="deleteBtn" onClick={disablePublicShare} disabled={shareLoading}>
+            {shareLoading ? "Desativando..." : "Desativar link"}
+          </button>
+        </div>
+      </>
+    )}
+  </section>
+)}
 
         <section className="card">
           <h2>{config.type === "cup" ? "Configuração da Copa" : "Participantes"}</h2>
@@ -2731,6 +2821,220 @@ function BracketColumn({
                 >
                   🔊 Chamar jogo
                 </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PublicTournamentPage({ publicId }) {
+  const [loading, setLoading] = useState(true);
+  const [tournament, setTournament] = useState(null);
+  const [error, setError] = useState(null);
+
+  async function loadPublicTournament() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("public_id", publicId)
+      .eq("is_public", true)
+      .single();
+
+    if (error) {
+      console.error(error);
+      setError("Link público não encontrado ou desativado.");
+      setTournament(null);
+    } else {
+      setTournament(data);
+      setError(null);
+    }
+
+    setLoading(false);
+  }
+
+  useEffect(() => {
+    loadPublicTournament();
+
+    const interval = setInterval(() => {
+      loadPublicTournament();
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [publicId]);
+
+  if (loading) {
+    return (
+      <div className="publicPage">
+        <div className="center">
+          <h1>Carregando tabela...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !tournament) {
+    return (
+      <div className="publicPage">
+        <div className="center">
+          <h1>Link indisponível</h1>
+          <p>{error || "Não foi possível carregar esta tabela."}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <PublicTournamentScreen tournament={tournament} />;
+}
+
+function PublicTournamentScreen({ tournament }) {
+  const config = modalityConfig[tournament.type];
+  const data = tournament.data || createInitialData(tournament.type, config);
+  const ranking = calculateRanking(data, tournament.type, data.rankingCriteria);
+
+  const isCup = config.type === "cup";
+  const cupGroupRankings = isCup
+    ? calculateCupGroupRankings(data, data.rankingCriteria)
+    : [];
+
+  const currentBrackets = isCup && data.brackets?.length
+    ? groupStoredBracketGames(data)
+    : null;
+
+  return (
+    <div className="publicPage">
+      <header className="publicHeader">
+        <div>
+          <span>Tabela pública</span>
+          <h1>{tournament.name}</h1>
+          <p>{tournament.type}</p>
+        </div>
+
+        <div className="publicBadge">
+          Somente visualização
+        </div>
+      </header>
+
+      <main className="publicContent">
+        <section className="card">
+          <h2>{isCup ? "Fase de grupos" : "Rodadas"}</h2>
+
+          {!data.schedule || data.schedule.length === 0 ? (
+            <p>A tabela ainda não foi gerada pelo organizador.</p>
+          ) : (
+            <PublicScheduleView
+              schedule={data.schedule}
+              showGroupName={isCup}
+            />
+          )}
+        </section>
+
+        {isCup ? (
+          <>
+            <section className="card">
+              <h2>Classificação dos grupos</h2>
+              <CupGroupRankingView
+                groupRankings={cupGroupRankings}
+                rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+              />
+            </section>
+
+            <section className="card">
+              <h2>Chaves finais</h2>
+
+              {!currentBrackets ? (
+                <p>As chaves finais ainda não foram geradas pelo organizador.</p>
+              ) : (
+                <PublicCupBracketView groupedBrackets={currentBrackets} />
+              )}
+            </section>
+          </>
+        ) : (
+          <section className="card">
+            <h2>Ranking</h2>
+            <RankingView
+              ranking={ranking}
+              type={tournament.type}
+              rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+            />
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function PublicScheduleView({ schedule, showGroupName = false }) {
+  return (
+    <div className="schedule">
+      {schedule.map((round, roundIndex) => (
+        <div className="roundCard" key={roundIndex}>
+          <h3>Rodada {roundIndex + 1}</h3>
+
+          {round.map((game, gameIndex) => (
+            <div className="gameCard" key={gameIndex}>
+              <strong>
+                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                Quadra {game.court}
+              </strong>
+
+              <div className="gameTeams">
+                <div>{game.team1.join(" + ")}</div>
+                <span>x</span>
+                <div>{game.team2.join(" + ")}</div>
+              </div>
+
+              <div className="publicScore">
+                {game.s1 === "" || game.s2 === "" ? (
+                  <span>Aguardando placar</span>
+                ) : (
+                  <strong>{game.s1} — {game.s2}</strong>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PublicCupBracketView({ groupedBrackets }) {
+  return (
+    <div className="cupBrackets">
+      <PublicBracketColumn rounds={groupedBrackets.main} />
+      <PublicBracketColumn rounds={groupedBrackets.repechage} />
+    </div>
+  );
+}
+
+function PublicBracketColumn({ rounds }) {
+  return (
+    <div className="bracketColumn">
+      {rounds.map((round, roundIndex) => (
+        <div className="roundCard" key={roundIndex}>
+          <h3>{round.bracketTitle} · {round.title}</h3>
+
+          {round.games.map((game) => (
+            <div className="gameCard" key={game.matchKey}>
+              <strong>Quadra {game.court}</strong>
+
+              <div className="gameTeams">
+                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                <span>x</span>
+                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
+              </div>
+
+              <div className="publicScore">
+                {game.s1 === "" || game.s2 === "" ? (
+                  <span>Aguardando placar</span>
+                ) : (
+                  <strong>{game.s1} — {game.s2}</strong>
+                )}
               </div>
             </div>
           ))}
