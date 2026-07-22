@@ -2361,49 +2361,28 @@ setNewLocation("");
     <p>Nenhum torneio criado ainda.</p>
   ) : (
     <div className="tournamentList">
-      {tournaments.map((t) => {
-        const details = t.data || {};
-
-        return (
-          <div className="tournamentItem" key={t.id}>
-            <div className="tournamentInfo">
-              <strong>{t.name}</strong>
-
-              <div className="tournamentMeta">
-                <span>🏆 {t.type}</span>
-
-                {details.gender ? <span>👥 {details.gender}</span> : null}
-
-                {details.eventDate ? (
-                  <span>📅 {formatDateBR(details.eventDate)}</span>
-                ) : null}
-
-                {details.eventDay ? <span>🗓️ {details.eventDay}</span> : null}
-
-                {details.location ? <span>📍 {details.location}</span> : null}
-
-                {details.winningScore ? (
-                  <span>🎯 Até {details.winningScore} pontos</span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="actions">
-              <button type="button" onClick={() => openTournament(t)}>
-                Abrir
-              </button>
-
-              <button
-                type="button"
-                className="deleteBtn"
-                onClick={() => setDeleteTarget(t)}
-              >
-                Excluir
-              </button>
-            </div>
+      {tournaments.map((t) => (
+        <div className="tournamentItem" key={t.id}>
+          <div>
+            <strong>{t.name}</strong>
+            <span>{t.type}</span>
           </div>
-        );
-      })}
+
+          <div className="actions">
+            <button type="button" onClick={() => openTournament(t)}>
+              Abrir
+            </button>
+
+            <button
+              type="button"
+              className="deleteBtn"
+              onClick={() => setDeleteTarget(t)}
+            >
+              Excluir
+            </button>
+          </div>
+        </div>
+      ))}
     </div>
   )}
 </section>
