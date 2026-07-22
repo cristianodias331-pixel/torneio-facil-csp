@@ -3046,30 +3046,30 @@ return (
                   “Gerar chaves finais”.
                 </p>
               ) : (
-                <>
-                <CupBracketView
-  groupedBrackets={currentBrackets}
-  data={data}
-  updateBracketScore={updateBracketScore}
-  voiceRepeat={voiceRepeat}
-  setVoiceRepeat={setVoiceRepeat}
-  winningScore={getWinningScore(data)}
-/>
+            <>
+  <CupBracketView
+    groupedBrackets={currentBrackets}
+    data={data}
+    updateBracketScore={updateBracketScore}
+    voiceRepeat={voiceRepeat}
+    setVoiceRepeat={setVoiceRepeat}
+    winningScore={getWinningScore(data)}
+  />
 
-                  <CupPodiumView podium={mainCupPodium} />
+  <CupPodiumView podium={mainCupPodium} />
 
-                  {parallelRanking.length > 0 && (
-                    <div className="parallelRankingBox">
-                      <h3>Ranking da Disputa Paralela</h3>
+  {parallelRanking.length > 0 && (
+    <div className="parallelRankingBox">
+      <h3>Ranking da Disputa Paralela</h3>
 
-                      <RankingTable
-                        title="Classificação"
-                        rows={parallelRanking}
-                        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-                      />
-                    </div>
-                  )}
-                </>
+      <RankingTable
+        title="Classificação"
+        rows={parallelRanking}
+        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+      />
+    </div>
+  )}
+</>
               )}
             </section>
           </>
