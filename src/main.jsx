@@ -214,16 +214,21 @@ function getWinningScore(data) {
 function getScoreWinnerSide(game, winningScore = 4) {
   const s1 = Number(game.s1);
   const s2 = Number(game.s2);
+  const target = Number(winningScore || 4);
 
   if (game.s1 === "" || game.s2 === "") return null;
   if (Number.isNaN(s1) || Number.isNaN(s2)) return null;
   if (s1 === s2) return null;
 
-  const maxScore = Math.max(s1, s2);
+  const team1Reached = s1 >= target;
+  const team2Reached = s2 >= target;
 
-  if (maxScore < winningScore) return null;
+  if (!team1Reached && !team2Reached) return null;
 
-  return s1 > s2 ? "team1" : "team2";
+  if (team1Reached && s1 > s2) return "team1";
+  if (team2Reached && s2 > s1) return "team2";
+
+  return null;
 }
 
 function isGameFinished(game, winningScore = 4) {
@@ -2066,7 +2071,11 @@ function Dashboard({ profile, user }) {
   const [tournaments, setTournaments] = useState([]);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
-  const [newType, setNewType] = useState("Super 08");
+  const [newType, setNewType] = useState("");
+const [newGender, setNewGender] = useState("");
+const [newDate, setNewDate] = useState("");
+const [newDay, setNewDay] = useState("");
+const [newLocation, setNewLocation] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [notice, setNotice] = useState(null);
@@ -2103,6 +2112,11 @@ function Dashboard({ profile, user }) {
       return;
     }
 
+    if (!newType) {
+  showNotice("warning", "Modalidade obrigatória", "Escolha a modalidade do torneio.");
+  return;
+}
+
     if (!allowedTypes.includes(newType)) {
       showNotice("warning", "Modalidade não liberada", "Seu plano não permite essa modalidade.");
       return;
@@ -2116,8 +2130,14 @@ function Dashboard({ profile, user }) {
     setSaving(true);
 
     const config = modalityConfig[newType];
-    const initialData = createInitialData(newType, config);
 
+const initialData = {
+  ...createInitialData(newType, config),
+  gender: newGender,
+  eventDate: newDate,
+  eventDay: newDay,
+  location: newLocation.trim(),
+};
     const { error } = await supabase.from("tournaments").insert({
       user_id: user.id,
       name: newName.trim(),
@@ -2135,6 +2155,11 @@ function Dashboard({ profile, user }) {
     }
 
     setNewName("");
+    setNewType("");
+setNewGender("");
+setNewDate("");
+setNewDay("");
+setNewLocation("");
     await loadTournaments();
     showNotice("success", "Torneio criado", "O torneio foi criado com sucesso.");
   }
@@ -2242,22 +2267,69 @@ function Dashboard({ profile, user }) {
         </div>
       </section>
 
-      <section className="card">
-        <h2>Criar novo torneio</h2>
+    <section className="card">
+  <h2>Criar novo torneio</h2>
 
-        <label>Nome do torneio</label>
-        <input
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          placeholder="Ex: Torneio de sábado"
-        />
+  <label>Nome do torneio</label>
+  <input
+    value={newName}
+    onChange={(e) => setNewName(e.target.value)}
+    placeholder="Ex: Torneio de sábado"
+  />
 
-        <label>Modalidade</label>
-        <select value={newType} onChange={(e) => setNewType(e.target.value)}>
-          {allowedTypes.map((type) => (
-            <option key={type} value={type}>{type}</option>
-          ))}
-        </select>
+  <label>Gênero</label>
+  <select value={newGender} onChange={(e) => setNewGender(e.target.value)}>
+    <option value="">Escolha o gênero</option>
+    <option value="Masculino">Masculino</option>
+    <option value="Feminino">Feminino</option>
+    <option value="Misto">Misto</option>
+    <option value="Livre">Livre</option>
+  </select>
+
+  <div className="twoCols">
+    <div>
+      <label>Data</label>
+      <input
+        type="date"
+        value={newDate}
+        onChange={(e) => setNewDate(e.target.value)}
+      />
+    </div>
+
+    <div>
+      <label>Dia</label>
+      <select value={newDay} onChange={(e) => setNewDay(e.target.value)}>
+        <option value="">Escolha o dia</option>
+        <option value="Segunda-feira">Segunda-feira</option>
+        <option value="Terça-feira">Terça-feira</option>
+        <option value="Quarta-feira">Quarta-feira</option>
+        <option value="Quinta-feira">Quinta-feira</option>
+        <option value="Sexta-feira">Sexta-feira</option>
+        <option value="Sábado">Sábado</option>
+        <option value="Domingo">Domingo</option>
+      </select>
+    </div>
+  </div>
+
+  <label>Local</label>
+  <input
+    value={newLocation}
+    onChange={(e) => setNewLocation(e.target.value)}
+    placeholder="Ex: Arena Beach Sports"
+  />
+
+  <label>Modalidade</label>
+  <select value={newType} onChange={(e) => setNewType(e.target.value)}>
+    <option value="">Escolha a modalidade</option>
+    {allowedTypes.map((type) => (
+      <option key={type} value={type}>{type}</option>
+    ))}
+  </select>
+
+  <button type="button" onClick={createTournament} disabled={saving}>
+    {saving ? "Salvando..." : "Criar torneio"}
+  </button>
+</section>
 
         <button type="button" onClick={createTournament} disabled={saving}>
           {saving ? "Salvando..." : "Criar torneio"}
@@ -2297,6 +2369,10 @@ function createInitialData(type, config) {
   const base = {
   rankingCriteria: defaultRankingCriteria,
   winningScore: 4,
+  gender: "",
+  eventDate: "",
+  eventDay: "",
+  location: "",
   schedule: [],
 };
 
@@ -2798,7 +2874,13 @@ return (
       <header>
         <div>
           <h1>{tournament.name}</h1>
-          <p>{tournament.type} · {savingStatus}</p>
+          <p>
+  {tournament.type} · {savingStatus}
+  {data.gender ? ` · ${data.gender}` : ""}
+  {data.eventDay ? ` · ${data.eventDay}` : ""}
+  {data.eventDate ? ` · ${data.eventDate}` : ""}
+  {data.location ? ` · ${data.location}` : ""}
+</p>
         </div>
 
         <div className="actions">
@@ -3808,7 +3890,13 @@ function PublicTournamentScreen({ tournament }) {
         <div>
           <span>Tabela pública</span>
           <h1>{tournament.name}</h1>
-          <p>{tournament.type}</p>
+         <p>
+  {tournament.type}
+  {data.gender ? ` · ${data.gender}` : ""}
+  {data.eventDay ? ` · ${data.eventDay}` : ""}
+  {data.eventDate ? ` · ${data.eventDate}` : ""}
+  {data.location ? ` · ${data.location}` : ""}
+</p>
         </div>
 
         <div className="publicBadge">
