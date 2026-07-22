@@ -3448,3 +3448,47 @@ tbody tr:hover {
 .card select option[value=""] {
   color: #94a3b8;
 }
+
+.tournamentInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tournamentMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tournamentMeta span {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tournamentItem {
+  align-items: center;
+  gap: 14px;
+}
+
+@media (max-width: 700px) {
+  .tournamentItem {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tournamentItem .actions {
+    width: 100%;
+  }
+
+  .tournamentItem .actions button {
+    flex: 1;
+  }
+}
