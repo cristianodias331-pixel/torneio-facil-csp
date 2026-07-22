@@ -1837,6 +1837,91 @@ const [voiceRepeat, setVoiceRepeat] = useState(1);
     setNotice({ type, title, message });
   }
 
+  function showNotice(type, title, message) {
+  setNotice({ type, title, message });
+}
+
+async function enablePublicShare() {
+  setShareLoading(true);
+
+  const publicId = shareInfo.public_id || generatePublicId();
+
+  const { error } = await supabase
+    .from("tournaments")
+    .update({
+      public_id: publicId,
+      is_public: true,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", tournament.id);
+
+  setShareLoading(false);
+
+  if (error) {
+    console.error(error);
+    showNotice("error", "Erro ao gerar link", "Não foi possível ativar o link público.");
+    return;
+  }
+
+  const nextInfo = {
+    public_id: publicId,
+    is_public: true,
+  };
+
+  setShareInfo(nextInfo);
+
+  const ok = await copyToClipboard(getPublicUrl(publicId));
+
+  showNotice(
+    "success",
+    "Link público ativado",
+    ok
+      ? "O link foi ativado e copiado para a área de transferência."
+      : "O link foi ativado. Copie o link na área de compartilhamento."
+  );
+}
+
+async function disablePublicShare() {
+  if (!shareInfo.public_id) return;
+
+  setShareLoading(true);
+
+  const { error } = await supabase
+    .from("tournaments")
+    .update({
+      is_public: false,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", tournament.id);
+
+  setShareLoading(false);
+
+  if (error) {
+    console.error(error);
+    showNotice("error", "Erro ao desativar", "Não foi possível desativar o link público.");
+    return;
+  }
+
+  setShareInfo((prev) => ({
+    ...prev,
+    is_public: false,
+  }));
+
+  showNotice("success", "Link desativado", "O link público foi desativado.");
+}
+
+async function copyPublicLink() {
+  if (!shareInfo.public_id) return;
+
+  const ok = await copyToClipboard(getPublicUrl(shareInfo.public_id));
+
+  showNotice(
+    ok ? "success" : "error",
+    ok ? "Link copiado" : "Erro ao copiar",
+    ok ? "O link público foi copiado." : "Não foi possível copiar o link."
+  );
+}
+
   function updateRankingCriteria(value) {
     setData((prev) => ({ ...prev, rankingCriteria: value }));
   }
