@@ -205,6 +205,29 @@ const modalityConfig = {
   },
 };
 
+function getWinningScore(data) {
+  return Number(data?.winningScore || 4);
+}
+
+function getScoreWinnerSide(game, winningScore = 4) {
+  const s1 = Number(game.s1);
+  const s2 = Number(game.s2);
+
+  if (game.s1 === "" || game.s2 === "") return null;
+  if (Number.isNaN(s1) || Number.isNaN(s2)) return null;
+  if (s1 === s2) return null;
+
+  const maxScore = Math.max(s1, s2);
+
+  if (maxScore < winningScore) return null;
+
+  return s1 > s2 ? "team1" : "team2";
+}
+
+function isGameFinished(game, winningScore = 4) {
+  return getScoreWinnerSide(game, winningScore) !== null;
+}
+
 function isCupType(config) {
   return config?.type === "cup" || config?.type === "cup18";
 }
@@ -426,6 +449,7 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
   const groups = createCupGroups(teamCount);
   const teamNames = data.players.teams.map((t) => getTeamName(t));
   const criteria = getRankingCriteria(rankingCriteriaValue);
+  const winningScore = getWinningScore(data);
 
   const groupRankings = groups.map((group) => {
     const rows = group.teamIds.map((id) => ({
@@ -453,9 +477,12 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
 
         if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
 
-        const win1 = s1 > s2;
-        const win2 = s2 > s1;
+        const winnerSide = getScoreWinnerSide(game, winningScore);
+if (!winnerSide) return;
 
+const win1 = winnerSide === "team1";
+const win2 = winnerSide === "team2";
+        
         game.ids1.forEach((id) => {
           tableById[id].pts += s1;
           tableById[id].bal += s1 - s2;
@@ -696,26 +723,24 @@ function generateParallelRoundRobin(teamIds) {
   }));
 }
 
-function getGameWinnerId(game) {
-  const s1 = Number(game.s1);
-  const s2 = Number(game.s2);
+function getGameWinnerId(game, data = null) {
+  const winningScore = getWinningScore(data);
+  const winnerSide = getScoreWinnerSide(game, winningScore);
 
   if (!game.ids1?.length || !game.ids2?.length) return null;
-  if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return null;
-  if (s1 === s2) return null;
+  if (!winnerSide) return null;
 
-  return s1 > s2 ? game.ids1[0] : game.ids2[0];
+  return winnerSide === "team1" ? game.ids1[0] : game.ids2[0];
 }
 
-function getGameLoserId(game) {
-  const s1 = Number(game.s1);
-  const s2 = Number(game.s2);
+function getGameLoserId(game, data = null) {
+  const winningScore = getWinningScore(data);
+  const winnerSide = getScoreWinnerSide(game, winningScore);
 
   if (!game.ids1?.length || !game.ids2?.length) return null;
-  if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return null;
-  if (s1 === s2) return null;
+  if (!winnerSide) return null;
 
-  return s1 > s2 ? game.ids2[0] : game.ids1[0];
+  return winnerSide === "team1" ? game.ids2[0] : game.ids1[0];
 }
 
 function resolveBracketGame(game, allGames, data) {
@@ -723,15 +748,15 @@ function resolveBracketGame(game, allGames, data) {
 
   if (copy.source1) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source1);
-    const winnerId = sourceGame ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data)) : null;
-    copy.ids1 = winnerId === null ? [] : [winnerId];
-  }
+    const winnerId = sourceGame
+  ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
+  : null;
 
   if (copy.source2) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source2);
-    const winnerId = sourceGame ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data)) : null;
-    copy.ids2 = winnerId === null ? [] : [winnerId];
-  }
+   const winnerId = sourceGame
+  ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
+  : null;
 
   copy.team1 = copy.ids1?.length ? [getCupTeamName(data, copy.ids1[0])] : ["Aguardando"];
   copy.team2 = copy.ids2?.length ? [getCupTeamName(data, copy.ids2[0])] : ["Aguardando"];
@@ -1013,6 +1038,8 @@ function calculateParallelRanking(data, rankingCriteriaValue = defaultRankingCri
     (game) => game.phase === "repechage" && game.roundName === "Disputa Paralela"
   );
 
+  const winningScore = getWinningScore(data);
+  
   const ids = Array.from(
     new Set(
       games.flatMap((game) => [
@@ -1047,8 +1074,11 @@ function calculateParallelRanking(data, rankingCriteriaValue = defaultRankingCri
 
     if (id1 === undefined || id2 === undefined) return;
 
-    const win1 = s1 > s2;
-    const win2 = s2 > s1;
+    const winnerSide = getScoreWinnerSide(game, winningScore);
+if (!winnerSide) return;
+
+const win1 = winnerSide === "team1";
+const win2 = winnerSide === "team2";
 
     tableById[id1].pts += s1;
     tableById[id1].bal += s1 - s2;
@@ -1088,15 +1118,15 @@ function calculateMainCupPodium(data) {
 
   const resolvedFinal = resolveBracketGame(finalGame, games, data);
 
-  const championId = getGameWinnerId(resolvedFinal);
-  const runnerUpId = getGameLoserId(resolvedFinal);
+  const championId = getGameWinnerId(resolvedFinal, data);
+const runnerUpId = getGameLoserId(resolvedFinal, data);
 
   if (championId === null || runnerUpId === null) return [];
 
   const semifinalLosers = semifinalGames
     .map((game) => resolveBracketGame(game, games, data))
     .map((game) => {
-      const loserId = getGameLoserId(game);
+      const loserId = getGameLoserId(game, data);
 
       if (loserId === null) return null;
 
@@ -2262,7 +2292,11 @@ function Dashboard({ profile, user }) {
 }
 
 function createInitialData(type, config) {
-  const base = { rankingCriteria: defaultRankingCriteria, schedule: [] };
+  const base = {
+  rankingCriteria: defaultRankingCriteria,
+  winningScore: 4,
+  schedule: [],
+};
 
   if (config.type === "mixed12" || config.type === "mixed16") {
     return {
@@ -2823,6 +2857,22 @@ return (
           <h2>{isCupType(config) ? "Configuração da Copa" : "Participantes"}</h2>
 
           <div className="rankingCriteriaBox">
+  <label>Pontuação para vencer</label>
+  <select
+    value={data.winningScore || 4}
+    onChange={(e) =>
+      setData((prev) => ({
+        ...prev,
+        winningScore: Number(e.target.value),
+      }))
+    }
+  >
+    <option value={4}>Até 4 pontos</option>
+    <option value={6}>Até 6 pontos</option>
+  </select>
+</div>
+
+          <div className="rankingCriteriaBox">
             <label>Critério do ranking</label>
             <select
               value={data.rankingCriteria || defaultRankingCriteria}
@@ -3326,6 +3376,7 @@ function ScheduleView({
 
 function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCriteria) {
   const config = modalityConfig[type];
+  const winningScore = getWinningScore(data);
 
   if (!data.players) return [];
 
@@ -3359,8 +3410,11 @@ function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCrite
 
     if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
 
-    const win1 = s1 > s2;
-    const win2 = s2 > s1;
+   const winnerSide = getScoreWinnerSide(game, winningScore);
+if (!winnerSide) return;
+
+const win1 = winnerSide === "team1";
+const win2 = winnerSide === "team2";
 
     game.ids1.forEach((id) => {
       table[id].pts += s1;
