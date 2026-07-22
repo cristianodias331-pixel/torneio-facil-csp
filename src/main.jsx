@@ -20,6 +20,7 @@ async function logout() {
         localStorage.removeItem(key);
       }
     });
+
     sessionStorage.clear();
   } catch (e) {
     console.error(e);
@@ -102,6 +103,17 @@ function getRankingCriteria(value) {
 
 function getRankingColumnLabel(key) {
   return { w: "Vitórias", pts: "Pontos", bal: "Saldo" }[key] || key;
+}
+
+function normalizeScoreInput(value) {
+  if (value === "") return "";
+
+  const number = Number(value);
+
+  if (Number.isNaN(number)) return "";
+  if (number < 0) return "0";
+
+  return String(Math.floor(number));
 }
 
 const allowedByPlan = {
@@ -688,10 +700,22 @@ function getGameWinnerId(game) {
   const s1 = Number(game.s1);
   const s2 = Number(game.s2);
 
+  if (!game.ids1?.length || !game.ids2?.length) return null;
   if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return null;
   if (s1 === s2) return null;
 
-  return s1 > s2 ? game.ids1?.[0] : game.ids2?.[0];
+  return s1 > s2 ? game.ids1[0] : game.ids2[0];
+}
+
+function getGameLoserId(game) {
+  const s1 = Number(game.s1);
+  const s2 = Number(game.s2);
+
+  if (!game.ids1?.length || !game.ids2?.length) return null;
+  if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return null;
+  if (s1 === s2) return null;
+
+  return s1 > s2 ? game.ids2[0] : game.ids1[0];
 }
 
 function resolveBracketGame(game, allGames, data) {
@@ -699,13 +723,13 @@ function resolveBracketGame(game, allGames, data) {
 
   if (copy.source1) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source1);
-    const winnerId = sourceGame ? getGameWinnerId(sourceGame) : null;
+    const winnerId = sourceGame ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data)) : null;
     copy.ids1 = winnerId === null ? [] : [winnerId];
   }
 
   if (copy.source2) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source2);
-    const winnerId = sourceGame ? getGameWinnerId(sourceGame) : null;
+    const winnerId = sourceGame ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data)) : null;
     copy.ids2 = winnerId === null ? [] : [winnerId];
   }
 
@@ -984,6 +1008,143 @@ function syncCupBracketScores(currentData) {
   return copy;
 }
 
+function calculateParallelRanking(data, rankingCriteriaValue = defaultRankingCriteria) {
+  const games = (data.brackets || []).filter(
+    (game) => game.phase === "repechage" && game.roundName === "Disputa Paralela"
+  );
+
+  const ids = Array.from(
+    new Set(
+      games.flatMap((game) => [
+        ...(game.ids1 || []),
+        ...(game.ids2 || []),
+      ])
+    )
+  );
+
+  const rows = ids.map((id) => ({
+    id,
+    name: getCupTeamName(data, id),
+    pts: 0,
+    w: 0,
+    bal: 0,
+    played: 0,
+  }));
+
+  const tableById = {};
+  rows.forEach((row) => {
+    tableById[row.id] = row;
+  });
+
+  games.forEach((game) => {
+    const s1 = Number(game.s1);
+    const s2 = Number(game.s2);
+
+    if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
+
+    const id1 = game.ids1?.[0];
+    const id2 = game.ids2?.[0];
+
+    if (id1 === undefined || id2 === undefined) return;
+
+    const win1 = s1 > s2;
+    const win2 = s2 > s1;
+
+    tableById[id1].pts += s1;
+    tableById[id1].bal += s1 - s2;
+    tableById[id1].played += 1;
+    if (win1) tableById[id1].w += 1;
+
+    tableById[id2].pts += s2;
+    tableById[id2].bal += s2 - s1;
+    tableById[id2].played += 1;
+    if (win2) tableById[id2].w += 1;
+  });
+
+  const criteria = getRankingCriteria(rankingCriteriaValue);
+
+  return rows.sort((a, b) => {
+    for (const key of criteria.order) {
+      const diff = b[key] - a[key];
+      if (diff !== 0) return diff;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+}
+
+function calculateMainCupPodium(data) {
+  const games = data.brackets || [];
+
+  const finalGame = games.find(
+    (game) => game.phase === "main" && game.roundName === "Final"
+  );
+
+  const semifinalGames = games.filter(
+    (game) => game.phase === "main" && game.roundName === "Semifinal"
+  );
+
+  if (!finalGame) return [];
+
+  const resolvedFinal = resolveBracketGame(finalGame, games, data);
+
+  const championId = getGameWinnerId(resolvedFinal);
+  const runnerUpId = getGameLoserId(resolvedFinal);
+
+  if (championId === null || runnerUpId === null) return [];
+
+  const semifinalLosers = semifinalGames
+    .map((game) => resolveBracketGame(game, games, data))
+    .map((game) => {
+      const loserId = getGameLoserId(game);
+
+      if (loserId === null) return null;
+
+      const s1 = Number(game.s1);
+      const s2 = Number(game.s2);
+
+      return {
+        id: loserId,
+        name: getCupTeamName(data, loserId),
+        pts: loserId === game.ids1?.[0] ? s1 : s2,
+        bal: loserId === game.ids1?.[0] ? s1 - s2 : s2 - s1,
+      };
+    })
+    .filter(Boolean);
+
+  semifinalLosers.sort((a, b) => {
+    const ptsDiff = b.pts - a.pts;
+    if (ptsDiff !== 0) return ptsDiff;
+
+    const balDiff = b.bal - a.bal;
+    if (balDiff !== 0) return balDiff;
+
+    return a.name.localeCompare(b.name);
+  });
+
+  const thirdId = semifinalLosers[0]?.id ?? null;
+
+  const podium = [
+    {
+      position: "🏆 Campeão",
+      name: getCupTeamName(data, championId),
+    },
+    {
+      position: "🥈 Vice",
+      name: getCupTeamName(data, runnerUpId),
+    },
+  ];
+
+  if (thirdId !== null) {
+    podium.push({
+      position: "🥉 3º lugar",
+      name: getCupTeamName(data, thirdId),
+    });
+  }
+
+  return podium;
+}
+
 function canUseSpeech() {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
@@ -1131,6 +1292,7 @@ function NoticeModal({ notice, onClose }) {
         <div className="confirmIcon">{icon}</div>
         <h2>{notice.title}</h2>
         <p>{notice.message}</p>
+
         <div className="confirmActions">
           <button type="button" onClick={onClose}>Entendi</button>
         </div>
@@ -1147,10 +1309,12 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
       <div className="confirmBox">
         <div className="confirmIcon">⚠️</div>
         <h2>Excluir torneio?</h2>
+
         <p>
           Você está prestes a excluir <strong>{target.name}</strong>. Essa ação
           removerá o torneio e seus dados salvos.
         </p>
+
         <div className="confirmActions">
           <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, excluir</button>
@@ -1168,10 +1332,12 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
       <div className="confirmBox">
         <div className="confirmIcon">🧹</div>
         <h2>Apagar placares?</h2>
+
         <p>
           Todos os placares preenchidos deste campeonato serão apagados. A tabela
           e os participantes serão mantidos.
         </p>
+
         <div className="confirmActions">
           <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
@@ -1199,7 +1365,9 @@ function PlanCard({ title, tag, badge, price, text, items }) {
       <p className="planDesc">{text}</p>
 
       <ul>
-        {items.map((item) => <li key={item}>{item}</li>)}
+        {items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
       </ul>
     </div>
   );
@@ -1227,6 +1395,25 @@ function Info({ title, text }) {
           <p>{text}</p>
         </div>
       )}
+    </div>
+  );
+}
+
+function CupPodiumView({ podium }) {
+  if (!podium || podium.length === 0) return null;
+
+  return (
+    <div className="cupPodiumBox">
+      <h3>Pódio da Copa Principal</h3>
+
+      <div className="cupPodiumGrid">
+        {podium.map((item) => (
+          <div className="cupPodiumItem" key={item.position}>
+            <strong>{item.position}</strong>
+            <span>{item.name}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1990,6 +2177,7 @@ function Dashboard({ profile, user }) {
   return (
     <div className="appPage">
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
       <ConfirmModal
         target={deleteTarget}
         onCancel={() => setDeleteTarget(null)}
@@ -2138,17 +2326,23 @@ function getShuffleNames(data, config) {
 
 function TournamentScreen({ tournament, onBack, onSave }) {
   const config = modalityConfig[tournament.type];
-  const [data, setData] = useState(tournament.data || createInitialData(tournament.type, config));
+
+  const [data, setData] = useState(
+    tournament.data || createInitialData(tournament.type, config)
+  );
+
   const [savingStatus, setSavingStatus] = useState("Salvo");
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
+
   const [shareInfo, setShareInfo] = useState({
     public_id: tournament.public_id || null,
     is_public: tournament.is_public || false,
   });
+
   const [voiceRepeat, setVoiceRepeat] = useState(1);
 
   const saveTimerRef = useRef(null);
@@ -2390,7 +2584,12 @@ function generate() {
   }
 
   const schedule = generateSchedule(tournament.type, data.players);
-  setData({ ...data, schedule });
+
+  setData({
+    ...data,
+    schedule,
+  });
+
   showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
 }
 
@@ -2426,7 +2625,8 @@ function generateBrackets() {
 
 function updateScore(roundIndex, gameIndex, field, value) {
   const copy = structuredClone(data);
-  copy.schedule[roundIndex][gameIndex][field] = value;
+
+  copy.schedule[roundIndex][gameIndex][field] = normalizeScoreInput(value);
 
   if (isCupType(config)) {
     copy.brackets = [];
@@ -2443,8 +2643,20 @@ function updateBracketScore(matchKey, field, value) {
       copy.brackets = getCupAllBracketGames(copy);
     }
 
+    const allResolved = copy.brackets.map((game) =>
+      resolveBracketGame(game, copy.brackets, copy)
+    );
+
+    const targetGame = allResolved.find((game) => game.matchKey === matchKey);
+
+    if (!targetGame?.ids1?.length || !targetGame?.ids2?.length) {
+      return copy;
+    }
+
     copy.brackets = copy.brackets.map((game) =>
-      game.matchKey === matchKey ? { ...game, [field]: value } : game
+      game.matchKey === matchKey
+        ? { ...game, [field]: normalizeScoreInput(value) }
+        : game
     );
 
     const existingScores = {};
@@ -2486,8 +2698,16 @@ function clearScores() {
 const currentBrackets = isCupType(config) && data.brackets?.length
   ? groupStoredBracketGames(data)
   : null;
-  const parallelRanking = isCupType(config) && (data.cupConfig?.teamCount || 12) === 18 && data.brackets?.length
-  ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
+
+const parallelRanking =
+  isCupType(config) &&
+  (data.cupConfig?.teamCount || 12) === 18 &&
+  data.brackets?.length
+    ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
+    : [];
+
+const mainCupPodium = isCupType(config) && data.brackets?.length
+  ? calculateMainCupPodium(data)
   : [];
 
 return (
@@ -2555,51 +2775,51 @@ return (
         </div>
       </header>
 
-      {shareOpen && (
-        <section className="card shareCard">
-          <h2>Compartilhar tabela</h2>
+              {shareOpen && (
+          <section className="card shareCard">
+            <h2>Compartilhar tabela</h2>
 
-          <p>
-            Gere um link público para os participantes acompanharem jogos, placares e ranking
-            sem poder editar nada.
-          </p>
+            <p>
+              Gere um link público para os participantes acompanharem jogos, placares e ranking
+              sem poder editar nada.
+            </p>
 
-          {!shareInfo.is_public ? (
-            <button type="button" onClick={enablePublicShare} disabled={shareLoading}>
-              {shareLoading ? "Gerando..." : "Ativar link público"}
-            </button>
-          ) : (
-            <>
-              <label>Link público</label>
+            {!shareInfo.is_public ? (
+              <button type="button" onClick={enablePublicShare} disabled={shareLoading}>
+                {shareLoading ? "Gerando..." : "Ativar link público"}
+              </button>
+            ) : (
+              <>
+                <label>Link público</label>
 
-              <div className="shareLinkBox">
-                <input
-                  readOnly
-                  value={getPublicUrl(shareInfo.public_id)}
-                  onFocus={(e) => e.target.select()}
-                />
+                <div className="shareLinkBox">
+                  <input
+                    readOnly
+                    value={getPublicUrl(shareInfo.public_id)}
+                    onFocus={(e) => e.target.select()}
+                  />
 
-                <button type="button" onClick={copyPublicLink}>
-                  Copiar
-                </button>
-              </div>
+                  <button type="button" onClick={copyPublicLink}>
+                    Copiar
+                  </button>
+                </div>
 
-              <div className="actions">
-                <button
-                  type="button"
-                  className="deleteBtn"
-                  onClick={disablePublicShare}
-                  disabled={shareLoading}
-                >
-                  {shareLoading ? "Desativando..." : "Desativar link"}
-                </button>
-              </div>
-            </>
-          )}
-        </section>
-      )}
+                <div className="actions">
+                  <button
+                    type="button"
+                    className="deleteBtn"
+                    onClick={disablePublicShare}
+                    disabled={shareLoading}
+                  >
+                    {shareLoading ? "Desativando..." : "Desativar link"}
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        )}
 
-              <section className="card">
+        <section className="card">
           <h2>{isCupType(config) ? "Configuração da Copa" : "Participantes"}</h2>
 
           <div className="rankingCriteriaBox">
@@ -2689,25 +2909,28 @@ return (
                 </p>
               ) : (
                 <>
-  <CupBracketView
-    groupedBrackets={currentBrackets}
-    data={data}
-    updateBracketScore={updateBracketScore}
-    voiceRepeat={voiceRepeat}
-    setVoiceRepeat={setVoiceRepeat}
-  />
+                  <CupBracketView
+                    groupedBrackets={currentBrackets}
+                    data={data}
+                    updateBracketScore={updateBracketScore}
+                    voiceRepeat={voiceRepeat}
+                    setVoiceRepeat={setVoiceRepeat}
+                  />
 
-  {parallelRanking.length > 0 && (
-    <div className="parallelRankingBox">
-      <h3>Ranking da Disputa Paralela</h3>
-      <RankingTable
-        title="Classificação"
-        rows={parallelRanking}
-        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-      />
-    </div>
-  )}
-</>
+                  <CupPodiumView podium={mainCupPodium} />
+
+                  {parallelRanking.length > 0 && (
+                    <div className="parallelRankingBox">
+                      <h3>Ranking da Disputa Paralela</h3>
+
+                      <RankingTable
+                        title="Classificação"
+                        rows={parallelRanking}
+                        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </>
@@ -3059,12 +3282,20 @@ function ScheduleView({
               <div className="scoreRow">
                 <input
                   type="number"
+                  min="0"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={game.s1}
                   onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
                 />
+
                 <span>—</span>
+
                 <input
                   type="number"
+                  min="0"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={game.s2}
                   onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
                 />
@@ -3249,71 +3480,6 @@ function CupGroupRankingView({ groupRankings, rankingCriteria }) {
   );
 }
 
-function calculateParallelRanking(data, rankingCriteriaValue = defaultRankingCriteria) {
-  const games = (data.brackets || []).filter(
-    (game) => game.phase === "repechage" && game.roundName === "Disputa Paralela"
-  );
-
-  const ids = Array.from(
-    new Set(
-      games.flatMap((game) => [
-        ...(game.ids1 || []),
-        ...(game.ids2 || []),
-      ])
-    )
-  );
-
-  const rows = ids.map((id) => ({
-    id,
-    name: getCupTeamName(data, id),
-    pts: 0,
-    w: 0,
-    bal: 0,
-    played: 0,
-  }));
-
-  const tableById = {};
-  rows.forEach((row) => {
-    tableById[row.id] = row;
-  });
-
-  games.forEach((game) => {
-    const s1 = Number(game.s1);
-    const s2 = Number(game.s2);
-
-    if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
-
-    const id1 = game.ids1?.[0];
-    const id2 = game.ids2?.[0];
-
-    if (id1 === undefined || id2 === undefined) return;
-
-    const win1 = s1 > s2;
-    const win2 = s2 > s1;
-
-    tableById[id1].pts += s1;
-    tableById[id1].bal += s1 - s2;
-    tableById[id1].played += 1;
-    if (win1) tableById[id1].w += 1;
-
-    tableById[id2].pts += s2;
-    tableById[id2].bal += s2 - s1;
-    tableById[id2].played += 1;
-    if (win2) tableById[id2].w += 1;
-  });
-
-  const criteria = getRankingCriteria(rankingCriteriaValue);
-
-  return rows.sort((a, b) => {
-    for (const key of criteria.order) {
-      const diff = b[key] - a[key];
-      if (diff !== 0) return diff;
-    }
-
-    return a.name.localeCompare(b.name);
-  });
-}
-
 function groupStoredBracketGames(data) {
   const cupConfig = data.cupConfig || {};
   const mainName = cupConfig.mainBracketName || "Principal";
@@ -3413,50 +3579,66 @@ function BracketColumn({
             </div>
           </div>
 
-          {round.games.map((game) => (
-            <div className="gameCard" key={game.matchKey}>
-              <strong>Quadra {game.court}</strong>
+          {round.games.map((game) => {
+            const blocked =
+              !game.ids1?.length ||
+              !game.ids2?.length ||
+              game.team1?.[0] === "Aguardando" ||
+              game.team2?.[0] === "Aguardando";
 
-              <div className="gameTeams">
-                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
-                <span>x</span>
-                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
-              </div>
+            return (
+              <div className="gameCard" key={game.matchKey}>
+                <strong>Quadra {game.court}</strong>
 
-              <div className="scoreRow">
-                <input
-                  type="number"
-                  value={game.s1}
-                  onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
-                  disabled={!game.ids1?.length || !game.ids2?.length}
-                />
-                <span>—</span>
-                <input
-                  type="number"
-                  value={game.s2}
-                  onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
-                  disabled={!game.ids1?.length || !game.ids2?.length}
-                />
-              </div>
+                <div className="gameTeams">
+                  <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                  <span>x</span>
+                  <div>{game.team2?.join(" + ") || "Aguardando"}</div>
+                </div>
 
-              <div className="voiceActions gameVoiceActions">
-                <button
-                  type="button"
-                  className="voiceBtn"
-                  onClick={() =>
-                    speakGame(game, {
-                      roundLabel: `${round.title} da chave ${title}`,
-                      includeGroup: false,
-                      repeat: voiceRepeat,
-                    })
-                  }
-                  disabled={!game.ids1?.length || !game.ids2?.length}
-                >
-                  🔊 Chamar jogo
-                </button>
+                <div className="scoreRow">
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={game.s1}
+                    onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
+                    disabled={blocked}
+                  />
+
+                  <span>—</span>
+
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    value={game.s2}
+                    onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
+                    disabled={blocked}
+                  />
+                </div>
+
+                <div className="voiceActions gameVoiceActions">
+                  <button
+                    type="button"
+                    className="voiceBtn"
+                    onClick={() =>
+                      speakGame(game, {
+                        roundLabel: `${round.title} da chave ${title}`,
+                        includeGroup: false,
+                        repeat: voiceRepeat,
+                      })
+                    }
+                    disabled={blocked}
+                  >
+                    🔊 Chamar jogo
+                  </button>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
@@ -3539,9 +3721,16 @@ function PublicTournamentScreen({ tournament }) {
     ? groupStoredBracketGames(data)
     : null;
 
-  const parallelRanking = isCup && (data.cupConfig?.teamCount || 12) === 18 && data.brackets?.length
-  ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
-  : [];
+  const parallelRanking =
+    isCup &&
+    (data.cupConfig?.teamCount || 12) === 18 &&
+    data.brackets?.length
+      ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
+      : [];
+
+  const mainCupPodium = isCup && data.brackets?.length
+    ? calculateMainCupPodium(data)
+    : [];
 
   return (
     <div className="publicPage">
@@ -3589,19 +3778,22 @@ function PublicTournamentScreen({ tournament }) {
                 <p>As chaves finais ainda não foram geradas pelo organizador.</p>
               ) : (
                 <>
-  <PublicCupBracketView groupedBrackets={currentBrackets} />
+                  <PublicCupBracketView groupedBrackets={currentBrackets} />
 
-  {parallelRanking.length > 0 && (
-    <div className="parallelRankingBox">
-      <h3>Ranking da Disputa Paralela</h3>
-      <RankingTable
-        title="Classificação"
-        rows={parallelRanking}
-        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-      />
-    </div>
-  )}
-</>
+                  <CupPodiumView podium={mainCupPodium} />
+
+                  {parallelRanking.length > 0 && (
+                    <div className="parallelRankingBox">
+                      <h3>Ranking da Disputa Paralela</h3>
+
+                      <RankingTable
+                        title="Classificação"
+                        rows={parallelRanking}
+                        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                      />
+                    </div>
+                  )}
+                </>
               )}
             </section>
           </>
@@ -3698,3 +3890,4 @@ function PublicBracketColumn({ rounds }) {
 }
 
 createRoot(document.getElementById("root")).render(<App />);
+
