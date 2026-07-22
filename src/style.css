@@ -3440,3 +3440,11 @@ tbody tr:hover {
 .scoreRow input[type="number"] {
   -moz-appearance: textfield;
 }
+
+.card .twoCols > div label {
+  display: block;
+}
+
+.card select option[value=""] {
+  color: #94a3b8;
+}
