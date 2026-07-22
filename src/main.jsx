@@ -748,109 +748,176 @@ function generateCupBrackets(data) {
   const mainIds = qualified.main.map((item) => item.id);
   const repechageIds = qualified.repechage.map((item) => item.id);
 
-  const mainFirstRound = seedBracket(mainIds, "main");
+  const mainRounds = [];
+  const repechageRounds = [];
+
+  if (teamCount === 18 && mainIds.length === 14) {
+    const preliminary = seedBracket(mainIds, "main");
+
+    const quarterfinals = [
+      {
+        phase: "main",
+        roundName: "Quartas de final",
+        matchKey: "main_qf_1",
+        source1: null,
+        source2: preliminary[0].matchKey,
+        ids1: [mainIds[0]],
+        ids2: [],
+        team1: null,
+        team2: null,
+        s1: "",
+        s2: "",
+        court: 1,
+      },
+      {
+        phase: "main",
+        roundName: "Quartas de final",
+        matchKey: "main_qf_2",
+        source1: null,
+        source2: preliminary[1].matchKey,
+        ids1: [mainIds[1]],
+        ids2: [],
+        team1: null,
+        team2: null,
+        s1: "",
+        s2: "",
+        court: 2,
+      },
+      {
+        phase: "main",
+        roundName: "Quartas de final",
+        matchKey: "main_qf_3",
+        source1: preliminary[2].matchKey,
+        source2: preliminary[3].matchKey,
+        ids1: [],
+        ids2: [],
+        team1: null,
+        team2: null,
+        s1: "",
+        s2: "",
+        court: 3,
+      },
+      {
+        phase: "main",
+        roundName: "Quartas de final",
+        matchKey: "main_qf_4",
+        source1: preliminary[4].matchKey,
+        source2: preliminary[5].matchKey,
+        ids1: [],
+        ids2: [],
+        team1: null,
+        team2: null,
+        s1: "",
+        s2: "",
+        court: 4,
+      },
+    ];
+
+    const semifinals = [
+      {
+        phase: "main",
+        roundName: "Semifinal",
+        matchKey: "main_sf_1",
+        source1: "main_qf_1",
+        source2: "main_qf_4",
+        ids1: [],
+        ids2: [],
+        team1: null,
+        team2: null,
+        s1: "",
+        s2: "",
+        court: 1,
+      },
+      {
+        phase: "main",
+        roundName: "Semifinal",
+        matchKey: "main_sf_2",
+        source1: "main_qf_2",
+        source2: "main_qf_3",
+        ids1: [],
+        ids2: [],
+        team1: null,
+        team2: null,
+        s1: "",
+        s2: "",
+        court: 2,
+      },
+    ];
+
+    const final = [
+      {
+        phase: "main",
+        roundName: "Final",
+        matchKey: "main_final_1",
+        source1: "main_sf_1",
+        source2: "main_sf_2",
+        ids1: [],
+        ids2: [],
+        team1: null,
+        team2: null,
+        s1: "",
+        s2: "",
+        court: 1,
+      },
+    ];
+
+    mainRounds.push({
+      title: "Preliminar",
+      bracketTitle: mainName,
+      games: preliminary,
+    });
+
+    mainRounds.push({
+      title: "Quartas de final",
+      bracketTitle: mainName,
+      games: quarterfinals,
+    });
+
+    mainRounds.push({
+      title: "Semifinal",
+      bracketTitle: mainName,
+      games: semifinals,
+    });
+
+    mainRounds.push({
+      title: "Final",
+      bracketTitle: mainName,
+      games: final,
+    });
+  } else {
+    const mainFirstRound = seedBracket(mainIds, "main");
+
+    if (mainFirstRound.length) {
+      mainRounds.push({
+        title: mainFirstRound[0].roundName,
+        bracketTitle: mainName,
+        games: mainFirstRound,
+      });
+
+      if (mainIds.length === 8) {
+        const semifinals = buildNextRound(mainFirstRound, "main", "Semifinal", "sf");
+        const final = buildNextRound(semifinals, "main", "Final", "final");
+
+        mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
+        mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
+      }
+
+      if (mainIds.length === 16) {
+        const quarterfinals = buildNextRound(mainFirstRound, "main", "Quartas de final", "qf");
+        const semifinals = buildNextRound(quarterfinals, "main", "Semifinal", "sf");
+        const final = buildNextRound(semifinals, "main", "Final", "final");
+
+        mainRounds.push({ title: "Quartas de final", bracketTitle: mainName, games: quarterfinals });
+        mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
+        mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
+      }
+    }
+  }
 
   const repechageFirstRound =
     teamCount === 18 && repechageIds.length === 4
       ? generateParallelRoundRobin(repechageIds)
       : seedBracket(repechageIds, "repechage");
-
-  const mainRounds = [];
-  const repechageRounds = [];
-
-  if (mainFirstRound.length) {
-    mainRounds.push({
-      title: mainFirstRound[0].roundName,
-      bracketTitle: mainName,
-      games: mainFirstRound,
-    });
-
-    if (mainIds.length === 8) {
-      const semifinals = buildNextRound(mainFirstRound, "main", "Semifinal", "sf");
-      const final = buildNextRound(semifinals, "main", "Final", "final");
-
-      mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
-      mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
-    }
-
-    if (mainIds.length === 14) {
-      const quarterfinals = [
-        {
-          phase: "main",
-          roundName: "Quartas de final",
-          matchKey: "main_qf_1",
-          source1: null,
-          source2: mainFirstRound[0].matchKey,
-          ids1: [mainIds[0]],
-          ids2: [],
-          team1: null,
-          team2: null,
-          s1: "",
-          s2: "",
-          court: 1,
-        },
-        {
-          phase: "main",
-          roundName: "Quartas de final",
-          matchKey: "main_qf_2",
-          source1: null,
-          source2: mainFirstRound[1].matchKey,
-          ids1: [mainIds[1]],
-          ids2: [],
-          team1: null,
-          team2: null,
-          s1: "",
-          s2: "",
-          court: 2,
-        },
-        {
-          phase: "main",
-          roundName: "Quartas de final",
-          matchKey: "main_qf_3",
-          source1: mainFirstRound[2].matchKey,
-          source2: mainFirstRound[3].matchKey,
-          ids1: [],
-          ids2: [],
-          team1: null,
-          team2: null,
-          s1: "",
-          s2: "",
-          court: 3,
-        },
-        {
-          phase: "main",
-          roundName: "Quartas de final",
-          matchKey: "main_qf_4",
-          source1: mainFirstRound[4].matchKey,
-          source2: mainFirstRound[5].matchKey,
-          ids1: [],
-          ids2: [],
-          team1: null,
-          team2: null,
-          s1: "",
-          s2: "",
-          court: 4,
-        },
-      ];
-
-      const semifinals = buildNextRound(quarterfinals, "main", "Semifinal", "sf");
-      const final = buildNextRound(semifinals, "main", "Final", "final");
-
-      mainRounds.push({ title: "Quartas de final", bracketTitle: mainName, games: quarterfinals });
-      mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
-      mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
-    }
-
-    if (mainIds.length === 16) {
-      const quarterfinals = buildNextRound(mainFirstRound, "main", "Quartas de final", "qf");
-      const semifinals = buildNextRound(quarterfinals, "main", "Semifinal", "sf");
-      const final = buildNextRound(semifinals, "main", "Final", "final");
-
-      mainRounds.push({ title: "Quartas de final", bracketTitle: mainName, games: quarterfinals });
-      mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
-      mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
-    }
-  }
 
   if (repechageFirstRound.length) {
     repechageRounds.push({
@@ -860,7 +927,7 @@ function generateCupBrackets(data) {
     });
 
     if (teamCount === 18 && repechageIds.length === 4) {
-      // Disputa paralela em pontos corridos. Não cria final.
+      // Disputa Paralela: todos contra todos. Não gera final.
     } else if (repechageIds.length === 4) {
       const final = buildNextRound(repechageFirstRound, "repechage", "Final", "final");
       repechageRounds.push({ title: "Final", bracketTitle: repechageName, games: final });
@@ -2419,6 +2486,9 @@ function clearScores() {
 const currentBrackets = isCupType(config) && data.brackets?.length
   ? groupStoredBracketGames(data)
   : null;
+  const parallelRanking = isCupType(config) && (data.cupConfig?.teamCount || 12) === 18 && data.brackets?.length
+  ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
+  : [];
 
 return (
   <>
@@ -2618,13 +2688,26 @@ return (
                   “Gerar chaves finais”.
                 </p>
               ) : (
-                <CupBracketView
-                  groupedBrackets={currentBrackets}
-                  data={data}
-                  updateBracketScore={updateBracketScore}
-                  voiceRepeat={voiceRepeat}
-                  setVoiceRepeat={setVoiceRepeat}
-                />
+                <>
+  <CupBracketView
+    groupedBrackets={currentBrackets}
+    data={data}
+    updateBracketScore={updateBracketScore}
+    voiceRepeat={voiceRepeat}
+    setVoiceRepeat={setVoiceRepeat}
+  />
+
+  {parallelRanking.length > 0 && (
+    <div className="parallelRankingBox">
+      <h3>Ranking da Disputa Paralela</h3>
+      <RankingTable
+        title="Classificação"
+        rows={parallelRanking}
+        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+      />
+    </div>
+  )}
+</>
               )}
             </section>
           </>
@@ -3166,6 +3249,71 @@ function CupGroupRankingView({ groupRankings, rankingCriteria }) {
   );
 }
 
+function calculateParallelRanking(data, rankingCriteriaValue = defaultRankingCriteria) {
+  const games = (data.brackets || []).filter(
+    (game) => game.phase === "repechage" && game.roundName === "Disputa Paralela"
+  );
+
+  const ids = Array.from(
+    new Set(
+      games.flatMap((game) => [
+        ...(game.ids1 || []),
+        ...(game.ids2 || []),
+      ])
+    )
+  );
+
+  const rows = ids.map((id) => ({
+    id,
+    name: getCupTeamName(data, id),
+    pts: 0,
+    w: 0,
+    bal: 0,
+    played: 0,
+  }));
+
+  const tableById = {};
+  rows.forEach((row) => {
+    tableById[row.id] = row;
+  });
+
+  games.forEach((game) => {
+    const s1 = Number(game.s1);
+    const s2 = Number(game.s2);
+
+    if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
+
+    const id1 = game.ids1?.[0];
+    const id2 = game.ids2?.[0];
+
+    if (id1 === undefined || id2 === undefined) return;
+
+    const win1 = s1 > s2;
+    const win2 = s2 > s1;
+
+    tableById[id1].pts += s1;
+    tableById[id1].bal += s1 - s2;
+    tableById[id1].played += 1;
+    if (win1) tableById[id1].w += 1;
+
+    tableById[id2].pts += s2;
+    tableById[id2].bal += s2 - s1;
+    tableById[id2].played += 1;
+    if (win2) tableById[id2].w += 1;
+  });
+
+  const criteria = getRankingCriteria(rankingCriteriaValue);
+
+  return rows.sort((a, b) => {
+    for (const key of criteria.order) {
+      const diff = b[key] - a[key];
+      if (diff !== 0) return diff;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+}
+
 function groupStoredBracketGames(data) {
   const cupConfig = data.cupConfig || {};
   const mainName = cupConfig.mainBracketName || "Principal";
@@ -3391,6 +3539,10 @@ function PublicTournamentScreen({ tournament }) {
     ? groupStoredBracketGames(data)
     : null;
 
+  const parallelRanking = isCup && (data.cupConfig?.teamCount || 12) === 18 && data.brackets?.length
+  ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
+  : [];
+
   return (
     <div className="publicPage">
       <header className="publicHeader">
@@ -3436,7 +3588,20 @@ function PublicTournamentScreen({ tournament }) {
               {!currentBrackets ? (
                 <p>As chaves finais ainda não foram geradas pelo organizador.</p>
               ) : (
-                <PublicCupBracketView groupedBrackets={currentBrackets} />
+                <>
+  <PublicCupBracketView groupedBrackets={currentBrackets} />
+
+  {parallelRanking.length > 0 && (
+    <div className="parallelRankingBox">
+      <h3>Ranking da Disputa Paralela</h3>
+      <RankingTable
+        title="Classificação"
+        rows={parallelRanking}
+        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+      />
+    </div>
+  )}
+</>
               )}
             </section>
           </>
