@@ -105,6 +105,16 @@ function getRankingColumnLabel(key) {
   return { w: "Vitórias", pts: "Pontos", bal: "Saldo" }[key] || key;
 }
 
+function formatDateBR(value) {
+  if (!value) return "";
+
+  const [year, month, day] = String(value).split("-");
+
+  if (!year || !month || !day) return value;
+
+  return `${day}/${month}/${year}`;
+}
+
 function normalizeScoreInput(value, winningScore = 4) {
   if (value === "") return "";
 
@@ -2352,20 +2362,48 @@ setNewLocation("");
         ) : (
           <div className="tournamentList">
             {tournaments.map((t) => (
-              <div className="tournamentItem" key={t.id}>
-                <div>
-                  <strong>{t.name}</strong>
-                  <span>{t.type}</span>
-                </div>
+              {tournaments.map((t) => {
+  const details = t.data || {};
 
-                <div className="actions">
-                  <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                  <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>
-                    Excluir
-                  </button>
-                </div>
-              </div>
-            ))}
+  return (
+    <div className="tournamentItem" key={t.id}>
+      <div className="tournamentInfo">
+        <strong>{t.name}</strong>
+
+        <div className="tournamentMeta">
+          <span>🏆 {t.type}</span>
+
+          {details.gender && (
+            <span>👥 {details.gender}</span>
+          )}
+
+          {details.eventDate && (
+            <span>📅 {formatDateBR(details.eventDate)}</span>
+          )}
+
+          {details.eventDay && (
+            <span>🗓️ {details.eventDay}</span>
+          )}
+
+          {details.location && (
+            <span>📍 {details.location}</span>
+          )}
+
+          {details.winningScore && (
+            <span>🎯 Até {details.winningScore} pontos</span>
+          )}
+        </div>
+      </div>
+
+      <div className="actions">
+        <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+        <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>
+          Excluir
+        </button>
+      </div>
+    </div>
+  );
+})}
           </div>
         )}
       </section>
