@@ -755,18 +755,31 @@ function resolveBracketGame(game, allGames, data) {
 
   if (copy.source1) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source1);
+
     const winnerId = sourceGame
-  ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
-  : null;
+      ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
+      : null;
+
+    copy.ids1 = winnerId === null ? [] : [winnerId];
+  }
 
   if (copy.source2) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source2);
-   const winnerId = sourceGame
-  ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
-  : null;
 
-  copy.team1 = copy.ids1?.length ? [getCupTeamName(data, copy.ids1[0])] : ["Aguardando"];
-  copy.team2 = copy.ids2?.length ? [getCupTeamName(data, copy.ids2[0])] : ["Aguardando"];
+    const winnerId = sourceGame
+      ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
+      : null;
+
+    copy.ids2 = winnerId === null ? [] : [winnerId];
+  }
+
+  copy.team1 = copy.ids1?.length
+    ? [getCupTeamName(data, copy.ids1[0])]
+    : ["Aguardando"];
+
+  copy.team2 = copy.ids2?.length
+    ? [getCupTeamName(data, copy.ids2[0])]
+    : ["Aguardando"];
 
   return copy;
 }
@@ -4043,4 +4056,3 @@ function PublicBracketColumn({ rounds }) {
 }
 
 createRoot(document.getElementById("root")).render(<App />);
-
