@@ -843,10 +843,27 @@ function PlanCard({ title, tag, badge, price, text, items }) {
 }
 
 function Info({ title, text }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div>
-      <strong>{title}</strong>
-      <p>{text}</p>
+    <div className="modalityInfoCard">
+      <div className="modalityInfoTop">
+        <strong>{title}</strong>
+
+        <button
+          type="button"
+          className="explainBtn"
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          {open ? "Fechar" : "Como funciona?"}
+        </button>
+      </div>
+
+      {open && (
+        <div className="modalityExplainBox">
+          <p>{text}</p>
+        </div>
+      )}
     </div>
   );
 }
@@ -1051,67 +1068,99 @@ function Login() {
             </button>
           </div>
 
-          {openInfoTab === "plans" && (
-            <div className="accordionContent">
-              <div className="plansGrid">
-                <PlanCard
-                  title="Basic"
-                  tag="Entrada"
-                  price="R$ 19,90"
-                  text="Para começar com torneios mistos e Super 08."
-                  items={[
-                    "Super 08",
-                    "Super 12 Mista (Dupla Aleatória)",
-                    "Super 16 Mista (Dupla Aleatória)",
-                    "1 campeonato ativo por vez",
-                    "Sorteio e ranking automático",
-                  ]}
-                />
-                <PlanCard
-                  title="Pro"
-                  tag="Organizador"
-                  badge="Mais usado"
-                  price="R$ 39,90"
-                  text="Para organizadores que precisam de duplas fixas."
-                  items={[
-                    "Tudo do Basic",
-                    "Super 12 Mista (Dupla Fixa)",
-                    "Super 16 Mista (Dupla Fixa)",
-                    "Campeonatos ilimitados",
-                    "Histórico salvo",
-                  ]}
-                />
-                <PlanCard
-                  title="Premium"
-                  tag="Completo"
-                  price="R$ 59,90"
-                  text="Libera todos os formatos disponíveis, incluindo a Copa."
-                  items={[
-                    "Tudo do Pro",
-                    "Simples 8",
-                    "Copa com 12 ou 24 duplas",
-                    "Chave principal e repescagem",
-                    "Campeonatos ilimitados",
-                    "Ideal para clubes e arenas",
-                  ]}
-                />
-              </div>
-            </div>
-          )}
+         {openInfoTab === "plans" && (
+  <div className="accordionContent">
+    <div className="plansGrid plansGridThree">
+      <PlanCard
+        title="Basic"
+        tag="Entrada"
+        price="R$ 19,90"
+        text="Para começar com torneios mistos e Super 08."
+        items={[
+          "Super 08",
+          "Super 12 Mista Aleatória",
+          "Super 16 Mista Aleatória",
+          "Gerencie apenas 1 campeonato por vez",
+          "Sorteio automático",
+        ]}
+      />
+
+      <PlanCard
+        title="Pro"
+        tag="Organizador"
+        badge="Mais usado"
+        price="R$ 39,90"
+        text="Para organizadores que precisam de modalidades com duplas fixas."
+        items={[
+          "Super 08",
+          "Super 12 Mista Aleatória",
+          "Super 16 Mista Aleatória",
+          "Super 12 Mista Dupla Fixa",
+          "Super 16 Mista Dupla Fixa",
+          "Gerencie vários campeonatos ao mesmo tempo",
+        ]}
+      />
+
+      <PlanCard
+        title="Premium"
+        tag="Completo"
+        price="R$ 59,90"
+        text="Para quem quer liberar todos os formatos disponíveis."
+        items={[
+          "Super 08",
+          "Super 12 Mista Aleatória",
+          "Super 16 Mista Aleatória",
+          "Super 12 Mista Dupla Fixa",
+          "Super 16 Mista Dupla Fixa",
+          "Simples 8",
+          "Copa",
+          "Gerencie vários campeonatos ao mesmo tempo",
+        ]}
+      />
+    </div>
+  </div>
+)}
 
           {openInfoTab === "modalities" && (
-            <div className="accordionContent">
-              <div className="modalitiesGrid">
-                <Info title="Super 08" text="8 participantes, duplas variáveis e ranking individual." />
-                <Info title="Super 12 Mista (Dupla Aleatória)" text="6 homens e 6 mulheres. As duplas mudam conforme a numeração sorteada." />
-                <Info title="Super 16 Mista (Dupla Aleatória)" text="8 homens e 8 mulheres com duplas alternadas por rodada." />
-                <Info title="Super 12 Mista (Dupla Fixa)" text="6 duplas fixas jogando entre si em 5 rodadas." />
-                <Info title="Super 16 Mista (Dupla Fixa)" text="8 duplas fixas no formato todos contra todos." />
-                <Info title="Simples 8" text="8 jogadores em disputa individual com ranking geral." />
-                <Info title="Copa" text="Disponível no Premium. 12 ou 24 duplas, grupos de 3, fase principal e repescagem." />
-              </div>
-            </div>
-          )}
+  <div className="accordionContent">
+    <div className="modalitiesGrid">
+      <Info
+        title="Super 08"
+        text="Formato com 8 participantes. O sistema gera duplas variáveis, monta as rodadas e calcula o ranking individual conforme os placares."
+      />
+
+      <Info
+        title="Super 12 Mista Aleatória"
+        text="Formato com 6 homens e 6 mulheres. As duplas são montadas de forma alternada conforme a numeração sorteada, mantendo jogos mistos durante o torneio."
+      />
+
+      <Info
+        title="Super 16 Mista Aleatória"
+        text="Formato com 8 homens e 8 mulheres. O sistema organiza rodadas com duplas mistas alternadas e ranking individual por desempenho."
+      />
+
+      <Info
+        title="Super 12 Mista Dupla Fixa"
+        text="Formato com 6 duplas fixas. As duplas permanecem as mesmas durante todo o campeonato e jogam entre si em rodadas automáticas."
+      />
+
+      <Info
+        title="Super 16 Mista Dupla Fixa"
+        text="Formato com 8 duplas fixas. O sistema gera os confrontos entre as duplas, registra placares e monta o ranking geral."
+      />
+
+      <Info
+        title="Simples 8"
+        text="Formato individual com 8 jogadores. Cada atleta joga individualmente, com tabela automática e ranking geral por desempenho."
+      />
+
+      <Info
+        title="Copa"
+        text="Formato exclusivo do plano Premium. Pode ser jogado com 12 ou 24 duplas, com fase de grupos, chave principal e repescagem com nomes editáveis."
+      />
+    </div>
+  </div>
+)}
 
           <div className="learnMoreBox">
             <strong>Quer saber qual plano escolher?</strong>
