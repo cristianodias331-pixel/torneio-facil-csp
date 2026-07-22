@@ -2333,10 +2333,9 @@ setNewLocation("");
 
         <button type="button" onClick={createTournament} disabled={saving}>
           {saving ? "Salvando..." : "Criar torneio"}
-        </button>
-      </section>
+        </header>
 
-      <section className="card">
+<section className="card">
         <h2>Meus torneios</h2>
 
         {tournaments.length === 0 ? (
