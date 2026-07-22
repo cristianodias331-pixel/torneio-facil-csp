@@ -940,10 +940,24 @@ function App() {
   return <Dashboard profile={profile} user={session.user} />;
 }
 
+function BeachLogo() {
+  return (
+    <div className="beachLogo" aria-label="Torneio Fácil BT">
+      <div className="beachLogoSand"></div>
+      <div className="beachLogoBall">●</div>
+      <div className="beachLogoRacket racketOne"></div>
+      <div className="beachLogoRacket racketTwo"></div>
+    </div>
+  );
+}
+
 function Login() {
-  const [name, setName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [birthDate, setBirthDate] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
   const [mode, setMode] = useState("login");
   const [notice, setNotice] = useState(null);
   const [openInfoTab, setOpenInfoTab] = useState("plans");
@@ -952,8 +966,33 @@ function Login() {
     setNotice({ type, title, message });
   }
 
+  function resetForm() {
+    setFirstName("");
+    setLastName("");
+    setBirthDate("");
+    setEmail("");
+    setPassword("");
+  }
+
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (mode === "signup") {
+      if (!firstName.trim()) {
+        showNotice("warning", "Nome obrigatório", "Informe seu nome para criar a conta.");
+        return;
+      }
+
+      if (!lastName.trim()) {
+        showNotice("warning", "Sobrenome obrigatório", "Informe seu sobrenome para criar a conta.");
+        return;
+      }
+
+      if (!birthDate) {
+        showNotice("warning", "Data de nascimento obrigatória", "Informe sua data de nascimento.");
+        return;
+      }
+    }
 
     if (!email.trim()) {
       showNotice("warning", "E-mail obrigatório", "Informe seu e-mail para continuar.");
@@ -979,15 +1018,19 @@ function Login() {
         );
       }
     } else {
-      if (!name.trim()) {
-        showNotice("warning", "Nome obrigatório", "Informe seu nome para criar a conta.");
-        return;
-      }
+      const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
       const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
-        options: { data: { name: name.trim() } },
+        options: {
+          data: {
+            name: fullName,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+            birth_date: birthDate,
+          },
+        },
       });
 
       if (error) {
@@ -1003,171 +1046,403 @@ function Login() {
           "Sua conta foi criada. Aguarde a liberação do acesso pelo administrador."
         );
 
-        setName("");
-        setEmail("");
-        setPassword("");
+        resetForm();
         setMode("login");
       }
     }
   }
 
   return (
-    <div className="loginPage">
+    <div className="landingPage">
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
-      <div className="loginLayout">
-        <div className="loginCard">
-          <div className="logo">🏆</div>
-          <h1>Torneio Fácil BT</h1>
-          <p>{mode === "login" ? "Entre para acessar seus torneios." : "Crie sua conta para solicitar acesso."}</p>
+      <header className="landingHeader">
+        <div className="landingBrand">
+          <BeachLogo />
+          <div>
+            <strong>Torneio Fácil BT</strong>
+            <span>Gestão simples para torneios de Beach Tennis</span>
+          </div>
+        </div>
 
-          <form onSubmit={handleSubmit}>
-            {mode === "signup" && (
-              <>
-                <label>Nome</label>
-                <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Seu nome" />
-              </>
-            )}
+        <nav className="landingNav">
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#planos">Planos</a>
+          <a href="#modalidades">Modalidades</a>
+        </nav>
 
-            <label>E-mail</label>
-            <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" />
-
-            <label>Senha</label>
-            <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Digite sua senha" />
-
-            <button type="submit">{mode === "login" ? "Entrar" : "Criar conta"}</button>
-          </form>
+        <div className="landingHeaderActions">
+          <button
+            type="button"
+            className="secondaryBtn"
+            onClick={() => {
+              setMode("login");
+              setTimeout(() => document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" }), 50);
+            }}
+          >
+            Login
+          </button>
 
           <button
             type="button"
-            className="linkBtn"
             onClick={() => {
-              setMode(mode === "login" ? "signup" : "login");
-              setName("");
-              setEmail("");
-              setPassword("");
+              setMode("signup");
+              setTimeout(() => document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" }), 50);
             }}
           >
-            {mode === "login" ? "Criar nova conta" : "Já tenho conta"}
+            Criar conta
           </button>
         </div>
+      </header>
 
-        <div className="loginInfoPanel">
-          <div className="loginHeroInfo">
-            <span>Conheça os planos</span>
-            <h2>Escolha o melhor formato para seus torneios</h2>
-            <p>Veja os planos e modalidades disponíveis sem poluir a tela de login. Clique nas abas abaixo para expandir os detalhes.</p>
+      <main>
+        <section className="landingHero">
+          <div className="heroContent">
+            <div className="heroBadge">
+              🔊 Agora com chamada de jogos por voz
+            </div>
+
+            <h1>
+              Organize torneios de Beach Tennis com mais facilidade
+            </h1>
+
+            <p>
+              Crie campeonatos, sorteie participantes, gere tabelas, acompanhe rankings,
+              chame jogos por voz e salve tudo automaticamente em uma plataforma simples
+              para organizadores, arenas e clubes.
+            </p>
+
+            <div className="heroActions">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("signup");
+                  document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                Criar minha conta
+              </button>
+
+              <button
+                type="button"
+                className="secondaryBtn"
+                onClick={() => {
+                  setMode("login");
+                  document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" });
+                }}
+              >
+                Já tenho conta
+              </button>
+            </div>
+
+            <div className="heroHighlights">
+              <span>🏆 Tabelas automáticas</span>
+              <span>🎾 Duplas fixas e aleatórias</span>
+              <span>📊 Ranking configurável</span>
+            </div>
           </div>
 
-          <div className="infoTabs">
-            <button type="button" className={openInfoTab === "plans" ? "active" : ""} onClick={() => setOpenInfoTab(openInfoTab === "plans" ? null : "plans")}>
-              Planos
-            </button>
-            <button type="button" className={openInfoTab === "modalities" ? "active" : ""} onClick={() => setOpenInfoTab(openInfoTab === "modalities" ? null : "modalities")}>
-              Modalidades
-            </button>
+          <div className="heroVisual">
+            <div className="sandCard">
+              <div className="sandSun"></div>
+              <div className="racketMark">
+                <span>🎾</span>
+              </div>
+
+              <div className="mockPanel">
+                <div className="mockTop">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+
+                <div className="mockTitle">Rodada 1</div>
+
+                <div className="mockGame">
+                  <strong>Quadra 1</strong>
+                  <p>João + Pedro x Lucas + Marcos</p>
+                </div>
+
+                <div className="mockGame">
+                  <strong>Quadra 2</strong>
+                  <p>Ana + Carla x Júlia + Fernanda</p>
+                </div>
+
+                <button type="button" className="mockVoiceBtn">
+                  🔊 Chamar rodada
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="como-funciona" className="landingSection">
+          <div className="sectionIntro">
+            <span>Como funciona</span>
+            <h2>Do cadastro à chamada dos jogos em poucos passos</h2>
+            <p>
+              O Torneio Fácil BT foi pensado para reduzir o trabalho manual do organizador
+              e deixar o torneio mais profissional.
+            </p>
           </div>
 
-         {openInfoTab === "plans" && (
-  <div className="accordionContent">
-    <div className="plansGrid plansGridThree">
-      <PlanCard
-        title="Basic"
-        tag="Entrada"
-        price="R$ 19,90"
-        text="Para começar com torneios mistos e Super 08."
-        items={[
-          "Super 08",
-          "Super 12 Mista Aleatória",
-          "Super 16 Mista Aleatória",
-          "Gerencie apenas 1 campeonato por vez",
-          "Sorteio automático",
-        ]}
-      />
+          <div className="stepsGrid">
+            <div className="stepCard">
+              <div>1</div>
+              <h3>Crie sua conta</h3>
+              <p>Cadastre-se com seus dados e aguarde a liberação do acesso pelo administrador.</p>
+            </div>
 
-      <PlanCard
-        title="Pro"
-        tag="Organizador"
-        badge="Mais usado"
-        price="R$ 39,90"
-        text="Para organizadores que precisam de modalidades com duplas fixas."
-        items={[
-          "Super 08",
-          "Super 12 Mista Aleatória",
-          "Super 16 Mista Aleatória",
-          "Super 12 Mista Dupla Fixa",
-          "Super 16 Mista Dupla Fixa",
-          "Gerencie vários campeonatos ao mesmo tempo",
-        ]}
-      />
+            <div className="stepCard">
+              <div>2</div>
+              <h3>Escolha a modalidade</h3>
+              <p>Selecione Super 08, Super 12, Super 16, Simples 8 ou Copa, conforme seu plano.</p>
+            </div>
 
-      <PlanCard
-        title="Premium"
-        tag="Completo"
-        price="R$ 59,90"
-        text="Para quem quer liberar todos os formatos disponíveis."
-        items={[
-          "Super 08",
-          "Super 12 Mista Aleatória",
-          "Super 16 Mista Aleatória",
-          "Super 12 Mista Dupla Fixa",
-          "Super 16 Mista Dupla Fixa",
-          "Simples 8",
-          "Copa",
-          "Gerencie vários campeonatos ao mesmo tempo",
-        ]}
-      />
-    </div>
-  </div>
-)}
+            <div className="stepCard">
+              <div>3</div>
+              <h3>Gere a tabela</h3>
+              <p>Informe os participantes, sorteie nomes e deixe o sistema montar os jogos.</p>
+            </div>
 
-          {openInfoTab === "modalities" && (
-  <div className="accordionContent">
-    <div className="modalitiesGrid">
-      <Info
-        title="Super 08"
-        text="Formato com 8 participantes. O sistema gera duplas variáveis, monta as rodadas e calcula o ranking individual conforme os placares."
-      />
-
-      <Info
-        title="Super 12 Mista Aleatória"
-        text="Formato com 6 homens e 6 mulheres. As duplas são montadas de forma alternada conforme a numeração sorteada, mantendo jogos mistos durante o torneio."
-      />
-
-      <Info
-        title="Super 16 Mista Aleatória"
-        text="Formato com 8 homens e 8 mulheres. O sistema organiza rodadas com duplas mistas alternadas e ranking individual por desempenho."
-      />
-
-      <Info
-        title="Super 12 Mista Dupla Fixa"
-        text="Formato com 6 duplas fixas. As duplas permanecem as mesmas durante todo o campeonato e jogam entre si em rodadas automáticas."
-      />
-
-      <Info
-        title="Super 16 Mista Dupla Fixa"
-        text="Formato com 8 duplas fixas. O sistema gera os confrontos entre as duplas, registra placares e monta o ranking geral."
-      />
-
-      <Info
-        title="Simples 8"
-        text="Formato individual com 8 jogadores. Cada atleta joga individualmente, com tabela automática e ranking geral por desempenho."
-      />
-
-      <Info
-        title="Copa"
-        text="Formato exclusivo do plano Premium. Pode ser jogado com 12 ou 24 duplas, com fase de grupos, chave principal e repescagem com nomes editáveis."
-      />
-    </div>
-  </div>
-)}
-
-          <div className="learnMoreBox">
-            <strong>Quer saber qual plano escolher?</strong>
-            <p>Para testes rápidos, use o Basic. Para torneios recorrentes e duplas fixas, escolha o Pro. Para liberar Copa e todos os formatos, use o Premium.</p>
+            <div className="stepCard">
+              <div>4</div>
+              <h3>Acompanhe o torneio</h3>
+              <p>Preencha placares, veja rankings e use a chamada por voz para anunciar os jogos.</p>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
+
+        <section className="landingSection featuresSection">
+          <div className="sectionIntro">
+            <span>Recursos</span>
+            <h2>Ferramentas para organizar melhor</h2>
+          </div>
+
+          <div className="featuresGrid">
+            <div className="featureCard">
+              <span>🎲</span>
+              <h3>Sorteio automático</h3>
+              <p>Embaralhe nomes e duplas com animação antes de gerar a tabela.</p>
+            </div>
+
+            <div className="featureCard">
+              <span>📅</span>
+              <h3>Tabelas automáticas</h3>
+              <p>O sistema gera rodadas conforme o formato escolhido.</p>
+            </div>
+
+            <div className="featureCard">
+              <span>📊</span>
+              <h3>Ranking configurável</h3>
+              <p>Escolha a ordem dos critérios entre vitórias, pontos e saldo.</p>
+            </div>
+
+            <div className="featureCard">
+              <span>🔊</span>
+              <h3>Chamada de jogos</h3>
+              <p>Anuncie rodada, quadra e nomes dos atletas usando voz pelo navegador.</p>
+            </div>
+
+            <div className="featureCard">
+              <span>💾</span>
+              <h3>Salvamento automático</h3>
+              <p>Os dados ficam salvos automaticamente na conta do organizador.</p>
+            </div>
+
+            <div className="featureCard">
+              <span>🏆</span>
+              <h3>Copa Premium</h3>
+              <p>Formato com grupos, chave principal e repescagem com nomes editáveis.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="planos" className="landingSection">
+          <div className="sectionIntro">
+            <span>Planos</span>
+            <h2>Escolha o plano ideal para seus torneios</h2>
+          </div>
+
+          <div className="plansGrid plansGridThree landingPlans">
+            <PlanCard
+              title="Basic"
+              tag="Entrada"
+              price="R$ 19,90"
+              text="Para começar com torneios mistos e Super 08."
+              items={[
+                "Super 08",
+                "Super 12 Mista Aleatória",
+                "Super 16 Mista Aleatória",
+                "Gerencie apenas 1 campeonato por vez",
+                "Sorteio automático",
+              ]}
+            />
+
+            <PlanCard
+              title="Pro"
+              tag="Organizador"
+              badge="Mais usado"
+              price="R$ 39,90"
+              text="Para organizadores que precisam de modalidades com duplas fixas."
+              items={[
+                "Super 08",
+                "Super 12 Mista Aleatória",
+                "Super 16 Mista Aleatória",
+                "Super 12 Mista Dupla Fixa",
+                "Super 16 Mista Dupla Fixa",
+                "Gerencie vários campeonatos ao mesmo tempo",
+              ]}
+            />
+
+            <PlanCard
+              title="Premium"
+              tag="Completo"
+              price="R$ 59,90"
+              text="Para quem quer liberar todos os formatos disponíveis."
+              items={[
+                "Super 08",
+                "Super 12 Mista Aleatória",
+                "Super 16 Mista Aleatória",
+                "Super 12 Mista Dupla Fixa",
+                "Super 16 Mista Dupla Fixa",
+                "Simples 8",
+                "Copa",
+                "Gerencie vários campeonatos ao mesmo tempo",
+              ]}
+            />
+          </div>
+        </section>
+
+        <section id="modalidades" className="landingSection">
+          <div className="sectionIntro">
+            <span>Modalidades</span>
+            <h2>Formatos disponíveis na plataforma</h2>
+            <p>Clique em “Como funciona?” para ver a explicação de cada formato.</p>
+          </div>
+
+          <div className="modalitiesGrid landingModalities">
+            <Info
+              title="Super 08"
+              text="Formato com 8 participantes. O sistema gera duplas variáveis, monta as rodadas e calcula o ranking individual conforme os placares."
+            />
+
+            <Info
+              title="Super 12 Mista Aleatória"
+              text="Formato com 6 homens e 6 mulheres. As duplas são montadas de forma alternada conforme a numeração sorteada, mantendo jogos mistos durante o torneio."
+            />
+
+            <Info
+              title="Super 16 Mista Aleatória"
+              text="Formato com 8 homens e 8 mulheres. O sistema organiza rodadas com duplas mistas alternadas e ranking individual por desempenho."
+            />
+
+            <Info
+              title="Super 12 Mista Dupla Fixa"
+              text="Formato com 6 duplas fixas. As duplas permanecem as mesmas durante todo o campeonato e jogam entre si em rodadas automáticas."
+            />
+
+            <Info
+              title="Super 16 Mista Dupla Fixa"
+              text="Formato com 8 duplas fixas. O sistema gera os confrontos entre as duplas, registra placares e monta o ranking geral."
+            />
+
+            <Info
+              title="Simples 8"
+              text="Formato individual com 8 jogadores. Cada atleta joga individualmente, com tabela automática e ranking geral por desempenho."
+            />
+
+            <Info
+              title="Copa"
+              text="Formato exclusivo do plano Premium. Pode ser jogado com 12 ou 24 duplas, com fase de grupos, chave principal e repescagem com nomes editáveis."
+            />
+          </div>
+        </section>
+
+        <section id="acesso" className="landingAccessSection">
+          <div className="accessText">
+            <span>Acesso</span>
+            <h2>{mode === "login" ? "Entre na sua conta" : "Crie sua conta"}</h2>
+            <p>
+              {mode === "login"
+                ? "Acesse seus torneios salvos e continue de onde parou."
+                : "Preencha seus dados para solicitar acesso à plataforma."}
+            </p>
+          </div>
+
+          <div className="accessCard">
+            <div className="accessToggle">
+              <button
+                type="button"
+                className={mode === "login" ? "active" : ""}
+                onClick={() => setMode("login")}
+              >
+                Login
+              </button>
+
+              <button
+                type="button"
+                className={mode === "signup" ? "active" : ""}
+                onClick={() => setMode("signup")}
+              >
+                Criar conta
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              {mode === "signup" && (
+                <>
+                  <div className="twoCols formTwoCols">
+                    <div>
+                      <label>Nome</label>
+                      <input
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        placeholder="Seu nome"
+                      />
+                    </div>
+
+                    <div>
+                      <label>Sobrenome</label>
+                      <input
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        placeholder="Seu sobrenome"
+                      />
+                    </div>
+                  </div>
+
+                  <label>Data de nascimento</label>
+                  <input
+                    type="date"
+                    value={birthDate}
+                    onChange={(e) => setBirthDate(e.target.value)}
+                  />
+                </>
+              )}
+
+              <label>E-mail</label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="seuemail@exemplo.com"
+              />
+
+              <label>Senha</label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Digite sua senha"
+              />
+
+              <button type="submit">
+                {mode === "login" ? "Entrar" : "Criar conta"}
+              </button>
+            </form>
+          </div>
+        </section>
+      </main>
     </div>
   );
 }
