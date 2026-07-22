@@ -1249,6 +1249,98 @@ tbody tr:hover {
   pointer-events: auto;
 }
 
+.roundHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+
+.roundHeader h3 {
+  margin: 0;
+}
+
+.voiceActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.gameVoiceActions {
+  justify-content: flex-end;
+  margin-top: 10px;
+}
+
+.voiceBtn {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  border: none;
+}
+
+.voiceBtn:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.voiceBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+
+.voiceRepeatBox {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.voiceRepeatBox span {
+  font-weight: 700;
+  color: #334155;
+}
+
+.voiceRepeatBox select {
+  max-width: 120px;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .roundHeader {
+    align-items: flex-start;
+  }
+
+  .voiceActions {
+    width: 100%;
+  }
+
+  .voiceActions button {
+    flex: 1;
+  }
+
+  .gameVoiceActions {
+    justify-content: stretch;
+  }
+
+  .voiceRepeatBox {
+    align-items: stretch;
+    justify-content: flex-start;
+    flex-direction: column;
+  }
+
+  .voiceRepeatBox select {
+    max-width: 100%;
+  }
+}
 .appPage header .actions button {
   position: relative;
   z-index: 90;
