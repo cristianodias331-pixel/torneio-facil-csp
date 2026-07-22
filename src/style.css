@@ -3430,3 +3430,13 @@ tbody tr:hover {
     width: 100% !important;
   }
 }
+
+.scoreRow input::-webkit-outer-spin-button,
+.scoreRow input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.scoreRow input[type="number"] {
+  -moz-appearance: textfield;
+}
