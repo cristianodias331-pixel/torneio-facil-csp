@@ -2386,6 +2386,9 @@ setNewLocation("");
     </div>
   )}
 </section>
+        </div>
+  );
+}
 
 function createInitialData(type, config) {
   const base = {
