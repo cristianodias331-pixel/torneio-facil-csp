@@ -625,6 +625,137 @@ function syncCupBracketScores(currentData) {
   return copy;
 }
 
+function canUseSpeech() {
+  return typeof window !== "undefined" && "speechSynthesis" in window;
+}
+
+function stopSpeech() {
+  if (!canUseSpeech()) return;
+  window.speechSynthesis.cancel();
+}
+
+function speakText(text) {
+  if (!canUseSpeech()) {
+    alert("Seu navegador não suporta chamada por voz.");
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "pt-BR";
+  utterance.rate = 0.92;
+  utterance.pitch = 1;
+  utterance.volume = 1;
+
+  window.speechSynthesis.speak(utterance);
+}
+
+function cleanSpeechName(value) {
+  return String(value || "")
+    .replace(/\s+/g, " ")
+    .replace(/\+/g, " e ")
+    .trim();
+}
+
+function formatTeamForSpeech(team) {
+  if (!team || team.length === 0) return "equipe aguardando definição";
+
+  return team
+    .map((item) => cleanSpeechName(item))
+    .filter(Boolean)
+    .join(" e ");
+}
+
+function getGameSpeechText(game, options = {}) {
+  const {
+    roundLabel = "",
+    includeIntro = true,
+    includeGroup = true,
+    includeClosing = true,
+  } = options;
+
+  const groupText = includeGroup && game.groupName ? `${game.groupName}. ` : "";
+  const roundText = roundLabel ? `${roundLabel}. ` : "";
+  const team1 = formatTeamForSpeech(game.team1);
+  const team2 = formatTeamForSpeech(game.team2);
+
+  return [
+    includeIntro ? "Atenção atletas." : "",
+    roundText,
+    groupText,
+    `Quadra ${game.court}.`,
+    `${team1} contra ${team2}.`,
+    includeClosing ? `Compareçam à quadra ${game.court}. Boa partida.` : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+}
+
+function repeatText(text, times = 1) {
+  return Array.from({ length: Number(times) || 1 }, () => text).join(" ");
+}
+
+function speakGame(game, options = {}) {
+  const { repeat = 1 } = options;
+
+  const text = getGameSpeechText(game, {
+    ...options,
+    includeIntro: true,
+    includeClosing: true,
+  });
+
+  speakText(repeatText(text, repeat));
+}
+
+function speakRound(round, roundIndex, options = {}) {
+  const {
+    titlePrefix = "Rodada",
+    includeGroup = true,
+    repeat = 1,
+  } = options;
+
+  const roundLabel = `${titlePrefix} ${roundIndex + 1}`;
+
+  const gamesText = round
+    .map((game) => {
+      const gameText = getGameSpeechText(game, {
+        includeIntro: false,
+        includeClosing: false,
+        includeGroup,
+      });
+
+      return repeatText(gameText, repeat);
+    })
+    .join(" ");
+
+  speakText(
+    `Atenção atletas. ${roundLabel} iniciando. ${gamesText} Compareçam às suas quadras. Boa partida.`
+  );
+}
+
+function speakBracketRound(round, repeat = 1) {
+  const title = round.bracketTitle
+    ? `${round.title} da chave ${round.bracketTitle}`
+    : round.title;
+
+  const gamesText = round.games
+    .map((game) => {
+      const gameText = getGameSpeechText(game, {
+        includeIntro: false,
+        includeClosing: false,
+        includeGroup: false,
+      });
+
+      return repeatText(gameText, repeat);
+    })
+    .join(" ");
+
+  speakText(
+    `Atenção atletas. ${title} iniciando. ${gamesText} Compareçam às suas quadras. Boa partida.`
+  );
+}
+
 function NoticeModal({ notice, onClose }) {
   if (!notice) return null;
 
@@ -1290,7 +1421,8 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const [savingStatus, setSavingStatus] = useState("Salvo");
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [clearScoresOpen, setClearScoresOpen] = useState(false);
+const [clearScoresOpen, setClearScoresOpen] = useState(false);
+const [voiceRepeat, setVoiceRepeat] = useState(1);
 
   const saveTimerRef = useRef(null);
   const latestDataRef = useRef(data);
@@ -1616,7 +1748,13 @@ function TournamentScreen({ tournament, onBack, onSave }) {
             <p> Clique em “Gerar tabela” para montar os jogos.</p>
           ) : (
             <>
-              <ScheduleView schedule={data.schedule} updateScore={updateScore} showGroupName={config.type === "cup"} />
+              <ScheduleView
+  schedule={data.schedule}
+  updateScore={updateScore}
+  showGroupName={config.type === "cup"}
+  voiceRepeat={voiceRepeat}
+  setVoiceRepeat={setVoiceRepeat}
+/>
               <div className="actions">
                 <button type="button" className="deleteBtn" onClick={() => setClearScoresOpen(true)}>
                   Apagar placares
@@ -1649,10 +1787,12 @@ function TournamentScreen({ tournament, onBack, onSave }) {
                 <p>Após preencher todos os placares da fase de grupos, clique em “Gerar chaves finais”.</p>
               ) : (
                 <CupBracketView
-                  groupedBrackets={currentBrackets}
-                  data={data}
-                  updateBracketScore={updateBracketScore}
-                />
+  groupedBrackets={currentBrackets}
+  data={data}
+  updateBracketScore={updateBracketScore}
+  voiceRepeat={voiceRepeat}
+  setVoiceRepeat={setVoiceRepeat}
+/>
               )}
             </section>
           </>
@@ -1889,12 +2029,64 @@ function generateSchedule(type, players) {
   return [];
 }
 
-function ScheduleView({ schedule, updateScore, showGroupName = false }) {
+function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
+  return (
+    <div className="voiceRepeatBox">
+      <span>Repetir cada jogo:</span>
+
+      <select
+        value={voiceRepeat}
+        onChange={(e) => setVoiceRepeat(Number(e.target.value))}
+      >
+        <option value={1}>1 vez</option>
+        <option value={2}>2 vezes</option>
+      </select>
+    </div>
+  );
+}
+
+function ScheduleView({
+  schedule,
+  updateScore,
+  showGroupName = false,
+  voiceRepeat = 1,
+  setVoiceRepeat,
+}) {
   return (
     <div className="schedule">
+      <VoiceRepeatSelector
+        voiceRepeat={voiceRepeat}
+        setVoiceRepeat={setVoiceRepeat}
+      />
+
       {schedule.map((round, roundIndex) => (
         <div className="roundCard" key={roundIndex}>
-          <h3>Rodada {roundIndex + 1}</h3>
+          <div className="roundHeader">
+            <h3>Rodada {roundIndex + 1}</h3>
+
+            <div className="voiceActions">
+              <button
+                type="button"
+                className="voiceBtn"
+                onClick={() =>
+                  speakRound(round, roundIndex, {
+                    includeGroup: showGroupName,
+                    repeat: voiceRepeat,
+                  })
+                }
+              >
+                🔊 Chamar rodada
+              </button>
+
+              <button
+                type="button"
+                className="secondaryBtn"
+                onClick={stopSpeech}
+              >
+                ⏹️ Parar
+              </button>
+            </div>
+          </div>
 
           {round.map((game, gameIndex) => (
             <div className="gameCard" key={gameIndex}>
@@ -1910,9 +2102,33 @@ function ScheduleView({ schedule, updateScore, showGroupName = false }) {
               </div>
 
               <div className="scoreRow">
-                <input type="number" value={game.s1} onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)} />
+                <input
+                  type="number"
+                  value={game.s1}
+                  onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
+                />
                 <span>—</span>
-                <input type="number" value={game.s2} onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)} />
+                <input
+                  type="number"
+                  value={game.s2}
+                  onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
+                />
+              </div>
+
+              <div className="voiceActions gameVoiceActions">
+                <button
+                  type="button"
+                  className="voiceBtn"
+                  onClick={() =>
+                    speakGame(game, {
+                      roundLabel: `Rodada ${roundIndex + 1}`,
+                      includeGroup: showGroupName,
+                      repeat: voiceRepeat,
+                    })
+                  }
+                >
+                  🔊 Chamar jogo
+                </button>
               </div>
             </div>
           ))}
@@ -2083,32 +2299,72 @@ function groupStoredBracketGames(data) {
   };
 }
 
-function CupBracketView({ groupedBrackets, data, updateBracketScore }) {
+function CupBracketView({
+  groupedBrackets,
+  data,
+  updateBracketScore,
+  voiceRepeat = 1,
+  setVoiceRepeat,
+}) {
   return (
-    <div className="cupBrackets">
-      <BracketColumn
-        title={(data.cupConfig?.mainBracketName || "Principal")}
-        rounds={groupedBrackets.main}
-        updateBracketScore={updateBracketScore}
+    <div>
+      <VoiceRepeatSelector
+        voiceRepeat={voiceRepeat}
+        setVoiceRepeat={setVoiceRepeat}
       />
 
-      <BracketColumn
-        title={(data.cupConfig?.repechageName || "Repescagem")}
-        rounds={groupedBrackets.repechage}
-        updateBracketScore={updateBracketScore}
-      />
+      <div className="cupBrackets">
+        <BracketColumn
+          title={(data.cupConfig?.mainBracketName || "Principal")}
+          rounds={groupedBrackets.main}
+          updateBracketScore={updateBracketScore}
+          voiceRepeat={voiceRepeat}
+        />
+
+        <BracketColumn
+          title={(data.cupConfig?.repechageName || "Repescagem")}
+          rounds={groupedBrackets.repechage}
+          updateBracketScore={updateBracketScore}
+          voiceRepeat={voiceRepeat}
+        />
+      </div>
     </div>
   );
 }
 
-function BracketColumn({ title, rounds, updateBracketScore }) {
+function BracketColumn({
+  title,
+  rounds,
+  updateBracketScore,
+  voiceRepeat = 1,
+}) {
   return (
     <div className="bracketColumn">
       <h3>{title}</h3>
 
       {rounds.map((round, roundIndex) => (
         <div className="roundCard" key={roundIndex}>
-          <h3>{round.title}</h3>
+          <div className="roundHeader">
+            <h3>{round.title}</h3>
+
+            <div className="voiceActions">
+              <button
+                type="button"
+                className="voiceBtn"
+                onClick={() => speakBracketRound(round, voiceRepeat)}
+              >
+                🔊 Chamar fase
+              </button>
+
+              <button
+                type="button"
+                className="secondaryBtn"
+                onClick={stopSpeech}
+              >
+                ⏹️ Parar
+              </button>
+            </div>
+          </div>
 
           {round.games.map((game) => (
             <div className="gameCard" key={game.matchKey}>
@@ -2134,6 +2390,23 @@ function BracketColumn({ title, rounds, updateBracketScore }) {
                   onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
                   disabled={!game.ids1?.length || !game.ids2?.length}
                 />
+              </div>
+
+              <div className="voiceActions gameVoiceActions">
+                <button
+                  type="button"
+                  className="voiceBtn"
+                  onClick={() =>
+                    speakGame(game, {
+                      roundLabel: `${round.title} da chave ${title}`,
+                      includeGroup: false,
+                      repeat: voiceRepeat,
+                    })
+                  }
+                  disabled={!game.ids1?.length || !game.ids2?.length}
+                >
+                  🔊 Chamar jogo
+                </button>
               </div>
             </div>
           ))}
