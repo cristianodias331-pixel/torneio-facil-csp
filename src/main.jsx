@@ -29,12 +29,36 @@ async function logout() {
 }
 
 const rankingCriteriaOptions = [
-  { value: "wins_points_balance", label: "Vitórias > Pontos > Saldo", order: ["w", "pts", "bal"] },
-  { value: "wins_balance_points", label: "Vitórias > Saldo > Pontos", order: ["w", "bal", "pts"] },
-  { value: "points_wins_balance", label: "Pontos > Vitórias > Saldo", order: ["pts", "w", "bal"] },
-  { value: "points_balance_wins", label: "Pontos > Saldo > Vitórias", order: ["pts", "bal", "w"] },
-  { value: "balance_wins_points", label: "Saldo > Vitórias > Pontos", order: ["bal", "w", "pts"] },
-  { value: "balance_points_wins", label: "Saldo > Pontos > Vitórias", order: ["bal", "pts", "w"] },
+  {
+    value: "wins_points_balance",
+    label: "Vitórias > Pontos > Saldo",
+    order: ["w", "pts", "bal"],
+  },
+  {
+    value: "wins_balance_points",
+    label: "Vitórias > Saldo > Pontos",
+    order: ["w", "bal", "pts"],
+  },
+  {
+    value: "points_wins_balance",
+    label: "Pontos > Vitórias > Saldo",
+    order: ["pts", "w", "bal"],
+  },
+  {
+    value: "points_balance_wins",
+    label: "Pontos > Saldo > Vitórias",
+    order: ["pts", "bal", "w"],
+  },
+  {
+    value: "balance_wins_points",
+    label: "Saldo > Vitórias > Pontos",
+    order: ["bal", "w", "pts"],
+  },
+  {
+    value: "balance_points_wins",
+    label: "Saldo > Pontos > Vitórias",
+    order: ["bal", "pts", "w"],
+  },
 ];
 
 const defaultRankingCriteria = "wins_points_balance";
@@ -100,19 +124,55 @@ const allowedByPlan = {
     "Super 12 Mista (Dupla Fixa)",
     "Super 16 Mista (Dupla Fixa)",
     "Simples 8",
-    "Copa",
+    "Copa - 12 ou 24 duplas",
+    "Copa - 18 duplas",
   ],
 };
 
 const modalityConfig = {
-  "Super 08": { type: "super8", total: 8, label: "Participante", courts: 2 },
-  "Super 12 Mista (Dupla Aleatória)": { type: "mixed12", men: 6, women: 6, courts: 3 },
-  "Super 16 Mista (Dupla Aleatória)": { type: "mixed16", men: 8, women: 8, courts: 4 },
-  "Super 12 Mista (Dupla Fixa)": { type: "fixed12", teams: 6, courts: 3 },
-  "Super 16 Mista (Dupla Fixa)": { type: "fixed16", teams: 8, courts: 4 },
-  "Simples 8": { type: "simple8", total: 8, label: "Jogador", courts: 4 },
-  "Copa": {
+  "Super 08": {
+    type: "super8",
+    total: 8,
+    label: "Participante",
+    courts: 2,
+  },
+
+  "Super 12 Mista (Dupla Aleatória)": {
+    type: "mixed12",
+    men: 6,
+    women: 6,
+    courts: 3,
+  },
+
+  "Super 16 Mista (Dupla Aleatória)": {
+    type: "mixed16",
+    men: 8,
+    women: 8,
+    courts: 4,
+  },
+
+  "Super 12 Mista (Dupla Fixa)": {
+    type: "fixed12",
+    teams: 6,
+    courts: 3,
+  },
+
+  "Super 16 Mista (Dupla Fixa)": {
+    type: "fixed16",
+    teams: 8,
+    courts: 4,
+  },
+
+  "Simples 8": {
+    type: "simple8",
+    total: 8,
+    label: "Jogador",
+    courts: 4,
+  },
+
+  "Copa - 12 ou 24 duplas": {
     type: "cup",
+    cupMode: "standard",
     allowedTeamCounts: [12, 24],
     defaultTeams: 12,
     groupSize: 3,
@@ -120,7 +180,22 @@ const modalityConfig = {
     defaultRepechageName: "Repescagem",
     courts: 4,
   },
+
+  "Copa - 18 duplas": {
+    type: "cup18",
+    cupMode: "cup18",
+    allowedTeamCounts: [18],
+    defaultTeams: 18,
+    groupSize: 3,
+    defaultMainBracketName: "Principal",
+    defaultRepechageName: "Disputa Paralela",
+    courts: 6,
+  },
 };
+
+function isCupType(config) {
+  return config?.type === "cup" || config?.type === "cup18";
+}
 
 const super8Template = [
   [[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
@@ -325,7 +400,12 @@ function generateCupGroupSchedule(players, cupConfig) {
     });
   });
 
-  return rounds.map((round) => round.map((game, index) => ({ ...game, court: index + 1 })));
+  return rounds.map((round) =>
+    round.map((game, index) => ({
+      ...game,
+      court: index + 1,
+    }))
+  );
 }
 
 function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCriteria) {
@@ -384,6 +464,7 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
         const diff = b[key] - a[key];
         if (diff !== 0) return diff;
       }
+
       return a.name.localeCompare(b.name);
     });
 
@@ -396,7 +477,62 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
   return groupRankings;
 }
 
+function sortRowsByPointsBalanceWins(a, b) {
+  const ptsDiff = b.pts - a.pts;
+  if (ptsDiff !== 0) return ptsDiff;
+
+  const balDiff = b.bal - a.bal;
+  if (balDiff !== 0) return balDiff;
+
+  const winDiff = b.w - a.w;
+  if (winDiff !== 0) return winDiff;
+
+  return a.name.localeCompare(b.name);
+}
+
+function getCup18Qualified(data) {
+  const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
+
+  const direct = [];
+  const thirds = [];
+
+  groupRankings.forEach((group) => {
+    if (group.rows[0]) direct.push({ ...group.rows[0], groupPosition: 1 });
+    if (group.rows[1]) direct.push({ ...group.rows[1], groupPosition: 2 });
+    if (group.rows[2]) thirds.push({ ...group.rows[2], groupPosition: 3 });
+  });
+
+  const sortedThirds = [...thirds].sort(sortRowsByPointsBalanceWins);
+
+  const extraMain = sortedThirds.slice(0, 2);
+  const parallel = sortedThirds.slice(2);
+
+  const criteria = getRankingCriteria(data.rankingCriteria || defaultRankingCriteria);
+
+  function sortMain(a, b) {
+    if (a.groupPosition !== b.groupPosition) return a.groupPosition - b.groupPosition;
+
+    for (const key of criteria.order) {
+      const diff = b[key] - a[key];
+      if (diff !== 0) return diff;
+    }
+
+    return a.name.localeCompare(b.name);
+  }
+
+  const main = [...direct, ...extraMain].sort(sortMain);
+
+  return {
+    main,
+    repechage: parallel,
+  };
+}
+
 function getCupQualified(data) {
+  if ((data.cupConfig?.teamCount || 12) === 18) {
+    return getCup18Qualified(data);
+  }
+
   const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
   const main = [];
   const repechage = [];
@@ -469,6 +605,30 @@ function seedBracket(teamIds, bracketType) {
     }));
   }
 
+  if (teamIds.length === 14) {
+    return [
+      [teamIds[2], teamIds[13]],
+      [teamIds[3], teamIds[12]],
+      [teamIds[4], teamIds[11]],
+      [teamIds[5], teamIds[10]],
+      [teamIds[6], teamIds[9]],
+      [teamIds[7], teamIds[8]],
+    ].map((pair, index) => ({
+      phase: bracketType,
+      roundName: "Preliminar",
+      matchKey: `${bracketType}_pre_${index + 1}`,
+      source1: null,
+      source2: null,
+      ids1: [pair[0]],
+      ids2: [pair[1]],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: index + 1,
+    }));
+  }
+
   if (teamIds.length === 16) {
     return [
       [teamIds[0], teamIds[15]],
@@ -496,6 +656,32 @@ function seedBracket(teamIds, bracketType) {
   }
 
   return [];
+}
+
+function generateParallelRoundRobin(teamIds) {
+  const pairs = [
+    [teamIds[0], teamIds[1]],
+    [teamIds[2], teamIds[3]],
+    [teamIds[0], teamIds[2]],
+    [teamIds[1], teamIds[3]],
+    [teamIds[0], teamIds[3]],
+    [teamIds[1], teamIds[2]],
+  ];
+
+  return pairs.map((pair, index) => ({
+    phase: "repechage",
+    roundName: "Disputa Paralela",
+    matchKey: `repechage_parallel_${index + 1}`,
+    source1: null,
+    source2: null,
+    ids1: [pair[0]],
+    ids2: [pair[1]],
+    team1: null,
+    team2: null,
+    s1: "",
+    s2: "",
+    court: (index % 2) + 1,
+  }));
 }
 
 function getGameWinnerId(game) {
@@ -555,6 +741,7 @@ function buildNextRound(previousGames, bracketType, roundName, keyPrefix) {
 function generateCupBrackets(data) {
   const qualified = getCupQualified(data);
   const cupConfig = data.cupConfig || {};
+  const teamCount = cupConfig.teamCount || 12;
   const mainName = cupConfig.mainBracketName || "Principal";
   const repechageName = cupConfig.repechageName || "Repescagem";
 
@@ -562,7 +749,11 @@ function generateCupBrackets(data) {
   const repechageIds = qualified.repechage.map((item) => item.id);
 
   const mainFirstRound = seedBracket(mainIds, "main");
-  const repechageFirstRound = seedBracket(repechageIds, "repechage");
+
+  const repechageFirstRound =
+    teamCount === 18 && repechageIds.length === 4
+      ? generateParallelRoundRobin(repechageIds)
+      : seedBracket(repechageIds, "repechage");
 
   const mainRounds = [];
   const repechageRounds = [];
@@ -578,6 +769,74 @@ function generateCupBrackets(data) {
       const semifinals = buildNextRound(mainFirstRound, "main", "Semifinal", "sf");
       const final = buildNextRound(semifinals, "main", "Final", "final");
 
+      mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
+      mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
+    }
+
+    if (mainIds.length === 14) {
+      const quarterfinals = [
+        {
+          phase: "main",
+          roundName: "Quartas de final",
+          matchKey: "main_qf_1",
+          source1: null,
+          source2: mainFirstRound[0].matchKey,
+          ids1: [mainIds[0]],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 1,
+        },
+        {
+          phase: "main",
+          roundName: "Quartas de final",
+          matchKey: "main_qf_2",
+          source1: null,
+          source2: mainFirstRound[1].matchKey,
+          ids1: [mainIds[1]],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 2,
+        },
+        {
+          phase: "main",
+          roundName: "Quartas de final",
+          matchKey: "main_qf_3",
+          source1: mainFirstRound[2].matchKey,
+          source2: mainFirstRound[3].matchKey,
+          ids1: [],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 3,
+        },
+        {
+          phase: "main",
+          roundName: "Quartas de final",
+          matchKey: "main_qf_4",
+          source1: mainFirstRound[4].matchKey,
+          source2: mainFirstRound[5].matchKey,
+          ids1: [],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 4,
+        },
+      ];
+
+      const semifinals = buildNextRound(quarterfinals, "main", "Semifinal", "sf");
+      const final = buildNextRound(semifinals, "main", "Final", "final");
+
+      mainRounds.push({ title: "Quartas de final", bracketTitle: mainName, games: quarterfinals });
       mainRounds.push({ title: "Semifinal", bracketTitle: mainName, games: semifinals });
       mainRounds.push({ title: "Final", bracketTitle: mainName, games: final });
     }
@@ -600,12 +859,12 @@ function generateCupBrackets(data) {
       games: repechageFirstRound,
     });
 
-    if (repechageIds.length === 4) {
+    if (teamCount === 18 && repechageIds.length === 4) {
+      // Disputa paralela em pontos corridos. Não cria final.
+    } else if (repechageIds.length === 4) {
       const final = buildNextRound(repechageFirstRound, "repechage", "Final", "final");
       repechageRounds.push({ title: "Final", bracketTitle: repechageName, games: final });
-    }
-
-    if (repechageIds.length === 8) {
+    } else if (repechageIds.length === 8) {
       const semifinals = buildNextRound(repechageFirstRound, "repechage", "Semifinal", "sf");
       const final = buildNextRound(semifinals, "repechage", "Final", "final");
 
@@ -675,11 +934,11 @@ function speakText(text) {
 
   window.speechSynthesis.cancel();
 
- const utterance = new SpeechSynthesisUtterance(text);
-utterance.lang = "pt-BR";
-utterance.rate = 1.05;
-utterance.pitch = 1;
-utterance.volume = 1;
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "pt-BR";
+  utterance.rate = 1.05;
+  utterance.pitch = 1;
+  utterance.volume = 1;
 
   window.speechSynthesis.speak(utterance);
 }
@@ -859,15 +1118,19 @@ function PlanCard({ title, tag, badge, price, text, items }) {
   return (
     <div className="planCard">
       {badge && <div className="planBadge">{badge}</div>}
+
       <div className="planTop">
         <h3>{title}</h3>
         <span>{tag}</span>
       </div>
+
       <div className="planPrice">
         <strong>{price}</strong>
         <small>/mês</small>
       </div>
+
       <p className="planDesc">{text}</p>
+
       <ul>
         {items.map((item) => <li key={item}>{item}</li>)}
       </ul>
@@ -953,10 +1216,10 @@ function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
- if (publicId) return <PublicTournamentPage publicId={publicId} />;
+  if (publicId) return <PublicTournamentPage publicId={publicId} />;
 
-if (loading) return <div className="center">Carregando...</div>;
-if (!session) return <Login />;
+  if (loading) return <div className="center">Carregando...</div>;
+  if (!session) return <Login />;
 
   if (!profile) {
     return (
@@ -997,7 +1260,6 @@ function Login() {
 
   const [mode, setMode] = useState("login");
   const [notice, setNotice] = useState(null);
-  const [openInfoTab, setOpenInfoTab] = useState("plans");
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -1114,7 +1376,9 @@ function Login() {
             className="secondaryBtn"
             onClick={() => {
               setMode("login");
-              setTimeout(() => document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" }), 50);
+              setTimeout(() => {
+                document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" });
+              }, 50);
             }}
           >
             Login
@@ -1124,7 +1388,9 @@ function Login() {
             type="button"
             onClick={() => {
               setMode("signup");
-              setTimeout(() => document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" }), 50);
+              setTimeout(() => {
+                document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" });
+              }, 50);
             }}
           >
             Criar conta
@@ -1139,9 +1405,7 @@ function Login() {
               🔊 Agora com chamada de jogos por voz
             </div>
 
-            <h1>
-              Organize torneios de Beach Tennis com mais facilidade
-            </h1>
+            <h1>Organize torneios de Beach Tennis com mais facilidade</h1>
 
             <p>
               Crie campeonatos, sorteie participantes, gere tabelas, acompanhe rankings,
@@ -1182,6 +1446,7 @@ function Login() {
           <div className="heroVisual">
             <div className="sandCard">
               <div className="sandSun"></div>
+
               <div className="racketMark">
                 <span>🎾</span>
               </div>
@@ -1213,7 +1478,7 @@ function Login() {
           </div>
         </section>
 
-        <section id="como-funciona" className="landingSection">
+                <section id="como-funciona" className="landingSection">
           <div className="sectionIntro">
             <span>Como funciona</span>
             <h2>Do cadastro à chamada dos jogos em poucos passos</h2>
@@ -1233,7 +1498,10 @@ function Login() {
             <div className="stepCard">
               <div>2</div>
               <h3>Escolha a modalidade</h3>
-              <p>Selecione Super 08, Super 12, Super 16, Simples 8 ou Copa, conforme seu plano.</p>
+              <p>
+                Selecione Super 08, Super 12, Super 16, Simples 8 ou uma das Copas,
+                conforme seu plano.
+              </p>
             </div>
 
             <div className="stepCard">
@@ -1290,7 +1558,7 @@ function Login() {
             <div className="featureCard">
               <span>🏆</span>
               <h3>Copa Premium</h3>
-              <p>Formato com grupos, chave principal e repescagem com nomes editáveis.</p>
+              <p>Formatos de Copa com 12, 18 ou 24 duplas, grupos, chaves finais e disputa paralela.</p>
             </div>
           </div>
         </section>
@@ -1344,7 +1612,8 @@ function Login() {
                 "Super 12 Mista Dupla Fixa",
                 "Super 16 Mista Dupla Fixa",
                 "Simples 8",
-                "Copa",
+                "Copa - 12 ou 24 duplas",
+                "Copa - 18 duplas",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -1390,8 +1659,13 @@ function Login() {
             />
 
             <Info
-              title="Copa"
+              title="Copa - 12 ou 24 duplas"
               text="Formato exclusivo do plano Premium. Pode ser jogado com 12 ou 24 duplas, com fase de grupos, chave principal e repescagem com nomes editáveis."
+            />
+
+            <Info
+              title="Copa - 18 duplas"
+              text="Formato exclusivo do plano Premium com 18 duplas, 6 grupos de 3, chave principal com BYE para os 2 melhores gerais e disputa paralela entre os terceiros restantes."
             />
           </div>
         </section>
@@ -1649,13 +1923,18 @@ function Dashboard({ profile, user }) {
   return (
     <div className="appPage">
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
-      <ConfirmModal target={deleteTarget} onCancel={() => setDeleteTarget(null)} onConfirm={confirmDeleteTournament} />
+      <ConfirmModal
+        target={deleteTarget}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={confirmDeleteTournament}
+      />
 
       <header>
         <div>
           <h1>Torneio Fácil BT</h1>
           <p>Dashboard profissional com login real.</p>
         </div>
+
         <button type="button" onClick={logout}>Sair</button>
       </header>
 
@@ -1668,19 +1947,29 @@ function Dashboard({ profile, user }) {
 
       <section className="card">
         <h2>Modalidades liberadas</h2>
+
         <div className="grid">
-          {allowedTypes.map((item) => <div className="modality" key={item}>🏆 {item}</div>)}
+          {allowedTypes.map((item) => (
+            <div className="modality" key={item}>🏆 {item}</div>
+          ))}
         </div>
       </section>
 
       <section className="card">
         <h2>Criar novo torneio</h2>
+
         <label>Nome do torneio</label>
-        <input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Ex: Torneio de sábado" />
+        <input
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          placeholder="Ex: Torneio de sábado"
+        />
 
         <label>Modalidade</label>
         <select value={newType} onChange={(e) => setNewType(e.target.value)}>
-          {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+          {allowedTypes.map((type) => (
+            <option key={type} value={type}>{type}</option>
+          ))}
         </select>
 
         <button type="button" onClick={createTournament} disabled={saving}>
@@ -1690,6 +1979,7 @@ function Dashboard({ profile, user }) {
 
       <section className="card">
         <h2>Meus torneios</h2>
+
         {tournaments.length === 0 ? (
           <p>Nenhum torneio criado ainda.</p>
         ) : (
@@ -1700,9 +1990,12 @@ function Dashboard({ profile, user }) {
                   <strong>{t.name}</strong>
                   <span>{t.type}</span>
                 </div>
+
                 <div className="actions">
                   <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                  <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+                  <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>
+                    Excluir
+                  </button>
                 </div>
               </div>
             ))}
@@ -1738,7 +2031,7 @@ function createInitialData(type, config) {
     };
   }
 
-  if (config.type === "cup") {
+  if (isCupType(config)) {
     return {
       ...base,
       cupConfig: {
@@ -1769,7 +2062,7 @@ function getShuffleNames(data, config) {
     return [...data.players.men, ...data.players.women];
   }
 
-  if (config.type === "fixed12" || config.type === "fixed16" || config.type === "cup") {
+  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
     return data.players.teams.map((team, index) => `Dupla ${index + 1}: ${team.a} + ${team.b}`);
   }
 
@@ -1782,14 +2075,14 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const [savingStatus, setSavingStatus] = useState("Salvo");
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
-const [clearScoresOpen, setClearScoresOpen] = useState(false);
-const [shareOpen, setShareOpen] = useState(false);
-const [shareLoading, setShareLoading] = useState(false);
-const [shareInfo, setShareInfo] = useState({
-  public_id: tournament.public_id || null,
-  is_public: tournament.is_public || false,
-});
-const [voiceRepeat, setVoiceRepeat] = useState(1);
+  const [clearScoresOpen, setClearScoresOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareInfo, setShareInfo] = useState({
+    public_id: tournament.public_id || null,
+    is_public: tournament.is_public || false,
+  });
+  const [voiceRepeat, setVoiceRepeat] = useState(1);
 
   const saveTimerRef = useRef(null);
   const latestDataRef = useRef(data);
@@ -1801,7 +2094,7 @@ const [voiceRepeat, setVoiceRepeat] = useState(1);
   );
 
   const cupGroupRankings = useMemo(
-    () => config.type === "cup" ? calculateCupGroupRankings(data, data.rankingCriteria) : [],
+    () => isCupType(config) ? calculateCupGroupRankings(data, data.rankingCriteria) : [],
     [data, config.type]
   );
 
@@ -1837,90 +2130,86 @@ const [voiceRepeat, setVoiceRepeat] = useState(1);
     setNotice({ type, title, message });
   }
 
-  function showNotice(type, title, message) {
-  setNotice({ type, title, message });
-}
+  async function enablePublicShare() {
+    setShareLoading(true);
 
-async function enablePublicShare() {
-  setShareLoading(true);
+    const publicId = shareInfo.public_id || generatePublicId();
 
-  const publicId = shareInfo.public_id || generatePublicId();
+    const { error } = await supabase
+      .from("tournaments")
+      .update({
+        public_id: publicId,
+        is_public: true,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", tournament.id);
 
-  const { error } = await supabase
-    .from("tournaments")
-    .update({
+    setShareLoading(false);
+
+    if (error) {
+      console.error(error);
+      showNotice("error", "Erro ao gerar link", "Não foi possível ativar o link público.");
+      return;
+    }
+
+    const nextInfo = {
       public_id: publicId,
       is_public: true,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", tournament.id);
+    };
 
-  setShareLoading(false);
+    setShareInfo(nextInfo);
 
-  if (error) {
-    console.error(error);
-    showNotice("error", "Erro ao gerar link", "Não foi possível ativar o link público.");
-    return;
+    const ok = await copyToClipboard(getPublicUrl(publicId));
+
+    showNotice(
+      "success",
+      "Link público ativado",
+      ok
+        ? "O link foi ativado e copiado para a área de transferência."
+        : "O link foi ativado. Copie o link na área de compartilhamento."
+    );
   }
 
-  const nextInfo = {
-    public_id: publicId,
-    is_public: true,
-  };
+  async function disablePublicShare() {
+    if (!shareInfo.public_id) return;
 
-  setShareInfo(nextInfo);
+    setShareLoading(true);
 
-  const ok = await copyToClipboard(getPublicUrl(publicId));
+    const { error } = await supabase
+      .from("tournaments")
+      .update({
+        is_public: false,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", tournament.id);
 
-  showNotice(
-    "success",
-    "Link público ativado",
-    ok
-      ? "O link foi ativado e copiado para a área de transferência."
-      : "O link foi ativado. Copie o link na área de compartilhamento."
-  );
-}
+    setShareLoading(false);
 
-async function disablePublicShare() {
-  if (!shareInfo.public_id) return;
+    if (error) {
+      console.error(error);
+      showNotice("error", "Erro ao desativar", "Não foi possível desativar o link público.");
+      return;
+    }
 
-  setShareLoading(true);
-
-  const { error } = await supabase
-    .from("tournaments")
-    .update({
+    setShareInfo((prev) => ({
+      ...prev,
       is_public: false,
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", tournament.id);
+    }));
 
-  setShareLoading(false);
-
-  if (error) {
-    console.error(error);
-    showNotice("error", "Erro ao desativar", "Não foi possível desativar o link público.");
-    return;
+    showNotice("success", "Link desativado", "O link público foi desativado.");
   }
 
-  setShareInfo((prev) => ({
-    ...prev,
-    is_public: false,
-  }));
+  async function copyPublicLink() {
+    if (!shareInfo.public_id) return;
 
-  showNotice("success", "Link desativado", "O link público foi desativado.");
-}
+    const ok = await copyToClipboard(getPublicUrl(shareInfo.public_id));
 
-async function copyPublicLink() {
-  if (!shareInfo.public_id) return;
-
-  const ok = await copyToClipboard(getPublicUrl(shareInfo.public_id));
-
-  showNotice(
-    ok ? "success" : "error",
-    ok ? "Link copiado" : "Erro ao copiar",
-    ok ? "O link público foi copiado." : "Não foi possível copiar o link."
-  );
-}
+    showNotice(
+      ok ? "success" : "error",
+      ok ? "Link copiado" : "Erro ao copiar",
+      ok ? "O link público foi copiado." : "Não foi possível copiar o link."
+    );
+  }
 
   function updateRankingCriteria(value) {
     setData((prev) => ({ ...prev, rankingCriteria: value }));
@@ -1938,12 +2227,14 @@ async function copyPublicLink() {
       if (field === "teamCount") {
         const teamCount = Number(value);
         copy.cupConfig.teamCount = teamCount;
+
         copy.players.teams = Array.from({ length: teamCount }, (_, i) => {
           return copy.players.teams[i] || {
             a: `Atleta 1 da dupla ${i + 1}`,
             b: `Atleta 2 da dupla ${i + 1}`,
           };
         });
+
         copy.schedule = [];
         copy.brackets = [];
       }
@@ -1960,7 +2251,7 @@ async function copyPublicLink() {
     if (path.kind === "women") copy.players.women[path.index] = value;
     if (path.kind === "team") copy.players.teams[path.index][path.field] = value;
 
-    if (config.type === "cup") {
+    if (isCupType(config)) {
       copy.brackets = [];
     }
 
@@ -1973,258 +2264,287 @@ async function copyPublicLink() {
     if (config.type === "mixed12" || config.type === "mixed16") {
       copy.players.men = shuffleArray(copy.players.men);
       copy.players.women = shuffleArray(copy.players.women);
-    } else if (config.type === "fixed12" || config.type === "fixed16" || config.type === "cup") {
+    } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
       copy.players.teams = shuffleArray(copy.players.teams);
     } else {
       copy.players = shuffleArray(copy.players);
     }
 
     copy.schedule = [];
-    if (config.type === "cup") copy.brackets = [];
+
+    if (isCupType(config)) copy.brackets = [];
 
     setData(copy);
     setShuffleOverlay(null);
   }
 
-  function shuffleNames() {
-    const names = getShuffleNames(data, config);
+function shuffleNames() {
+  const names = getShuffleNames(data, config);
 
-    if (!names.length) {
-      showNotice("warning", "Sem participantes", "Adicione os nomes antes do sorteio.");
-      return;
-    }
-
-    let seconds = 10;
-    let animationNames = shuffleArray(names);
-    setShuffleOverlay({ seconds, names: animationNames });
-
-    const interval = setInterval(() => {
-      animationNames = shuffleArray(names);
-      setShuffleOverlay((prev) => (prev ? { ...prev, names: animationNames } : null));
-    }, 250);
-
-    const countdown = setInterval(() => {
-      seconds -= 1;
-      setShuffleOverlay((prev) => (prev ? { ...prev, seconds } : null));
-
-      if (seconds <= 0) {
-        clearInterval(interval);
-        clearInterval(countdown);
-        finishShuffle();
-      }
-    }, 1000);
+  if (!names.length) {
+    showNotice("warning", "Sem participantes", "Adicione os nomes antes do sorteio.");
+    return;
   }
 
-  function generate() {
-    if (config.type === "cup") {
-      const schedule = generateCupGroupSchedule(data.players, data.cupConfig || {});
-      setData((prev) => ({
-        ...prev,
-        schedule,
-        brackets: [],
-      }));
-      showNotice("success", "Tabela gerada", "A fase de grupos da Copa foi montada com sucesso.");
-      return;
-    }
+  let seconds = 10;
+  let animationNames = shuffleArray(names);
 
-    const schedule = generateSchedule(tournament.type, data.players);
-    setData({ ...data, schedule });
-    showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
+  setShuffleOverlay({ seconds, names: animationNames });
+
+  const interval = setInterval(() => {
+    animationNames = shuffleArray(names);
+    setShuffleOverlay((prev) => (prev ? { ...prev, names: animationNames } : null));
+  }, 250);
+
+  const countdown = setInterval(() => {
+    seconds -= 1;
+    setShuffleOverlay((prev) => (prev ? { ...prev, seconds } : null));
+
+    if (seconds <= 0) {
+      clearInterval(interval);
+      clearInterval(countdown);
+      finishShuffle();
+    }
+  }, 1000);
+}
+
+function generate() {
+  if (isCupType(config)) {
+    const schedule = generateCupGroupSchedule(data.players, data.cupConfig || {});
+
+    setData((prev) => ({
+      ...prev,
+      schedule,
+      brackets: [],
+    }));
+
+    showNotice("success", "Tabela gerada", "A fase de grupos da Copa foi montada com sucesso.");
+    return;
   }
 
-  function generateBrackets() {
-    if (config.type !== "cup") return;
+  const schedule = generateSchedule(tournament.type, data.players);
+  setData({ ...data, schedule });
+  showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
+}
 
-    const allGroupGames = (data.schedule || []).flat();
-    const pendingGames = allGroupGames.some((game) => game.s1 === "" || game.s2 === "");
+function generateBrackets() {
+  if (!isCupType(config)) return;
 
-    if (!data.schedule || data.schedule.length === 0) {
-      showNotice("warning", "Fase de grupos não gerada", "Gere a tabela da fase de grupos antes de montar as chaves.");
-      return;
-    }
+  const allGroupGames = (data.schedule || []).flat();
+  const pendingGames = allGroupGames.some((game) => game.s1 === "" || game.s2 === "");
 
-    if (pendingGames) {
-      showNotice("warning", "Placares pendentes", "Preencha todos os placares da fase de grupos antes de gerar as chaves.");
-      return;
-    }
-
-    const copy = syncCupBracketScores(data);
-    setData(copy);
-    showNotice("success", "Chaves geradas", "A chave principal e a repescagem foram montadas.");
+  if (!data.schedule || data.schedule.length === 0) {
+    showNotice(
+      "warning",
+      "Fase de grupos não gerada",
+      "Gere a tabela da fase de grupos antes de montar as chaves."
+    );
+    return;
   }
 
-  function updateScore(roundIndex, gameIndex, field, value) {
-    const copy = structuredClone(data);
-    copy.schedule[roundIndex][gameIndex][field] = value;
+  if (pendingGames) {
+    showNotice(
+      "warning",
+      "Placares pendentes",
+      "Preencha todos os placares da fase de grupos antes de gerar as chaves."
+    );
+    return;
+  }
 
-    if (config.type === "cup") {
-      copy.brackets = [];
+  const copy = syncCupBracketScores(data);
+  setData(copy);
+
+  showNotice("success", "Chaves geradas", "As chaves finais foram montadas com sucesso.");
+}
+
+function updateScore(roundIndex, gameIndex, field, value) {
+  const copy = structuredClone(data);
+  copy.schedule[roundIndex][gameIndex][field] = value;
+
+  if (isCupType(config)) {
+    copy.brackets = [];
+  }
+
+  setData(copy);
+}
+
+function updateBracketScore(matchKey, field, value) {
+  setData((prev) => {
+    const copy = structuredClone(prev);
+
+    if (!copy.brackets || copy.brackets.length === 0) {
+      copy.brackets = getCupAllBracketGames(copy);
     }
 
-    setData(copy);
-  }
-
-  function updateBracketScore(matchKey, field, value) {
-    setData((prev) => {
-      const copy = structuredClone(prev);
-
-      if (!copy.brackets || copy.brackets.length === 0) {
-        copy.brackets = getCupAllBracketGames(copy);
-      }
-
-      copy.brackets = copy.brackets.map((game) => (
-        game.matchKey === matchKey ? { ...game, [field]: value } : game
-      ));
-
-      const existingScores = {};
-      copy.brackets.forEach((game) => {
-        existingScores[game.matchKey] = {
-          s1: game.s1,
-          s2: game.s2,
-        };
-      });
-
-      const fresh = getCupAllBracketGames(copy).map((game) => ({
-        ...game,
-        s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
-        s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
-      }));
-
-      copy.brackets = fresh;
-      return copy;
-    });
-  }
-
-  function clearScores() {
-    const copy = structuredClone(data);
-
-    copy.schedule = (copy.schedule || []).map((round) =>
-      round.map((game) => ({ ...game, s1: "", s2: "" }))
+    copy.brackets = copy.brackets.map((game) =>
+      game.matchKey === matchKey ? { ...game, [field]: value } : game
     );
 
-    if (config.type === "cup") {
-      copy.brackets = [];
-    }
+    const existingScores = {};
 
-    setData(copy);
-    setClearScoresOpen(false);
-    showNotice("success", "Placares apagados", "Todos os placares foram removidos.");
+    copy.brackets.forEach((game) => {
+      existingScores[game.matchKey] = {
+        s1: game.s1,
+        s2: game.s2,
+      };
+    });
+
+    const fresh = getCupAllBracketGames(copy).map((game) => ({
+      ...game,
+      s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
+      s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
+    }));
+
+    copy.brackets = fresh;
+    return copy;
+  });
+}
+
+function clearScores() {
+  const copy = structuredClone(data);
+
+  copy.schedule = (copy.schedule || []).map((round) =>
+    round.map((game) => ({ ...game, s1: "", s2: "" }))
+  );
+
+  if (isCupType(config)) {
+    copy.brackets = [];
   }
 
-  const currentBrackets = config.type === "cup" && data.brackets?.length
-    ? groupStoredBracketGames(data)
-    : null;
+  setData(copy);
+  setClearScoresOpen(false);
+  showNotice("success", "Placares apagados", "Todos os placares foram removidos.");
+}
 
-  return (
-    <>
-      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
-      <ConfirmClearScoresModal open={clearScoresOpen} onCancel={() => setClearScoresOpen(false)} onConfirm={clearScores} />
+const currentBrackets = isCupType(config) && data.brackets?.length
+  ? groupStoredBracketGames(data)
+  : null;
 
-      {shuffleOverlay && (
-        <div className="shuffleOverlay">
-          <div className="shuffleBox">
-            <div className="shuffleHeader">
-              <div>
-                <h2>Sorteando nomes...</h2>
-                <p>Os participantes estão sendo embaralhados.</p>
+return (
+  <>
+    <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
+    <ConfirmClearScoresModal
+      open={clearScoresOpen}
+      onCancel={() => setClearScoresOpen(false)}
+      onConfirm={clearScores}
+    />
+
+    {shuffleOverlay && (
+      <div className="shuffleOverlay">
+        <div className="shuffleBox">
+          <div className="shuffleHeader">
+            <div>
+              <h2>Sorteando nomes...</h2>
+              <p>Os participantes estão sendo embaralhados.</p>
+            </div>
+
+            <div className="shuffleTimer">{shuffleOverlay.seconds}s</div>
+          </div>
+
+          <div className="shuffleStage">
+            {shuffleOverlay.names.map((name, index) => (
+              <div
+                className="floatingName"
+                key={index + "-" + name}
+                style={{
+                  left: `${8 + ((index * 17) % 76)}%`,
+                  top: `${12 + ((index * 29) % 70)}%`,
+                  animationDelay: `${(index % 6) * 0.08}s`,
+                }}
+              >
+                {name}
               </div>
-              <div className="shuffleTimer">{shuffleOverlay.seconds}s</div>
-            </div>
+            ))}
+          </div>
 
-            <div className="shuffleStage">
-              {shuffleOverlay.names.map((name, index) => (
-                <div
-                  className="floatingName"
-                  key={index + "-" + name}
-                  style={{
-                    left: `${8 + ((index * 17) % 76)}%`,
-                    top: `${12 + ((index * 29) % 70)}%`,
-                    animationDelay: `${(index % 6) * 0.08}s`,
-                  }}
-                >
-                  {name}
-                </div>
-              ))}
-            </div>
-
-            <div className="shuffleProgress">
-              <div style={{ width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%` }} />
-            </div>
+          <div className="shuffleProgress">
+            <div style={{ width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%` }} />
           </div>
         </div>
-      )}
+      </div>
+    )}
 
-            <div className="appPage">
-    <header>
-  <div>
-    <h1>{tournament.name}</h1>
-    <p>{tournament.type} · {savingStatus}</p>
-  </div>
-
-  <div className="actions">
-    <button
-      type="button"
-      className="secondaryBtn"
-      onClick={() => setShareOpen((prev) => !prev)}
-    >
-      🔗 Compartilhar tabela
-    </button>
-
-    <button type="button" onClick={handleBack}>Voltar</button>
-  </div>
-</header>
-
-              {shareOpen && (
-  <section className="card shareCard">
-    <h2>Compartilhar tabela</h2>
-
-    <p>
-      Gere um link público para os participantes acompanharem jogos, placares e ranking
-      sem poder editar nada.
-    </p>
-
-    {!shareInfo.is_public ? (
-      <button type="button" onClick={enablePublicShare} disabled={shareLoading}>
-        {shareLoading ? "Gerando..." : "Ativar link público"}
-      </button>
-    ) : (
-      <>
-        <label>Link público</label>
-        <div className="shareLinkBox">
-          <input
-            readOnly
-            value={getPublicUrl(shareInfo.public_id)}
-            onFocus={(e) => e.target.select()}
-          />
-
-          <button type="button" onClick={copyPublicLink}>
-            Copiar
-          </button>
+    <div className="appPage">
+      <header>
+        <div>
+          <h1>{tournament.name}</h1>
+          <p>{tournament.type} · {savingStatus}</p>
         </div>
 
         <div className="actions">
-          <button type="button" className="deleteBtn" onClick={disablePublicShare} disabled={shareLoading}>
-            {shareLoading ? "Desativando..." : "Desativar link"}
+          <button
+            type="button"
+            className="secondaryBtn"
+            onClick={() => setShareOpen((prev) => !prev)}
+          >
+            🔗 Compartilhar tabela
           </button>
-        </div>
-      </>
-    )}
-  </section>
-)}
 
-        <section className="card">
-          <h2>{config.type === "cup" ? "Configuração da Copa" : "Participantes"}</h2>
+          <button type="button" onClick={handleBack}>Voltar</button>
+        </div>
+      </header>
+
+      {shareOpen && (
+        <section className="card shareCard">
+          <h2>Compartilhar tabela</h2>
+
+          <p>
+            Gere um link público para os participantes acompanharem jogos, placares e ranking
+            sem poder editar nada.
+          </p>
+
+          {!shareInfo.is_public ? (
+            <button type="button" onClick={enablePublicShare} disabled={shareLoading}>
+              {shareLoading ? "Gerando..." : "Ativar link público"}
+            </button>
+          ) : (
+            <>
+              <label>Link público</label>
+
+              <div className="shareLinkBox">
+                <input
+                  readOnly
+                  value={getPublicUrl(shareInfo.public_id)}
+                  onFocus={(e) => e.target.select()}
+                />
+
+                <button type="button" onClick={copyPublicLink}>
+                  Copiar
+                </button>
+              </div>
+
+              <div className="actions">
+                <button
+                  type="button"
+                  className="deleteBtn"
+                  onClick={disablePublicShare}
+                  disabled={shareLoading}
+                >
+                  {shareLoading ? "Desativando..." : "Desativar link"}
+                </button>
+              </div>
+            </>
+          )}
+        </section>
+      )}
+
+              <section className="card">
+          <h2>{isCupType(config) ? "Configuração da Copa" : "Participantes"}</h2>
 
           <div className="rankingCriteriaBox">
             <label>Critério do ranking</label>
-            <select value={data.rankingCriteria || defaultRankingCriteria} onChange={(e) => updateRankingCriteria(e.target.value)}>
+            <select
+              value={data.rankingCriteria || defaultRankingCriteria}
+              onChange={(e) => updateRankingCriteria(e.target.value)}
+            >
               {rankingCriteriaOptions.map((option) => (
                 <option key={option.value} value={option.value}>{option.label}</option>
               ))}
             </select>
           </div>
 
-          {config.type === "cup" && (
+          {isCupType(config) && (
             <CupConfigPanel
               data={data}
               config={config}
@@ -2232,7 +2552,11 @@ async function copyPublicLink() {
             />
           )}
 
-          <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} />
+          <PlayerInputs
+            type={tournament.type}
+            data={data}
+            updatePlayer={updatePlayer}
+          />
 
           <div className="actions">
             <button type="button" onClick={shuffleNames}>Sortear nomes</button>
@@ -2241,21 +2565,26 @@ async function copyPublicLink() {
         </section>
 
         <section className="card">
-          <h2>{config.type === "cup" ? "Fase de grupos" : "Rodadas"}</h2>
+          <h2>{isCupType(config) ? "Fase de grupos" : "Rodadas"}</h2>
 
           {!data.schedule || data.schedule.length === 0 ? (
-            <p> Clique em “Gerar tabela” para montar os jogos.</p>
+            <p>Clique em “Gerar tabela” para montar os jogos.</p>
           ) : (
             <>
               <ScheduleView
-  schedule={data.schedule}
-  updateScore={updateScore}
-  showGroupName={config.type === "cup"}
-  voiceRepeat={voiceRepeat}
-  setVoiceRepeat={setVoiceRepeat}
-/>
+                schedule={data.schedule}
+                updateScore={updateScore}
+                showGroupName={isCupType(config)}
+                voiceRepeat={voiceRepeat}
+                setVoiceRepeat={setVoiceRepeat}
+              />
+
               <div className="actions">
-                <button type="button" className="deleteBtn" onClick={() => setClearScoresOpen(true)}>
+                <button
+                  type="button"
+                  className="deleteBtn"
+                  onClick={() => setClearScoresOpen(true)}
+                >
                   Apagar placares
                 </button>
               </div>
@@ -2263,10 +2592,11 @@ async function copyPublicLink() {
           )}
         </section>
 
-        {config.type === "cup" ? (
+        {isCupType(config) ? (
           <>
             <section className="card">
               <h2>Classificação dos grupos</h2>
+
               <CupGroupRankingView
                 groupRankings={cupGroupRankings}
                 rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
@@ -2283,22 +2613,30 @@ async function copyPublicLink() {
               <h2>Chaves finais</h2>
 
               {!currentBrackets ? (
-                <p>Após preencher todos os placares da fase de grupos, clique em “Gerar chaves finais”.</p>
+                <p>
+                  Após preencher todos os placares da fase de grupos, clique em
+                  “Gerar chaves finais”.
+                </p>
               ) : (
                 <CupBracketView
-  groupedBrackets={currentBrackets}
-  data={data}
-  updateBracketScore={updateBracketScore}
-  voiceRepeat={voiceRepeat}
-  setVoiceRepeat={setVoiceRepeat}
-/>
+                  groupedBrackets={currentBrackets}
+                  data={data}
+                  updateBracketScore={updateBracketScore}
+                  voiceRepeat={voiceRepeat}
+                  setVoiceRepeat={setVoiceRepeat}
+                />
               )}
             </section>
           </>
         ) : (
           <section className="card">
             <h2>Ranking</h2>
-            <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+
+            <RankingView
+              ranking={ranking}
+              type={tournament.type}
+              rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+            />
           </section>
         )}
       </div>
@@ -2308,6 +2646,7 @@ async function copyPublicLink() {
 
 function CupConfigPanel({ data, config, updateCupConfig }) {
   const cupConfig = data.cupConfig || {};
+  const isCup18 = config.type === "cup18";
 
   return (
     <div className="cupConfigBox">
@@ -2317,6 +2656,7 @@ function CupConfigPanel({ data, config, updateCupConfig }) {
           <select
             value={cupConfig.teamCount || config.defaultTeams}
             onChange={(e) => updateCupConfig("teamCount", Number(e.target.value))}
+            disabled={isCup18}
           >
             {config.allowedTeamCounts.map((count) => (
               <option key={count} value={count}>{count} duplas</option>
@@ -2334,19 +2674,31 @@ function CupConfigPanel({ data, config, updateCupConfig }) {
         </div>
 
         <div>
-          <label>Nome da repescagem</label>
+          <label>{isCup18 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
           <input
             value={cupConfig.repechageName || config.defaultRepechageName}
             onChange={(e) => updateCupConfig("repechageName", e.target.value)}
-            placeholder="Repescagem"
+            placeholder={isCup18 ? "Disputa Paralela" : "Repescagem"}
           />
         </div>
       </div>
 
       <div className="infoBox">
-        <p><strong>Formato:</strong> grupos de 3 duplas.</p>
-        <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
-        <p><strong>Classificação:</strong> 1º e 2º de cada grupo avançam para a chave principal. O 3º vai para a repescagem.</p>
+        {isCup18 ? (
+          <>
+            <p><strong>Formato:</strong> 18 duplas divididas em 6 grupos de 3.</p>
+            <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
+            <p><strong>Classificação:</strong> 1º e 2º de cada grupo avançam. Os 2 melhores terceiros também entram na chave principal.</p>
+            <p><strong>Chave principal:</strong> 14 duplas, com os 2 melhores gerais entrando direto nas quartas.</p>
+            <p><strong>Disputa paralela:</strong> os 4 terceiros restantes jogam todos contra todos.</p>
+          </>
+        ) : (
+          <>
+            <p><strong>Formato:</strong> grupos de 3 duplas.</p>
+            <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
+            <p><strong>Classificação:</strong> 1º e 2º de cada grupo avançam para a chave principal. O 3º vai para a repescagem.</p>
+          </>
+        )}
       </div>
     </div>
   );
@@ -2360,20 +2712,28 @@ function PlayerInputs({ type, data, updatePlayer }) {
       <div className="twoCols">
         <div>
           <h3>Homens</h3>
+
           {data.players.men.map((name, i) => (
             <div className="numberedInput" key={i}>
               <span>{i + 1}</span>
-              <input value={name} onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)} />
+              <input
+                value={name}
+                onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)}
+              />
             </div>
           ))}
         </div>
 
         <div>
           <h3>Mulheres</h3>
+
           {data.players.women.map((name, i) => (
             <div className="numberedInput" key={i}>
               <span>{config.men + i + 1}</span>
-              <input value={name} onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)} />
+              <input
+                value={name}
+                onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)}
+              />
             </div>
           ))}
         </div>
@@ -2381,17 +2741,25 @@ function PlayerInputs({ type, data, updatePlayer }) {
     );
   }
 
-  if (config.type === "fixed12" || config.type === "fixed16" || config.type === "cup") {
+  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
     return (
       <div className="twoCols">
         {data.players.teams.map((team, i) => (
           <div key={i} className="miniCard">
             <h3>Dupla {i + 1}</h3>
+
             <div className="numberedInput">
               <span>{i + 1}</span>
-              <input value={team.a} onChange={(e) => updatePlayer({ kind: "team", index: i, field: "a" }, e.target.value)} />
+              <input
+                value={team.a}
+                onChange={(e) => updatePlayer({ kind: "team", index: i, field: "a" }, e.target.value)}
+              />
             </div>
-            <input value={team.b} onChange={(e) => updatePlayer({ kind: "team", index: i, field: "b" }, e.target.value)} />
+
+            <input
+              value={team.b}
+              onChange={(e) => updatePlayer({ kind: "team", index: i, field: "b" }, e.target.value)}
+            />
           </div>
         ))}
       </div>
@@ -2403,7 +2771,10 @@ function PlayerInputs({ type, data, updatePlayer }) {
       {data.players.map((name, i) => (
         <div className="numberedInput" key={i}>
           <span>{i + 1}</span>
-          <input value={name} onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)} />
+          <input
+            value={name}
+            onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)}
+          />
         </div>
       ))}
     </div>
@@ -2477,6 +2848,7 @@ function generateSchedule(type, players) {
 
   if (config.type === "fixed12") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
+
     const schedule = fixed12Template.map((round) =>
       round.map((game, index) => ({
         court: index + 1,
@@ -2494,6 +2866,7 @@ function generateSchedule(type, players) {
 
   if (config.type === "fixed16") {
     const teamNames = players.teams.map((t) => `${t.a} + ${t.b}`);
+
     const schedule = berger(8).map((round) =>
       round.map((game, index) => ({
         court: index + 1,
@@ -2642,7 +3015,7 @@ function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCrite
 
   if (!data.players) return [];
 
-  if (config.type === "cup") {
+  if (isCupType(config)) {
     const qualified = getCupQualified(data);
     return [...qualified.main, ...qualified.repechage];
   }
@@ -2657,7 +3030,14 @@ function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCrite
     names = data.players;
   }
 
-  const table = names.map((name, id) => ({ id, name, pts: 0, w: 0, bal: 0, played: 0 }));
+  const table = names.map((name, id) => ({
+    id,
+    name,
+    pts: 0,
+    w: 0,
+    bal: 0,
+    played: 0,
+  }));
 
   (data.schedule || []).flat().forEach((game) => {
     const s1 = Number(game.s1);
@@ -2712,13 +3092,27 @@ function RankingView({ ranking, type, rankingCriteria }) {
 
     return (
       <div className="twoCols">
-        <RankingTable title="Ranking Masculino" rows={men} rankingCriteria={rankingCriteria} />
-        <RankingTable title="Ranking Feminino" rows={women} rankingCriteria={rankingCriteria} />
+        <RankingTable
+          title="Ranking Masculino"
+          rows={men}
+          rankingCriteria={rankingCriteria}
+        />
+        <RankingTable
+          title="Ranking Feminino"
+          rows={women}
+          rankingCriteria={rankingCriteria}
+        />
       </div>
     );
   }
 
-  return <RankingTable title="Ranking Geral" rows={ranking} rankingCriteria={rankingCriteria} />;
+  return (
+    <RankingTable
+      title="Ranking Geral"
+      rows={ranking}
+      rankingCriteria={rankingCriteria}
+    />
+  );
 }
 
 function RankingTable({ title, rows, rankingCriteria }) {
@@ -2727,12 +3121,15 @@ function RankingTable({ title, rows, rankingCriteria }) {
   return (
     <div>
       <h3>{title}</h3>
+
       <table>
         <thead>
           <tr>
             <th>#</th>
             <th>Nome</th>
-            {criteria.order.map((key) => <th key={key}>{getRankingColumnLabel(key)}</th>)}
+            {criteria.order.map((key) => (
+              <th key={key}>{getRankingColumnLabel(key)}</th>
+            ))}
             <th>Jogos</th>
           </tr>
         </thead>
@@ -2742,7 +3139,9 @@ function RankingTable({ title, rows, rankingCriteria }) {
             <tr key={p.id}>
               <td>{podium(i)}</td>
               <td>{p.name}</td>
-              {criteria.order.map((key) => <td key={key}>{p[key]}</td>)}
+              {criteria.order.map((key) => (
+                <td key={key}>{p[key]}</td>
+              ))}
               <td>{p.played}</td>
             </tr>
           ))}
@@ -2782,6 +3181,7 @@ function groupStoredBracketGames(data) {
       if (!map[game.roundName]) {
         map[game.roundName] = [];
       }
+
       map[game.roundName].push(resolveBracketGame(game, data.brackets || [], data));
     });
 
@@ -2814,14 +3214,14 @@ function CupBracketView({
 
       <div className="cupBrackets">
         <BracketColumn
-          title={(data.cupConfig?.mainBracketName || "Principal")}
+          title={data.cupConfig?.mainBracketName || "Principal"}
           rounds={groupedBrackets.main}
           updateBracketScore={updateBracketScore}
           voiceRepeat={voiceRepeat}
         />
 
         <BracketColumn
-          title={(data.cupConfig?.repechageName || "Repescagem")}
+          title={data.cupConfig?.repechageName || "Repescagem"}
           rounds={groupedBrackets.repechage}
           updateBracketScore={updateBracketScore}
           voiceRepeat={voiceRepeat}
@@ -2981,7 +3381,8 @@ function PublicTournamentScreen({ tournament }) {
   const data = tournament.data || createInitialData(tournament.type, config);
   const ranking = calculateRanking(data, tournament.type, data.rankingCriteria);
 
-  const isCup = config.type === "cup";
+  const isCup = isCupType(config);
+
   const cupGroupRankings = isCup
     ? calculateCupGroupRankings(data, data.rankingCriteria)
     : [];
@@ -3022,6 +3423,7 @@ function PublicTournamentScreen({ tournament }) {
           <>
             <section className="card">
               <h2>Classificação dos grupos</h2>
+
               <CupGroupRankingView
                 groupRankings={cupGroupRankings}
                 rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
@@ -3041,6 +3443,7 @@ function PublicTournamentScreen({ tournament }) {
         ) : (
           <section className="card">
             <h2>Ranking</h2>
+
             <RankingView
               ranking={ranking}
               type={tournament.type}
