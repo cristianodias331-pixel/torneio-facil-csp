@@ -4049,3 +4049,5 @@ function PublicBracketColumn({ rounds }) {
 
 createRoot(document.getElementById("root")).render(<App />);
 
+    Atualiza formulário e pontuação dos torneios
+
