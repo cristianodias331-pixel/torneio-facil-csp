@@ -3077,3 +3077,16 @@ tbody tr:hover {
     width: 100% !important;
   }
 }
+
+.parallelRankingBox {
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  border: 1px solid #cbd5e1;
+}
+
+.parallelRankingBox > h3 {
+  margin-top: 0;
+  color: #0f172a;
+}
