@@ -115,11 +115,34 @@ function formatDateBR(value) {
   return `${day}/${month}/${year}`;
 }
 
+function getWeekdayBR(value) {
+  if (!value) return "";
+
+  const [year, month, day] = String(value).split("-").map(Number);
+  if (!year || !month || !day) return "";
+
+  const date = new Date(year, month - 1, day);
+
+  return [
+    "Domingo",
+    "Segunda-feira",
+    "Terça-feira",
+    "Quarta-feira",
+    "Quinta-feira",
+    "Sexta-feira",
+    "Sábado",
+  ][date.getDay()];
+}
+
+function getMaxScore(winningScore = 4) {
+  return Number(winningScore) === 6 ? 7 : 4;
+}
+
 function normalizeScoreInput(value, winningScore = 4) {
   if (value === "") return "";
 
   const number = Number(value);
-  const maxScore = Number(winningScore || 4);
+  const maxScore = getMaxScore(winningScore);
 
   if (Number.isNaN(number)) return "";
   if (number < 0) return "0";
@@ -230,13 +253,16 @@ function getScoreWinnerSide(game, winningScore = 4) {
   if (Number.isNaN(s1) || Number.isNaN(s2)) return null;
   if (s1 === s2) return null;
 
-  const team1Reached = s1 >= target;
-  const team2Reached = s2 >= target;
+  if (target === 6) {
+    if (s1 === 6 && s2 <= 4) return "team1";
+    if (s2 === 6 && s1 <= 4) return "team2";
+    if (s1 === 7 && (s2 === 5 || s2 === 6)) return "team1";
+    if (s2 === 7 && (s1 === 5 || s1 === 6)) return "team2";
+    return null;
+  }
 
-  if (!team1Reached && !team2Reached) return null;
-
-  if (team1Reached && s1 > s2) return "team1";
-  if (team2Reached && s2 > s1) return "team2";
+  if (s1 >= target && s1 > s2) return "team1";
+  if (s2 >= target && s2 > s1) return "team2";
 
   return null;
 }
@@ -766,21 +792,25 @@ function resolveBracketGame(game, allGames, data) {
   if (copy.source1) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source1);
 
-    const winnerId = sourceGame
-      ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
+    const sourceId = sourceGame
+      ? copy.source1Mode === "loser"
+        ? getGameLoserId(resolveBracketGame(sourceGame, allGames, data), data)
+        : getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
       : null;
 
-    copy.ids1 = winnerId === null ? [] : [winnerId];
+    copy.ids1 = sourceId === null ? [] : [sourceId];
   }
 
   if (copy.source2) {
     const sourceGame = allGames.find((item) => item.matchKey === copy.source2);
 
-    const winnerId = sourceGame
-      ? getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
+    const sourceId = sourceGame
+      ? copy.source2Mode === "loser"
+        ? getGameLoserId(resolveBracketGame(sourceGame, allGames, data), data)
+        : getGameWinnerId(resolveBracketGame(sourceGame, allGames, data), data)
       : null;
 
-    copy.ids2 = winnerId === null ? [] : [winnerId];
+    copy.ids2 = sourceId === null ? [] : [sourceId];
   }
 
   copy.team1 = copy.ids1?.length
@@ -815,6 +845,29 @@ function buildNextRound(previousGames, bracketType, roundName, keyPrefix) {
   }
 
   return games;
+}
+
+function buildThirdPlaceGame(semifinals) {
+  if (!semifinals || semifinals.length < 2) return [];
+
+  return [
+    {
+      phase: "main",
+      roundName: "3º lugar",
+      matchKey: "main_third_1",
+      source1: semifinals[0].matchKey,
+      source2: semifinals[1].matchKey,
+      source1Mode: "loser",
+      source2Mode: "loser",
+      ids1: [],
+      ids2: [],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: 2,
+    },
+  ];
 }
 
 function generateCupBrackets(data) {
@@ -956,6 +1009,12 @@ function generateCupBrackets(data) {
       title: "Semifinal",
       bracketTitle: mainName,
       games: semifinals,
+    });
+
+    mainRounds.push({
+      title: "3º lugar",
+      bracketTitle: mainName,
+      games: buildThirdPlaceGame(semifinals),
     });
 
     mainRounds.push({
@@ -1140,66 +1199,30 @@ function calculateMainCupPodium(data) {
     (game) => game.phase === "main" && game.roundName === "Final"
   );
 
-  const semifinalGames = games.filter(
-    (game) => game.phase === "main" && game.roundName === "Semifinal"
+  const thirdPlaceGame = games.find(
+    (game) => game.phase === "main" && game.roundName === "3º lugar"
   );
 
   if (!finalGame) return [];
 
   const resolvedFinal = resolveBracketGame(finalGame, games, data);
-
   const championId = getGameWinnerId(resolvedFinal, data);
-const runnerUpId = getGameLoserId(resolvedFinal, data);
+  const runnerUpId = getGameLoserId(resolvedFinal, data);
 
   if (championId === null || runnerUpId === null) return [];
 
-  const semifinalLosers = semifinalGames
-    .map((game) => resolveBracketGame(game, games, data))
-    .map((game) => {
-      const loserId = getGameLoserId(game, data);
-
-      if (loserId === null) return null;
-
-      const s1 = Number(game.s1);
-      const s2 = Number(game.s2);
-
-      return {
-        id: loserId,
-        name: getCupTeamName(data, loserId),
-        pts: loserId === game.ids1?.[0] ? s1 : s2,
-        bal: loserId === game.ids1?.[0] ? s1 - s2 : s2 - s1,
-      };
-    })
-    .filter(Boolean);
-
-  semifinalLosers.sort((a, b) => {
-    const ptsDiff = b.pts - a.pts;
-    if (ptsDiff !== 0) return ptsDiff;
-
-    const balDiff = b.bal - a.bal;
-    if (balDiff !== 0) return balDiff;
-
-    return a.name.localeCompare(b.name);
-  });
-
-  const thirdId = semifinalLosers[0]?.id ?? null;
-
   const podium = [
-    {
-      position: "🏆 Campeão",
-      name: getCupTeamName(data, championId),
-    },
-    {
-      position: "🥈 Vice",
-      name: getCupTeamName(data, runnerUpId),
-    },
+    { position: "🏆 Campeão", name: getCupTeamName(data, championId) },
+    { position: "🥈 Vice", name: getCupTeamName(data, runnerUpId) },
   ];
 
-  if (thirdId !== null) {
-    podium.push({
-      position: "🥉 3º lugar",
-      name: getCupTeamName(data, thirdId),
-    });
+  if (thirdPlaceGame) {
+    const resolvedThirdPlace = resolveBracketGame(thirdPlaceGame, games, data);
+    const thirdId = getGameWinnerId(resolvedThirdPlace, data);
+
+    if (thirdId !== null) {
+      podium.push({ position: "🥉 3º lugar", name: getCupTeamName(data, thirdId) });
+    }
   }
 
   return podium;
@@ -2101,6 +2124,7 @@ const [newDay, setNewDay] = useState("");
 const [newLocation, setNewLocation] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [editingTournament, setEditingTournament] = useState(null);
   const [notice, setNotice] = useState(null);
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
@@ -3471,7 +3495,7 @@ function ScheduleView({
            <input
   type="number"
   min="0"
- max={winningScore}
+ max={getMaxScore(winningScore)}
   inputMode="numeric"
   pattern="[0-9]*"
   value={game.s1}
@@ -3483,7 +3507,7 @@ function ScheduleView({
                <input
   type="number"
   min="0"
-  max={winningScore}
+  max={getMaxScore(winningScore)}
   inputMode="numeric"
   pattern="[0-9]*"
   value={game.s2}
@@ -3798,7 +3822,7 @@ function BracketColumn({
                   <input
   type="number"
   min="0"
-  max={winningScore}
+  max={getMaxScore(winningScore)}
   inputMode="numeric"
   pattern="[0-9]*"
   value={game.s1}
@@ -3811,7 +3835,7 @@ function BracketColumn({
             <input
   type="number"
   min="0"
-  max={winningScore}
+  max={getMaxScore(winningScore)}
   inputMode="numeric"
   pattern="[0-9]*"
   value={game.s2}
