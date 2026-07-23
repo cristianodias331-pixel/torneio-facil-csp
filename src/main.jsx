@@ -2365,7 +2365,7 @@ setNewLocation("");
         const details = t.data || {};
 
         return (
-       <div className="tournamentItem" key={t.id}>
+      <div className="tournamentItem" key={t.id}>
   <div className="tournamentInfo">
     <div className="tournamentTitleRow">
       <strong>{t.name}</strong>
