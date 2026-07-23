@@ -2285,7 +2285,7 @@ setNewLocation("");
 
         <div className="grid">
           {allowedTypes.map((item) => (
-            <div className="modality" key={item}>🏆 {item}</div>
+            <div className="modality" key={item}>{item}</div>
           ))}
         </div>
       </section>
