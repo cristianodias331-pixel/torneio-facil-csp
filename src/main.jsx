@@ -2365,49 +2365,45 @@ setNewLocation("");
         const details = t.data || {};
 
         return (
-          <div className="tournamentItem" key={t.id}>
-            <div className="tournamentInfo">
-              <strong>{t.name}</strong>
+       <div className="tournamentItem" key={t.id}>
+  <div className="tournamentInfo">
+    <div className="tournamentTitleRow">
+      <strong>{t.name}</strong>
+      <span className="tournamentTypeBadge">{t.type}</span>
+    </div>
 
-              <div className="tournamentMeta">
-                <span>🏆 {t.type}</span>
+    <div className="tournamentMeta">
+      {details.gender ? (
+        <span>👥 {details.gender}</span>
+      ) : null}
+      {details.eventDate ? (
+        <span>📅 {formatDateBR(details.eventDate)}</span>
+      ) : null}
+      {details.eventDay ? (
+        <span>🗓️ {details.eventDay}</span>
+      ) : null}
+      {details.location ? (
+        <span>📍 {details.location}</span>
+      ) : null}
+      {details.winningScore ? (
+        <span>🎯 Até {details.winningScore} pontos</span>
+      ) : null}
+    </div>
+  </div>
 
-                {details.gender ? (
-                  <span>👥 {details.gender}</span>
-                ) : null}
-
-                {details.eventDate ? (
-                  <span>📅 {formatDateBR(details.eventDate)}</span>
-                ) : null}
-
-                {details.eventDay ? (
-                  <span>🗓️ {details.eventDay}</span>
-                ) : null}
-
-                {details.location ? (
-                  <span>📍 {details.location}</span>
-                ) : null}
-
-                {details.winningScore ? (
-                  <span>🎯 Até {details.winningScore} pontos</span>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="actions">
-              <button type="button" onClick={() => openTournament(t)}>
-                Abrir
-              </button>
-
-              <button
-                type="button"
-                className="deleteBtn"
-                onClick={() => setDeleteTarget(t)}
-              >
-                Excluir
-              </button>
-            </div>
-          </div>
+  <div className="tournamentActions">
+    <button type="button" onClick={() => openTournament(t)}>
+      Abrir
+    </button>
+    <button
+      type="button"
+      className="deleteBtn"
+      onClick={() => setDeleteTarget(t)}
+    >
+      Excluir
+    </button>
+  </div>
+</div>
         );
       })}
     </div>
