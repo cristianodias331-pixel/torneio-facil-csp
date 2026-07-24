@@ -271,6 +271,30 @@ function isGameFinished(game, winningScore = 4) {
   return getScoreWinnerSide(game, winningScore) !== null;
 }
 
+function isTournamentFinished(data, config, tournamentType) {
+  const winningScore = getWinningScore(data);
+
+  if (isCupType(config)) {
+    const games = data.brackets || [];
+    const mainGames = games.filter((game) => game.phase === "main");
+
+    if (!mainGames.length) return false;
+
+    return mainGames.every((game) => {
+      const resolvedGame = resolveBracketGame(game, games, data);
+      return resolvedGame.ids1?.length &&
+        resolvedGame.ids2?.length &&
+        isGameFinished(resolvedGame, winningScore);
+    });
+  }
+
+  const games = (data.schedule || []).flat();
+
+  if (!games.length) return false;
+
+  return games.every((game) => isGameFinished(game, winningScore));
+}
+
 function isCupType(config) {
   return config?.type === "cup" || config?.type === "cup18";
 }
@@ -3185,7 +3209,7 @@ return (
               )}
             </section>
           </>
-        ) : (
+        ) : publicCanShowRanking ? (
           <section className="card">
             <h2>Ranking</h2>
 
@@ -3195,7 +3219,7 @@ return (
               rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
             />
           </section>
-        )}
+        ) : null}
       </div>
     </>
   );
@@ -3976,6 +4000,7 @@ function PublicTournamentScreen({ tournament }) {
   const ranking = calculateRanking(data, tournament.type, data.rankingCriteria);
 
   const isCup = isCupType(config);
+  const publicCanShowRanking = isTournamentFinished(data, config, tournament.type);
 
   const cupGroupRankings = isCup
     ? calculateCupGroupRankings(data, data.rankingCriteria)
@@ -4030,14 +4055,16 @@ function PublicTournamentScreen({ tournament }) {
 
         {isCup ? (
           <>
-            <section className="card">
-              <h2>Classificação dos grupos</h2>
+            {publicCanShowRanking && (
+              <section className="card">
+                <h2>Classificação dos grupos</h2>
 
-              <CupGroupRankingView
-                groupRankings={cupGroupRankings}
-                rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-              />
-            </section>
+                <CupGroupRankingView
+                  groupRankings={cupGroupRankings}
+                  rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                />
+              </section>
+            )}
 
             <section className="card">
               <h2>Chaves finais</h2>
@@ -4048,18 +4075,22 @@ function PublicTournamentScreen({ tournament }) {
                 <>
                   <PublicCupBracketView groupedBrackets={currentBrackets} />
 
-                  <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
+                  {publicCanShowRanking && (
+                    <>
+                      <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
 
-                  {parallelRanking.length > 0 && (
-                    <div className="parallelRankingBox">
-                      <h3>Ranking da {data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
+                      {parallelRanking.length > 0 && (
+                        <div className="parallelRankingBox">
+                          <h3>Ranking da {data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
 
-                      <RankingTable
-                        title="Classificação"
-                        rows={parallelRanking}
-                        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-                      />
-                    </div>
+                          <RankingTable
+                            title="Classificação"
+                            rows={parallelRanking}
+                            rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                          />
+                        </div>
+                      )}
+                    </>
                   )}
                 </>
               )}
