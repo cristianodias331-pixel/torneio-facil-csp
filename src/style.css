@@ -3952,3 +3952,31 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 }
+​
+​
+/* Correção final do seletor de data */
+.datePickerBox {
+  position: relative !important;
+  cursor: pointer !important;
+}
+​
+.datePickerBox input[type="date"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  opacity: 0.001 !important;
+  color: transparent !important;
+  background: transparent !important;
+  border: 0 !important;
+  cursor: pointer !important;
+  z-index: 5 !important;
+}
+​
+.datePickerBox span,
+.datePickerBox::before {
+  position: relative !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
