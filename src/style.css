@@ -270,6 +270,7 @@ label {
 .accordionContent {
   animation: tabOpen 0.22s ease-out;
 }
+​
 @keyframes tabOpen {
   from {
     opacity: 0;
@@ -947,9 +948,10 @@ tbody tr:hover {
   margin-top: 24px;
 }
 ​
-.confirmBox {
-  ...
+.confirmActions button {
+  min-width: 150px;
 }
+​
 @keyframes confirmIn {
   from {
     opacity: 0;
