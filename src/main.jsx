@@ -525,7 +525,6 @@ if (!winnerSide) return;
 
 const win1 = winnerSide === "team1";
 const win2 = winnerSide === "team2";
-        
         game.ids1.forEach((id) => {
           tableById[id].pts += s1;
           tableById[id].bal += s1 - s2;
@@ -1990,7 +1989,7 @@ function Login() {
               text="Formato com 8 duplas fixas. O sistema gera os confrontos entre as duplas, registra placares e monta o ranking geral."
             />
 
-            <Info
+<Info
               title="Simples 8"
               text="Formato individual com 8 jogadores. Cada atleta joga individualmente, com tabela automática e ranking geral por desempenho."
             />
@@ -4120,3 +4119,4 @@ function PublicBracketColumn({ rounds }) {
 }
 
 createRoot(document.getElementById("root")).render(<App />);
+
