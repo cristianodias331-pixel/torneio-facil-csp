@@ -3806,3 +3806,167 @@ tbody tr:hover {
   content: "🏆";
   margin-right: 8px;
 }
+
+/* Popup de edição de campeonato */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(2, 6, 23, 0.62);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 10vh 16px 24px;
+}
+
+.modalBox {
+  width: min(520px, calc(100% - 32px));
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: 30px;
+  padding: 28px;
+  border: 1px solid #e2e8f0;
+  box-shadow:
+    0 30px 100px rgba(2, 6, 23, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  animation: confirmIn 0.22s ease-out;
+}
+
+.modalBox h2 {
+  margin: 0 0 18px;
+  font-size: 28px;
+  font-weight: 950;
+  letter-spacing: -0.05em;
+  color: #020617;
+}
+
+.modalBox label {
+  margin-top: 12px;
+  text-align: left;
+}
+
+.modalBox input,
+.modalBox select {
+  width: 100%;
+}
+
+.modalBox .helperText {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.modalBox .actions {
+  margin-top: 22px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.modalBox .actions button {
+  min-width: 150px;
+}
+
+@media (max-width: 640px) {
+  .modalOverlay {
+    padding-top: 8vh;
+  }
+
+  .modalBox .actions {
+    flex-direction: column;
+  }
+
+  .modalBox .actions button {
+    width: 100%;
+  }
+}
+
+
+/* Edição expansível do torneio */
+.editTournamentPanel {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.editTournamentPanel h3 {
+  margin: 0 0 12px;
+}
+
+.editTournamentPanel label {
+  margin-top: 10px;
+}
+
+.editTournamentPanel .helperText {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.editTournamentPanel .actions {
+  margin-top: 14px;
+}
+
+
+/* Controles de mover torneio à esquerda */
+.moveControls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+}
+
+.moveLineBtn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  border-radius: 12px;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  line-height: 0.55;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.moveLineBtn span {
+  display: block;
+  height: 6px;
+  line-height: 6px;
+}
+
+.moveLineBtn:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+
+/* Arrastar torneios */
+.tournamentItem.dragging {
+  opacity: 0.55;
+  outline: 2px dashed var(--primary);
+  outline-offset: 3px;
+}
+
+.moveLineBtn {
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+
+.moveLineBtn:active {
+  cursor: grabbing;
+}
