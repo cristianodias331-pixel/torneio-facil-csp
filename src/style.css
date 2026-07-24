@@ -3883,3 +3883,34 @@ tbody tr:hover {
     width: 100%;
   }
 }
+​
+​
+/* Edição expansível do torneio */
+.editTournamentPanel {
+  flex-basis: 100%;
+  width: 100%;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 18px;
+  background: #f8fafc;
+}
+​
+.editTournamentPanel h3 {
+  margin: 0 0 12px;
+}
+​
+.editTournamentPanel label {
+  margin-top: 10px;
+}
+​
+.editTournamentPanel .helperText {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 800;
+}
+​
+.editTournamentPanel .actions {
+  margin-top: 14px;
+}
