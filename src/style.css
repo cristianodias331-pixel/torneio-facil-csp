@@ -947,10 +947,9 @@ tbody tr:hover {
   margin-top: 24px;
 }
 ​
-.confirmActions button {
-  min-width: 150px;
+.confirmBox {
+  ...
 }
-​
 @keyframes confirmIn {
   from {
     opacity: 0;
