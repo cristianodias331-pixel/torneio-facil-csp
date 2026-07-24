@@ -4098,3 +4098,33 @@ tbody tr:hover {
   cursor: pointer;
   opacity: 1;
 }
+
+
+/* Área inteira do campo de data clicável */
+.dateInputClickArea {
+  position: relative;
+  width: 100%;
+  cursor: pointer;
+}
+
+.dateInputClickArea .dateInputLeft {
+  width: 100%;
+  pointer-events: none;
+}
+
+/* Recoloca o ícone visível do calendário no campo clicável */
+.dateInputClickArea::before {
+  content: "📅";
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  pointer-events: none;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.dateInputClickArea .dateInputLeft::-webkit-calendar-picker-indicator {
+  opacity: 0 !important;
+}
