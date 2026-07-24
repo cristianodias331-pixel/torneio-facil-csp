@@ -2356,24 +2356,15 @@ setNewLocation("");
   </select>
 
   <label>Data</label>
-  <button
-    type="button"
-    className="datePickerSimple"
-    onClick={() => {
-      const input = document.getElementById("newTournamentDate");
-      if (input?.showPicker) input.showPicker();
-      else input?.click();
-    }}
-  >
-    <span>{newDate ? `${formatDateBR(newDate)} · ${getWeekdayBR(newDate)}` : "Escolher data"}</span>
-    <input
-      id="newTournamentDate"
-      type="date"
-      value={newDate}
-      onClick={(e) => e.stopPropagation()}
-      onChange={(e) => setNewDate(e.target.value)}
-    />
-  </button>
+  <input
+    className="dateInputLeft"
+    type="date"
+    value={newDate}
+    onChange={(e) => setNewDate(e.target.value)}
+  />
+  {newDate ? (
+    <p className="helperText">{formatDateBR(newDate)} · {getWeekdayBR(newDate)}</p>
+  ) : null}
 
   <label>Local</label>
   <input
