@@ -2356,12 +2356,22 @@ setNewLocation("");
   </select>
 
   <label>Data</label>
-  <input
-    className="dateInputLeft"
-    type="date"
-    value={newDate}
-    onChange={(e) => setNewDate(e.target.value)}
-  />
+  <div
+    className="dateInputClickArea"
+    onClick={() => {
+      const input = document.getElementById("newTournamentDate");
+      if (input?.showPicker) input.showPicker();
+      else input?.click();
+    }}
+  >
+    <input
+      id="newTournamentDate"
+      className="dateInputLeft"
+      type="date"
+      value={newDate}
+      onChange={(e) => setNewDate(e.target.value)}
+    />
+  </div>
 
   <label>Local</label>
   <input
