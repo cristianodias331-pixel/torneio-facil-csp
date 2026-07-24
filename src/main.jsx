@@ -2380,33 +2380,8 @@ setNewLocation("");
       />
 ​
       {editingTournament && (
-        <div
-          className="modalOverlay"
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 99999,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 20,
-            background: "rgba(2, 6, 23, 0.72)",
-            backdropFilter: "blur(8px)",
-          }}
-        >
-          <div
-            className="modalBox"
-            style={{
-              width: "min(460px, calc(100vw - 32px))",
-              maxHeight: "calc(100vh - 48px)",
-              overflowY: "auto",
-              background: "linear-gradient(180deg, #ffffff, #f8fafc)",
-              border: "1px solid #e2e8f0",
-              borderRadius: 26,
-              padding: 24,
-              boxShadow: "0 30px 100px rgba(2, 6, 23, 0.45)",
-            }}
-          >
+        <div className="modalOverlay">
+          <div className="modalBox">
             <h2>Editar campeonato</h2>
 ​
             <label>Nome</label>
@@ -2428,14 +2403,11 @@ setNewLocation("");
             </select>
 ​
             <label>Data</label>
-            <label
-              className="datePickerBox"
-              onClick={(e) => e.currentTarget.querySelector("input")?.showPicker?.()}
-            >
+            <label className="datePickerBox">
               <span>
                 {editingTournament.editDate
                   ? `${formatDateBR(editingTournament.editDate)} · ${getWeekdayBR(editingTournament.editDate)}`
-                  : "Escolher data"}
+                  : "📅 Escolher data"}
               </span>
               <input
                 type="date"
@@ -2507,11 +2479,8 @@ setNewLocation("");
   </select>
 ​
   <label>Data</label>
-  <label
-    className="datePickerBox"
-    onClick={(e) => e.currentTarget.querySelector("input")?.showPicker?.()}
-  >
-    <span>{newDate ? `${formatDateBR(newDate)} · ${getWeekdayBR(newDate)}` : "Escolher data"}</span>
+  <label className="datePickerBox">
+    <span>{newDate ? `${formatDateBR(newDate)} · ${getWeekdayBR(newDate)}` : "📅 Escolher data"}</span>
     <input
       type="date"
       value={newDate}
@@ -2589,17 +2558,11 @@ setNewLocation("");
       onChange={(e) => setHistorySearch(e.target.value)}
       placeholder="Buscar por nome, tipo ou local"
     />
-    <label
-      className="datePickerBox"
-      onClick={(e) => e.currentTarget.querySelector("input")?.showPicker?.()}
-    >
-      <span>{historyDate ? `${formatDateBR(historyDate)} · ${getWeekdayBR(historyDate)}` : "Escolher data"}</span>
-      <input
-        type="date"
-        value={historyDate}
-        onChange={(e) => setHistoryDate(e.target.value)}
-      />
-    </label>
+    <input
+      type="date"
+      value={historyDate}
+      onChange={(e) => setHistoryDate(e.target.value)}
+    />
     <select value={historyGender} onChange={(e) => setHistoryGender(e.target.value)}>
       <option value="">Todos os gêneros</option>
       <option value="Masculino">Masculino</option>
