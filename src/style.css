@@ -270,13 +270,11 @@ label {
 .accordionContent {
   animation: tabOpen 0.22s ease-out;
 }
-
 @keyframes tabOpen {
   from {
     opacity: 0;
     transform: translateY(-8px);
   }
-​
   to {
     opacity: 1;
     transform: translateY(0);
