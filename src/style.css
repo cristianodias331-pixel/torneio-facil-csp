@@ -253,7 +253,7 @@ label {
   gap: 10px;
   flex-wrap: wrap;
 }
-​
+
 .infoTabs button {
   min-width: 150px;
   background: rgba(255, 255, 255, 0.13) !important;
@@ -261,22 +261,22 @@ label {
   color: white !important;
   box-shadow: none !important;
 }
-​
+
 .infoTabs button.active {
   background: linear-gradient(135deg, #22c55e, #06b6d4) !important;
   box-shadow: 0 14px 32px rgba(14, 165, 233, 0.28) !important;
 }
-​
+
 .accordionContent {
   animation: tabOpen 0.22s ease-out;
 }
-​
+
 @keyframes tabOpen {
   from {
     opacity: 0;
     transform: translateY(-8px);
   }
-​
+
   to {
     opacity: 1;
     transform: translateY(0);
