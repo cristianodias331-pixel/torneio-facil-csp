@@ -1057,7 +1057,7 @@ function generateCupBrackets(data) {
   }
 ​
   const repechageFirstRound =
-    teamCount === 18 && repechageIds.length === 4
+    repechageIds.length === 4
       ? generateParallelRoundRobin(repechageIds)
       : seedBracket(repechageIds, "repechage");
 ​
@@ -1068,11 +1068,8 @@ function generateCupBrackets(data) {
       games: repechageFirstRound,
     });
 ​
-    if (teamCount === 18 && repechageIds.length === 4) {
+    if (repechageIds.length === 4) {
       // Disputa Paralela: todos contra todos. Não gera final.
-    } else if (repechageIds.length === 4) {
-      const final = buildNextRound(repechageFirstRound, "repechage", "Final", "final");
-      repechageRounds.push({ title: "Final", bracketTitle: repechageName, games: final });
     } else if (repechageIds.length === 8) {
       const semifinals = buildNextRound(repechageFirstRound, "repechage", "Semifinal", "sf");
       const final = buildNextRound(semifinals, "repechage", "Final", "final");
@@ -2891,9 +2888,7 @@ const currentBrackets = isCupType(config) && data.brackets?.length
   : null;
 ​
 const parallelRanking =
-  isCupType(config) &&
-  (data.cupConfig?.teamCount || 12) === 18 &&
-  data.brackets?.length
+  isCupType(config) && data.brackets?.length
     ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
     : [];
 ​
@@ -3950,9 +3945,7 @@ function PublicTournamentScreen({ tournament }) {
     : null;
 ​
   const parallelRanking =
-    isCup &&
-    (data.cupConfig?.teamCount || 12) === 18 &&
-    data.brackets?.length
+    isCup && data.brackets?.length
       ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
       : [];
 ​
@@ -4124,4 +4117,3 @@ function PublicBracketColumn({ rounds }) {
 }
 ​
 createRoot(document.getElementById("root")).render(<App />);
-​
