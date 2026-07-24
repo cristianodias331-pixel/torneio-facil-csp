@@ -2362,9 +2362,6 @@ setNewLocation("");
     value={newDate}
     onChange={(e) => setNewDate(e.target.value)}
   />
-  {newDate ? (
-    <p className="helperText">{formatDateBR(newDate)} · {getWeekdayBR(newDate)}</p>
-  ) : null}
 
   <label>Local</label>
   <input
