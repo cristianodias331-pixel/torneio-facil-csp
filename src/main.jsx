@@ -2125,11 +2125,7 @@ const [newDay, setNewDay] = useState("");
 const [newLocation, setNewLocation] = useState("");
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
-  const [editingTournament, setEditingTournament] = useState(null);
-  const [historySearch, setHistorySearch] = useState("");
-  const [historyDate, setHistoryDate] = useState("");
-  const [historyGender, setHistoryGender] = useState("");
-  const [historyType, setHistoryType] = useState("");
+  const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
 ​
   const allowedTypes = allowedByPlan[profile.plan] || [];
@@ -2275,78 +2271,23 @@ setNewLocation("");
     return true;
   }
 ​
-  function startEditTournament(tournament) {
-    const details = tournament.data || {};
+  function moveTournamentByDrag(fromId, toId) {
+    if (!fromId || !toId || fromId === toId) return;
 ​
-    setEditingTournament({
-      ...tournament,
-      editName: tournament.name || "",
-      editGender: details.gender || "",
-      editDate: details.eventDate || "",
-      editLocation: details.location || "",
-    });
-  }
-​
-  async function saveTournamentDetails() {
-    if (!editingTournament) return;
-​
-    if (!editingTournament.editName.trim()) {
-      showNotice("warning", "Nome obrigatório", "Digite um nome para este torneio.");
-      return;
-    }
-​
-    const updated = {
-      ...editingTournament,
-      name: editingTournament.editName.trim(),
-      data: {
-        ...(editingTournament.data || {}),
-        gender: editingTournament.editGender,
-        eventDate: editingTournament.editDate,
-        eventDay: getWeekdayBR(editingTournament.editDate),
-        location: editingTournament.editLocation.trim(),
-      },
-    };
-​
-    const ok = await saveTournament(updated);
-​
-    if (!ok) {
-      showNotice("error", "Erro ao salvar", "Não foi possível editar este torneio.");
-      return;
-    }
-​
-    setEditingTournament(null);
-    showNotice("success", "Torneio editado", "Os dados do torneio foram atualizados.");
-  }
-​
-  function moveTournament(id, direction) {
     setTournaments((prev) => {
       const list = [...prev];
-      const index = list.findIndex((item) => item.id === id);
-      const targetIndex = index + direction;
+      const fromIndex = list.findIndex((item) => item.id === fromId);
+      const toIndex = list.findIndex((item) => item.id === toId);
 ​
-      if (index < 0 || targetIndex < 0 || targetIndex >= list.length) return prev;
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) return prev;
 ​
-      const [item] = list.splice(index, 1);
-      list.splice(targetIndex, 0, item);
+      const [item] = list.splice(fromIndex, 1);
+      list.splice(toIndex, 0, item);
       return list;
     });
   }
 ​
-  const filteredTournaments = tournaments.filter((t) => {
-    const details = t.data || {};
-    const search = historySearch.trim().toLowerCase();
 ​
-    const matchesSearch = !search ||
-      t.name?.toLowerCase().includes(search) ||
-      t.type?.toLowerCase().includes(search) ||
-      details.location?.toLowerCase().includes(search);
-​
-    const matchesDate = !historyDate || details.eventDate === historyDate;
-    const matchesGender = !historyGender || details.gender === historyGender;
-    const matchesType = !historyType || t.type === historyType;
-​
-    return matchesSearch && matchesDate && matchesGender && matchesType;
-  });
 ​
   if (selected) {
     return (
@@ -2368,56 +2309,6 @@ setNewLocation("");
         onConfirm={confirmDeleteTournament}
       />
 ​
-      {editingTournament && (
-        <div className="modalOverlay">
-          <div className="modalBox">
-            <h2>Editar campeonato</h2>
-​
-            <label>Nome</label>
-            <input
-              value={editingTournament.editName}
-              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editName: e.target.value }))}
-            />
-​
-            <label>Gênero</label>
-            <select
-              value={editingTournament.editGender}
-              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editGender: e.target.value }))}
-            >
-              <option value="">Escolha o gênero</option>
-              <option value="Masculino">Masculino</option>
-              <option value="Feminino">Feminino</option>
-              <option value="Misto">Misto</option>
-              <option value="Livre">Livre</option>
-            </select>
-​
-            <label>Data</label>
-            <input
-              type="date"
-              value={editingTournament.editDate}
-              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editDate: e.target.value }))}
-            />
-            {editingTournament.editDate ? (
-              <p className="helperText">
-                {formatDateBR(editingTournament.editDate)} · {getWeekdayBR(editingTournament.editDate)}
-              </p>
-            ) : null}
-​
-            <label>Local</label>
-            <input
-              value={editingTournament.editLocation}
-              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editLocation: e.target.value }))}
-            />
-​
-            <div className="actions">
-              <button type="button" onClick={saveTournamentDetails}>Salvar</button>
-              <button type="button" className="secondaryBtn" onClick={() => setEditingTournament(null)}>
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 ​
       <header>
         <div>
@@ -2495,45 +2386,43 @@ setNewLocation("");
       </section>
 ​
 <section className="card">
-  <h2>Histórico de torneios</h2>
-​
-  <div className="historyFilters">
-    <input
-      value={historySearch}
-      onChange={(e) => setHistorySearch(e.target.value)}
-      placeholder="Buscar por nome, tipo ou local"
-    />
-    <input
-      type="date"
-      value={historyDate}
-      onChange={(e) => setHistoryDate(e.target.value)}
-    />
-    <select value={historyGender} onChange={(e) => setHistoryGender(e.target.value)}>
-      <option value="">Todos os gêneros</option>
-      <option value="Masculino">Masculino</option>
-      <option value="Feminino">Feminino</option>
-      <option value="Misto">Misto</option>
-      <option value="Livre">Livre</option>
-    </select>
-    <select value={historyType} onChange={(e) => setHistoryType(e.target.value)}>
-      <option value="">Todos os tipos</option>
-      {allowedTypes.map((type) => (
-        <option key={type} value={type}>{type}</option>
-      ))}
-    </select>
-  </div>
+  <h2>Meus torneios</h2>
 ​
   {tournaments.length === 0 ? (
     <p>Nenhum torneio criado ainda.</p>
-  ) : filteredTournaments.length === 0 ? (
-    <p>Nenhum torneio encontrado com esses filtros.</p>
+  ) : (false) ? (
+    <p></p>
   ) : (
     <div className="tournamentList">
-      {filteredTournaments.map((t, index) => {
+      {tournaments.map((t, index) => {
         const details = t.data || {};
 ​
         return (
-      <div className="tournamentItem" key={t.id}>
+      <div
+        className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
+        key={t.id}
+        onDragOver={(e) => e.preventDefault()}
+        onDrop={() => {
+          moveTournamentByDrag(draggedTournamentId, t.id);
+          setDraggedTournamentId(null);
+        }}
+      >
+  <button
+    type="button"
+    className="moveLineBtn"
+    title="Segure e arraste para mover"
+    draggable
+    onDragStart={(e) => {
+      setDraggedTournamentId(t.id);
+      e.dataTransfer.effectAllowed = "move";
+    }}
+    onDragEnd={() => setDraggedTournamentId(null)}
+  >
+    <span>—</span>
+    <span>—</span>
+    <span>—</span>
+  </button>
+​
   <div className="tournamentInfo">
     <div className="tournamentTitleRow">
       <strong>{t.name}</strong>
@@ -2560,15 +2449,6 @@ setNewLocation("");
   </div>
 ​
   <div className="tournamentActions">
-    <button type="button" className="secondaryBtn" title="Mover para cima" onClick={() => moveTournament(t.id, -1)} disabled={index === 0}>
-      ☝️
-    </button>
-    <button type="button" className="secondaryBtn" title="Mover para baixo" onClick={() => moveTournament(t.id, 1)} disabled={index === filteredTournaments.length - 1}>
-      👇
-    </button>
-    <button type="button" className="secondaryBtn" onClick={() => startEditTournament(t)}>
-      Editar
-    </button>
     <button type="button" onClick={() => openTournament(t)}>
       Abrir
     </button>
@@ -2580,6 +2460,7 @@ setNewLocation("");
       Excluir
     </button>
   </div>
+​
 </div>
         );
       })}
