@@ -4072,3 +4072,29 @@ tbody tr:hover {
   cursor: pointer;
   opacity: 1;
 }
+
+
+/* Data: mostrar somente o ícone e deixar todo campo clicável */
+.dateInputLeft {
+  color: transparent !important;
+  caret-color: transparent !important;
+  cursor: pointer !important;
+  padding-left: 46px !important;
+}
+
+.dateInputLeft::-webkit-datetime-edit,
+.dateInputLeft::-webkit-datetime-edit-fields-wrapper,
+.dateInputLeft::-webkit-datetime-edit-text,
+.dateInputLeft::-webkit-datetime-edit-day-field,
+.dateInputLeft::-webkit-datetime-edit-month-field,
+.dateInputLeft::-webkit-datetime-edit-year-field {
+  color: transparent !important;
+}
+
+.dateInputLeft::-webkit-calendar-picker-indicator {
+  position: absolute;
+  left: 16px;
+  right: auto;
+  cursor: pointer;
+  opacity: 1;
+}
