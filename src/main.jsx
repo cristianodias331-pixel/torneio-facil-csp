@@ -2368,6 +2368,56 @@ setNewLocation("");
         onConfirm={confirmDeleteTournament}
       />
 ​
+      {editingTournament && (
+        <div className="modalOverlay">
+          <div className="modalBox">
+            <h2>Editar campeonato</h2>
+​
+            <label>Nome</label>
+            <input
+              value={editingTournament.editName}
+              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editName: e.target.value }))}
+            />
+​
+            <label>Gênero</label>
+            <select
+              value={editingTournament.editGender}
+              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editGender: e.target.value }))}
+            >
+              <option value="">Escolha o gênero</option>
+              <option value="Masculino">Masculino</option>
+              <option value="Feminino">Feminino</option>
+              <option value="Misto">Misto</option>
+              <option value="Livre">Livre</option>
+            </select>
+​
+            <label>Data</label>
+            <input
+              type="date"
+              value={editingTournament.editDate}
+              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editDate: e.target.value }))}
+            />
+            {editingTournament.editDate ? (
+              <p className="helperText">
+                {formatDateBR(editingTournament.editDate)} · {getWeekdayBR(editingTournament.editDate)}
+              </p>
+            ) : null}
+​
+            <label>Local</label>
+            <input
+              value={editingTournament.editLocation}
+              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editLocation: e.target.value }))}
+            />
+​
+            <div className="actions">
+              <button type="button" onClick={saveTournamentDetails}>Salvar</button>
+              <button type="button" className="secondaryBtn" onClick={() => setEditingTournament(null)}>
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 ​
       <header>
         <div>
@@ -2517,7 +2567,7 @@ setNewLocation("");
       👇
     </button>
     <button type="button" className="secondaryBtn" onClick={() => startEditTournament(t)}>
-      Editar dados
+      Editar
     </button>
     <button type="button" onClick={() => openTournament(t)}>
       Abrir
@@ -2530,55 +2580,6 @@ setNewLocation("");
       Excluir
     </button>
   </div>
-​
-  {editingTournament?.id === t.id && (
-    <div className="editTournamentPanel">
-      <h3>Editar dados</h3>
-​
-      <label>Nome</label>
-      <input
-        value={editingTournament.editName}
-        onChange={(e) => setEditingTournament((prev) => ({ ...prev, editName: e.target.value }))}
-      />
-​
-      <label>Gênero</label>
-      <select
-        value={editingTournament.editGender}
-        onChange={(e) => setEditingTournament((prev) => ({ ...prev, editGender: e.target.value }))}
-      >
-        <option value="">Escolha o gênero</option>
-        <option value="Masculino">Masculino</option>
-        <option value="Feminino">Feminino</option>
-        <option value="Misto">Misto</option>
-        <option value="Livre">Livre</option>
-      </select>
-​
-      <label>Data</label>
-      <input
-        type="date"
-        value={editingTournament.editDate}
-        onChange={(e) => setEditingTournament((prev) => ({ ...prev, editDate: e.target.value }))}
-      />
-      {editingTournament.editDate ? (
-        <p className="helperText">
-          {formatDateBR(editingTournament.editDate)} · {getWeekdayBR(editingTournament.editDate)}
-        </p>
-      ) : null}
-​
-      <label>Local</label>
-      <input
-        value={editingTournament.editLocation}
-        onChange={(e) => setEditingTournament((prev) => ({ ...prev, editLocation: e.target.value }))}
-      />
-​
-      <div className="actions">
-        <button type="button" onClick={saveTournamentDetails}>Salvar alterações</button>
-        <button type="button" className="secondaryBtn" onClick={() => setEditingTournament(null)}>
-          Cancelar
-        </button>
-      </div>
-    </div>
-  )}
 </div>
         );
       })}
