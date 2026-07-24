@@ -4032,3 +4032,28 @@ tbody tr:hover {
   opacity: 0.001;
   cursor: pointer;
 }
+
+
+/* Correção: campo de data clicável */
+.datePickerSimple {
+  appearance: none;
+  -webkit-appearance: none;
+  text-align: left;
+}
+
+.datePickerSimple input[type="date"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 3;
+}
+
+.datePickerSimple span,
+.datePickerSimple::after {
+  position: relative;
+  z-index: 4;
+  pointer-events: none;
+}
