@@ -4057,3 +4057,18 @@ tbody tr:hover {
   z-index: 4;
   pointer-events: none;
 }
+
+
+/* Data nativa com calendário à esquerda */
+.dateInputLeft {
+  position: relative;
+  padding-left: 46px !important;
+}
+
+.dateInputLeft::-webkit-calendar-picker-indicator {
+  position: absolute;
+  left: 16px;
+  right: auto;
+  cursor: pointer;
+  opacity: 1;
+}
