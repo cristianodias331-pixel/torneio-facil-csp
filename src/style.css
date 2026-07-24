@@ -4002,7 +4002,7 @@ tbody tr:hover {
   justify-content: space-between;
   width: 100%;
   min-height: 48px;
-  padding: 14px 46px 14px 16px;
+  padding: 14px 16px 14px 46px;
   border: 1px solid var(--line);
   border-radius: 14px;
   background: #fff;
@@ -4014,7 +4014,7 @@ tbody tr:hover {
 .datePickerSimple::after {
   content: "📅";
   position: absolute;
-  right: 16px;
+  left: 16px;
   top: 50%;
   transform: translateY(-50%);
   pointer-events: none;
