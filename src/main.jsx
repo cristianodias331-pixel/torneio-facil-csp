@@ -2332,6 +2332,17 @@ setNewLocation("");
     });
   }
 ​
+  const hasHistorySearch = Boolean(
+    historySearch.trim() || historyDate || historyGender || historyType
+  );
+​
+  const recentTournaments = tournaments.filter((t) => {
+    const createdAt = new Date(t.created_at).getTime();
+    if (Number.isNaN(createdAt)) return true;
+​
+    return Date.now() - createdAt <= 48 * 60 * 60 * 1000;
+  });
+​
   const filteredTournaments = tournaments.filter((t) => {
     const details = t.data || {};
     const search = historySearch.trim().toLowerCase();
@@ -2392,16 +2403,18 @@ setNewLocation("");
             </select>
 ​
             <label>Data</label>
-            <input
-              type="date"
-              value={editingTournament.editDate}
-              onChange={(e) => setEditingTournament((prev) => ({ ...prev, editDate: e.target.value }))}
-            />
-            {editingTournament.editDate ? (
-              <p className="helperText">
-                {formatDateBR(editingTournament.editDate)} · {getWeekdayBR(editingTournament.editDate)}
-              </p>
-            ) : null}
+            <label className="datePickerBox">
+              <span>
+                {editingTournament.editDate
+                  ? `${formatDateBR(editingTournament.editDate)} · ${getWeekdayBR(editingTournament.editDate)}`
+                  : "📅 Escolher data"}
+              </span>
+              <input
+                type="date"
+                value={editingTournament.editDate}
+                onChange={(e) => setEditingTournament((prev) => ({ ...prev, editDate: e.target.value }))}
+              />
+            </label>
 ​
             <label>Local</label>
             <input
@@ -2445,6 +2458,7 @@ setNewLocation("");
         </div>
       </section>
 ​
+    <div className="dashboardGrid">
     <section className="card">
   <h2>Criar novo torneio</h2>
 ​
@@ -2465,14 +2479,14 @@ setNewLocation("");
   </select>
 ​
   <label>Data</label>
-  <input
-    type="date"
-    value={newDate}
-    onChange={(e) => setNewDate(e.target.value)}
-  />
-  {newDate ? (
-    <p className="helperText">{formatDateBR(newDate)} · {getWeekdayBR(newDate)}</p>
-  ) : null}
+  <label className="datePickerBox">
+    <span>{newDate ? `${formatDateBR(newDate)} · ${getWeekdayBR(newDate)}` : "📅 Escolher data"}</span>
+    <input
+      type="date"
+      value={newDate}
+      onChange={(e) => setNewDate(e.target.value)}
+    />
+  </label>
 ​
   <label>Local</label>
   <input
@@ -2493,6 +2507,47 @@ setNewLocation("");
   {saving ? "Salvando..." : "Criar torneio"}
 </button>
       </section>
+​
+<section className="card">
+  <h2>Torneios criados</h2>
+​
+  {recentTournaments.length === 0 ? (
+    <p>Nenhum torneio criado nas últimas 48h.</p>
+  ) : (
+    <div className="tournamentList">
+      {recentTournaments.map((t, index) => {
+        const details = t.data || {};
+​
+        return (
+      <div className="tournamentItem" key={t.id}>
+  <div className="tournamentInfo">
+    <div className="tournamentTitleRow">
+      <strong>{t.name}</strong>
+      <span className="tournamentTypeBadge">{t.type}</span>
+    </div>
+​
+    <div className="tournamentMeta">
+      {details.gender ? <span>👥 {details.gender}</span> : null}
+      {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
+      {details.eventDay ? <span>🗓️ {details.eventDay}</span> : null}
+      {details.location ? <span>📍 {details.location}</span> : null}
+      {details.winningScore ? <span>🎯 Até {details.winningScore} pontos</span> : null}
+    </div>
+  </div>
+​
+  <div className="tournamentActions">
+    <button type="button" className="secondaryBtn" title="Mover para cima" onClick={() => moveTournament(t.id, -1)} disabled={index === 0}>☝️</button>
+    <button type="button" className="secondaryBtn" title="Mover para baixo" onClick={() => moveTournament(t.id, 1)} disabled={index === recentTournaments.length - 1}>👇</button>
+    <button type="button" className="secondaryBtn" onClick={() => startEditTournament(t)}>Editar</button>
+    <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+  </div>
+</div>
+        );
+      })}
+    </div>
+  )}
+</section>
 ​
 <section className="card">
   <h2>Histórico de torneios</h2>
@@ -2523,7 +2578,9 @@ setNewLocation("");
     </select>
   </div>
 ​
-  {tournaments.length === 0 ? (
+  {!hasHistorySearch ? (
+    <p>Use os filtros acima para pesquisar torneios antigos.</p>
+  ) : tournaments.length === 0 ? (
     <p>Nenhum torneio criado ainda.</p>
   ) : filteredTournaments.length === 0 ? (
     <p>Nenhum torneio encontrado com esses filtros.</p>
@@ -2586,6 +2643,7 @@ setNewLocation("");
     </div>
   )}
 </section>
+    </div>
           </div>
   );
 }
