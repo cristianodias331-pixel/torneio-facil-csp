@@ -4067,76 +4067,6 @@ tbody tr:hover {
 }
 
 
-/* Data nativa com calendário à esquerda */
-.dateInputLeft {
-  position: relative;
-  padding-left: 46px !important;
-}
-
-.dateInputLeft::-webkit-calendar-picker-indicator {
-  position: absolute;
-  left: 16px;
-  right: auto;
-  cursor: pointer;
-  opacity: 1;
-}
-
-
-/* Data: mostra a data escolhida e mantém o campo clicável */
-.dateInputLeft {
-  color: inherit !important;
-  caret-color: auto !important;
-  cursor: pointer !important;
-  padding-left: 46px !important;
-}
-
-.dateInputLeft::-webkit-datetime-edit,
-.dateInputLeft::-webkit-datetime-edit-fields-wrapper,
-.dateInputLeft::-webkit-datetime-edit-text,
-.dateInputLeft::-webkit-datetime-edit-day-field,
-.dateInputLeft::-webkit-datetime-edit-month-field,
-.dateInputLeft::-webkit-datetime-edit-year-field {
-  color: inherit !important;
-}
-
-.dateInputLeft::-webkit-calendar-picker-indicator {
-  position: absolute;
-  left: 16px;
-  right: auto;
-  cursor: pointer;
-  opacity: 1;
-}
-
-
-/* Área inteira do campo de data clicável */
-.dateInputClickArea {
-  position: relative;
-  width: 100%;
-  cursor: pointer;
-}
-
-.dateInputClickArea .dateInputLeft {
-  width: 100%;
-  pointer-events: none;
-}
-
-/* Recoloca o ícone visível do calendário no campo clicável */
-.dateInputClickArea::before {
-  content: "📅";
-  position: absolute;
-  left: 16px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 5;
-  pointer-events: none;
-  font-size: 16px;
-  line-height: 1;
-}
-
-.dateInputClickArea .dateInputLeft::-webkit-calendar-picker-indicator {
-  opacity: 0 !important;
-}
-
 /* =========================================================
    PAINEL ESTILO PLAYZINHO — ADAPTADO PARA ARENAPRO BT
    ========================================================= */
@@ -4384,7 +4314,9 @@ body {
 @media (max-width: 900px) { .playTabs { grid-template-columns: 1fr; } }
 
 
-/* Correção do campo Data: mantém o modelo anterior, sem ícones/textos sobrepostos */
+
+
+/* Campo Data limpo: caixa inteira clicável, sem ícone sobreposto */
 .playCreateCard .dateInputClickArea {
   width: 100%;
   height: 46px;
@@ -4393,12 +4325,14 @@ body {
   border: 1px solid #cbd5e1 !important;
   border-radius: 10px !important;
   background: #ffffff;
-  padding: 0 12px;
+  padding: 0 14px;
   margin: 0 0 14px !important;
   cursor: pointer;
   overflow: hidden;
 }
 .playCreateCard .dateInputClickArea .dateInputLeft {
+  appearance: auto;
+  -webkit-appearance: auto;
   width: 100% !important;
   height: 44px !important;
   min-height: 44px !important;
@@ -4407,10 +4341,14 @@ body {
   border: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
-  line-height: 44px !important;
+  line-height: normal !important;
   cursor: pointer;
+  color: #0f172a !important;
+  pointer-events: auto !important;
 }
 .playCreateCard .dateInputClickArea .dateInputLeft::-webkit-calendar-picker-indicator {
-  margin-left: auto;
+  position: static !important;
+  opacity: 1 !important;
+  margin-left: auto !important;
   cursor: pointer;
 }
