@@ -2123,7 +2123,7 @@ const [newLocation, setNewLocation] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [activePanel, setActivePanel] = useState("historico");
+  const [activePanel, setActivePanel] = useState("criar");
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
 
@@ -2308,7 +2308,6 @@ setNewLocation("");
 
       <aside className="playSidebar">
         <div className="playSideLogo"><BeachLogo /><strong>Torneio<br/>Fácil BT</strong></div>
-        <button className={`playNavItem ${activePanel === "historico" ? "active" : ""}`} type="button" onClick={() => setActivePanel("historico")}><span>🏠</span><small>Início</small></button>
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
         <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
         <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>⚙️</span><small>Ajustes</small></button>
@@ -2329,14 +2328,14 @@ setNewLocation("");
         <main className="playContent">
           <section className="playTitleBlock">
             <div>
-              <h1>{activePanel === "historico" ? "Histórico de torneios" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Assinatura"}</h1>
-              <p>{activePanel === "historico" ? "Acompanhe todos os torneios já criados na sua arena." : activePanel === "criar" ? "Cadastre um novo torneio com data, local e modalidade." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Consulte plano, status e dados da sua conta."}</p>
+              <h1>{activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Assinatura"}</h1>
+              <p>{activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Consulte plano, status e dados da sua conta."}</p>
             </div>
             <div className="playPlanPill">Plano {profile.plan} · {profile.status}</div>
           </section>
 
           <section className="playTabs">
-            <button type="button" className={activePanel === "historico" ? "active" : ""} onClick={() => setActivePanel("historico")}>🏆 Histórico de torneios criados</button>
+            <button type="button" className={activePanel === "criar" ? "active" : ""} onClick={() => setActivePanel("criar")}>➕ Criar</button>
             <button type="button" className={activePanel === "modalidades" ? "active" : ""} onClick={() => setActivePanel("modalidades")}>🎾 Modalidades</button>
             <button type="button" className={activePanel === "ajustes" ? "active" : ""} onClick={() => setActivePanel("ajustes")}>💳 Assinatura</button>
           </section>
@@ -2348,6 +2347,7 @@ setNewLocation("");
           </section>
 
     {activePanel === "criar" && (
+    <>
     <section className="card playCreateCard">
   <h2>Criar novo torneio</h2>
 
@@ -2414,30 +2414,7 @@ setNewLocation("");
   {saving ? "Salvando..." : "Criar torneio"}
 </button>
       </section>
-    )}
 
-{activePanel === "modalidades" && (
-<section className="card">
-  <h2>Modalidades liberadas</h2>
-  <div className="grid">
-    {allowedTypes.map((item) => (
-      <div className="modality" key={item}>{item}</div>
-    ))}
-  </div>
-</section>
-)}
-
-{activePanel === "ajustes" && (
-<section className="card">
-  <h2>Assinatura e conta</h2>
-  <p><strong>Plano:</strong> {profile.plan}</p>
-  <p><strong>Status:</strong> {profile.status}</p>
-  <p><strong>Vencimento:</strong> {profile.expires_at || "não definido"}</p>
-  <p><strong>E-mail:</strong> {user.email}</p>
-</section>
-)}
-
-{activePanel === "historico" && (
 <section className="card">
   <h2>Histórico de torneios criados</h2>
 
@@ -2520,7 +2497,30 @@ setNewLocation("");
     </div>
   )}
 </section>
+    </>
+    )}
+
+{activePanel === "modalidades" && (
+<section className="card">
+  <h2>Modalidades liberadas</h2>
+  <div className="grid">
+    {allowedTypes.map((item) => (
+      <div className="modality" key={item}>{item}</div>
+    ))}
+  </div>
+</section>
 )}
+
+{activePanel === "ajustes" && (
+<section className="card">
+  <h2>Assinatura e conta</h2>
+  <p><strong>Plano:</strong> {profile.plan}</p>
+  <p><strong>Status:</strong> {profile.status}</p>
+  <p><strong>Vencimento:</strong> {profile.expires_at || "não definido"}</p>
+  <p><strong>E-mail:</strong> {user.email}</p>
+</section>
+)}
+
         </main>
       </div>
     </div>
