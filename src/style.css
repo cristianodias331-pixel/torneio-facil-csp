@@ -4142,10 +4142,9 @@ tbody tr:hover {
    ========================================================= */
 body {
   background:
-    linear-gradient(rgba(219, 234, 254, .38) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(219, 234, 254, .38) 1px, transparent 1px),
-    #f8fbff;
-  background-size: 32px 32px;
+    radial-gradient(circle at top left, rgba(56, 189, 248, 0.18), transparent 34%),
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 30%),
+    linear-gradient(135deg, #020617 0%, #082f49 48%, #020617 100%);
 }
 
 .playAppShell {
@@ -4153,12 +4152,11 @@ body {
   display: grid;
   grid-template-columns: 82px minmax(0, 1fr);
   background:
-    linear-gradient(rgba(219, 234, 254, .42) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(219, 234, 254, .42) 1px, transparent 1px),
-    radial-gradient(circle at 20% 0%, rgba(37,99,235,.10), transparent 36%),
-    #f8fbff;
-  background-size: 32px 32px, 32px 32px, auto, auto;
+    radial-gradient(circle at 18% 0%, rgba(56, 189, 248, 0.16), transparent 34%),
+    radial-gradient(circle at 86% 12%, rgba(37, 99, 235, 0.18), transparent 32%),
+    linear-gradient(135deg, #020617 0%, #082f49 52%, #020617 100%);
 }
+
 
 .playSidebar {
   position: sticky;
@@ -4367,3 +4365,20 @@ body {
   .playStatsGrid, .playAppShell .tournamentList, .playCreateCard { grid-template-columns: 1fr; }
   .playTitleBlock { flex-direction: column; }
 }
+
+
+/* Ajustes de navegação funcional e formulário */
+.playCreateCard .formField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.playCreateCard .fullField { grid-column: 1 / -1; }
+.playCreateCard label { margin: 0; }
+.playCreateCard input,
+.playCreateCard select { margin: 0 0 14px !important; width: 100%; }
+.playCreateCard input[type="date"] { min-height: 46px; line-height: normal; }
+.playTabs { grid-template-columns: 1.5fr 1fr 1fr; }
+.playTitleBlock h1, .playTitleBlock p { color: #ffffff; }
+@media (max-width: 900px) { .playTabs { grid-template-columns: 1fr; } }
