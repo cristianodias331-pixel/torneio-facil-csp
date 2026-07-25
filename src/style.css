@@ -5660,3 +5660,45 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* Melhoria dos botões de atalho da tela inicial */
+.homeQuickActions {
+  gap: 10px !important;
+  padding: 9px !important;
+}
+
+.homeQuickActions button {
+  min-height: 58px !important;
+  padding: 0 22px !important;
+  border-radius: 14px !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 10px !important;
+  background: linear-gradient(135deg, #174ea6 0%, #2563eb 54%, #06b6d4 100%) !important;
+  box-shadow: 0 14px 28px rgba(23, 78, 166, 0.22) !important;
+}
+
+.homeQuickActions button:hover {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.04) !important;
+}
+
+.homeQuickActions button::first-letter {
+  font-size: 22px;
+}
+
+/* Deixa os emojis dos botões mais visíveis sem trocar a identidade visual */
+.homeQuickActions button {
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.18) !important;
+}
+
+@media (max-width: 900px) {
+  .homeQuickActions button {
+    min-height: 54px !important;
+    font-size: 14px !important;
+  }
+}
