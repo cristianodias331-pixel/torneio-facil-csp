@@ -115,6 +115,16 @@ function formatDateBR(value) {
   return `${day}/${month}/${year}`;
 }
 
+function formatStatusBR(value) {
+  const normalized = String(value || "").toLowerCase();
+  if (normalized === "active") return "ATIVO";
+  if (normalized === "inactive") return "INATIVO";
+  if (normalized === "blocked") return "BLOQUEADO";
+  if (normalized === "pending") return "PENDENTE";
+  if (normalized === "expired") return "VENCIDO";
+  return String(value || "").toUpperCase();
+}
+
 function getWeekdayBR(value) {
   if (!value) return "";
 
@@ -2100,8 +2110,8 @@ function Blocked({ profile }) {
 
       <div className="infoBox">
         <p><strong>Plano:</strong> {profile.plan}</p>
-        <p><strong>Status:</strong> {profile.status}</p>
-        <p><strong>Vencimento:</strong> {profile.expires_at || "não definido"}</p>
+        <p><strong>Status:</strong> {formatStatusBR(profile.status)}</p>
+        <p><strong>Vencimento:</strong> {profile.expires_at ? formatDateBR(profile.expires_at) : "não definido"}</p>
       </div>
 
       <p>Entre em contato para regularizar seu acesso.</p>
@@ -2123,7 +2133,7 @@ const [newLocation, setNewLocation] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [activePanel, setActivePanel] = useState("criar");
+  const [activePanel, setActivePanel] = useState("inicio");
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
 
@@ -2308,6 +2318,7 @@ setNewLocation("");
 
       <aside className="playSidebar">
         <div className="playSideLogo"><BeachLogo /><strong>Torneio<br/>Fácil BT</strong></div>
+        <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => setActivePanel("inicio")}><span>🏠</span><small>Início</small></button>
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
         <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
         <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>⚙️</span><small>Ajustes</small></button>
@@ -2328,23 +2339,34 @@ setNewLocation("");
         <main className="playContent">
           <section className="playTitleBlock">
             <div>
-              <h1>{activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Assinatura"}</h1>
-              <p>{activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Consulte plano, status e dados da sua conta."}</p>
+              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Assinatura"}</h1>
+              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Consulte plano, status e dados da sua conta."}</p>
             </div>
-            <div className="playPlanPill">Plano {profile.plan} · {profile.status}</div>
+            <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
           </section>
 
-          <section className="playTabs">
-            <button type="button" className={activePanel === "criar" ? "active" : ""} onClick={() => setActivePanel("criar")}>➕ Criar</button>
-            <button type="button" className={activePanel === "modalidades" ? "active" : ""} onClick={() => setActivePanel("modalidades")}>🎾 Modalidades</button>
-            <button type="button" className={activePanel === "ajustes" ? "active" : ""} onClick={() => setActivePanel("ajustes")}>💳 Assinatura</button>
-          </section>
+          {activePanel === "inicio" && (
+            <>
+              <section className="playTabs homeQuickActions">
+                <button type="button" onClick={() => setActivePanel("criar")}>➕ Criar torneio</button>
+                <button type="button" onClick={() => setActivePanel("modalidades")}>🎾 Ver modalidades</button>
+                <button type="button" onClick={() => setActivePanel("ajustes")}>💳 Ver assinatura</button>
+              </section>
 
-          <section className="playStatsGrid">
-            <div><strong>{tournaments.length}</strong><span>Torneios criados</span></div>
-            <div><strong>{allowedTypes.length}</strong><span>Modalidades liberadas</span></div>
-            <div><strong>{profile.expires_at || "—"}</strong><span>Vencimento</span></div>
-          </section>
+              <section className="playStatsGrid">
+                <div><strong>{tournaments.length}</strong><span>Torneios criados</span></div>
+                <div><strong>{allowedTypes.length}</strong><span>Modalidades liberadas</span></div>
+                <div><strong>{profile.expires_at ? formatDateBR(profile.expires_at) : "—"}</strong><span>Vencimento</span></div>
+              </section>
+            </>
+          )}
+
+{activePanel === "inicio" && (
+<section className="card">
+  <h2>Resumo da plataforma</h2>
+  <p>Use o menu lateral para criar torneios, consultar modalidades liberadas e acompanhar sua assinatura.</p>
+</section>
+)}
 
     {activePanel === "criar" && (
     <>
@@ -2515,8 +2537,8 @@ setNewLocation("");
 <section className="card">
   <h2>Assinatura e conta</h2>
   <p><strong>Plano:</strong> {profile.plan}</p>
-  <p><strong>Status:</strong> {profile.status}</p>
-  <p><strong>Vencimento:</strong> {profile.expires_at || "não definido"}</p>
+  <p><strong>Status:</strong> {formatStatusBR(profile.status)}</p>
+  <p><strong>Vencimento:</strong> {profile.expires_at ? formatDateBR(profile.expires_at) : "não definido"}</p>
   <p><strong>E-mail:</strong> {user.email}</p>
 </section>
 )}
