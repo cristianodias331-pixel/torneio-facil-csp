@@ -5754,32 +5754,3 @@ body {
     min-width: 0;
   }
 }
-
-
-/* Mensagem de compartilhamento sem atrapalhar o link */
-.shareMessagePreview {
-  margin-top: 12px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid #dbeafe;
-  background: #eff6ff;
-  color: #0f172a;
-}
-.shareMessagePreview strong {
-  display: block;
-  margin-bottom: 6px;
-  font-size: 13px;
-  font-weight: 900;
-  color: #174ea6;
-}
-.shareMessagePreview p {
-  margin: 0 0 6px;
-  font-weight: 750;
-}
-.shareMessagePreview code {
-  display: block;
-  overflow-wrap: anywhere;
-  color: #2563eb;
-  font-family: inherit;
-  font-weight: 700;
-}
