@@ -2310,6 +2310,41 @@ setNewLocation("");
       />
 
 
+      <aside className="appSidebar">
+        <div className="sidebarBrand">
+          <BeachLogo />
+          <div>
+            <strong>Torneio Fácil BT</strong>
+            <span>Gestão simples para torneios de Beach Tennis</span>
+          </div>
+        </div>
+
+        <div className="sidebarProfile">
+          <div className="profilePhotoPlaceholder">
+            {(profile.name || user.email || "U").slice(0, 1).toUpperCase()}
+          </div>
+          <strong>{profile.name || user.email}</strong>
+          <span>{user.email}</span>
+        </div>
+
+        <div className="sidebarPlanBox">
+          <p><strong>Plano:</strong> {profile.plan}</p>
+          <p><strong>Status:</strong> {profile.status}</p>
+          <p><strong>Vencimento:</strong> {profile.expires_at}</p>
+        </div>
+
+        <button
+          type="button"
+          className="sidebarActionBtn"
+          onClick={() => document.getElementById("createTournamentCard")?.scrollIntoView({ behavior: "smooth" })}
+        >
+          Criar torneio
+        </button>
+
+        <button type="button" className="sidebarLogoutBtn" onClick={logout}>Sair</button>
+      </aside>
+
+      <main className="appMainContent">
       <header className="appBrandHeader">
         <div className="landingBrand">
           <BeachLogo />
@@ -2318,16 +2353,7 @@ setNewLocation("");
             <span>Gestão simples para torneios de Beach Tennis</span>
           </div>
         </div>
-
-        <button type="button" onClick={logout}>Sair</button>
       </header>
-
-      <section className="card">
-        <h2>Meu plano</h2>
-        <p><strong>Plano:</strong> {profile.plan}</p>
-        <p><strong>Status:</strong> {profile.status}</p>
-        <p><strong>Vencimento:</strong> {profile.expires_at}</p>
-      </section>
 
       <section className="card">
         <h2>Modalidades liberadas</h2>
@@ -2339,7 +2365,7 @@ setNewLocation("");
         </div>
       </section>
 
-    <section className="card">
+    <section className="card" id="createTournamentCard">
   <h2>Criar novo torneio</h2>
 
   <label>Nome do torneio</label>
@@ -2478,6 +2504,7 @@ setNewLocation("");
     </div>
   )}
 </section>
+      </main>
           </div>
   );
 }
