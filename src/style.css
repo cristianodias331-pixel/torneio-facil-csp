@@ -3801,3 +3801,235 @@ tbody tr:hover {
 .dateInputClickArea .dateInputLeft::-webkit-calendar-picker-indicator {
   opacity: 0 !important;
 }
+
+
+/* =========================================================
+   PAINEL ESTILO PLAYZINHO — ADAPTADO PARA ARENAPRO BT
+   ========================================================= */
+body {
+  background:
+    linear-gradient(rgba(219, 234, 254, .38) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(219, 234, 254, .38) 1px, transparent 1px),
+    #f8fbff;
+  background-size: 32px 32px;
+}
+
+.playAppShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  background:
+    linear-gradient(rgba(219, 234, 254, .42) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(219, 234, 254, .42) 1px, transparent 1px),
+    radial-gradient(circle at 20% 0%, rgba(37, 99, 235, .10), transparent 36%),
+    #f8fbff;
+  background-size: 32px 32px, 32px 32px, auto, auto;
+}
+
+.playSidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 12px 8px;
+  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
+  border-right: 1px solid #dbe7ff;
+  box-shadow: 8px 0 30px rgba(15, 23, 42, .08);
+  z-index: 30;
+}
+
+.playSideLogo {
+  height: 50px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  color: #1553d8;
+  font-size: 10px;
+}
+.playSideLogo .beachLogo { width: 34px; height: 34px; border-radius: 12px; box-shadow: none; }
+.playSideLogo strong { margin-top: 4px; }
+
+.playNavItem {
+  width: 58px;
+  min-height: 64px;
+  margin: 8px 0;
+  padding: 8px 4px;
+  border-radius: 8px;
+  background: transparent !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+  border: 2px solid transparent;
+  display: grid;
+  place-items: center;
+  gap: 3px;
+}
+.playNavItem span { font-size: 22px; line-height: 1; }
+.playNavItem small { font-size: 11px; font-weight: 800; }
+.playNavItem.active {
+  color: #1455d9 !important;
+  border-color: #1455d9;
+  background: #fff !important;
+  box-shadow: 0 8px 18px rgba(20, 85, 217, .12) !important;
+}
+
+.playMain { min-width: 0; }
+.playTopbar {
+  height: 50px;
+  background: #1553d8;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  box-shadow: 0 5px 18px rgba(21, 83, 216, .22);
+}
+.playBrandText strong { display:block; font-size: 18px; letter-spacing: -.03em; }
+.playBrandText span { display:block; font-size: 11px; opacity: .78; }
+.playUserBox { display:flex; align-items:center; gap: 14px; font-weight: 900; font-size: 13px; }
+.playUserBox button { padding: 9px 14px; border-radius: 999px; background: rgba(255,255,255,.18) !important; box-shadow: none !important; }
+
+.playContent {
+  width: min(1120px, calc(100% - 56px));
+  margin: 0 auto;
+  padding: 28px 0 60px;
+}
+.playTitleBlock {
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 18px;
+  margin: 0 0 18px;
+}
+.playTitleBlock h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1;
+  color: #0f172a;
+  letter-spacing: -.055em;
+}
+.playTitleBlock p { margin: 8px 0 0; color: #7b8798; font-weight: 700; }
+.playPlanPill {
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid #dce7f8;
+  color: #1553d8;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(15,23,42,.06);
+}
+.playTabs {
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  padding: 6px;
+  margin: 18px 0;
+  background: rgba(255,255,255,.92);
+  border: 1px solid #dce7f8;
+  border-radius: 16px;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, .06);
+}
+.playTabs button {
+  background: transparent !important;
+  color: #475569 !important;
+  box-shadow: none !important;
+  border-radius: 10px;
+  padding: 13px;
+}
+.playTabs button.active { background: #1553d8 !important; color: #fff !important; }
+.playStatsGrid {
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.playStatsGrid div {
+  background:#fff;
+  border:1px solid #dce7f8;
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 10px 24px rgba(15,23,42,.06);
+}
+.playStatsGrid strong { display:block; font-size:26px; color:#1553d8; letter-spacing:-.04em; }
+.playStatsGrid span { color:#64748b; font-weight:800; font-size:13px; }
+
+.playAppShell .card {
+  border-radius: 16px !important;
+  background: rgba(255,255,255,.94) !important;
+  border: 1px solid #dce7f8 !important;
+  box-shadow: 0 10px 24px rgba(15,23,42,.07) !important;
+  padding: 22px !important;
+}
+.playAppShell .card::before { display:none !important; }
+.playAppShell .card h2 {
+  font-size: 22px !important;
+  letter-spacing: -.035em !important;
+  margin-bottom: 16px !important;
+}
+.playAppShell .card h2::before { display:none !important; }
+.playCreateCard {
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 0 14px;
+}
+.playCreateCard h2,
+.playCreateCard button { grid-column: 1 / -1; }
+
+.playAppShell input,
+.playAppShell select {
+  border-radius: 10px !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
+  padding: 12px 14px !important;
+  font-weight: 700 !important;
+}
+.playAppShell button:not(.playNavItem) {
+  border-radius: 10px;
+  background: #1553d8;
+  box-shadow: 0 9px 18px rgba(21,83,216,.20);
+}
+
+.playAppShell .tournamentList {
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+.playAppShell .tournamentItem {
+  position: relative;
+  display:flex;
+  flex-direction:column;
+  align-items:stretch;
+  justify-content:space-between;
+  min-height: 210px;
+  padding: 16px;
+  border-radius: 16px;
+  background:#fff;
+  border: 1px solid #dce7f8;
+  box-shadow: 0 9px 22px rgba(15,23,42,.08);
+  overflow:hidden;
+}
+.playAppShell .tournamentItem::before {
+  content:"";
+  display:block;
+  height: 86px;
+  margin: -16px -16px 14px;
+  background:
+    linear-gradient(135deg, rgba(21,83,216,.92), rgba(22,163,74,.80)),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.16) 0 8px, transparent 8px 16px);
+}
+.playAppShell .moveLineBtn { position:absolute; top: 10px; right: 10px; width:34px; min-width:34px; height:34px; padding:0; opacity:.9; }
+.playAppShell .tournamentTitleRow { display:grid; gap: 8px; }
+.playAppShell .tournamentTitleRow strong { font-size: 15px; color:#111827; }
+.playAppShell .tournamentTypeBadge { width:max-content; border-radius:999px; background:#eef4ff; color:#1553d8; padding:6px 9px; font-size:11px; font-weight:950; }
+.playAppShell .tournamentMeta { display:grid; gap: 4px; margin-top: 10px; color:#64748b; font-size:12px; font-weight:800; }
+.playAppShell .tournamentActions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
+.playAppShell .tournamentActions button { min-width: 0; padding: 11px; }
+
+@media (max-width: 900px) {
+  .playAppShell { grid-template-columns: 1fr; }
+  .playSidebar { position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: 72px; display:flex; justify-content:space-around; padding: 6px; border-right:0; border-top:1px solid #dbe7ff; }
+  .playSideLogo { display:none; }
+  .playNavItem { margin:0; }
+  .playContent { width: min(100% - 28px, 760px); padding-bottom: 96px; }
+  .playTopbar { height:auto; padding: 12px 16px; }
+  .playStatsGrid, .playAppShell .tournamentList, .playCreateCard { grid-template-columns: 1fr; }
+  .playTitleBlock { flex-direction: column; }
+}
