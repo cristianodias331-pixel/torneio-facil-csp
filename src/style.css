@@ -5406,3 +5406,82 @@ body {
   .playContent { width: min(100% - 28px, 760px) !important; padding-bottom: 104px !important; }
   .playTabs, .playStatsGrid, .playAppShell .tournamentList, .playCreateCard { grid-template-columns: 1fr !important; }
 }
+
+/* Correção do menu lateral: borda não atravessa/encosta no nome */
+.playSidebar {
+  width: 92px !important;
+  padding: 14px 10px !important;
+}
+
+.playMain {
+  padding-left: 92px !important;
+}
+
+.playTopbar {
+  padding-left: 116px !important;
+}
+
+.playNavItem {
+  width: 70px !important;
+  min-height: 74px !important;
+  padding: 9px 5px 8px !important;
+  gap: 7px !important;
+  overflow: visible !important;
+}
+
+.playNavItem.active {
+  border-width: 2px !important;
+}
+
+.playNavItem small {
+  display: block !important;
+  width: 100% !important;
+  max-width: 62px !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  line-height: 1.12 !important;
+  font-size: 10px !important;
+}
+
+.playNavItem .navIcon {
+  flex: 0 0 auto !important;
+  width: 23px !important;
+  height: 23px !important;
+}
+
+@media (max-width: 900px) {
+  .playSidebar {
+    width: auto !important;
+  }
+
+  .playMain {
+    padding-left: 0 !important;
+  }
+
+  .playTopbar {
+    padding-left: 16px !important;
+  }
+}
+
+
+/* Voltar emojis no menu/abas, com acabamento limpo */
+.playNavItem span:not(.navIcon) {
+  font-size: 22px !important;
+  line-height: 1 !important;
+  filter: none !important;
+  width: auto !important;
+  height: auto !important;
+  background: transparent !important;
+  display: block !important;
+}
+.playNavItem .navIcon,
+.tabIcon {
+  display: none !important;
+}
+.playNavItem.active span:not(.navIcon) {
+  transform: scale(1.02);
+}
+.playTabs button {
+  white-space: normal !important;
+}
