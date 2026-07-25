@@ -5808,3 +5808,35 @@ body {
   font-size: 13px;
   font-weight: 750;
 }
+
+
+/* Cabeçalho do torneio em lista organizada, como cards de informações */
+.tournamentHeaderMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 10px;
+  margin-top: 10px;
+  max-width: 900px;
+}
+.tournamentHeaderMeta span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.appPage header p {
+  display: none;
+}
+@media (max-width: 720px) {
+  .tournamentHeaderMeta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
