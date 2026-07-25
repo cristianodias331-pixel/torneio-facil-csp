@@ -2308,10 +2308,10 @@ setNewLocation("");
 
       <aside className="playSidebar">
         <div className="playSideLogo"><BeachLogo /><strong>ArenaPro</strong></div>
-        <button className={`playNavItem ${activePanel === "historico" ? "active" : ""}`} type="button" onClick={() => setActivePanel("historico")}><span>🏠</span><small>Início</small></button>
-        <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
-        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
-        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>⚙️</span><small>Ajustes</small></button>
+        <button className={`playNavItem ${activePanel === "historico" ? "active" : ""}`} type="button" onClick={() => setActivePanel("historico")}><span className="navIcon homeIcon"></span><small>Início</small></button>
+        <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span className="navIcon calendarIcon"></span><small>Criar</small></button>
+        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span className="navIcon trophyIcon"></span><small>Modalidades</small></button>
+        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span className="navIcon gearIcon"></span><small>Ajustes</small></button>
       </aside>
 
       <div className="playMain">
@@ -2336,9 +2336,9 @@ setNewLocation("");
           </section>
 
           <section className="playTabs">
-            <button type="button" className={activePanel === "historico" ? "active" : ""} onClick={() => setActivePanel("historico")}>🏆 Histórico de torneios criados</button>
-            <button type="button" className={activePanel === "modalidades" ? "active" : ""} onClick={() => setActivePanel("modalidades")}>🎾 Modalidades</button>
-            <button type="button" className={activePanel === "ajustes" ? "active" : ""} onClick={() => setActivePanel("ajustes")}>💳 Assinatura</button>
+            <button type="button" className={activePanel === "historico" ? "active" : ""} onClick={() => setActivePanel("historico")}><span className="tabIcon trophySmall"></span> Histórico de torneios criados</button>
+            <button type="button" className={activePanel === "modalidades" ? "active" : ""} onClick={() => setActivePanel("modalidades")}><span className="tabIcon racketSmall"></span> Modalidades</button>
+            <button type="button" className={activePanel === "ajustes" ? "active" : ""} onClick={() => setActivePanel("ajustes")}><span className="tabIcon cardSmall"></span> Assinatura</button>
           </section>
 
           <section className="playStatsGrid">
