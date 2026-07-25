@@ -4352,3 +4352,176 @@ body {
   margin-left: auto !important;
   cursor: pointer;
 }
+
+/* Refinamento visual: tipografia mais profissional mantendo a paleta original */
+.playAppShell,
+.playAppShell input,
+.playAppShell select,
+.playAppShell button {
+  font-family: Inter, "Segoe UI", Roboto, Arial, system-ui, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.playContent {
+  width: min(1080px, calc(100% - 64px));
+}
+
+.playTitleBlock {
+  margin-bottom: 22px;
+}
+
+.playTitleBlock h1 {
+  font-size: clamp(34px, 3.2vw, 46px) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.055em !important;
+  line-height: 0.98 !important;
+  text-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+}
+
+.playTitleBlock p {
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+  font-weight: 650 !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  letter-spacing: -0.015em;
+}
+
+.playBrandText strong {
+  font-size: 19px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.045em !important;
+}
+
+.playBrandText span,
+.playUserBox,
+.playSideLogo strong,
+.playNavItem small {
+  letter-spacing: -0.02em;
+}
+
+.playTabs {
+  border-radius: 18px !important;
+  padding: 7px !important;
+}
+
+.playTabs button {
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  letter-spacing: -0.018em !important;
+  min-height: 44px;
+}
+
+.playStatsGrid div,
+.playAppShell .card,
+.playAppShell .tournamentItem {
+  border-color: rgba(226, 232, 240, 0.88) !important;
+  box-shadow:
+    0 18px 46px rgba(2, 6, 23, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.86) !important;
+}
+
+.playStatsGrid strong {
+  font-size: 28px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.055em !important;
+  line-height: 1;
+}
+
+.playStatsGrid span {
+  display: block;
+  margin-top: 8px;
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  letter-spacing: -0.012em;
+}
+
+.playAppShell .card {
+  border-radius: 22px !important;
+  padding: 26px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+.playAppShell .card h2 {
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.05em !important;
+  line-height: 1.08 !important;
+  color: #020617 !important;
+  margin-bottom: 20px !important;
+}
+
+.playCreateCard {
+  gap: 2px 18px !important;
+}
+
+.playCreateCard .formField label,
+.playAppShell label {
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.018em !important;
+  margin-bottom: 2px !important;
+}
+
+.playAppShell input,
+.playAppShell select,
+.playCreateCard .dateInputClickArea {
+  min-height: 48px !important;
+  border-radius: 13px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 650 !important;
+  color: #0f172a !important;
+  letter-spacing: -0.018em !important;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.playAppShell input::placeholder,
+.playAppShell select:invalid {
+  color: #94a3b8 !important;
+  font-weight: 600 !important;
+}
+
+.playAppShell input:focus,
+.playAppShell select:focus,
+.playCreateCard .dateInputClickArea:focus-within {
+  border-color: #38bdf8 !important;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.18) !important;
+  outline: none !important;
+}
+
+.playAppShell button:not(.playNavItem) {
+  min-height: 46px;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.018em !important;
+  border-radius: 13px !important;
+}
+
+.playNavItem {
+  border-radius: 14px !important;
+}
+
+.playNavItem span {
+  font-size: 21px !important;
+}
+
+.playNavItem small {
+  font-size: 10.5px !important;
+  font-weight: 850 !important;
+}
+
+.playPlanPill {
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.02em !important;
+  box-shadow: 0 16px 38px rgba(2, 6, 23, 0.16) !important;
+}
+
+@media (max-width: 900px) {
+  .playContent { width: min(100% - 28px, 760px); }
+  .playTitleBlock h1 { font-size: 32px !important; }
+}
