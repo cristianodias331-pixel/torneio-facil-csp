@@ -4742,3 +4742,127 @@ body {
   font-weight: 850 !important;
   box-shadow: 0 8px 18px rgba(21,83,216,.18) !important;
 }
+
+/* Acabamento profissional: menos desenho, menos cor, logo visível */
+.playTopbar {
+  background: #1553d8 !important;
+}
+
+.playBrandText::before {
+  display: none !important;
+}
+
+.playBrandText span {
+  display: block !important;
+  color: rgba(255,255,255,.78) !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+}
+
+.playSidebar {
+  padding-top: 10px !important;
+}
+
+.playSideLogo {
+  display: grid !important;
+  height: 56px !important;
+  margin: 0 0 12px !important;
+  place-items: center !important;
+  color: #1553d8 !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+}
+
+.playSideLogo .beachLogo {
+  display: block !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 10px !important;
+  box-shadow: none !important;
+  background: linear-gradient(135deg, #38bdf8, #2563eb) !important;
+}
+
+.playSideLogo strong {
+  display: block !important;
+  margin-top: 3px !important;
+  color: #1553d8 !important;
+  font-size: 10px !important;
+  letter-spacing: -0.03em !important;
+}
+
+.playNavItem span {
+  font-size: 21px !important;
+  filter: grayscale(.25) saturate(.75) !important;
+}
+
+.playNavItem.active span {
+  filter: none !important;
+}
+
+.playTabs button.active {
+  background: #1553d8 !important;
+}
+
+.playAppShell .tournamentItem {
+  min-height: 220px !important;
+  border-radius: 14px !important;
+  border: 1px solid #dbe4f0 !important;
+  background: #ffffff !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .08) !important;
+}
+
+.playAppShell .tournamentItem::before {
+  height: 72px !important;
+  margin: -16px -16px 16px !important;
+  background:
+    linear-gradient(135deg, #0f172a 0%, #1553d8 100%) !important;
+  border-bottom: 1px solid rgba(255,255,255,.18) !important;
+}
+
+.playAppShell .moveLineBtn {
+  background: rgba(255,255,255,.16) !important;
+  color: #ffffff !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+  box-shadow: none !important;
+}
+
+.playAppShell .tournamentTitleRow strong {
+  color: #111827 !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.025em !important;
+}
+
+.playAppShell .tournamentTypeBadge {
+  background: #eef4ff !important;
+  color: #1553d8 !important;
+  border: 1px solid #dbe7ff !important;
+  font-weight: 850 !important;
+}
+
+.playAppShell .tournamentMeta span {
+  width: fit-content !important;
+  padding: 6px 9px !important;
+  border-radius: 999px !important;
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+}
+
+.playStatsGrid div,
+.playAppShell .card,
+.playTabs {
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .06) !important;
+}
+
+.playAppShell .card h2,
+.playTitleBlock h1 {
+  font-family: Inter, "Segoe UI", Arial, system-ui, sans-serif !important;
+  color: #111827 !important;
+}
+
+.playAppShell button:not(.playNavItem):not(.moveLineBtn) {
+  background: #1553d8 !important;
+}
