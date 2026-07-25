@@ -273,14 +273,24 @@ function getWinningScore(data) {
 function getScoreWinnerSide(game, winningScore = 4) {
   const s1 = Number(game.s1);
   const s2 = Number(game.s2);
+  const target = Number(winningScore || 4);
 
   if (game.s1 === "" || game.s2 === "") return null;
   if (Number.isNaN(s1) || Number.isNaN(s2)) return null;
   if (s1 === s2) return null;
 
-  // Regra simples: quem tiver o maior placar vence.
-  // Não exigimos diferença mínima, tie-break ou placar fechado exato.
-  return s1 > s2 ? "team1" : "team2";
+  if (target === 6) {
+    if (s1 === 6 && s2 <= 4) return "team1";
+    if (s2 === 6 && s1 <= 4) return "team2";
+    if (s1 === 7 && (s2 === 5 || s2 === 6)) return "team1";
+    if (s2 === 7 && (s1 === 5 || s1 === 6)) return "team2";
+    return null;
+  }
+
+  if (s1 >= target && s1 > s2) return "team1";
+  if (s2 >= target && s2 > s1) return "team2";
+
+  return null;
 }
 
 function isGameFinished(game, winningScore = 4) {
@@ -1446,28 +1456,6 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
         <p>
           Todos os placares preenchidos deste campeonato serão apagados. A tabela
           e os participantes serão mantidos.
-        </p>
-
-        <div className="confirmActions">
-          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
-          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
-  if (!open) return null;
-
-  return (
-    <div className="confirmOverlay">
-      <div className="confirmBox">
-        <div className="confirmIcon">🧹</div>
-        <h2>Apagar placares e tabela?</h2>
-
-        <p>
-          As rodadas, os placares e as chaves geradas serão apagados. Os participantes cadastrados serão mantidos.
         </p>
 
         <div className="confirmActions">
@@ -2740,7 +2728,6 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
-  const [clearTableOpen, setClearTableOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -3105,6 +3092,9 @@ function clearScores() {
 }
 
 function clearTable() {
+  const ok = window.confirm("Deseja apagar a tabela gerada? Os participantes serão mantidos, mas rodadas, placares e chaves serão removidos.");
+  if (!ok) return;
+
   const copy = structuredClone(data);
   copy.schedule = [];
 
@@ -3113,8 +3103,7 @@ function clearTable() {
   }
 
   setData(copy);
-  setClearTableOpen(false);
-  showNotice("success", "Tabela apagada", "A tabela e os placares foram removidos. Os participantes foram mantidos.");
+  showNotice("success", "Tabela apagada", "A tabela foi removida. Os participantes foram mantidos.");
 }
 
 const currentBrackets = isCupType(config) && data.brackets?.length
@@ -3138,12 +3127,6 @@ return (
       open={clearScoresOpen}
       onCancel={() => setClearScoresOpen(false)}
       onConfirm={clearScores}
-    />
-
-    <ConfirmClearTableModal
-      open={clearTableOpen}
-      onCancel={() => setClearTableOpen(false)}
-      onConfirm={clearTable}
     />
 
     {shuffleOverlay && (
@@ -3327,15 +3310,15 @@ return (
                   className="deleteBtn"
                   onClick={() => setClearScoresOpen(true)}
                 >
-                  Apagar somente placares
+                  Apagar placares
                 </button>
 
                 <button
                   type="button"
                   className="deleteBtn"
-                  onClick={() => setClearTableOpen(true)}
+                  onClick={clearTable}
                 >
-                  Apagar placares e tabela
+                  Apagar tabela
                 </button>
               </div>
             </>
@@ -3734,15 +3717,10 @@ function ScheduleView({
 
           {round.map((game, gameIndex) => (
             <div className="gameCard" key={gameIndex}>
-              <div className="gameCardTop">
-                <strong>
-                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                  Quadra {game.court}
-                </strong>
-                <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
-                  {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
-                </span>
-              </div>
+              <strong>
+                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                Quadra {game.court}
+              </strong>
 
               <div className="gameTeams">
                 <div>{game.team1.join(" + ")}</div>
@@ -4069,12 +4047,7 @@ function BracketColumn({
 
             return (
               <div className="gameCard" key={game.matchKey}>
-                <div className="gameCardTop">
-                  <strong>Quadra {game.court}</strong>
-                  <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
-                    {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
-                  </span>
-                </div>
+                <strong>Quadra {game.court}</strong>
 
                 <div className="gameTeams">
                   <div>{game.team1?.join(" + ") || "Aguardando"}</div>
@@ -4369,15 +4342,10 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
 
           {round.map((game, gameIndex) => (
             <div className="gameCard" key={gameIndex}>
-              <div className="gameCardTop">
-                <strong>
-                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                  Quadra {game.court}
-                </strong>
-                <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
-                  {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
-                </span>
-              </div>
+              <strong>
+                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                Quadra {game.court}
+              </strong>
 
               <div className="gameTeams">
                 <div>{game.team1.join(" + ")}</div>
@@ -4422,12 +4390,7 @@ function PublicBracketColumn({ rounds }) {
 
           {round.games.map((game) => (
             <div className="gameCard" key={game.matchKey}>
-              <div className="gameCardTop">
-                <strong>Quadra {game.court}</strong>
-                <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
-                  {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
-                </span>
-              </div>
+              <strong>Quadra {game.court}</strong>
 
               <div className="gameTeams">
                 <div>{game.team1?.join(" + ") || "Aguardando"}</div>
