@@ -2123,6 +2123,7 @@ const [newLocation, setNewLocation] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [activePanel, setActivePanel] = useState("historico");
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
 
@@ -2307,10 +2308,10 @@ setNewLocation("");
 
       <aside className="playSidebar">
         <div className="playSideLogo"><BeachLogo /><strong>ArenaPro</strong></div>
-        <button className="playNavItem active" type="button"><span>🏠</span><small>Início</small></button>
-        <button className="playNavItem" type="button"><span>📅</span><small>Torneios</small></button>
-        <button className="playNavItem" type="button"><span>🏆</span><small>Eventos</small></button>
-        <button className="playNavItem" type="button"><span>⚙️</span><small>Ajustes</small></button>
+        <button className={`playNavItem ${activePanel === "historico" ? "active" : ""}`} type="button" onClick={() => setActivePanel("historico")}><span>🏠</span><small>Início</small></button>
+        <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
+        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
+        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>⚙️</span><small>Ajustes</small></button>
       </aside>
 
       <div className="playMain">
@@ -2328,16 +2329,16 @@ setNewLocation("");
         <main className="playContent">
           <section className="playTitleBlock">
             <div>
-              <h1>Meus Torneios</h1>
-              <p>Crie, acompanhe e gerencie os torneios da sua arena.</p>
+              <h1>{activePanel === "historico" ? "Histórico de torneios" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Assinatura"}</h1>
+              <p>{activePanel === "historico" ? "Acompanhe todos os torneios já criados na sua arena." : activePanel === "criar" ? "Cadastre um novo torneio com data, local e modalidade." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Consulte plano, status e dados da sua conta."}</p>
             </div>
             <div className="playPlanPill">Plano {profile.plan} · {profile.status}</div>
           </section>
 
           <section className="playTabs">
-            <button type="button" className="active">🏆 Torneios</button>
-            <button type="button">🎾 Modalidades</button>
-            <button type="button">💳 Assinatura</button>
+            <button type="button" className={activePanel === "historico" ? "active" : ""} onClick={() => setActivePanel("historico")}>🏆 Histórico de torneios criados</button>
+            <button type="button" className={activePanel === "modalidades" ? "active" : ""} onClick={() => setActivePanel("modalidades")}>🎾 Modalidades</button>
+            <button type="button" className={activePanel === "ajustes" ? "active" : ""} onClick={() => setActivePanel("ajustes")}>💳 Assinatura</button>
           </section>
 
           <section className="playStatsGrid">
@@ -2346,65 +2347,89 @@ setNewLocation("");
             <div><strong>{profile.expires_at || "—"}</strong><span>Vencimento</span></div>
           </section>
 
+    {activePanel === "criar" && (
     <section className="card playCreateCard">
   <h2>Criar novo torneio</h2>
 
-  <label>Nome do torneio</label>
-  <input
-    value={newName}
-    onChange={(e) => setNewName(e.target.value)}
-    placeholder="Ex: Torneio de sábado"
-  />
+  <div className="formField">
+    <label>Nome do torneio</label>
+    <input
+      value={newName}
+      onChange={(e) => setNewName(e.target.value)}
+      placeholder="Ex: Torneio de sábado"
+    />
+  </div>
 
-  <label>Gênero</label>
-  <select value={newGender} onChange={(e) => setNewGender(e.target.value)}>
-    <option value="">Escolha o gênero</option>
-    <option value="Masculino">Masculino</option>
-    <option value="Feminino">Feminino</option>
-    <option value="Misto">Misto</option>
-    <option value="Livre">Livre</option>
-  </select>
+  <div className="formField">
+    <label>Gênero</label>
+    <select value={newGender} onChange={(e) => setNewGender(e.target.value)}>
+      <option value="">Escolha o gênero</option>
+      <option value="Masculino">Masculino</option>
+      <option value="Feminino">Feminino</option>
+      <option value="Misto">Misto</option>
+      <option value="Livre">Livre</option>
+    </select>
+  </div>
 
-  <label>Data</label>
-  <div
-    className="dateInputClickArea"
-    onClick={() => {
-      const input = document.getElementById("newTournamentDate");
-      if (input?.showPicker) input.showPicker();
-      else input?.click();
-    }}
-  >
+  <div className="formField">
+    <label>Data</label>
     <input
       id="newTournamentDate"
-      className="dateInputLeft"
       type="date"
       value={newDate}
       onChange={(e) => setNewDate(e.target.value)}
     />
   </div>
 
-  <label>Local</label>
-  <input
-    value={newLocation}
-    onChange={(e) => setNewLocation(e.target.value)}
-    placeholder="Ex: Arena Beach Sports"
-  />
+  <div className="formField">
+    <label>Local</label>
+    <input
+      value={newLocation}
+      onChange={(e) => setNewLocation(e.target.value)}
+      placeholder="Ex: Arena Beach Sports"
+    />
+  </div>
 
-  <label>Modalidade</label>
-  <select value={newType} onChange={(e) => setNewType(e.target.value)}>
-    <option value="">Escolha a modalidade</option>
-    {allowedTypes.map((type) => (
-      <option key={type} value={type}>{type}</option>
-    ))}
-  </select>
+  <div className="formField fullField">
+    <label>Modalidade</label>
+    <select value={newType} onChange={(e) => setNewType(e.target.value)}>
+      <option value="">Escolha a modalidade</option>
+      {allowedTypes.map((type) => (
+        <option key={type} value={type}>{type}</option>
+      ))}
+    </select>
+  </div>
 
  <button type="button" onClick={createTournament} disabled={saving}>
   {saving ? "Salvando..." : "Criar torneio"}
 </button>
       </section>
+    )}
 
+{activePanel === "modalidades" && (
 <section className="card">
-  <h2>Meus torneios</h2>
+  <h2>Modalidades liberadas</h2>
+  <div className="grid">
+    {allowedTypes.map((item) => (
+      <div className="modality" key={item}>{item}</div>
+    ))}
+  </div>
+</section>
+)}
+
+{activePanel === "ajustes" && (
+<section className="card">
+  <h2>Assinatura e conta</h2>
+  <p><strong>Plano:</strong> {profile.plan}</p>
+  <p><strong>Status:</strong> {profile.status}</p>
+  <p><strong>Vencimento:</strong> {profile.expires_at || "não definido"}</p>
+  <p><strong>E-mail:</strong> {user.email}</p>
+</section>
+)}
+
+{activePanel === "historico" && (
+<section className="card">
+  <h2>Histórico de torneios criados</h2>
 
   {tournaments.length === 0 ? (
     <p>Nenhum torneio criado ainda.</p>
@@ -2485,6 +2510,7 @@ setNewLocation("");
     </div>
   )}
 </section>
+)}
         </main>
       </div>
     </div>
