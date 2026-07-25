@@ -5623,3 +5623,40 @@ body {
   .playTopbar { padding-left: 16px !important; }
   .playSideLogo { display: none !important; }
 }
+
+
+/* Atalhos da tela inicial e explicações internas de modalidades */
+.homeQuickActionsFour {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+#historico-torneios {
+  scroll-margin-top: 86px;
+}
+.internalModalities {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+}
+.playAppShell .internalModalities .modalityInfoCard {
+  margin: 0 !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--pro-line, #d9e2ef) !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+.playAppShell .internalModalities .modalityInfoTop h3 {
+  font-size: 16px !important;
+  color: var(--pro-ink, #0f172a) !important;
+}
+.playAppShell .internalModalities .modalityExplainBox,
+.playAppShell .internalModalities p {
+  color: var(--pro-muted, #667085) !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+}
+@media (max-width: 900px) {
+  .homeQuickActionsFour,
+  .internalModalities {
+    grid-template-columns: 1fr !important;
+  }
+}
