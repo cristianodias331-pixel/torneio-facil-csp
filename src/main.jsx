@@ -3200,15 +3200,10 @@ return (
                   />
 
                   <button type="button" onClick={copyPublicLink}>
-                    Copiar mensagem
+                    Compartilhar link
                   </button>
                 </div>
 
-                <div className="shareMessagePreview">
-                  <strong>Mensagem copiada junto com o link:</strong>
-                  <p>Acompanhe as rodadas e os placares ao vivo:</p>
-                  <code>{getPublicUrl(shareInfo.public_id)}</code>
-                </div>
 
                 <div className="actions">
                   <button
@@ -3358,7 +3353,17 @@ return (
               )}
             </section>
           </>
-        ) : null}
+        ) : (
+          <section className="card">
+            <h2>Ranking</h2>
+
+            <RankingView
+              ranking={ranking}
+              type={tournament.type}
+              rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+            />
+          </section>
+        )}
       </div>
     </>
   );
