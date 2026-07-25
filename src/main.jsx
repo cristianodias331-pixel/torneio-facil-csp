@@ -1467,6 +1467,28 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
   );
 }
 
+function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
+  if (!open) return null;
+
+  return (
+    <div className="confirmOverlay">
+      <div className="confirmBox">
+        <div className="confirmIcon">🧹</div>
+        <h2>Apagar placares e tabela?</h2>
+
+        <p>
+          As rodadas, os placares e as chaves geradas serão apagados. Os participantes cadastrados serão mantidos.
+        </p>
+
+        <div className="confirmActions">
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PlanCard({ title, tag, badge, price, text, items }) {
   return (
     <div className="planCard">
@@ -2728,6 +2750,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
+  const [clearTableOpen, setClearTableOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -3092,9 +3115,6 @@ function clearScores() {
 }
 
 function clearTable() {
-  const ok = window.confirm("Deseja apagar a tabela gerada? Os participantes serão mantidos, mas rodadas, placares e chaves serão removidos.");
-  if (!ok) return;
-
   const copy = structuredClone(data);
   copy.schedule = [];
 
@@ -3103,7 +3123,8 @@ function clearTable() {
   }
 
   setData(copy);
-  showNotice("success", "Tabela apagada", "A tabela foi removida. Os participantes foram mantidos.");
+  setClearTableOpen(false);
+  showNotice("success", "Tabela apagada", "A tabela e os placares foram removidos. Os participantes foram mantidos.");
 }
 
 const currentBrackets = isCupType(config) && data.brackets?.length
@@ -3127,6 +3148,12 @@ return (
       open={clearScoresOpen}
       onCancel={() => setClearScoresOpen(false)}
       onConfirm={clearScores}
+    />
+
+    <ConfirmClearTableModal
+      open={clearTableOpen}
+      onCancel={() => setClearTableOpen(false)}
+      onConfirm={clearTable}
     />
 
     {shuffleOverlay && (
@@ -3310,15 +3337,15 @@ return (
                   className="deleteBtn"
                   onClick={() => setClearScoresOpen(true)}
                 >
-                  Apagar placares
+                  Apagar somente placares
                 </button>
 
                 <button
                   type="button"
                   className="deleteBtn"
-                  onClick={clearTable}
+                  onClick={() => setClearTableOpen(true)}
                 >
-                  Apagar tabela
+                  Apagar placares e tabela
                 </button>
               </div>
             </>
@@ -3717,10 +3744,15 @@ function ScheduleView({
 
           {round.map((game, gameIndex) => (
             <div className="gameCard" key={gameIndex}>
-              <strong>
-                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                Quadra {game.court}
-              </strong>
+              <div className="gameCardTop">
+                <strong>
+                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                  Quadra {game.court}
+                </strong>
+                <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
+                  {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
+                </span>
+              </div>
 
               <div className="gameTeams">
                 <div>{game.team1.join(" + ")}</div>
@@ -4047,7 +4079,12 @@ function BracketColumn({
 
             return (
               <div className="gameCard" key={game.matchKey}>
-                <strong>Quadra {game.court}</strong>
+                <div className="gameCardTop">
+                  <strong>Quadra {game.court}</strong>
+                  <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
+                    {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
+                  </span>
+                </div>
 
                 <div className="gameTeams">
                   <div>{game.team1?.join(" + ") || "Aguardando"}</div>
@@ -4342,10 +4379,15 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
 
           {round.map((game, gameIndex) => (
             <div className="gameCard" key={gameIndex}>
-              <strong>
-                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                Quadra {game.court}
-              </strong>
+              <div className="gameCardTop">
+                <strong>
+                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                  Quadra {game.court}
+                </strong>
+                <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
+                  {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
+                </span>
+              </div>
 
               <div className="gameTeams">
                 <div>{game.team1.join(" + ")}</div>
@@ -4390,7 +4432,12 @@ function PublicBracketColumn({ rounds }) {
 
           {round.games.map((game) => (
             <div className="gameCard" key={game.matchKey}>
-              <strong>Quadra {game.court}</strong>
+              <div className="gameCardTop">
+                <strong>Quadra {game.court}</strong>
+                <span className={`gameStatusBadge ${game.s1 === "" || game.s2 === "" ? "pending" : "finished"}`}>
+                  {game.s1 === "" || game.s2 === "" ? "Pendente" : "Finalizado"}
+                </span>
+              </div>
 
               <div className="gameTeams">
                 <div>{game.team1?.join(" + ") || "Aguardando"}</div>
