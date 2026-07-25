@@ -306,11 +306,13 @@ const super8Template = [
 ];
 
 const super10MixedTemplate = [
-  [[1, 6, 2, 7], [3, 8, 4, 9]],
-  [[1, 7, 3, 9], [5, 10, 2, 8]],
-  [[1, 8, 4, 10], [5, 6, 3, 7]],
-  [[1, 9, 5, 8], [2, 6, 4, 7]],
-  [[2, 10, 3, 6], [4, 8, 5, 9]],
+  // 5 homens (1-5) + 5 mulheres (6-10)
+  // Regra: cada atleta joga 4 partidas em 5 rodadas e descansa exatamente 1 rodada.
+  [[1, 6, 2, 7], [3, 8, 4, 9]], // descansam: 5 e 10
+  [[1, 7, 2, 8], [3, 9, 5, 10]], // descansam: 4 e 6
+  [[1, 8, 3, 10], [4, 6, 5, 7]], // descansam: 2 e 9
+  [[1, 9, 4, 10], [2, 6, 5, 7]], // descansam: 3 e 8
+  [[2, 9, 3, 6], [4, 8, 5, 10]], // descansam: 1 e 7
 ];
 
 const super12MixedTemplate = [
