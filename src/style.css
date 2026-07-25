@@ -5840,3 +5840,44 @@ body {
     align-items: flex-start;
   }
 }
+
+
+/* Status visual dos jogos: pendente/finalizado */
+.gameCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.gameCardTop > strong {
+  margin: 0 !important;
+}
+.gameStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 24px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+.gameStatusBadge.pending {
+  color: #7c2d12;
+  background: #ffedd5;
+  border: 1px solid #fdba74;
+}
+.gameStatusBadge.finished {
+  color: #14532d;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+}
+@media (max-width: 640px) {
+  .gameCardTop {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
