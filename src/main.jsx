@@ -2296,7 +2296,7 @@ setNewLocation("");
   }
 
   return (
-    <div className="appPage">
+    <div className="playAppShell">
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
       <ConfirmModal
@@ -2305,37 +2305,48 @@ setNewLocation("");
         onConfirm={confirmDeleteTournament}
       />
 
+      <aside className="playSidebar">
+        <div className="playSideLogo"><BeachLogo /><strong>ArenaPro</strong></div>
+        <button className="playNavItem active" type="button"><span>🏠</span><small>Início</small></button>
+        <button className="playNavItem" type="button"><span>📅</span><small>Torneios</small></button>
+        <button className="playNavItem" type="button"><span>🏆</span><small>Eventos</small></button>
+        <button className="playNavItem" type="button"><span>⚙️</span><small>Ajustes</small></button>
+      </aside>
 
-      <header className="appBrandHeader">
-        <div className="landingBrand">
-          <BeachLogo />
-          <div>
+      <div className="playMain">
+        <header className="playTopbar">
+          <div className="playBrandText">
             <strong>ArenaPro BT</strong>
-            <span>Sistema premium para arenas, torneios e rankings</span>
+            <span>Gestão de torneios para Beach Tennis</span>
           </div>
-        </div>
+          <div className="playUserBox">
+            <span>E aí, {profile.name || user.email?.split("@")[0] || "organizador"}!</span>
+            <button type="button" onClick={logout}>Sair</button>
+          </div>
+        </header>
 
-        <button type="button" onClick={logout}>Sair</button>
-      </header>
+        <main className="playContent">
+          <section className="playTitleBlock">
+            <div>
+              <h1>Meus Torneios</h1>
+              <p>Crie, acompanhe e gerencie os torneios da sua arena.</p>
+            </div>
+            <div className="playPlanPill">Plano {profile.plan} · {profile.status}</div>
+          </section>
 
-      <section className="card">
-        <h2>Meu plano</h2>
-        <p><strong>Plano:</strong> {profile.plan}</p>
-        <p><strong>Status:</strong> {profile.status}</p>
-        <p><strong>Vencimento:</strong> {profile.expires_at}</p>
-      </section>
+          <section className="playTabs">
+            <button type="button" className="active">🏆 Torneios</button>
+            <button type="button">🎾 Modalidades</button>
+            <button type="button">💳 Assinatura</button>
+          </section>
 
-      <section className="card">
-        <h2>Modalidades liberadas</h2>
+          <section className="playStatsGrid">
+            <div><strong>{tournaments.length}</strong><span>Torneios criados</span></div>
+            <div><strong>{allowedTypes.length}</strong><span>Modalidades liberadas</span></div>
+            <div><strong>{profile.expires_at || "—"}</strong><span>Vencimento</span></div>
+          </section>
 
-        <div className="grid">
-          {allowedTypes.map((item) => (
-            <div className="modality" key={item}>{item}</div>
-          ))}
-        </div>
-      </section>
-
-    <section className="card">
+    <section className="card playCreateCard">
   <h2>Criar novo torneio</h2>
 
   <label>Nome do torneio</label>
@@ -2474,7 +2485,9 @@ setNewLocation("");
     </div>
   )}
 </section>
-          </div>
+        </main>
+      </div>
+    </div>
   );
 }
 
