@@ -2310,10 +2310,13 @@ setNewLocation("");
       />
 
 
-      <header>
-        <div>
-          <h1>Torneio Fácil BT</h1>
-          <p>Dashboard profissional com login real.</p>
+      <header className="appBrandHeader">
+        <div className="landingBrand">
+          <BeachLogo />
+          <div>
+            <strong>Torneio Fácil BT</strong>
+            <span>Gestão simples para torneios de Beach Tennis</span>
+          </div>
         </div>
 
         <button type="button" onClick={logout}>Sair</button>
