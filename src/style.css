@@ -5702,3 +5702,84 @@ body {
     font-size: 14px !important;
   }
 }
+
+
+/* Visualização pública: logo, mensagem ao vivo e ranking só para Copas */
+.publicHeaderWithLogo {
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+  gap: 20px !important;
+}
+.publicBrandRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 220px;
+}
+.publicBrandRow .beachLogo {
+  width: 54px;
+  height: 54px;
+  border-radius: 16px;
+  flex: 0 0 auto;
+}
+.publicBrandRow strong {
+  display: block;
+  color: #0f172a;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+.publicBrandRow span {
+  display: block;
+  margin-top: 5px;
+  color: #2563eb;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: none;
+  letter-spacing: -0.01em;
+}
+.publicTitleBlock {
+  min-width: 0;
+}
+.publicTitleBlock h1 {
+  margin-top: 4px !important;
+}
+@media (max-width: 800px) {
+  .publicHeaderWithLogo {
+    grid-template-columns: 1fr !important;
+  }
+  .publicBrandRow {
+    min-width: 0;
+  }
+}
+
+
+/* Mensagem de compartilhamento sem atrapalhar o link */
+.shareMessagePreview {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #0f172a;
+}
+.shareMessagePreview strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  color: #174ea6;
+}
+.shareMessagePreview p {
+  margin: 0 0 6px;
+  font-weight: 750;
+}
+.shareMessagePreview code {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #2563eb;
+  font-family: inherit;
+  font-weight: 700;
+}
