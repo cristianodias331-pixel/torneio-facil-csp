@@ -1697,8 +1697,8 @@ function Login() {
         <div className="landingBrand">
           <BeachLogo />
           <div>
-            <strong>Torneio Fácil BT</strong>
-            <span>Gestão simples para torneios de Beach Tennis</span>
+            <strong>ArenaPro BT</strong>
+            <span>Sistema premium para arenas, torneios e rankings</span>
           </div>
         </div>
 
@@ -1740,15 +1740,13 @@ function Login() {
         <section className="landingHero">
           <div className="heroContent">
             <div className="heroBadge">
-              🔊 Agora com chamada de jogos por voz
+              🎾 Gestão de torneios com cara de arena profissional
             </div>
 
-            <h1>Organize torneios de Beach Tennis com mais facilidade</h1>
+            <h1>Sua arena com torneios, rankings e experiência profissional</h1>
 
             <p>
-              Crie campeonatos, sorteie participantes, gere tabelas, acompanhe rankings,
-              chame jogos por voz e salve tudo automaticamente em uma plataforma simples
-              para organizadores, arenas e clubes.
+              Monte torneios de Beach Tennis com visual moderno, controle de jogos, rankings automáticos, chamada por voz e uma área pública pronta para encantar atletas e organizadores.
             </p>
 
             <div className="heroActions">
@@ -1759,7 +1757,7 @@ function Login() {
                   document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" });
                 }}
               >
-                Criar minha conta
+                Começar agora
               </button>
 
               <button
@@ -1775,9 +1773,9 @@ function Login() {
             </div>
 
             <div className="heroHighlights">
-              <span>🏆 Tabelas automáticas</span>
-              <span>🎾 Duplas fixas e aleatórias</span>
-              <span>📊 Ranking configurável</span>
+              <span>🏟️ Gestão para arenas</span>
+              <span>🏆 Torneios e copas</span>
+              <span>📊 Ranking em tempo real</span>
             </div>
           </div>
 
@@ -1796,20 +1794,20 @@ function Login() {
                   <span></span>
                 </div>
 
-                <div className="mockTitle">Rodada 1</div>
+                <div className="mockTitle">Arena Central · Rodada 1</div>
 
                 <div className="mockGame">
                   <strong>Quadra 1</strong>
-                  <p>João + Pedro x Lucas + Marcos</p>
+                  <p>João + Pedro  4 x 2  Lucas + Marcos</p>
                 </div>
 
                 <div className="mockGame">
                   <strong>Quadra 2</strong>
-                  <p>Ana + Carla x Júlia + Fernanda</p>
+                  <p>Ana + Carla  3 x 4  Júlia + Fernanda</p>
                 </div>
 
                 <button type="button" className="mockVoiceBtn">
-                  🔊 Chamar rodada
+                  🔊 Anunciar próximos jogos
                 </button>
               </div>
             </div>
@@ -1819,26 +1817,24 @@ function Login() {
                 <section id="como-funciona" className="landingSection">
           <div className="sectionIntro">
             <span>Como funciona</span>
-            <h2>Do cadastro à chamada dos jogos em poucos passos</h2>
+            <h2>Da inscrição ao pódio, tudo em uma plataforma</h2>
             <p>
-              O Torneio Fácil BT foi pensado para reduzir o trabalho manual do organizador
-              e deixar o torneio mais profissional.
+              A plataforma foi pensada para a realidade de quem organiza torneios de Beach Tennis e precisa de agilidade, clareza e apresentação profissional.
             </p>
           </div>
 
           <div className="stepsGrid">
             <div className="stepCard">
               <div>1</div>
-              <h3>Crie sua conta</h3>
-              <p>Cadastre-se com seus dados e aguarde a liberação do acesso pelo administrador.</p>
+              <h3>Cadastre a arena</h3>
+              <p>Use sua conta para centralizar os torneios da arena, clube ou organizador.</p>
             </div>
 
             <div className="stepCard">
               <div>2</div>
-              <h3>Escolha a modalidade</h3>
+              <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 08, Super 12, Super 16, Simples 8 ou uma das Copas,
-                conforme seu plano.
+                Selecione Super 08, Super 12, Super 16, Simples 8 ou Copas conforme a realidade do evento.
               </p>
             </div>
 
@@ -1850,8 +1846,8 @@ function Login() {
 
             <div className="stepCard">
               <div>4</div>
-              <h3>Acompanhe o torneio</h3>
-              <p>Preencha placares, veja rankings e use a chamada por voz para anunciar os jogos.</p>
+              <h3>Entregue uma experiência premium</h3>
+              <p>Preencha placares, acompanhe rankings e anuncie jogos com aparência profissional.</p>
             </div>
           </div>
         </section>
@@ -1859,7 +1855,7 @@ function Login() {
         <section className="landingSection featuresSection">
           <div className="sectionIntro">
             <span>Recursos</span>
-            <h2>Ferramentas para organizar melhor</h2>
+            <h2>Tudo que sua arena precisa para rodar campeonatos</h2>
           </div>
 
           <div className="featuresGrid">
@@ -2314,8 +2310,8 @@ setNewLocation("");
         <div className="landingBrand">
           <BeachLogo />
           <div>
-            <strong>Torneio Fácil BT</strong>
-            <span>Gestão simples para torneios de Beach Tennis</span>
+            <strong>ArenaPro BT</strong>
+            <span>Sistema premium para arenas, torneios e rankings</span>
           </div>
         </div>
 
