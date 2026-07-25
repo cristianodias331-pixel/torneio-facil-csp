@@ -2347,8 +2347,12 @@ setNewLocation("");
 
           {activePanel === "inicio" && (
             <>
-              <section className="playTabs homeQuickActions">
+              <section className="playTabs homeQuickActions homeQuickActionsFour">
                 <button type="button" onClick={() => setActivePanel("criar")}>➕ Criar torneio</button>
+                <button type="button" onClick={() => {
+                  setActivePanel("criar");
+                  setTimeout(() => document.getElementById("historico-torneios")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
+                }}>🏆 Ver histórico</button>
                 <button type="button" onClick={() => setActivePanel("modalidades")}>🎾 Ver modalidades</button>
                 <button type="button" onClick={() => setActivePanel("ajustes")}>💳 Ver assinatura</button>
               </section>
@@ -2437,7 +2441,7 @@ setNewLocation("");
 </button>
       </section>
 
-<section className="card">
+<section id="historico-torneios" className="card">
   <h2>Histórico de torneios criados</h2>
 
   {tournaments.length === 0 ? (
@@ -2525,10 +2529,62 @@ setNewLocation("");
 {activePanel === "modalidades" && (
 <section className="card">
   <h2>Modalidades liberadas</h2>
-  <div className="grid">
-    {allowedTypes.map((item) => (
-      <div className="modality" key={item}>{item}</div>
-    ))}
+  <div className="modalitiesGrid internalModalities">
+    {allowedTypes.includes("Super 08") && (
+      <Info
+        title="Super 08"
+        text="Formato com 8 participantes. O sistema gera duplas variáveis, monta as rodadas e calcula o ranking individual conforme os placares."
+      />
+    )}
+
+    {allowedTypes.includes("Super 12 Mista (Dupla Aleatória)") && (
+      <Info
+        title="Super 12 Mista Aleatória"
+        text="Formato com 6 homens e 6 mulheres. As duplas são montadas de forma alternada conforme a numeração sorteada, mantendo jogos mistos durante o torneio."
+      />
+    )}
+
+    {allowedTypes.includes("Super 16 Mista (Dupla Aleatória)") && (
+      <Info
+        title="Super 16 Mista Aleatória"
+        text="Formato com 8 homens e 8 mulheres. O sistema organiza rodadas com duplas mistas alternadas e ranking individual por desempenho."
+      />
+    )}
+
+    {allowedTypes.includes("Super 12 Mista (Dupla Fixa)") && (
+      <Info
+        title="Super 12 Mista Dupla Fixa"
+        text="Formato com 6 duplas fixas. As duplas permanecem as mesmas durante todo o campeonato e jogam entre si em rodadas automáticas."
+      />
+    )}
+
+    {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
+      <Info
+        title="Super 16 Mista Dupla Fixa"
+        text="Formato com 8 duplas fixas. O sistema gera os confrontos entre as duplas, registra placares e monta o ranking geral."
+      />
+    )}
+
+    {allowedTypes.includes("Simples 8") && (
+      <Info
+        title="Simples 8"
+        text="Formato individual com 8 jogadores. Cada atleta joga individualmente, com tabela automática e ranking geral por desempenho."
+      />
+    )}
+
+    {allowedTypes.includes("Copa - 12 ou 24 duplas") && (
+      <Info
+        title="Copa - 12 ou 24 duplas"
+        text="Formato exclusivo do plano Premium. Pode ser jogado com 12 ou 24 duplas, com fase de grupos, chave principal e repescagem com nomes editáveis."
+      />
+    )}
+
+    {allowedTypes.includes("Copa - 18 duplas") && (
+      <Info
+        title="Copa - 18 duplas"
+        text="Formato exclusivo do plano Premium com 18 duplas, 6 grupos de 3, chave principal com BYE para os 2 melhores gerais e disputa paralela entre os terceiros restantes."
+      />
+    )}
   </div>
 </section>
 )}
