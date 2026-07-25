@@ -72,6 +72,12 @@ function getPublicUrl(publicId) {
   return `${window.location.origin}${window.location.pathname}?public=${publicId}`;
 }
 
+function getPublicShareMessage(publicId) {
+  const url = getPublicUrl(publicId);
+  return `Acompanhe as rodadas e os placares ao vivo:
+${url}`;
+}
+
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -2807,13 +2813,13 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
     setShareInfo(nextInfo);
 
-    const ok = await copyToClipboard(getPublicUrl(publicId));
+    const ok = await copyToClipboard(getPublicShareMessage(publicId));
 
     showNotice(
       "success",
       "Link público ativado",
       ok
-        ? "O link foi ativado e copiado para a área de transferência."
+        ? "A mensagem com o link foi ativada e copiada para a área de transferência."
         : "O link foi ativado. Copie o link na área de compartilhamento."
     );
   }
@@ -2850,12 +2856,12 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   async function copyPublicLink() {
     if (!shareInfo.public_id) return;
 
-    const ok = await copyToClipboard(getPublicUrl(shareInfo.public_id));
+    const ok = await copyToClipboard(getPublicShareMessage(shareInfo.public_id));
 
     showNotice(
       ok ? "success" : "error",
-      ok ? "Link copiado" : "Erro ao copiar",
-      ok ? "O link público foi copiado." : "Não foi possível copiar o link."
+      ok ? "Mensagem copiada" : "Erro ao copiar",
+      ok ? "A mensagem com o link público foi copiada." : "Não foi possível copiar a mensagem."
     );
   }
 
@@ -3194,8 +3200,14 @@ return (
                   />
 
                   <button type="button" onClick={copyPublicLink}>
-                    Copiar
+                    Copiar mensagem
                   </button>
+                </div>
+
+                <div className="shareMessagePreview">
+                  <strong>Mensagem copiada junto com o link:</strong>
+                  <p>Acompanhe as rodadas e os placares ao vivo:</p>
+                  <code>{getPublicUrl(shareInfo.public_id)}</code>
                 </div>
 
                 <div className="actions">
@@ -3346,17 +3358,7 @@ return (
               )}
             </section>
           </>
-        ) : (
-          <section className="card">
-            <h2>Ranking</h2>
-
-            <RankingView
-              ranking={ranking}
-              type={tournament.type}
-              rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-            />
-          </section>
-        )}
+        ) : null}
       </div>
     </>
   );
@@ -4161,17 +4163,25 @@ function PublicTournamentScreen({ tournament }) {
 
   return (
     <div className="publicPage">
-      <header className="publicHeader">
-        <div>
+      <header className="publicHeader publicHeaderWithLogo">
+        <div className="publicBrandRow">
+          <BeachLogo />
+          <div>
+            <strong>Torneio Fácil BT</strong>
+            <span>Acompanhe as rodadas e os placares ao vivo</span>
+          </div>
+        </div>
+
+        <div className="publicTitleBlock">
           <span>Tabela pública</span>
           <h1>{tournament.name}</h1>
-         <p>
-  {tournament.type}
-  {data.gender ? ` · ${data.gender}` : ""}
-  {data.eventDay ? ` · ${data.eventDay}` : ""}
-  {data.eventDate ? ` · ${data.eventDate}` : ""}
-  {data.location ? ` · ${data.location}` : ""}
-</p>
+          <p>
+            {tournament.type}
+            {data.gender ? ` · ${data.gender}` : ""}
+            {data.eventDay ? ` · ${data.eventDay}` : ""}
+            {data.eventDate ? ` · ${formatDateBR(data.eventDate)}` : ""}
+            {data.location ? ` · ${data.location}` : ""}
+          </p>
         </div>
 
         <div className="publicBadge">
@@ -4230,17 +4240,7 @@ function PublicTournamentScreen({ tournament }) {
               )}
             </section>
           </>
-        ) : (
-          <section className="card">
-            <h2>Ranking</h2>
-
-            <RankingView
-              ranking={ranking}
-              type={tournament.type}
-              rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-            />
-          </section>
-        )}
+        ) : null}
       </main>
     </div>
   );
