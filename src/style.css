@@ -4526,177 +4526,219 @@ body {
   .playTitleBlock h1 { font-size: 32px !important; }
 }
 
-/* Modelo Playzinho: barra superior inteira + menu lateral limpo */
+/* Ajuste final: design, cores e tipografia no padrão do modelo enviado */
+:root {
+  --play-blue: #1553d8;
+  --play-blue-dark: #0f46bf;
+  --play-bg: #f5f9ff;
+  --play-sidebar: #eef4ff;
+  --play-line: #d9e3f2;
+  --play-text: #111827;
+  --play-muted: #6b7280;
+}
+
 .playAppShell {
-  grid-template-columns: 76px minmax(0, 1fr) !important;
-  background: #f4f8ff !important;
+  background:
+    linear-gradient(rgba(218, 230, 247, .42) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(218, 230, 247, .42) 1px, transparent 1px),
+    var(--play-bg) !important;
+  background-size: 32px 32px !important;
+  color: var(--play-text) !important;
+}
+
+.playMain {
+  background:
+    linear-gradient(rgba(218, 230, 247, .36) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(218, 230, 247, .36) 1px, transparent 1px),
+    #f7fbff !important;
+  background-size: 32px 32px !important;
 }
 
 .playTopbar {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  right: 0 !important;
-  height: 46px !important;
-  z-index: 60 !important;
-  padding: 0 26px !important;
-  background: #1553d8 !important;
-  border-radius: 0 !important;
-  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.16) !important;
-}
-
-.playBrandText {
-  display: flex !important;
-  align-items: center !important;
-  gap: 10px !important;
+  background: var(--play-blue) !important;
+  height: 44px !important;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, .12) !important;
 }
 
 .playBrandText::before {
-  content: "🎾";
-  width: 28px;
-  height: 28px;
-  display: grid;
-  place-items: center;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.18);
-  font-size: 18px;
+  content: "🎾" !important;
+  width: 30px !important;
+  height: 30px !important;
+  background: transparent !important;
+  font-size: 22px !important;
 }
 
 .playBrandText strong {
-  color: #ffffff !important;
-  font-size: 20px !important;
-  font-weight: 950 !important;
-  letter-spacing: -0.05em !important;
-  line-height: 1 !important;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  color: #fff !important;
+  letter-spacing: -0.055em !important;
 }
 
-.playBrandText span {
-  display: none !important;
+.playUserBox {
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+}
+
+.playUserBox button {
+  min-height: 28px !important;
+  padding: 6px 12px !important;
+  border-radius: 999px !important;
+  background: rgba(255,255,255,.18) !important;
+  color: #fff !important;
 }
 
 .playSidebar {
-  position: sticky !important;
-  top: 46px !important;
-  height: calc(100vh - 46px) !important;
-  padding: 18px 7px 10px !important;
-  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%) !important;
-  border-right: 1px solid #dbe7ff !important;
-  box-shadow: 8px 0 28px rgba(15, 23, 42, 0.08) !important;
-  z-index: 30 !important;
-}
-
-.playSideLogo {
-  display: none !important;
+  top: 44px !important;
+  height: calc(100vh - 44px) !important;
+  width: 76px !important;
+  padding: 18px 7px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #eef4ff 100%) !important;
+  border-right: 1px solid #dce6f5 !important;
+  box-shadow: 8px 0 30px rgba(15, 23, 42, .08) !important;
 }
 
 .playNavItem {
   width: 58px !important;
   min-height: 68px !important;
-  margin: 2px auto 12px !important;
-  padding: 8px 3px !important;
-  border-radius: 8px !important;
-  border: 2px solid transparent !important;
-  background: transparent !important;
+  border-radius: 7px !important;
   color: #111827 !important;
-  box-shadow: none !important;
-  display: grid !important;
-  place-items: center !important;
-  gap: 4px !important;
 }
 
 .playNavItem.active {
-  border-color: #1553d8 !important;
-  background: #ffffff !important;
-  color: #1553d8 !important;
-  box-shadow: 0 8px 18px rgba(21, 83, 216, 0.12) !important;
+  border: 3px solid var(--play-blue) !important;
+  color: var(--play-blue) !important;
+  background: #fff !important;
+  box-shadow: 0 8px 18px rgba(21, 83, 216, .12) !important;
 }
 
-.playNavItem span {
-  font-size: 24px !important;
-  line-height: 1 !important;
-}
-
+.playNavItem span { font-size: 23px !important; }
 .playNavItem small {
   font-size: 11px !important;
   font-weight: 750 !important;
-  color: inherit !important;
-  letter-spacing: -0.01em !important;
-}
-
-.playMain {
-  min-width: 0 !important;
-  padding-top: 46px !important;
-  background:
-    radial-gradient(circle at top left, rgba(37, 99, 235, 0.05), transparent 30%),
-    #f4f8ff !important;
+  letter-spacing: -0.02em !important;
 }
 
 .playContent {
-  width: min(1120px, calc(100% - 72px)) !important;
-  padding: 28px 0 60px !important;
-  margin: 0 auto !important;
+  width: min(1100px, calc(100% - 82px)) !important;
+  padding-top: 28px !important;
+}
+
+.playTitleBlock {
+  align-items: flex-start !important;
+  margin-bottom: 18px !important;
 }
 
 .playTitleBlock h1 {
-  color: #0f172a !important;
-  text-shadow: none !important;
+  color: #111827 !important;
+  font-size: 34px !important;
+  line-height: 1.02 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.055em !important;
 }
 
 .playTitleBlock p {
-  color: #7b8798 !important;
-  font-weight: 650 !important;
+  margin-top: 6px !important;
+  color: #6b7280 !important;
+  font-size: 16px !important;
+  font-weight: 500 !important;
+  line-height: 1.35 !important;
 }
 
-.playTabs,
-.playStatsGrid div,
-.playAppShell .card {
-  background: rgba(255, 255, 255, 0.96) !important;
-  border: 1px solid #dce7f8 !important;
-  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07) !important;
+.playPlanPill {
+  background: #fff !important;
+  color: var(--play-blue) !important;
+  border: 1px solid #dce6f5 !important;
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  box-shadow: 0 6px 18px rgba(15,23,42,.06) !important;
 }
 
 .playTabs {
+  background: rgba(255,255,255,.92) !important;
+  border: 1px solid #dce6f5 !important;
   border-radius: 16px !important;
+  padding: 7px !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, .06) !important;
+}
+
+.playTabs button {
+  min-height: 42px !important;
+  border-radius: 9px !important;
+  color: #4b5563 !important;
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  background: transparent !important;
 }
 
 .playTabs button.active {
-  background: #1553d8 !important;
-  color: #ffffff !important;
+  background: var(--play-blue) !important;
+  color: #fff !important;
 }
 
-.playAppShell button:not(.playNavItem) {
-  background: #1553d8 !important;
-  box-shadow: 0 8px 18px rgba(21, 83, 216, 0.2) !important;
+.playStatsGrid div,
+.playAppShell .card {
+  background: rgba(255,255,255,.96) !important;
+  border: 1px solid #dce6f5 !important;
+  border-radius: 14px !important;
+  box-shadow: 0 8px 22px rgba(15,23,42,.07) !important;
 }
 
-.playUserBox button {
-  background: rgba(255, 255, 255, 0.18) !important;
+.playStatsGrid div { padding: 18px 20px !important; }
+.playStatsGrid strong {
+  color: var(--play-blue) !important;
+  font-size: 28px !important;
+  font-weight: 900 !important;
+}
+.playStatsGrid span {
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+.playAppShell .card {
+  padding: 24px !important;
+}
+
+.playAppShell .card h2 {
+  color: #111827 !important;
+  font-size: 22px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.playCreateCard .formField label,
+.playAppShell label {
+  color: #111827 !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+}
+
+.playAppShell input,
+.playAppShell select,
+.playCreateCard .dateInputClickArea {
+  background: #fff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 10px !important;
+  min-height: 42px !important;
+  color: #111827 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
   box-shadow: none !important;
 }
 
-.playStatsGrid strong,
-.playPlanPill,
-.playAppShell .tournamentTypeBadge {
-  color: #1553d8 !important;
+.playAppShell input:focus,
+.playAppShell select:focus,
+.playCreateCard .dateInputClickArea:focus-within {
+  border-color: var(--play-blue) !important;
+  box-shadow: 0 0 0 3px rgba(21,83,216,.12) !important;
 }
 
-@media (max-width: 900px) {
-  .playAppShell { grid-template-columns: 1fr !important; }
-  .playTopbar { height: 52px !important; padding: 0 14px !important; }
-  .playMain { padding-top: 52px !important; }
-  .playSidebar {
-    position: fixed !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    top: auto !important;
-    height: 74px !important;
-    display: flex !important;
-    justify-content: space-around !important;
-    padding: 6px !important;
-    border-right: 0 !important;
-    border-top: 1px solid #dbe7ff !important;
-  }
-  .playNavItem { margin: 0 !important; }
-  .playContent { width: min(100% - 28px, 760px) !important; padding-bottom: 98px !important; }
+.playAppShell button:not(.playNavItem) {
+  background: var(--play-blue) !important;
+  color: #fff !important;
+  border-radius: 10px !important;
+  font-weight: 850 !important;
+  box-shadow: 0 8px 18px rgba(21,83,216,.18) !important;
 }
