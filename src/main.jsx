@@ -3091,6 +3091,21 @@ function clearScores() {
   showNotice("success", "Placares apagados", "Todos os placares foram removidos.");
 }
 
+function clearTable() {
+  const ok = window.confirm("Deseja apagar a tabela gerada? Os participantes serão mantidos, mas rodadas, placares e chaves serão removidos.");
+  if (!ok) return;
+
+  const copy = structuredClone(data);
+  copy.schedule = [];
+
+  if (isCupType(config)) {
+    copy.brackets = [];
+  }
+
+  setData(copy);
+  showNotice("success", "Tabela apagada", "A tabela foi removida. Os participantes foram mantidos.");
+}
+
 const currentBrackets = isCupType(config) && data.brackets?.length
   ? groupStoredBracketGames(data)
   : null;
@@ -3153,13 +3168,15 @@ return (
       <header>
         <div>
           <h1>{tournament.name}</h1>
-          <p>
-  {tournament.type} · {savingStatus}
-  {data.gender ? ` · ${data.gender}` : ""}
-  {data.eventDay ? ` · ${data.eventDay}` : ""}
-  {data.eventDate ? ` · ${data.eventDate}` : ""}
-  {data.location ? ` · ${data.location}` : ""}
-</p>
+          <div className="tournamentHeaderMeta">
+            <span>🏆 {tournament.type}</span>
+            <span>💾 {savingStatus}</span>
+            {data.gender ? <span>👥 {data.gender}</span> : null}
+            {data.eventDate ? <span>🗓️ {formatDateBR(data.eventDate)}</span> : null}
+            {data.eventDay ? <span>📅 {data.eventDay}</span> : null}
+            {data.location ? <span>📍 {data.location}</span> : null}
+            {data.winningScore ? <span>🎯 Até {data.winningScore} pontos</span> : null}
+          </div>
         </div>
 
         <div className="actions">
@@ -3294,6 +3311,14 @@ return (
                   onClick={() => setClearScoresOpen(true)}
                 >
                   Apagar placares
+                </button>
+
+                <button
+                  type="button"
+                  className="deleteBtn"
+                  onClick={clearTable}
+                >
+                  Apagar tabela
                 </button>
               </div>
             </>
