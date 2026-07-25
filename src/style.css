@@ -5485,3 +5485,141 @@ body {
 .playTabs button {
   white-space: normal !important;
 }
+
+
+/* Correção de identidade: Torneio Fácil BT + logo original + barra maior */
+.playAppShell {
+  grid-template-columns: 112px minmax(0, 1fr) !important;
+}
+
+.playSidebar {
+  width: 112px !important;
+  padding: 16px 12px !important;
+}
+
+.playMain {
+  padding-left: 112px !important;
+}
+
+.playTopbar {
+  padding-left: 136px !important;
+}
+
+.playSideLogo {
+  display: grid !important;
+  height: 88px !important;
+  margin: 0 0 14px !important;
+  place-items: center !important;
+  text-align: center !important;
+}
+
+.playSideLogo .beachLogo {
+  display: block !important;
+  position: relative !important;
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  background: linear-gradient(135deg, #38bdf8, #0ea5e9) !important;
+  box-shadow: 0 10px 22px rgba(14, 165, 233, 0.20) !important;
+}
+
+.playSideLogo .beachLogo::before {
+  display: none !important;
+  content: none !important;
+}
+
+.playSideLogo .beachLogoSand,
+.playSideLogo .beachLogoBall,
+.playSideLogo .beachLogoRacket {
+  display: block !important;
+}
+
+.playSideLogo .beachLogoSand {
+  position: absolute !important;
+  left: -8px !important;
+  right: -8px !important;
+  bottom: -8px !important;
+  height: 24px !important;
+  background: #facc15 !important;
+  border-radius: 50% 50% 0 0 !important;
+}
+
+.playSideLogo .beachLogoBall {
+  position: absolute !important;
+  right: 9px !important;
+  top: 8px !important;
+  width: 14px !important;
+  height: 14px !important;
+  color: #fef08a !important;
+  font-size: 22px !important;
+  line-height: 14px !important;
+}
+
+.playSideLogo .beachLogoRacket {
+  position: absolute !important;
+  width: 15px !important;
+  height: 24px !important;
+  border: 3px solid #ffffff !important;
+  border-radius: 999px !important;
+  transform: rotate(-32deg) !important;
+}
+
+.playSideLogo .beachLogoRacket::after {
+  content: "" !important;
+  position: absolute !important;
+  width: 4px !important;
+  height: 16px !important;
+  background: #ffffff !important;
+  left: 50% !important;
+  bottom: -16px !important;
+  transform: translateX(-50%) !important;
+  border-radius: 999px !important;
+}
+
+.playSideLogo .racketOne {
+  left: 14px !important;
+  top: 12px !important;
+}
+
+.playSideLogo .racketTwo {
+  left: 24px !important;
+  top: 18px !important;
+  transform: rotate(28deg) !important;
+  opacity: 0.9 !important;
+}
+
+.playSideLogo strong {
+  display: block !important;
+  margin-top: 7px !important;
+  color: #174ea6 !important;
+  font-size: 12px !important;
+  line-height: 1.05 !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.04em !important;
+}
+
+.playNavItem {
+  width: 84px !important;
+  min-height: 70px !important;
+  margin-bottom: 10px !important;
+}
+
+.playNavItem small {
+  max-width: 76px !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+  overflow-wrap: normal !important;
+  word-break: normal !important;
+}
+
+.playBrandText strong {
+  font-size: 20px !important;
+}
+
+@media (max-width: 900px) {
+  .playSidebar { width: auto !important; }
+  .playMain { padding-left: 0 !important; }
+  .playTopbar { padding-left: 16px !important; }
+  .playSideLogo { display: none !important; }
+}
