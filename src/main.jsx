@@ -164,11 +164,13 @@ function normalizeScoreInput(value, winningScore = 4) {
 const allowedByPlan = {
   basic: [
     "Super 08",
+    "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
   ],
   pro: [
     "Super 08",
+    "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Fixa)",
@@ -176,6 +178,7 @@ const allowedByPlan = {
   ],
   premium: [
     "Super 08",
+    "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Fixa)",
@@ -191,6 +194,13 @@ const modalityConfig = {
     type: "super8",
     total: 8,
     label: "Participante",
+    courts: 2,
+  },
+
+  "Super 10 Mista (Dupla Aleatória)": {
+    type: "mixed10",
+    men: 5,
+    women: 5,
     courts: 2,
   },
 
@@ -293,6 +303,14 @@ const super8Template = [
   [[[1, 6], [4, 7]], [[2, 5], [3, 8]]],
   [[[1, 7], [3, 5]], [[2, 8], [4, 6]]],
   [[[1, 8], [2, 7]], [[3, 6], [4, 5]]],
+];
+
+const super10MixedTemplate = [
+  [[1, 6, 2, 7], [3, 8, 4, 9]],
+  [[1, 7, 3, 9], [5, 10, 2, 8]],
+  [[1, 8, 4, 10], [5, 6, 3, 7]],
+  [[1, 9, 5, 8], [2, 6, 4, 7]],
+  [[2, 10, 3, 6], [4, 8, 5, 9]],
 ];
 
 const super12MixedTemplate = [
@@ -1921,6 +1939,7 @@ function Login() {
               text="Para começar com torneios mistos e Super 08."
               items={[
                 "Super 08",
+                "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
                 "Gerencie apenas 1 campeonato por vez",
@@ -1936,6 +1955,7 @@ function Login() {
               text="Para organizadores que precisam de modalidades com duplas fixas."
               items={[
                 "Super 08",
+                "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
                 "Super 12 Mista Dupla Fixa",
@@ -1951,6 +1971,7 @@ function Login() {
               text="Para quem quer liberar todos os formatos disponíveis."
               items={[
                 "Super 08",
+                "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
                 "Super 12 Mista Dupla Fixa",
@@ -1975,6 +1996,11 @@ function Login() {
             <Info
               title="Super 08"
               text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo."
+            />
+
+            <Info
+              title="Super 10 Mista Aleatória"
+              text="Formato com 5 homens e 5 mulheres. São 5 rodadas, 2 jogos por rodada, e em cada rodada descansam 1 homem e 1 mulher. Todos jogam 4 partidas e descansam 1 vez. O ranking é separado masculino e feminino."
             />
 
             <Info
@@ -2537,6 +2563,13 @@ setNewLocation("");
       />
     )}
 
+    {allowedTypes.includes("Super 10 Mista (Dupla Aleatória)") && (
+      <Info
+        title="Super 10 Mista Aleatória"
+        text="Formato misto com 10 participantes: 5 homens e 5 mulheres. São 5 rodadas, com 2 jogos por rodada, e em cada rodada descansam 1 homem e 1 mulher. Ao final, todos jogam 4 partidas e descansam 1 vez. O sistema monta automaticamente as duplas mistas, organiza as quadras, registra os placares e calcula rankings separados masculino e feminino. É ideal para torneios de hoje, eventos rápidos e grupos menores, mantendo equilíbrio de jogos entre todos os atletas."
+      />
+    )}
+
     {allowedTypes.includes("Super 12 Mista (Dupla Aleatória)") && (
       <Info
         title="Super 12 Mista Aleatória"
@@ -2616,7 +2649,7 @@ function createInitialData(type, config) {
   schedule: [],
 };
 
-  if (config.type === "mixed12" || config.type === "mixed16") {
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return {
       ...base,
       players: {
@@ -2665,7 +2698,7 @@ function createInitialData(type, config) {
 function getShuffleNames(data, config) {
   if (!data?.players) return [];
 
-  if (config.type === "mixed12" || config.type === "mixed16") {
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return [...data.players.men, ...data.players.women];
   }
 
@@ -2874,7 +2907,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   function finishShuffle() {
     const copy = structuredClone(data);
 
-    if (config.type === "mixed12" || config.type === "mixed16") {
+    if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
       copy.players.men = shuffleArray(copy.players.men);
       copy.players.women = shuffleArray(copy.players.women);
     } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
@@ -3390,7 +3423,7 @@ function CupConfigPanel({ data, config, updateCupConfig }) {
 function PlayerInputs({ type, data, updatePlayer }) {
   const config = modalityConfig[type];
 
-  if (config.type === "mixed12" || config.type === "mixed16") {
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return (
       <div className="twoCols">
         <div>
@@ -3519,6 +3552,10 @@ function generateSchedule(type, players) {
 
   if (config.type === "super8") {
     return optimizeCourts(buildFromPairTemplate(super8Template, players));
+  }
+
+  if (config.type === "mixed10") {
+    return optimizeCourts(buildFromMixedTemplate(super10MixedTemplate, players));
   }
 
   if (config.type === "mixed12") {
@@ -3717,7 +3754,7 @@ function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCrite
 
   let names = [];
 
-  if (config.type === "mixed12" || config.type === "mixed16") {
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     names = [...data.players.men, ...data.players.women];
   } else if (config.type === "fixed12" || config.type === "fixed16") {
     names = data.players.teams.map((t) => `${t.a} + ${t.b}`);
@@ -3783,7 +3820,7 @@ function podium(i) {
 function RankingView({ ranking, type, rankingCriteria }) {
   const config = modalityConfig[type];
 
-  if (config.type === "mixed12" || config.type === "mixed16") {
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     const menLimit = config.men;
     const men = ranking.filter((p) => p.id < menLimit);
     const women = ranking.filter((p) => p.id >= menLimit);
