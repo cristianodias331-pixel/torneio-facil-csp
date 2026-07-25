@@ -74,7 +74,7 @@ function getPublicUrl(publicId) {
 
 function getPublicShareMessage(publicId) {
   const url = getPublicUrl(publicId);
-  return `Acompanhe as rodadas e os placares ao vivo:
+  return `Sua plataforma para gestão de competições de Beach Tennis:
 ${url}`;
 }
 
@@ -1734,7 +1734,7 @@ function Login() {
           <BeachLogo />
           <div>
             <strong>Torneio Fácil BT</strong>
-            <span>Gestão simples para torneios de Beach Tennis</span>
+            <span>Sua plataforma para gestão de competições de Beach Tennis</span>
           </div>
         </div>
 
@@ -2362,7 +2362,7 @@ setNewLocation("");
         <header className="playTopbar">
           <div className="playBrandText">
             <strong>Torneio Fácil BT</strong>
-            <span>Gestão simples para torneios de Beach Tennis</span>
+            <span>Sua plataforma para gestão de competições de Beach Tennis</span>
           </div>
           <div className="playUserBox">
             <span>E aí, {profile.name || user.email?.split("@")[0] || "organizador"}!</span>
@@ -4142,6 +4142,41 @@ function PublicTournamentPage({ publicId }) {
   return <PublicTournamentScreen tournament={tournament} />;
 }
 
+function getRegisteredAthletesForPublic(data, config) {
+  if (!data?.players) return [];
+
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+    return [
+      {
+        title: "Masculino",
+        names: (data.players.men || []).filter(Boolean),
+      },
+      {
+        title: "Feminino",
+        names: (data.players.women || []).filter(Boolean),
+      },
+    ];
+  }
+
+  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+    return [
+      {
+        title: "Duplas cadastradas",
+        names: (data.players.teams || [])
+          .map((team, index) => `${index + 1}. ${team.a || "Atleta 1"} + ${team.b || "Atleta 2"}`)
+          .filter(Boolean),
+      },
+    ];
+  }
+
+  return [
+    {
+      title: "Atletas cadastrados",
+      names: (data.players || []).filter(Boolean),
+    },
+  ];
+}
+
 function PublicTournamentScreen({ tournament }) {
   const config = modalityConfig[tournament.type];
   const data = tournament.data || createInitialData(tournament.type, config);
@@ -4166,6 +4201,8 @@ function PublicTournamentScreen({ tournament }) {
     ? calculateMainCupPodium(data)
     : [];
 
+  const publicAthletes = getRegisteredAthletesForPublic(data, config);
+
   return (
     <div className="publicPage">
       <header className="publicHeader publicHeaderWithLogo">
@@ -4173,7 +4210,7 @@ function PublicTournamentScreen({ tournament }) {
           <BeachLogo />
           <div>
             <strong>Torneio Fácil BT</strong>
-            <span>Acompanhe as rodadas e os placares ao vivo</span>
+            <span>Sua plataforma para gestão de competições de Beach Tennis</span>
           </div>
         </div>
 
@@ -4195,6 +4232,26 @@ function PublicTournamentScreen({ tournament }) {
       </header>
 
       <main className="publicContent">
+        <section className="card publicAthletesCard">
+          <h2>Atletas cadastrados</h2>
+          <div className="publicAthletesGrid">
+            {publicAthletes.map((group) => (
+              <div className="publicAthleteGroup" key={group.title}>
+                <h3>{group.title}</h3>
+                {group.names.length === 0 ? (
+                  <p>Nenhum atleta cadastrado ainda.</p>
+                ) : (
+                  <div className="publicAthleteList">
+                    {group.names.map((name, index) => (
+                      <span key={`${group.title}-${index}`}>{name}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
         <section className="card">
           <h2>{isCup ? "Fase de grupos" : "Rodadas"}</h2>
 
