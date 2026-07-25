@@ -9,7 +9,7 @@
   --muted: #64748b;
   --text: #0f172a;
   --line: #e2e8f0;
-  --primary: #2563eb;
+  --primary: #16a34a;
   --cyan: #06b6d4;
   --green: #22c55e;
   --purple: #7c3aed;
@@ -40,7 +40,7 @@ button {
   letter-spacing: -0.01em;
   cursor: pointer;
   color: white;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  background: linear-gradient(135deg, #16a34a, #06b6d4);
   box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
   transition:
     transform 0.16s ease,
@@ -102,7 +102,7 @@ button.secondaryBtn,
 }
 
 .actions button:not(.deleteBtn):not(.danger):nth-child(3) {
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  background: linear-gradient(135deg, #16a34a, #06b6d4);
   box-shadow: 0 14px 28px rgba(37, 99, 235, 0.3);
 }
 
@@ -595,7 +595,7 @@ label {
   border-radius: 10px;
   display: inline-grid;
   place-items: center;
-  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  background: linear-gradient(135deg, #16a34a, #06b6d4);
   color: white;
   font-size: 16px;
   box-shadow: 0 10px 22px rgba(37, 99, 235, 0.28);
@@ -758,7 +758,7 @@ label {
   padding: 6px 12px;
   border-radius: 999px;
   background: linear-gradient(135deg, #dbeafe, #cffafe);
-  color: #1d4ed8;
+  color: #15803d;
   border: 1px solid #bfdbfe;
   font-size: 12px;
   font-weight: 950;
@@ -1283,7 +1283,7 @@ tbody tr:hover {
 }
 
 .voiceBtn {
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #16a34a, #15803d);
   color: #ffffff;
   border: none;
 }
@@ -1391,7 +1391,7 @@ tbody tr:hover {
   border-radius: 999px;
   font-size: 12px;
   background: #eff6ff;
-  color: #1d4ed8;
+  color: #15803d;
   border: 1px solid #bfdbfe;
   white-space: nowrap;
 }
@@ -1610,7 +1610,7 @@ tbody tr:hover {
 .publicHeader span {
   display: inline-block;
   margin-bottom: 6px;
-  color: #2563eb;
+  color: #16a34a;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -3821,7 +3821,7 @@ body {
   background:
     linear-gradient(rgba(219, 234, 254, .42) 1px, transparent 1px),
     linear-gradient(90deg, rgba(219, 234, 254, .42) 1px, transparent 1px),
-    radial-gradient(circle at 20% 0%, rgba(37, 99, 235, .10), transparent 36%),
+    radial-gradient(circle at 20% 0%, rgba(245,158,11,.10), transparent 36%),
     #f8fbff;
   background-size: 32px 32px, 32px 32px, auto, auto;
 }
@@ -3831,8 +3831,8 @@ body {
   top: 0;
   height: 100vh;
   padding: 12px 8px;
-  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%);
-  border-right: 1px solid #dbe7ff;
+  background: linear-gradient(180deg, #ffffff 0%, #f7f2e8 100%);
+  border-right: 1px solid #dfe8dc;
   box-shadow: 8px 0 30px rgba(15, 23, 42, .08);
   z-index: 30;
 }
@@ -3842,7 +3842,7 @@ body {
   display: grid;
   place-items: center;
   margin-bottom: 18px;
-  color: #1553d8;
+  color: #16a34a;
   font-size: 10px;
 }
 .playSideLogo .beachLogo { width: 34px; height: 34px; border-radius: 12px; box-shadow: none; }
@@ -3865,22 +3865,22 @@ body {
 .playNavItem span { font-size: 22px; line-height: 1; }
 .playNavItem small { font-size: 11px; font-weight: 800; }
 .playNavItem.active {
-  color: #1455d9 !important;
-  border-color: #1455d9;
+  color: #16a34a !important;
+  border-color: #16a34a;
   background: #fff !important;
-  box-shadow: 0 8px 18px rgba(20, 85, 217, .12) !important;
+  box-shadow: 0 8px 18px rgba(22,163,74,.12) !important;
 }
 
 .playMain { min-width: 0; }
 .playTopbar {
   height: 50px;
-  background: #1553d8;
+  background: linear-gradient(135deg, #16a34a, #f59e0b);
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 28px;
-  box-shadow: 0 5px 18px rgba(21, 83, 216, .22);
+  box-shadow: 0 5px 18px rgba(22, 163, 74, .20);
 }
 .playBrandText strong { display:block; font-size: 18px; letter-spacing: -.03em; }
 .playBrandText span { display:block; font-size: 11px; opacity: .78; }
@@ -3911,8 +3911,8 @@ body {
   padding: 11px 16px;
   border-radius: 999px;
   background: #fff;
-  border: 1px solid #dce7f8;
-  color: #1553d8;
+  border: 1px solid #e5e7eb;
+  color: #16a34a;
   font-weight: 950;
   box-shadow: 0 8px 18px rgba(15,23,42,.06);
 }
@@ -3923,7 +3923,7 @@ body {
   padding: 6px;
   margin: 18px 0;
   background: rgba(255,255,255,.92);
-  border: 1px solid #dce7f8;
+  border: 1px solid #e5e7eb;
   border-radius: 16px;
   box-shadow: 0 10px 26px rgba(15, 23, 42, .06);
 }
@@ -3934,7 +3934,7 @@ body {
   border-radius: 10px;
   padding: 13px;
 }
-.playTabs button.active { background: #1553d8 !important; color: #fff !important; }
+.playTabs button.active { background: #16a34a !important; color: #fff !important; }
 .playStatsGrid {
   display:grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -3943,18 +3943,18 @@ body {
 }
 .playStatsGrid div {
   background:#fff;
-  border:1px solid #dce7f8;
+  border:1px solid #e5e7eb;
   border-radius:18px;
   padding:18px;
   box-shadow:0 10px 24px rgba(15,23,42,.06);
 }
-.playStatsGrid strong { display:block; font-size:26px; color:#1553d8; letter-spacing:-.04em; }
+.playStatsGrid strong { display:block; font-size:26px; color:#16a34a; letter-spacing:-.04em; }
 .playStatsGrid span { color:#64748b; font-weight:800; font-size:13px; }
 
 .playAppShell .card {
   border-radius: 16px !important;
   background: rgba(255,255,255,.94) !important;
-  border: 1px solid #dce7f8 !important;
+  border: 1px solid #e5e7eb !important;
   box-shadow: 0 10px 24px rgba(15,23,42,.07) !important;
   padding: 22px !important;
 }
@@ -3983,8 +3983,8 @@ body {
 }
 .playAppShell button:not(.playNavItem) {
   border-radius: 10px;
-  background: #1553d8;
-  box-shadow: 0 9px 18px rgba(21,83,216,.20);
+  background: linear-gradient(135deg, #16a34a, #f59e0b);
+  box-shadow: 0 9px 18px rgba(22,163,74,.20);
 }
 
 .playAppShell .tournamentList {
@@ -4002,7 +4002,7 @@ body {
   padding: 16px;
   border-radius: 16px;
   background:#fff;
-  border: 1px solid #dce7f8;
+  border: 1px solid #e5e7eb;
   box-shadow: 0 9px 22px rgba(15,23,42,.08);
   overflow:hidden;
 }
@@ -4018,14 +4018,14 @@ body {
 .playAppShell .moveLineBtn { position:absolute; top: 10px; right: 10px; width:34px; min-width:34px; height:34px; padding:0; opacity:.9; }
 .playAppShell .tournamentTitleRow { display:grid; gap: 8px; }
 .playAppShell .tournamentTitleRow strong { font-size: 15px; color:#111827; }
-.playAppShell .tournamentTypeBadge { width:max-content; border-radius:999px; background:#eef4ff; color:#1553d8; padding:6px 9px; font-size:11px; font-weight:950; }
+.playAppShell .tournamentTypeBadge { width:max-content; border-radius:999px; background:#ecfdf5; color:#16a34a; padding:6px 9px; font-size:11px; font-weight:950; }
 .playAppShell .tournamentMeta { display:grid; gap: 4px; margin-top: 10px; color:#64748b; font-size:12px; font-weight:800; }
 .playAppShell .tournamentActions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px; }
 .playAppShell .tournamentActions button { min-width: 0; padding: 11px; }
 
 @media (max-width: 900px) {
   .playAppShell { grid-template-columns: 1fr; }
-  .playSidebar { position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: 72px; display:flex; justify-content:space-around; padding: 6px; border-right:0; border-top:1px solid #dbe7ff; }
+  .playSidebar { position: fixed; left: 0; right: 0; bottom: 0; top: auto; height: 72px; display:flex; justify-content:space-around; padding: 6px; border-right:0; border-top:1px solid #dfe8dc; }
   .playSideLogo { display:none; }
   .playNavItem { margin:0; }
   .playContent { width: min(100% - 28px, 760px); padding-bottom: 96px; }
