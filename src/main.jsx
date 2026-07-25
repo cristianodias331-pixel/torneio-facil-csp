@@ -2127,6 +2127,7 @@ const [newLocation, setNewLocation] = useState("");
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [activeDashboardSection, setActiveDashboardSection] = useState("tournaments");
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
 
@@ -2333,28 +2334,35 @@ setNewLocation("");
           <p><strong>Vencimento:</strong> {profile.expires_at}</p>
         </div>
 
-        <button
-          type="button"
-          className="sidebarActionBtn"
-          onClick={() => document.getElementById("createTournamentCard")?.scrollIntoView({ behavior: "smooth" })}
-        >
-          Criar torneio
-        </button>
+        <nav className="sidebarMenu">
+          <button
+            type="button"
+            className={activeDashboardSection === "tournaments" ? "active" : ""}
+            onClick={() => setActiveDashboardSection("tournaments")}
+          >
+            Meus torneios
+          </button>
+          <button
+            type="button"
+            className={activeDashboardSection === "create" ? "active" : ""}
+            onClick={() => setActiveDashboardSection("create")}
+          >
+            Criar torneio
+          </button>
+          <button
+            type="button"
+            className={activeDashboardSection === "modalities" ? "active" : ""}
+            onClick={() => setActiveDashboardSection("modalities")}
+          >
+            Modalidades
+          </button>
+        </nav>
 
         <button type="button" className="sidebarLogoutBtn" onClick={logout}>Sair</button>
       </aside>
 
       <main className="appMainContent">
-      <header className="appBrandHeader">
-        <div className="landingBrand">
-          <BeachLogo />
-          <div>
-            <strong>Torneio Fácil BT</strong>
-            <span>Gestão simples para torneios de Beach Tennis</span>
-          </div>
-        </div>
-      </header>
-
+      {activeDashboardSection === "modalities" ? (
       <section className="card">
         <h2>Modalidades liberadas</h2>
 
@@ -2364,7 +2372,9 @@ setNewLocation("");
           ))}
         </div>
       </section>
+      ) : null}
 
+    {activeDashboardSection === "create" ? (
     <section className="card" id="createTournamentCard">
   <h2>Criar novo torneio</h2>
 
@@ -2421,7 +2431,9 @@ setNewLocation("");
   {saving ? "Salvando..." : "Criar torneio"}
 </button>
       </section>
+      ) : null}
 
+{activeDashboardSection === "tournaments" ? (
 <section className="card">
   <h2>Meus torneios</h2>
 
@@ -2504,6 +2516,7 @@ setNewLocation("");
     </div>
   )}
 </section>
+) : null}
       </main>
           </div>
   );
