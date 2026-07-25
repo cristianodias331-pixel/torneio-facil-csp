@@ -4525,3 +4525,178 @@ body {
   .playContent { width: min(100% - 28px, 760px); }
   .playTitleBlock h1 { font-size: 32px !important; }
 }
+
+/* Modelo Playzinho: barra superior inteira + menu lateral limpo */
+.playAppShell {
+  grid-template-columns: 76px minmax(0, 1fr) !important;
+  background: #f4f8ff !important;
+}
+
+.playTopbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  height: 46px !important;
+  z-index: 60 !important;
+  padding: 0 26px !important;
+  background: #1553d8 !important;
+  border-radius: 0 !important;
+  box-shadow: 0 2px 10px rgba(15, 23, 42, 0.16) !important;
+}
+
+.playBrandText {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.playBrandText::before {
+  content: "🎾";
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 18px;
+}
+
+.playBrandText strong {
+  color: #ffffff !important;
+  font-size: 20px !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.05em !important;
+  line-height: 1 !important;
+}
+
+.playBrandText span {
+  display: none !important;
+}
+
+.playSidebar {
+  position: sticky !important;
+  top: 46px !important;
+  height: calc(100vh - 46px) !important;
+  padding: 18px 7px 10px !important;
+  background: linear-gradient(180deg, #ffffff 0%, #eef3ff 100%) !important;
+  border-right: 1px solid #dbe7ff !important;
+  box-shadow: 8px 0 28px rgba(15, 23, 42, 0.08) !important;
+  z-index: 30 !important;
+}
+
+.playSideLogo {
+  display: none !important;
+}
+
+.playNavItem {
+  width: 58px !important;
+  min-height: 68px !important;
+  margin: 2px auto 12px !important;
+  padding: 8px 3px !important;
+  border-radius: 8px !important;
+  border: 2px solid transparent !important;
+  background: transparent !important;
+  color: #111827 !important;
+  box-shadow: none !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 4px !important;
+}
+
+.playNavItem.active {
+  border-color: #1553d8 !important;
+  background: #ffffff !important;
+  color: #1553d8 !important;
+  box-shadow: 0 8px 18px rgba(21, 83, 216, 0.12) !important;
+}
+
+.playNavItem span {
+  font-size: 24px !important;
+  line-height: 1 !important;
+}
+
+.playNavItem small {
+  font-size: 11px !important;
+  font-weight: 750 !important;
+  color: inherit !important;
+  letter-spacing: -0.01em !important;
+}
+
+.playMain {
+  min-width: 0 !important;
+  padding-top: 46px !important;
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.05), transparent 30%),
+    #f4f8ff !important;
+}
+
+.playContent {
+  width: min(1120px, calc(100% - 72px)) !important;
+  padding: 28px 0 60px !important;
+  margin: 0 auto !important;
+}
+
+.playTitleBlock h1 {
+  color: #0f172a !important;
+  text-shadow: none !important;
+}
+
+.playTitleBlock p {
+  color: #7b8798 !important;
+  font-weight: 650 !important;
+}
+
+.playTabs,
+.playStatsGrid div,
+.playAppShell .card {
+  background: rgba(255, 255, 255, 0.96) !important;
+  border: 1px solid #dce7f8 !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.07) !important;
+}
+
+.playTabs {
+  border-radius: 16px !important;
+}
+
+.playTabs button.active {
+  background: #1553d8 !important;
+  color: #ffffff !important;
+}
+
+.playAppShell button:not(.playNavItem) {
+  background: #1553d8 !important;
+  box-shadow: 0 8px 18px rgba(21, 83, 216, 0.2) !important;
+}
+
+.playUserBox button {
+  background: rgba(255, 255, 255, 0.18) !important;
+  box-shadow: none !important;
+}
+
+.playStatsGrid strong,
+.playPlanPill,
+.playAppShell .tournamentTypeBadge {
+  color: #1553d8 !important;
+}
+
+@media (max-width: 900px) {
+  .playAppShell { grid-template-columns: 1fr !important; }
+  .playTopbar { height: 52px !important; padding: 0 14px !important; }
+  .playMain { padding-top: 52px !important; }
+  .playSidebar {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    height: 74px !important;
+    display: flex !important;
+    justify-content: space-around !important;
+    padding: 6px !important;
+    border-right: 0 !important;
+    border-top: 1px solid #dbe7ff !important;
+  }
+  .playNavItem { margin: 0 !important; }
+  .playContent { width: min(100% - 28px, 760px) !important; padding-bottom: 98px !important; }
+}
