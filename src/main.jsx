@@ -1974,42 +1974,42 @@ function Login() {
           <div className="modalitiesGrid landingModalities">
             <Info
               title="Super 08"
-              text="Formato com 8 participantes. O sistema gera duplas variáveis, monta as rodadas e calcula o ranking individual conforme os placares."
+              text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo."
             />
 
             <Info
               title="Super 12 Mista Aleatória"
-              text="Formato com 6 homens e 6 mulheres. As duplas são montadas de forma alternada conforme a numeração sorteada, mantendo jogos mistos durante o torneio."
+              text="Formato misto com 12 participantes: 6 homens e 6 mulheres. Primeiro, os atletas são cadastrados e sorteados. Depois, o sistema combina os participantes para formar duplas mistas em diferentes rodadas, mantendo equilíbrio entre homens e mulheres. Cada jogador participa de jogos com combinações variadas, e o desempenho é calculado individualmente. É uma boa opção para eventos sociais e competitivos com rotação de parceiros."
             />
 
             <Info
               title="Super 16 Mista Aleatória"
-              text="Formato com 8 homens e 8 mulheres. O sistema organiza rodadas com duplas mistas alternadas e ranking individual por desempenho."
+              text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
             />
 
             <Info
               title="Super 12 Mista Dupla Fixa"
-              text="Formato com 6 duplas fixas. As duplas permanecem as mesmas durante todo o campeonato e jogam entre si em rodadas automáticas."
+              text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
             />
 
             <Info
               title="Super 16 Mista Dupla Fixa"
-              text="Formato com 8 duplas fixas. O sistema gera os confrontos entre as duplas, registra placares e monta o ranking geral."
+              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
               title="Simples 8"
-              text="Formato individual com 8 jogadores. Cada atleta joga individualmente, com tabela automática e ranking geral por desempenho."
+              text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo até definir os melhores colocados."
             />
 
             <Info
               title="Copa - 12 ou 24 duplas"
-              text="Formato exclusivo do plano Premium. Pode ser jogado com 12 ou 24 duplas, com fase de grupos, chave principal e repescagem com nomes editáveis."
+              text="Formato de Copa para 12 ou 24 duplas, pensado para eventos mais completos. As duplas são organizadas em fase de grupos, jogam partidas classificatórias e depois avançam para as chaves finais conforme o desempenho. O sistema permite trabalhar com chave principal e repescagem, além de nomes editáveis para adaptar à regra do seu evento. É indicado para torneios com estrutura de campeonato, fases eliminatórias e premiação por colocação."
             />
 
             <Info
               title="Copa - 18 duplas"
-              text="Formato exclusivo do plano Premium com 18 duplas, 6 grupos de 3, chave principal com BYE para os 2 melhores gerais e disputa paralela entre os terceiros restantes."
+              text="Formato de Copa com 18 duplas, dividido em 6 grupos de 3 duplas. Cada grupo joga sua fase classificatória, e o sistema calcula a classificação com base nos critérios definidos. Os melhores avançam para a chave principal; os 2 melhores gerais podem receber BYE, entrando em fase mais avançada. Também há disputa paralela para duplas específicas, como terceiros colocados, permitindo manter mais atletas em atividade. É um formato ideal para torneios grandes, com organização mais profissional e várias fases."
             />
           </div>
         </section>
@@ -2533,56 +2533,56 @@ setNewLocation("");
     {allowedTypes.includes("Super 08") && (
       <Info
         title="Super 08"
-        text="Formato com 8 participantes. O sistema gera duplas variáveis, monta as rodadas e calcula o ranking individual conforme os placares."
+        text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo."
       />
     )}
 
     {allowedTypes.includes("Super 12 Mista (Dupla Aleatória)") && (
       <Info
         title="Super 12 Mista Aleatória"
-        text="Formato com 6 homens e 6 mulheres. As duplas são montadas de forma alternada conforme a numeração sorteada, mantendo jogos mistos durante o torneio."
+        text="Formato misto com 12 participantes: 6 homens e 6 mulheres. Primeiro, os atletas são cadastrados e sorteados. Depois, o sistema combina os participantes para formar duplas mistas em diferentes rodadas, mantendo equilíbrio entre homens e mulheres. Cada jogador participa de jogos com combinações variadas, e o desempenho é calculado individualmente. É uma boa opção para eventos sociais e competitivos com rotação de parceiros."
       />
     )}
 
     {allowedTypes.includes("Super 16 Mista (Dupla Aleatória)") && (
       <Info
         title="Super 16 Mista Aleatória"
-        text="Formato com 8 homens e 8 mulheres. O sistema organiza rodadas com duplas mistas alternadas e ranking individual por desempenho."
+        text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
       />
     )}
 
     {allowedTypes.includes("Super 12 Mista (Dupla Fixa)") && (
       <Info
         title="Super 12 Mista Dupla Fixa"
-        text="Formato com 6 duplas fixas. As duplas permanecem as mesmas durante todo o campeonato e jogam entre si em rodadas automáticas."
+        text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
       />
     )}
 
     {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
       <Info
         title="Super 16 Mista Dupla Fixa"
-        text="Formato com 8 duplas fixas. O sistema gera os confrontos entre as duplas, registra placares e monta o ranking geral."
+        text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo, ajudando o organizador a acompanhar quem está avançando melhor."
       />
     )}
 
     {allowedTypes.includes("Simples 8") && (
       <Info
         title="Simples 8"
-        text="Formato individual com 8 jogadores. Cada atleta joga individualmente, com tabela automática e ranking geral por desempenho."
+        text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo até definir os melhores colocados."
       />
     )}
 
     {allowedTypes.includes("Copa - 12 ou 24 duplas") && (
       <Info
         title="Copa - 12 ou 24 duplas"
-        text="Formato exclusivo do plano Premium. Pode ser jogado com 12 ou 24 duplas, com fase de grupos, chave principal e repescagem com nomes editáveis."
+        text="Formato de Copa para 12 ou 24 duplas, pensado para eventos mais completos. As duplas são organizadas em fase de grupos, jogam partidas classificatórias e depois avançam para as chaves finais conforme o desempenho. O sistema permite trabalhar com chave principal e repescagem, além de nomes editáveis para adaptar à regra do seu evento. É indicado para torneios com estrutura de campeonato, fases eliminatórias e premiação por colocação."
       />
     )}
 
     {allowedTypes.includes("Copa - 18 duplas") && (
       <Info
         title="Copa - 18 duplas"
-        text="Formato exclusivo do plano Premium com 18 duplas, 6 grupos de 3, chave principal com BYE para os 2 melhores gerais e disputa paralela entre os terceiros restantes."
+        text="Formato de Copa com 18 duplas, dividido em 6 grupos de 3 duplas. Cada grupo joga sua fase classificatória, e o sistema calcula a classificação com base nos critérios definidos. Os melhores avançam para a chave principal; os 2 melhores gerais podem receber BYE, entrando em fase mais avançada. Também há disputa paralela para duplas específicas, como terceiros colocados, permitindo manter mais atletas em atividade. É um formato ideal para torneios grandes, com organização mais profissional e várias fases."
       />
     )}
   </div>
