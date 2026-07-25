@@ -4074,10 +4074,10 @@ tbody tr:hover {
 }
 
 
-/* Data: mostrar somente o ícone e deixar todo campo clicável */
+/* Data: mostra a data escolhida e mantém o campo clicável */
 .dateInputLeft {
-  color: transparent !important;
-  caret-color: transparent !important;
+  color: inherit !important;
+  caret-color: auto !important;
   cursor: pointer !important;
   padding-left: 46px !important;
 }
@@ -4088,7 +4088,7 @@ tbody tr:hover {
 .dateInputLeft::-webkit-datetime-edit-day-field,
 .dateInputLeft::-webkit-datetime-edit-month-field,
 .dateInputLeft::-webkit-datetime-edit-year-field {
-  color: transparent !important;
+  color: inherit !important;
 }
 
 .dateInputLeft::-webkit-calendar-picker-indicator {
