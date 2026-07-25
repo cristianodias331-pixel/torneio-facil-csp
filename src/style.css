@@ -5841,43 +5841,160 @@ body {
   }
 }
 
+/* Correção forte para celular/tablet: menu vira barra inferior e não quebra layout */
+@media (max-width: 1024px) {
+  html, body {
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
 
-/* Status visual dos jogos: pendente/finalizado */
-.gameCardTop {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin-bottom: 10px;
-}
-.gameCardTop > strong {
-  margin: 0 !important;
-}
-.gameStatusBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 24px;
-  padding: 4px 9px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: -0.01em;
-  white-space: nowrap;
-}
-.gameStatusBadge.pending {
-  color: #7c2d12;
-  background: #ffedd5;
-  border: 1px solid #fdba74;
-}
-.gameStatusBadge.finished {
-  color: #14532d;
-  background: #dcfce7;
-  border: 1px solid #86efac;
-}
-@media (max-width: 640px) {
-  .gameCardTop {
-    align-items: flex-start;
-    flex-direction: column;
+  .playAppShell {
+    display: block !important;
+    grid-template-columns: none !important;
+    min-height: 100vh !important;
+  }
+
+  .playTopbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 56px !important;
+    padding: 0 10px 0 12px !important;
+    z-index: 1000 !important;
+  }
+
+  .playBrandText strong {
+    font-size: 15px !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+  }
+
+  .playBrandText span {
+    max-width: 190px !important;
+    font-size: 9px !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+  }
+
+  .playUserBox {
+    gap: 6px !important;
+    font-size: 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .playUserBox span {
+    max-width: 70px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .playUserBox button {
+    min-height: 30px !important;
+    padding: 6px 9px !important;
+    font-size: 11px !important;
+  }
+
+  .playMain {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding-left: 0 !important;
+    padding-top: 56px !important;
+    padding-bottom: 86px !important;
+  }
+
+  .playContent {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 18px 12px 100px !important;
+    margin: 0 !important;
+  }
+
+  .playSidebar {
+    position: fixed !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    height: 76px !important;
+    min-height: 76px !important;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom)) !important;
+    background: rgba(255,255,255,.96) !important;
+    border-right: 0 !important;
+    border-top: 1px solid #dce6f5 !important;
+    box-shadow: 0 -8px 26px rgba(15,23,42,.10) !important;
+    z-index: 999 !important;
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    align-items: center !important;
+    gap: 6px !important;
+    overflow: visible !important;
+  }
+
+  .playSideLogo {
+    display: none !important;
+  }
+
+  .playNavItem {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 58px !important;
+    height: 58px !important;
+    margin: 0 !important;
+    padding: 6px 2px !important;
+    border-radius: 14px !important;
+    display: grid !important;
+    place-items: center !important;
+    gap: 3px !important;
+  }
+
+  .playNavItem span:not(.navIcon) {
+    display: block !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  .playNavItem small {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    text-align: center !important;
+    font-size: 9px !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .playTitleBlock {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  .playTitleBlock h1 {
+    font-size: 30px !important;
+  }
+
+  .playPlanPill {
+    align-self: flex-start !important;
+  }
+
+  .homeQuickActionsFour,
+  .playTabs,
+  .playStatsGrid,
+  .playCreateCard,
+  .playAppShell .tournamentList,
+  .internalModalities {
+    grid-template-columns: 1fr !important;
+  }
+
+  .appPage,
+  .card,
+  .playAppShell .card {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 }
