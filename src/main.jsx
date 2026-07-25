@@ -1697,8 +1697,8 @@ function Login() {
         <div className="landingBrand">
           <BeachLogo />
           <div>
-            <strong>ArenaPro BT</strong>
-            <span>Sistema premium para arenas, torneios e rankings</span>
+            <strong>Torneio Fácil BT</strong>
+            <span>Gestão simples para torneios de Beach Tennis</span>
           </div>
         </div>
 
@@ -2307,7 +2307,7 @@ setNewLocation("");
       />
 
       <aside className="playSidebar">
-        <div className="playSideLogo"><BeachLogo /><strong>ArenaPro</strong></div>
+        <div className="playSideLogo"><BeachLogo /><strong>Torneio<br/>Fácil BT</strong></div>
         <button className={`playNavItem ${activePanel === "historico" ? "active" : ""}`} type="button" onClick={() => setActivePanel("historico")}><span>🏠</span><small>Início</small></button>
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
         <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
@@ -2317,8 +2317,8 @@ setNewLocation("");
       <div className="playMain">
         <header className="playTopbar">
           <div className="playBrandText">
-            <strong>ArenaPro BT</strong>
-            <span>Gestão de torneios para Beach Tennis</span>
+            <strong>Torneio Fácil BT</strong>
+            <span>Gestão simples para torneios de Beach Tennis</span>
           </div>
           <div className="playUserBox">
             <span>E aí, {profile.name || user.email?.split("@")[0] || "organizador"}!</span>
