@@ -6287,3 +6287,166 @@ body {
     width: 100% !important;
   }
 }
+
+/* =========================================================
+   COPAS — MATA-MATA / REPESCAGEM COM MAIS ESPAÇO
+   Aplica o mesmo cuidado depois da fase de grupos:
+   jogos das chaves com mais altura, nomes sem corte e layout organizado.
+========================================================= */
+
+.cupBrackets {
+  gap: 22px !important;
+  align-items: start !important;
+}
+
+.bracketColumn .roundCard {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(300px, 1fr)) !important;
+  gap: 18px !important;
+  align-items: stretch !important;
+}
+
+.bracketColumn .roundCard > .roundHeader,
+.bracketColumn .roundCard > h3 {
+  grid-column: 1 / -1 !important;
+}
+
+.bracketColumn .roundCard > .gameCard {
+  margin-bottom: 0 !important;
+  min-width: 0 !important;
+}
+
+.bracketColumn .gameCard {
+  min-height: 178px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    "court court court"
+    "team1 versus team2"
+    "score score score"
+    ". action action" !important;
+  row-gap: 14px !important;
+  column-gap: 14px !important;
+  align-items: center !important;
+  padding: 18px 16px 16px !important;
+}
+
+.bracketColumn .gameCard > strong {
+  grid-area: court !important;
+  justify-self: start !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+}
+
+.bracketColumn .gameTeams {
+  display: contents !important;
+}
+
+.bracketColumn .gameTeams div {
+  min-height: 58px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 8px 10px !important;
+  border-radius: 12px !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.bracketColumn .gameTeams div:first-child {
+  grid-area: team1 !important;
+}
+
+.bracketColumn .gameTeams div:last-child {
+  grid-area: team2 !important;
+}
+
+.bracketColumn .gameTeams span {
+  grid-area: versus !important;
+  display: inline-flex !important;
+  justify-self: center !important;
+  align-self: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  border-radius: 999px !important;
+  font-size: 12px !important;
+}
+
+.bracketColumn .scoreRow {
+  grid-area: score !important;
+  justify-self: center !important;
+  margin: 0 !important;
+  gap: 12px !important;
+}
+
+.bracketColumn .scoreRow input {
+  width: 74px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  font-size: 14px !important;
+}
+
+.bracketColumn .scoreRow span {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+}
+
+.bracketColumn .gameVoiceActions {
+  grid-area: action !important;
+  justify-self: end !important;
+  align-self: end !important;
+  margin: 0 !important;
+}
+
+.bracketColumn .gameVoiceActions button {
+  min-height: 38px !important;
+  padding: 9px 14px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 1280px) {
+  .bracketColumn .roundCard {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bracketColumn .gameCard {
+    min-height: 190px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .bracketColumn .gameCard {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "court"
+      "team1"
+      "versus"
+      "team2"
+      "score"
+      "action" !important;
+    min-height: 240px !important;
+    padding: 16px !important;
+  }
+
+  .bracketColumn .gameCard > strong,
+  .bracketColumn .gameVoiceActions {
+    justify-self: center !important;
+  }
+
+  .bracketColumn .gameVoiceActions button {
+    width: 100% !important;
+  }
+}
