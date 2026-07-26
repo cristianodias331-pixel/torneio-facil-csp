@@ -2738,6 +2738,8 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   });
 
   const [voiceRepeat, setVoiceRepeat] = useState(1);
+  const [activeTournamentTab, setActiveTournamentTab] = useState("participantes");
+  const [activeMatchesTab, setActiveMatchesTab] = useState("grupos");
 
   const saveTimerRef = useRef(null);
   const latestDataRef = useRef(data);
@@ -3238,8 +3240,17 @@ return (
           </section>
         )}
 
-        <section className="card">
-          <h2>{isCupType(config) ? "Configuração da Copa" : "Participantes"}</h2>
+        <nav className="tournamentTopTabs" aria-label="Organização do torneio">
+          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}>👥 Participantes</button>
+          {isCupType(config) && (
+            <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}>🧩 Grupos</button>
+          )}
+          <button type="button" className={activeTournamentTab === "partidas" ? "active" : ""} onClick={() => setActiveTournamentTab("partidas")}>🔥 Partidas</button>
+          <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}>🏆 Ranking</button>
+        </nav>
+
+        <section className="card" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
+          <h2>Participantes</h2>
 
           <div className="rankingCriteriaBox">
   <label>Pontuação para vencer</label>
@@ -3289,8 +3300,34 @@ return (
           </div>
         </section>
 
-        <section className="card">
-          <h2>{isCupType(config) ? "Fase de grupos" : "Rodadas"}</h2>
+        {isCupType(config) && (
+          <section className="card" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
+            <h2>Grupos</h2>
+            <p>Use o sorteio para embaralhar as duplas e depois gere a fase de grupos.</p>
+            <CupConfigPanel data={data} config={config} updateCupConfig={updateCupConfig} />
+            <div className="actions">
+              <button type="button" onClick={shuffleNames}>Sortear grupos</button>
+              <button type="button" onClick={generate}>Gerar fase de grupos</button>
+            </div>
+            {cupGroupRankings.length > 0 && (
+              <div className="groupsPreviewBox">
+                <h3>Classificação dos grupos</h3>
+                <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+              </div>
+            )}
+          </section>
+        )}
+
+        <section className="card" style={{ display: activeTournamentTab === "partidas" ? undefined : "none" }}>
+          <h2>{isCupType(config) ? "Partidas" : "Rodadas"}</h2>
+          {isCupType(config) && (
+            <div className="matchesSubTabs">
+              <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
+              <button type="button" className={activeMatchesTab === "chaves" ? "active" : ""} onClick={() => setActiveMatchesTab("chaves")}>Chaves finais</button>
+              <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>Disputa paralela</button>
+            </div>
+          )}
+          <div style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
 
           {!data.schedule || data.schedule.length === 0 ? (
             <p>Clique em “Gerar tabela” para montar os jogos.</p>
@@ -3324,11 +3361,12 @@ return (
               </div>
             </>
           )}
+          </div>
         </section>
 
         {isCupType(config) ? (
           <>
-            <section className="card">
+            <section className="card" style={{ display: "none" }}>
               <h2>Classificação dos grupos</h2>
 
               <CupGroupRankingView
@@ -3343,7 +3381,7 @@ return (
               </div>
             </section>
 
-            <section className="card">
+            <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "chaves" ? undefined : "none" }}>
               <h2>Chaves finais</h2>
 
               {!currentBrackets ? (
@@ -3378,9 +3416,23 @@ return (
 </>
               )}
             </section>
+
+            <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
+              <h2>Ranking</h2>
+              <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+            </section>
+
+            <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
+              <h2>{data.cupConfig?.repechageName || "Disputa Paralela"}</h2>
+              {!currentBrackets ? (
+                <p>Gere as chaves finais para visualizar a disputa paralela.</p>
+              ) : (
+                <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
+              )}
+            </section>
           </>
         ) : (
-          <section className="card">
+          <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
             <h2>Ranking</h2>
 
             <RankingView
