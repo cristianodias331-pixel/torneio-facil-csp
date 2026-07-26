@@ -6505,3 +6505,13 @@ body {
     min-height: 48px !important;
   }
 }
+
+/* ORGANIZAÇÃO DOS CAMPEONATOS — ABAS PRINCIPAIS E SUBABAS */
+.tournamentTopTabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0;padding:12px;border-radius:22px;background:rgba(255,255,255,.92);border:1px solid #dbeafe;box-shadow:0 10px 28px rgba(15,23,42,.08)}
+.tournamentTopTabs button{min-height:58px;border:0;border-radius:18px;background:#f8fafc;color:#334155;font-size:15px;font-weight:900;cursor:pointer;box-shadow:inset 0 0 0 1px #e2e8f0}
+.tournamentTopTabs button.active{background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;box-shadow:0 12px 24px rgba(37,99,235,.28)}
+.matchesSubTabs{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 18px;padding:8px;border-radius:18px;background:#f1f5f9;border:1px solid #dbeafe}
+.matchesSubTabs button{min-height:44px;padding:10px 16px;border:0;border-radius:999px;background:#fff;color:#0f172a;font-size:13px;font-weight:900;cursor:pointer;box-shadow:inset 0 0 0 1px #dbeafe}
+.matchesSubTabs button.active{background:#0f58d6;color:#fff;box-shadow:0 10px 20px rgba(37,99,235,.25)}
+.groupsPreviewBox{margin-top:18px;padding-top:16px;border-top:1px solid #dbeafe}
+@media (max-width:760px){.tournamentTopTabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournamentTopTabs button{min-height:52px;font-size:13px}.matchesSubTabs{display:grid;grid-template-columns:1fr}}
