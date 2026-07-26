@@ -3294,17 +3294,19 @@ return (
             updatePlayer={updatePlayer}
           />
 
-          <div className="actions">
-            <button type="button" onClick={shuffleNames}>Sortear nomes</button>
-            <button type="button" onClick={generate}>Gerar tabela</button>
-          </div>
+          {!isCupType(config) && (
+            <div className="actions">
+              <button type="button" onClick={shuffleNames}>Sortear nomes</button>
+              <button type="button" onClick={generate}>Gerar tabela</button>
+            </div>
+          )}
         </section>
 
         {isCupType(config) && (
           <section className="card" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
             <h2>Grupos</h2>
             <p>Use o sorteio para embaralhar as duplas e depois gere a fase de grupos.</p>
-            <CupConfigPanel data={data} config={config} updateCupConfig={updateCupConfig} />
+            <CupConfigPanel data={data} config={config} updateCupConfig={updateCupConfig} showInfo={false} />
             <div className="actions">
               <button type="button" onClick={shuffleNames}>Sortear grupos</button>
               <button type="button" onClick={generate}>Gerar fase de grupos</button>
@@ -3385,10 +3387,18 @@ return (
               <h2>Chaves finais</h2>
 
               {!currentBrackets ? (
-                <p>
-                  Após preencher todos os placares da fase de grupos, clique em
-                  “Gerar chaves finais”.
-                </p>
+                <>
+                  <p>
+                    Após preencher todos os placares da fase de grupos, clique em
+                    “Gerar chaves finais”.
+                  </p>
+
+                  <div className="actions">
+                    <button type="button" onClick={generateBrackets}>
+                      Gerar chaves finais
+                    </button>
+                  </div>
+                </>
               ) : (
             <>
   <CupBracketView
@@ -3419,13 +3429,44 @@ return (
 
             <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
               <h2>Ranking</h2>
-              <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+
+              <div className="cupRankingSplit">
+                <div className="cupRankingPanel">
+                  <h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>
+                  {mainCupPodium.length > 0 ? (
+                    <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
+                  ) : (
+                    <p>Finalize a chave principal para ver o ranking da chave principal.</p>
+                  )}
+                </div>
+
+                <div className="cupRankingPanel">
+                  <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
+                  {parallelRanking.length > 0 ? (
+                    <RankingTable
+                      title="Classificação"
+                      rows={parallelRanking}
+                      rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                    />
+                  ) : (
+                    <p>Gere ou finalize a disputa paralela para ver o ranking separado.</p>
+                  )}
+                </div>
+              </div>
             </section>
 
             <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
               <h2>{data.cupConfig?.repechageName || "Disputa Paralela"}</h2>
               {!currentBrackets ? (
-                <p>Gere as chaves finais para visualizar a disputa paralela.</p>
+                <>
+                  <p>Gere as chaves finais para visualizar a disputa paralela.</p>
+
+                  <div className="actions">
+                    <button type="button" onClick={generateBrackets}>
+                      Gerar chaves finais
+                    </button>
+                  </div>
+                </>
               ) : (
                 <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
               )}
@@ -3447,7 +3488,7 @@ return (
   );
 }
 
-function CupConfigPanel({ data, config, updateCupConfig }) {
+function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   const cupConfig = data.cupConfig || {};
   const isCup18 = config.type === "cup18";
 
@@ -3486,8 +3527,9 @@ function CupConfigPanel({ data, config, updateCupConfig }) {
         </div>
       </div>
 
-      <div className="infoBox">
-        {isCup18 ? (
+      {showInfo && (
+        <div className="infoBox">
+          {isCup18 ? (
           <>
             <p><strong>Formato:</strong> 18 duplas divididas em 6 grupos de 3.</p>
             <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
@@ -3501,8 +3543,9 @@ function CupConfigPanel({ data, config, updateCupConfig }) {
             <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
             <p><strong>Classificação:</strong> 1º e 2º de cada grupo avançam para a chave principal. O 3º vai para a repescagem.</p>
           </>
-        )}
-      </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
