@@ -6515,3 +6515,9 @@ body {
 .matchesSubTabs button.active{background:#0f58d6;color:#fff;box-shadow:0 10px 20px rgba(37,99,235,.25)}
 .groupsPreviewBox{margin-top:18px;padding-top:16px;border-top:1px solid #dbeafe}
 @media (max-width:760px){.tournamentTopTabs{grid-template-columns:repeat(2,minmax(0,1fr))}.tournamentTopTabs button{min-height:52px;font-size:13px}.matchesSubTabs{display:grid;grid-template-columns:1fr}}
+
+/* RANKING SEPARADO DAS COPAS */
+.cupRankingSplit{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start}
+.cupRankingPanel{padding:16px;border-radius:18px;background:#f8fafc;border:1px solid #dbeafe;min-width:0}
+.cupRankingPanel>h3{margin-top:0;color:#0f172a;font-size:16px;font-weight:900}
+@media (max-width:900px){.cupRankingSplit{grid-template-columns:1fr}}
