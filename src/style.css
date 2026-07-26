@@ -6133,3 +6133,45 @@ body {
     width: 38px !important;
   }
 }
+
+/* =========================================================
+   CORREÇÃO — RODADAS UMA EMBAIXO DA OUTRA
+   Mantém Rodada 1, Rodada 2, Rodada 3 em sequência vertical,
+   mas deixa os jogos dentro de cada rodada em grade 2x2.
+========================================================= */
+
+.schedule {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 22px !important;
+  align-items: stretch !important;
+}
+
+.schedule > .voiceRepeatBox {
+  width: 100% !important;
+}
+
+.schedule > .roundCard {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(280px, 1fr)) !important;
+  gap: 14px !important;
+  align-items: stretch !important;
+  margin-bottom: 0 !important;
+}
+
+.schedule > .roundCard > .roundHeader,
+.schedule > .roundCard > h3 {
+  grid-column: 1 / -1 !important;
+}
+
+.schedule > .roundCard > .gameCard {
+  margin-bottom: 0 !important;
+  min-width: 0 !important;
+}
+
+@media (max-width: 900px) {
+  .schedule > .roundCard {
+    grid-template-columns: 1fr !important;
+  }
+}
