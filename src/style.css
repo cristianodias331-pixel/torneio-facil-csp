@@ -6175,3 +6175,115 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* =========================================================
+   MELHORIA — MAIS ESPAÇO VERTICAL NOS JOGOS
+   Aumenta a altura dos cards e organiza melhor nomes longos,
+   placar, quadra e botão dentro de cada jogo.
+========================================================= */
+
+.schedule > .roundCard {
+  gap: 18px !important;
+}
+
+.schedule .gameCard {
+  min-height: 138px !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    "team1 score team2"
+    "team1 score team2"
+    "court court action" !important;
+  row-gap: 16px !important;
+  column-gap: 16px !important;
+  align-items: center !important;
+  padding: 20px 18px 16px !important;
+}
+
+.schedule .gameTeams div {
+  min-height: 42px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial !important;
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.schedule .scoreRow {
+  min-width: 124px !important;
+  align-self: center !important;
+}
+
+.schedule .scoreRow input {
+  width: 46px !important;
+  height: 36px !important;
+  font-size: 14px !important;
+  border-radius: 9px !important;
+}
+
+.schedule .scoreRow span {
+  font-size: 18px !important;
+  font-weight: 900 !important;
+}
+
+.schedule .gameCard > strong {
+  align-self: end !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+}
+
+.schedule .gameVoiceActions {
+  align-self: end !important;
+}
+
+.schedule .gameVoiceActions button {
+  min-height: 38px !important;
+  padding: 9px 14px !important;
+}
+
+@media (max-width: 1100px) {
+  .schedule .gameCard {
+    min-height: 156px !important;
+    grid-template-areas:
+      "team1 team1 team1"
+      "score score score"
+      "team2 team2 team2"
+      "court court action" !important;
+    row-gap: 10px !important;
+  }
+
+  .schedule .scoreRow {
+    justify-self: center !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .schedule .gameCard {
+    min-height: 170px !important;
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "team1"
+      "score"
+      "team2"
+      "court"
+      "action" !important;
+    padding: 16px !important;
+  }
+
+  .schedule .gameCard > strong,
+  .schedule .gameVoiceActions {
+    justify-self: center !important;
+  }
+
+  .schedule .gameVoiceActions button {
+    width: 100% !important;
+  }
+}
