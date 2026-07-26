@@ -3410,19 +3410,6 @@ return (
     winningScore={getWinningScore(data)}
   />
 
-  <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
-
-  {parallelRanking.length > 0 && (
-    <div className="parallelRankingBox">
-      <h3>Ranking da {data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
-
-      <RankingTable
-        title="Classificação"
-        rows={parallelRanking}
-        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-      />
-    </div>
-  )}
 </>
               )}
             </section>
