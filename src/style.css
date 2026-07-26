@@ -6327,3 +6327,151 @@ body {
     grid-template-columns: 1fr !important;
   }
 }
+
+/* =========================================================
+   INVERSÃO FINAL — QUADRA/BOTÃO EM CIMA, JOGADORES/PLACAR EMBAIXO
+   Aplicado em todos os torneios: rodadas normais, fase de grupos e copas.
+========================================================= */
+
+.schedule .gameCard,
+.bracketColumn .gameCard {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    "court court action"
+    "team1 score team2" !important;
+  row-gap: 18px !important;
+  column-gap: 16px !important;
+  align-items: center !important;
+  min-height: 132px !important;
+  padding: 18px 16px !important;
+}
+
+.schedule .gameCard > strong,
+.bracketColumn .gameCard > strong {
+  grid-area: court !important;
+  justify-self: start !important;
+  align-self: center !important;
+  margin: 0 !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+}
+
+.schedule .gameVoiceActions,
+.bracketColumn .gameVoiceActions {
+  grid-area: action !important;
+  justify-self: end !important;
+  align-self: center !important;
+  margin: 0 !important;
+}
+
+.schedule .gameVoiceActions button,
+.bracketColumn .gameVoiceActions button {
+  min-height: 38px !important;
+  padding: 9px 14px !important;
+  border-radius: 999px !important;
+  white-space: nowrap !important;
+}
+
+.schedule .gameTeams,
+.bracketColumn .gameTeams {
+  display: contents !important;
+}
+
+.schedule .gameTeams div,
+.bracketColumn .gameTeams div {
+  min-height: 44px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 6px 8px !important;
+  font-size: 12px !important;
+  line-height: 1.25 !important;
+  font-weight: 800 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.schedule .gameTeams div:first-child,
+.bracketColumn .gameTeams div:first-child {
+  grid-area: team1 !important;
+}
+
+.schedule .gameTeams div:last-child,
+.bracketColumn .gameTeams div:last-child {
+  grid-area: team2 !important;
+}
+
+.schedule .gameTeams span {
+  display: none !important;
+}
+
+.bracketColumn .gameTeams span {
+  grid-area: score !important;
+  display: none !important;
+}
+
+.schedule .scoreRow,
+.bracketColumn .scoreRow {
+  grid-area: score !important;
+  justify-self: center !important;
+  align-self: center !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 124px !important;
+  margin: 0 !important;
+  gap: 10px !important;
+}
+
+.schedule .scoreRow input,
+.bracketColumn .scoreRow input {
+  width: 48px !important;
+  height: 36px !important;
+  padding: 4px 6px !important;
+  border-radius: 9px !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+
+.schedule .scoreRow span,
+.bracketColumn .scoreRow span {
+  font-size: 18px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+}
+
+@media (max-width: 640px) {
+  .schedule .gameCard,
+  .bracketColumn .gameCard {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "court"
+      "action"
+      "team1"
+      "score"
+      "team2" !important;
+    row-gap: 12px !important;
+    min-height: 190px !important;
+    padding: 16px !important;
+  }
+
+  .schedule .gameCard > strong,
+  .bracketColumn .gameCard > strong,
+  .schedule .gameVoiceActions,
+  .bracketColumn .gameVoiceActions {
+    justify-self: center !important;
+  }
+
+  .schedule .gameVoiceActions button,
+  .bracketColumn .gameVoiceActions button {
+    width: 100% !important;
+  }
+}
