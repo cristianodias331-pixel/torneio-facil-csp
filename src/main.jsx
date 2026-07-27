@@ -2854,7 +2854,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   );
 
   const cupGroupRankings = useMemo(
-    () => isCupType(config) ? calculateCupGroupRankings(data, data.rankingCriteria) : [],
+    () => isCupType(config) && data.groupsShuffled ? calculateCupGroupRankings(data, data.rankingCriteria) : [],
     [data, config.type]
   );
 
@@ -2997,6 +2997,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
         copy.schedule = [];
         copy.brackets = [];
+        copy.groupsShuffled = false;
       }
 
       return copy;
@@ -3013,6 +3014,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
     if (isCupType(config)) {
       copy.brackets = [];
+      copy.groupsShuffled = false;
     }
 
     setData(copy);
@@ -3032,7 +3034,10 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
     copy.schedule = [];
 
-    if (isCupType(config)) copy.brackets = [];
+    if (isCupType(config)) {
+      copy.brackets = [];
+      copy.groupsShuffled = true;
+    }
 
     setData(copy);
     setShuffleOverlay(null);
@@ -3076,6 +3081,7 @@ function generate() {
       ...prev,
       schedule,
       brackets: [],
+      groupsShuffled: prev.groupsShuffled || false,
     }));
 
     showNotice("success", "Tabela gerada", "A fase de grupos da Copa foi montada com sucesso.");
