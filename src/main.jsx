@@ -2293,6 +2293,7 @@ const [newLocation, setNewLocation] = useState("");
   const [activePanel, setActivePanel] = useState("inicio");
   const [photoEditor, setPhotoEditor] = useState(null);
   const photoPointersRef = useRef(new Map());
+  const photoPreviewRef = useRef(null);
   const lastPhotoDragRef = useRef(null);
   const lastPhotoPinchRef = useRef(null);
   const [organizerProfile, setOrganizerProfile] = useState(() => {
@@ -2456,7 +2457,8 @@ const [newLocation, setNewLocation] = useState("");
       const scale = baseScale * Number(photoEditor.zoom || 1);
       const drawWidth = image.width * scale;
       const drawHeight = image.height * scale;
-      const previewSize = 190;
+      const previewRect = photoPreviewRef.current?.getBoundingClientRect();
+      const previewSize = previewRect?.width || 220;
       const offsetScale = size / previewSize;
       const offsetX = Number(photoEditor.x || 0) * offsetScale;
       const offsetY = Number(photoEditor.y || 0) * offsetScale;
@@ -2718,6 +2720,7 @@ setNewLocation("");
             <h2>Ajustar foto de perfil</h2>
             <p>Arraste a imagem para alinhar. Use o movimento de pinça no celular ou a roda do mouse para aproximar.</p>
             <div
+              ref={photoPreviewRef}
               className="photoEditorPreview"
               onPointerDown={handlePhotoPointerDown}
               onPointerMove={handlePhotoPointerMove}
