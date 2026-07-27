@@ -3936,17 +3936,26 @@ function ScheduleView({
             </div>
           </div>
 
-          {round.map((game, gameIndex) => (
-            <div className="gameCard" key={gameIndex}>
-              <strong>
-                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                Quadra {game.court}
-              </strong>
+          {round.map((game, gameIndex) => {
+            const winnerSide = getScoreWinnerSide(game, winningScore);
+            const isFinished = winnerSide !== null;
+
+            return (
+            <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={gameIndex}>
+              <div className="gameTopLine">
+                <strong>
+                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                  Quadra {game.court}
+                </strong>
+                <span className={`gameStatusPill ${isFinished ? "finished" : "waiting"}`}>
+                  {isFinished ? "Concluída" : "Aguardando"}
+                </span>
+              </div>
 
               <div className="gameTeams">
-                <div>{game.team1.join(" + ")}</div>
+                <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
                 <span>x</span>
-                <div>{game.team2.join(" + ")}</div>
+                <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
               </div>
 
               <div className="scoreRow">
@@ -3989,7 +3998,8 @@ function ScheduleView({
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
@@ -4270,14 +4280,22 @@ function BracketColumn({
               game.team1?.[0] === "Aguardando" ||
               game.team2?.[0] === "Aguardando";
 
+            const winnerSide = getScoreWinnerSide(game, winningScore);
+            const isFinished = winnerSide !== null;
+
             return (
-              <div className="gameCard" key={game.matchKey}>
-                <strong>Quadra {game.court}</strong>
+              <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
+                <div className="gameTopLine">
+                  <strong>Quadra {game.court}</strong>
+                  <span className={`gameStatusPill ${isFinished ? "finished" : "waiting"}`}>
+                    {isFinished ? "Concluída" : "Aguardando"}
+                  </span>
+                </div>
 
                 <div className="gameTeams">
-                  <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                  <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1?.join(" + ") || "Aguardando"}</div>
                   <span>x</span>
-                  <div>{game.team2?.join(" + ") || "Aguardando"}</div>
+                  <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
                 </div>
 
                 <div className="scoreRow">
