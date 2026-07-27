@@ -1549,16 +1549,16 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
     <div className="confirmOverlay">
       <div className="confirmBox">
         <div className="confirmIcon">⚠️</div>
-        <h2>Excluir torneio?</h2>
+        <h2>Mover para a lixeira?</h2>
 
         <p>
-          Você está prestes a excluir <strong>{target.name}</strong>. Essa ação
-          removerá o torneio e seus dados salvos.
+          O torneio <strong>{target.name}</strong> será movido para a lixeira e
+          poderá ser recuperado em até 30 dias.
         </p>
 
         <div className="confirmActions">
           <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
-          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, excluir</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Mover para lixeira</button>
         </div>
       </div>
     </div>
