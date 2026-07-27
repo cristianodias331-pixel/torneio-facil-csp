@@ -6987,3 +6987,92 @@ body {
     margin-top: 8px !important;
   }
 }
+
+/* Editor de foto ultra compacto - mantém botões sempre visíveis */
+.photoEditorOverlay {
+  padding: 6px !important;
+  align-items: flex-start !important;
+  overflow-y: auto !important;
+}
+
+.photoEditorModal {
+  width: min(360px, 92vw) !important;
+  max-height: none !important;
+  margin: 8px auto !important;
+  padding: 10px 12px !important;
+  border-radius: 14px !important;
+  overflow: visible !important;
+}
+
+.photoEditorModal h2 {
+  font-size: 1rem !important;
+  line-height: 1.15 !important;
+  margin: 0 0 2px !important;
+}
+
+.photoEditorModal p {
+  font-size: 0.72rem !important;
+  line-height: 1.2 !important;
+  margin: 0 0 6px !important;
+}
+
+.photoEditorPreview {
+  width: 92px !important;
+  height: 92px !important;
+  margin: 0 auto 7px !important;
+  border-width: 2px !important;
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.10) !important;
+}
+
+.photoEditorControls {
+  gap: 4px !important;
+}
+
+.photoEditorControls label {
+  gap: 0 !important;
+  font-size: 0.68rem !important;
+  line-height: 1.05 !important;
+}
+
+.photoEditorControls input[type="range"] {
+  height: 14px !important;
+  margin: 0 !important;
+}
+
+.photoEditorActions {
+  gap: 8px !important;
+  margin-top: 7px !important;
+}
+
+.photoEditorActions button {
+  min-height: 30px !important;
+  padding: 6px 10px !important;
+  border-radius: 9px !important;
+  font-size: 0.72rem !important;
+}
+
+@media (max-height: 620px) {
+  .photoEditorModal {
+    width: min(330px, 92vw) !important;
+    padding: 8px 10px !important;
+    margin: 4px auto !important;
+  }
+
+  .photoEditorPreview {
+    width: 72px !important;
+    height: 72px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .photoEditorModal p {
+    display: none !important;
+  }
+
+  .photoEditorControls {
+    gap: 2px !important;
+  }
+
+  .photoEditorActions {
+    margin-top: 5px !important;
+  }
+}
