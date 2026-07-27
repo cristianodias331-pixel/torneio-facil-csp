@@ -7088,3 +7088,73 @@ body {
     justify-content: flex-start !important;
   }
 }
+
+/* Editor de foto moderno: arrastar, pinça e mouse */
+.photoEditorPreview {
+  width: 220px !important;
+  height: 220px !important;
+  cursor: grab !important;
+  touch-action: none !important;
+  user-select: none !important;
+}
+
+.photoEditorPreview:active {
+  cursor: grabbing !important;
+}
+
+.photoEditorPreview img {
+  pointer-events: none !important;
+  user-select: none !important;
+  will-change: transform !important;
+}
+
+.photoEditorControls {
+  display: none !important;
+}
+
+.photoEditorHint {
+  margin: -4px 0 10px;
+  color: #64748b;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.photoZoomButtons {
+  display: inline-grid;
+  grid-template-columns: 36px 64px 36px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.photoZoomButtons button {
+  min-height: 34px !important;
+  width: 36px !important;
+  padding: 0 !important;
+  border-radius: 999px !important;
+  font-size: 1.1rem !important;
+}
+
+.photoZoomButtons span {
+  color: #0f172a;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+@media (max-width: 640px) {
+  .photoEditorPreview {
+    width: 200px !important;
+    height: 200px !important;
+  }
+
+  .photoEditorHint {
+    font-size: 0.72rem;
+  }
+}
+
+@media (max-height: 680px) {
+  .photoEditorPreview {
+    width: 170px !important;
+    height: 170px !important;
+  }
+}
