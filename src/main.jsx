@@ -3409,7 +3409,6 @@ return (
           <section className="card" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
             <h2>Grupos</h2>
             <p>Use o sorteio para embaralhar as duplas e depois gere a fase de grupos.</p>
-            <CupConfigPanel data={data} config={config} updateCupConfig={updateCupConfig} showInfo={false} />
             <div className="actions">
               <button type="button" onClick={shuffleNames}>Sortear grupos</button>
               <button type="button" onClick={generate}>Gerar fase de grupos</button>
