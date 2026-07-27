@@ -7236,3 +7236,14 @@ body {
     display: none !important;
   }
 }
+
+
+/* Lixeira de torneios */
+.trashCard { display: flex; flex-direction: column; gap: 16px; }
+.trashHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.trashHeader h2 { margin-bottom: 4px; }
+.trashHeader p { margin: 0; color: #64748b; }
+.trashHeader span { background: #f1f5f9; color: #334155; border-radius: 999px; padding: 8px 12px; font-weight: 800; font-size: 0.85rem; white-space: nowrap; }
+.trashTournamentItem { border-color: #e2e8f0; background: #fbfdff; }
+.trashTournamentItem .tournamentActions button { background: linear-gradient(135deg, #16a34a, #22c55e); }
+@media (max-width: 720px) { .trashHeader { flex-direction: column; } }
