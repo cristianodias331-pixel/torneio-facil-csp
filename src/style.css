@@ -6581,3 +6581,31 @@ body {
     min-height: 66px !important;
   }
 }
+
+
+/* =========================================================
+   CORREÇÃO — CORES ORIGINAIS DAS CHAVES
+   Chave Principal em ouro; Disputa Paralela em cinza.
+========================================================= */
+
+.cupBrackets .bracketColumn.mainBracket > h3,
+.cupBrackets .bracketColumn.mainBracket .roundHeader h3,
+.cupBrackets .bracketColumn.mainBracket .roundCard > h3 {
+  background: linear-gradient(135deg, #facc15, #f59e0b) !important;
+  color: #111827 !important;
+}
+
+.cupBrackets .bracketColumn.mainBracket .roundCard {
+  border-left: 5px solid #f59e0b !important;
+}
+
+.cupBrackets .bracketColumn.repechageBracket > h3,
+.cupBrackets .bracketColumn.repechageBracket .roundHeader h3,
+.cupBrackets .bracketColumn.repechageBracket .roundCard > h3 {
+  background: linear-gradient(135deg, #e5e7eb, #94a3b8) !important;
+  color: #0f172a !important;
+}
+
+.cupBrackets .bracketColumn.repechageBracket .roundCard {
+  border-left: 5px solid #94a3b8 !important;
+}
