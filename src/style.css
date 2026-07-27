@@ -7158,3 +7158,130 @@ body {
     height: 170px !important;
   }
 }
+
+/* Correção mobile do editor: recorte fiel e botões sempre visíveis */
+.photoEditorOverlay {
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 70px 10px 12px !important;
+  overflow: hidden !important;
+}
+
+.photoEditorModal {
+  width: min(440px, 94vw) !important;
+  max-height: calc(100dvh - 88px) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  padding: 12px 14px !important;
+}
+
+.photoEditorModal h2 {
+  flex: 0 0 auto !important;
+  font-size: 1.08rem !important;
+  margin-bottom: 3px !important;
+}
+
+.photoEditorModal p {
+  flex: 0 0 auto !important;
+  font-size: 0.76rem !important;
+  line-height: 1.2 !important;
+  margin-bottom: 8px !important;
+}
+
+.photoEditorPreview {
+  flex: 0 0 auto !important;
+  width: 220px !important;
+  height: 220px !important;
+  margin: 0 auto 8px !important;
+}
+
+.photoEditorHint {
+  flex: 0 0 auto !important;
+  margin: 0 0 6px !important;
+  font-size: 0.72rem !important;
+  line-height: 1.15 !important;
+}
+
+.photoZoomButtons {
+  flex: 0 0 auto !important;
+  margin-bottom: 8px !important;
+}
+
+.photoEditorActions {
+  flex: 0 0 auto !important;
+  position: sticky !important;
+  bottom: 0 !important;
+  background: #fff !important;
+  padding-top: 8px !important;
+  margin-top: auto !important;
+  z-index: 2 !important;
+}
+
+@media (max-width: 640px) {
+  .photoEditorOverlay {
+    padding: 58px 8px calc(8px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .photoEditorModal {
+    width: 94vw !important;
+    max-height: calc(100dvh - 70px) !important;
+    padding: 10px 12px !important;
+  }
+
+  .photoEditorPreview {
+    width: min(210px, 58vw) !important;
+    height: min(210px, 58vw) !important;
+  }
+
+  .photoEditorActions {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .photoEditorActions button {
+    min-height: 38px !important;
+    font-size: 0.78rem !important;
+  }
+}
+
+@media (max-height: 640px) {
+  .photoEditorOverlay {
+    padding-top: 44px !important;
+  }
+
+  .photoEditorModal {
+    max-height: calc(100dvh - 52px) !important;
+  }
+
+  .photoEditorModal p {
+    display: none !important;
+  }
+
+  .photoEditorPreview {
+    width: min(170px, 46vh) !important;
+    height: min(170px, 46vh) !important;
+  }
+
+  .photoEditorHint {
+    font-size: 0.66rem !important;
+  }
+
+  .photoZoomButtons {
+    margin-bottom: 4px !important;
+  }
+}
+
+@media (max-height: 540px) {
+  .photoEditorPreview {
+    width: 125px !important;
+    height: 125px !important;
+  }
+
+  .photoEditorModal h2 {
+    font-size: 0.95rem !important;
+  }
+
+  .photoEditorHint {
+    display: none !important;
+  }
+}
