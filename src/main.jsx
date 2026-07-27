@@ -1640,11 +1640,11 @@ function Info({ title, text }) {
   );
 }
 
-function CupPodiumView({ podium, title = "Principal" }) {
+function CupPodiumView({ podium, title = "Principal", variant = "main" }) {
   if (!podium || podium.length === 0) return null;
 
   return (
-    <div className="cupPodiumBox">
+    <div className={`cupPodiumBox ${variant === "parallel" ? "parallelPodiumBox" : "mainPodiumBox"}`}>
       <h3>Pódio da {title}</h3>
 
       <div className="cupPodiumGrid">
@@ -3556,10 +3556,13 @@ return (
                 <div className="cupRankingPanel">
                   <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
                   {parallelRanking.length > 0 ? (
-                    <RankingTable
-                      title="Classificação"
-                      rows={parallelRanking}
-                      rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                    <CupPodiumView
+                      podium={parallelRanking.slice(0, 3).map((item, index) => ({
+                        position: index === 0 ? "🏆 Campeão" : index === 1 ? "🥈 Vice" : "🥉 3º lugar",
+                        name: item.name,
+                      }))}
+                      title={data.cupConfig?.repechageName || "Disputa Paralela"}
+                      variant="parallel"
                     />
                   ) : (
                     <p>Gere ou finalize a disputa paralela para ver o ranking separado.</p>
