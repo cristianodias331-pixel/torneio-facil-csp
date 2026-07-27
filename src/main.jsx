@@ -310,7 +310,7 @@ function isGameFinished(game, winningScore = 4) {
 }
 
 function isCupType(config) {
-  return config?.type === "cup" || config?.type === "cup18";
+  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21";
 }
 
 const super8Template = [
@@ -3580,7 +3580,9 @@ return (
 
 function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   const cupConfig = data.cupConfig || {};
+  const isFixedCupSize = config.type === "cup18" || config.type === "cup21";
   const isCup18 = config.type === "cup18";
+  const isCup21 = config.type === "cup21";
 
   return (
     <div className="cupConfigBox">
@@ -3590,7 +3592,7 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
           <select
             value={cupConfig.teamCount || config.defaultTeams}
             onChange={(e) => updateCupConfig("teamCount", Number(e.target.value))}
-            disabled={isCup18}
+            disabled={isFixedCupSize}
           >
             {config.allowedTeamCounts.map((count) => (
               <option key={count} value={count}>{count} duplas</option>
@@ -3608,11 +3610,11 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
         </div>
 
         <div>
-          <label>{isCup18 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
+          <label>{isCup18 || isCup21 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
           <input
             value={cupConfig.repechageName || config.defaultRepechageName}
             onChange={(e) => updateCupConfig("repechageName", e.target.value)}
-            placeholder={isCup18 ? "Disputa Paralela" : "Repescagem"}
+            placeholder={isCup18 || isCup21 ? "Disputa Paralela" : "Repescagem"}
           />
         </div>
       </div>
@@ -3626,6 +3628,13 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
             <p><strong>Classificação:</strong> 1º e 2º de cada grupo avançam. Os 2 melhores terceiros também entram na chave principal.</p>
             <p><strong>Chave principal:</strong> 14 duplas, com os 2 melhores gerais entrando direto nas quartas.</p>
             <p><strong>Disputa paralela:</strong> os 4 terceiros restantes jogam todos contra todos.</p>
+          </>
+        ) : isCup21 ? (
+          <>
+            <p><strong>Formato:</strong> 21 duplas divididas em 7 grupos de 3.</p>
+            <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
+            <p><strong>Chave principal:</strong> passam 1º e 2º de cada grupo. As 2 melhores campanhas recebem BYE para as quartas.</p>
+            <p><strong>Disputa paralela:</strong> os 7 terceiros colocados entram; o melhor terceiro recebe BYE para a semifinal.</p>
           </>
         ) : (
           <>
