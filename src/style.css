@@ -6522,3 +6522,62 @@ body {
 .cupRankingPanel{padding:16px;border-radius:18px;background:#f8fafc;border:1px solid #dbeafe;min-width:0}
 .cupRankingPanel>h3{margin-top:0;color:#0f172a;font-size:16px;font-weight:900}
 @media (max-width:900px){.cupRankingSplit{grid-template-columns:1fr}}
+
+
+/* =========================================================
+   AJUSTE FINAL — CHAVES ESCURAS E JOGOS MAIS ALTOS
+   Mantém a cor escura em todas as Copas e aumenta a altura dos cards.
+========================================================= */
+
+.cupBrackets .bracketColumn > h3,
+.cupBrackets .bracketColumn:first-child > h3,
+.cupBrackets .bracketColumn:nth-child(2) > h3 {
+  background: linear-gradient(135deg, #020617, #1e293b) !important;
+  color: #ffffff !important;
+}
+
+.cupBrackets .bracketColumn .roundHeader h3,
+.cupBrackets .bracketColumn .roundCard > h3,
+.cupBrackets .bracketColumn:first-child .roundHeader h3,
+.cupBrackets .bracketColumn:first-child .roundCard > h3,
+.cupBrackets .bracketColumn:nth-child(2) .roundHeader h3,
+.cupBrackets .bracketColumn:nth-child(2) .roundCard > h3 {
+  background: linear-gradient(135deg, #020617, #1e293b) !important;
+  color: #ffffff !important;
+}
+
+.cupBrackets .bracketColumn:first-child .roundCard,
+.cupBrackets .bracketColumn:nth-child(2) .roundCard,
+.cupBrackets .bracketColumn .roundCard {
+  border-left: 5px solid #0f172a !important;
+}
+
+.schedule .gameCard,
+.bracketColumn .gameCard {
+  min-height: 210px !important;
+  padding-top: 34px !important;
+  padding-bottom: 34px !important;
+  row-gap: 28px !important;
+}
+
+.schedule .gameTeams div,
+.bracketColumn .gameTeams div {
+  min-height: 72px !important;
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+
+@media (max-width: 640px) {
+  .schedule .gameCard,
+  .bracketColumn .gameCard {
+    min-height: 250px !important;
+    padding-top: 26px !important;
+    padding-bottom: 26px !important;
+    row-gap: 18px !important;
+  }
+
+  .schedule .gameTeams div,
+  .bracketColumn .gameTeams div {
+    min-height: 66px !important;
+  }
+}
