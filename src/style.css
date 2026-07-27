@@ -7076,3 +7076,163 @@ body {
     margin-top: 5px !important;
   }
 }
+
+/* Editor de foto - centralizado com prévia maior */
+.photoEditorOverlay {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 12px !important;
+  overflow-y: auto !important;
+}
+
+.photoEditorModal {
+  width: min(380px, 92vw) !important;
+  margin: auto !important;
+  padding: 12px 14px !important;
+  border-radius: 16px !important;
+  max-height: calc(100vh - 24px) !important;
+  overflow-y: auto !important;
+}
+
+.photoEditorPreview {
+  width: 135px !important;
+  height: 135px !important;
+  margin: 0 auto 9px !important;
+}
+
+.photoEditorControls {
+  gap: 5px !important;
+}
+
+.photoEditorControls label {
+  font-size: 0.7rem !important;
+  gap: 1px !important;
+}
+
+.photoEditorControls input[type="range"] {
+  height: 16px !important;
+}
+
+.photoEditorActions {
+  margin-top: 8px !important;
+}
+
+.photoEditorActions button {
+  min-height: 32px !important;
+}
+
+@media (max-height: 620px) {
+  .photoEditorOverlay {
+    align-items: center !important;
+  }
+
+  .photoEditorModal {
+    max-height: calc(100vh - 12px) !important;
+    padding: 8px 10px !important;
+  }
+
+  .photoEditorPreview {
+    width: 105px !important;
+    height: 105px !important;
+  }
+}
+
+/* Correção final: editor realmente afastado do topo e prévia maior */
+.photoEditorOverlay {
+  position: fixed !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  left: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 96px 16px 28px !important;
+  overflow-y: auto !important;
+}
+
+.photoEditorModal {
+  width: min(460px, 92vw) !important;
+  max-height: calc(100vh - 124px) !important;
+  margin: auto !important;
+  padding: 16px 18px !important;
+  border-radius: 18px !important;
+  overflow-y: auto !important;
+}
+
+.photoEditorModal h2 {
+  font-size: 1.25rem !important;
+  margin: 0 0 4px !important;
+}
+
+.photoEditorModal p {
+  display: block !important;
+  font-size: 0.82rem !important;
+  margin: 0 0 10px !important;
+}
+
+.photoEditorPreview {
+  width: 190px !important;
+  height: 190px !important;
+  margin: 0 auto 12px !important;
+}
+
+.photoEditorControls {
+  gap: 7px !important;
+}
+
+.photoEditorControls label {
+  font-size: 0.76rem !important;
+  gap: 2px !important;
+}
+
+.photoEditorControls input[type="range"] {
+  height: 18px !important;
+}
+
+.photoEditorActions {
+  margin-top: 10px !important;
+  gap: 10px !important;
+}
+
+.photoEditorActions button {
+  min-height: 36px !important;
+  font-size: 0.8rem !important;
+}
+
+@media (max-height: 760px) {
+  .photoEditorOverlay {
+    align-items: flex-start !important;
+    padding-top: 82px !important;
+    padding-bottom: 18px !important;
+  }
+
+  .photoEditorModal {
+    max-height: calc(100vh - 100px) !important;
+  }
+
+  .photoEditorPreview {
+    width: 155px !important;
+    height: 155px !important;
+  }
+}
+
+@media (max-height: 620px) {
+  .photoEditorOverlay {
+    padding-top: 70px !important;
+  }
+
+  .photoEditorPreview {
+    width: 125px !important;
+    height: 125px !important;
+  }
+
+  .photoEditorModal p {
+    display: none !important;
+  }
+}
