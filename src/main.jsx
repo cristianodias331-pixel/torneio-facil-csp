@@ -192,6 +192,7 @@ const allowedByPlan = {
     "Simples 8",
     "Copa - 12 ou 24 duplas",
     "Copa - 18 duplas",
+    "Copa - 21 duplas",
   ],
 };
 
@@ -263,6 +264,17 @@ const modalityConfig = {
     defaultMainBracketName: "Principal",
     defaultRepechageName: "Disputa Paralela",
     courts: 6,
+  },
+
+  "Copa - 21 duplas": {
+    type: "cup21",
+    cupMode: "cup21",
+    allowedTeamCounts: [21],
+    defaultTeams: 21,
+    groupSize: 3,
+    defaultMainBracketName: "Chave Principal",
+    defaultRepechageName: "Disputa Paralela",
+    courts: 7,
   },
 };
 
@@ -647,9 +659,43 @@ function getCup18Qualified(data) {
   };
 }
 
+function getCup21Qualified(data) {
+  const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
+  const main = [];
+  const repechage = [];
+
+  groupRankings.forEach((group) => {
+    if (group.rows[0]) main.push({ ...group.rows[0], groupPosition: 1 });
+    if (group.rows[1]) main.push({ ...group.rows[1], groupPosition: 2 });
+    if (group.rows[2]) repechage.push({ ...group.rows[2], groupPosition: 3 });
+  });
+
+  const criteria = getRankingCriteria(data.rankingCriteria || defaultRankingCriteria);
+
+  function sortGeneral(a, b) {
+    if (a.groupPosition !== b.groupPosition) return a.groupPosition - b.groupPosition;
+
+    for (const key of criteria.order) {
+      const diff = b[key] - a[key];
+      if (diff !== 0) return diff;
+    }
+
+    return a.name.localeCompare(b.name);
+  }
+
+  main.sort(sortGeneral);
+  repechage.sort(sortRowsByPointsBalanceWins);
+
+  return { main, repechage };
+}
+
 function getCupQualified(data) {
   if ((data.cupConfig?.teamCount || 12) === 18) {
     return getCup18Qualified(data);
+  }
+
+  if ((data.cupConfig?.teamCount || 12) === 21) {
+    return getCup21Qualified(data);
   }
 
   const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
@@ -712,6 +758,27 @@ function seedBracket(teamIds, bracketType) {
       phase: bracketType,
       roundName: "Quartas de final",
       matchKey: `${bracketType}_qf_${index + 1}`,
+      source1: null,
+      source2: null,
+      ids1: [pair[0]],
+      ids2: [pair[1]],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: index + 1,
+    }));
+  }
+
+  if (teamIds.length === 7) {
+    return [
+      [teamIds[1], teamIds[6]],
+      [teamIds[2], teamIds[5]],
+      [teamIds[3], teamIds[4]],
+    ].map((pair, index) => ({
+      phase: bracketType,
+      roundName: "Preliminar",
+      matchKey: `${bracketType}_pre_${index + 1}`,
       source1: null,
       source2: null,
       ids1: [pair[0]],
@@ -920,7 +987,7 @@ function generateCupBrackets(data) {
   const mainRounds = [];
   const repechageRounds = [];
 
-  if (teamCount === 18 && mainIds.length === 14) {
+  if ((teamCount === 18 || teamCount === 21) && mainIds.length === 14) {
     const preliminary = seedBracket(mainIds, "main");
 
     const quarterfinals = [
@@ -1107,6 +1174,41 @@ function generateCupBrackets(data) {
 
     if (repechageIds.length === 4) {
       // Disputa Paralela: todos contra todos. Não gera final.
+    } else if (repechageIds.length === 7) {
+      const semifinals = [
+        {
+          phase: "repechage",
+          roundName: "Semifinal",
+          matchKey: "repechage_sf_1",
+          source1: null,
+          source2: repechageFirstRound[0].matchKey,
+          ids1: [repechageIds[0]],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 1,
+        },
+        {
+          phase: "repechage",
+          roundName: "Semifinal",
+          matchKey: "repechage_sf_2",
+          source1: repechageFirstRound[1].matchKey,
+          source2: repechageFirstRound[2].matchKey,
+          ids1: [],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 2,
+        },
+      ];
+      const final = buildNextRound(semifinals, "repechage", "Final", "final");
+
+      repechageRounds.push({ title: "Semifinal", bracketTitle: repechageName, games: semifinals });
+      repechageRounds.push({ title: "Final", bracketTitle: repechageName, games: final });
     } else if (repechageIds.length === 8) {
       const semifinals = buildNextRound(repechageFirstRound, "repechage", "Semifinal", "sf");
       const final = buildNextRound(semifinals, "repechage", "Final", "final");
@@ -1988,6 +2090,7 @@ function Login() {
                 "Simples 8",
                 "Copa - 12 ou 24 duplas",
                 "Copa - 18 duplas",
+                "Copa - 21 duplas",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
