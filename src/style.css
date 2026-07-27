@@ -7285,3 +7285,16 @@ body {
     display: none !important;
   }
 }
+
+/* Preview da foto em canvas: a prévia agora é exatamente o arquivo salvo */
+.photoEditorPreview canvas {
+  width: 100% !important;
+  height: 100% !important;
+  display: block !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.photoEditorPreview img {
+  display: none !important;
+}
