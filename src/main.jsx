@@ -2403,12 +2403,7 @@ const [newLocation, setNewLocation] = useState("");
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-    await supabase
-      .from("tournaments")
-      .delete()
-      .eq("user_id", user.id)
-      .eq("status", "trash")
-      .lt("updated_at", thirtyDaysAgo.toISOString());
+    const deleteLimit = thirtyDaysAgo.toISOString();
 
     const { data, error } = await supabase
       .from("tournaments")
@@ -2423,8 +2418,19 @@ const [newLocation, setNewLocation] = useState("");
     }
 
     const allTournaments = data || [];
-    setTournaments(allTournaments.filter((item) => item.status !== "trash"));
-    setTrashTournaments(allTournaments.filter((item) => item.status === "trash"));
+    const expiredTrash = allTournaments.filter((item) => item.data?.deletedAt && item.data.deletedAt < deleteLimit);
+
+    if (expiredTrash.length) {
+      await supabase
+        .from("tournaments")
+        .delete()
+        .eq("user_id", user.id)
+        .in("id", expiredTrash.map((item) => item.id));
+    }
+
+    const validTournaments = allTournaments.filter((item) => !item.data?.deletedAt || item.data.deletedAt >= deleteLimit);
+    setTournaments(validTournaments.filter((item) => !item.data?.deletedAt));
+    setTrashTournaments(validTournaments.filter((item) => item.data?.deletedAt));
   }
 
   useEffect(() => {
@@ -2495,7 +2501,10 @@ setNewLocation("");
     const { error } = await supabase
       .from("tournaments")
       .update({
-        status: "trash",
+        data: {
+          ...(deleteTarget.data || {}),
+          deletedAt: new Date().toISOString(),
+        },
         updated_at: new Date().toISOString(),
       })
       .eq("id", deleteTarget.id)
@@ -2513,10 +2522,13 @@ setNewLocation("");
   }
 
   async function restoreTournament(tournament) {
+    const restoredData = { ...(tournament.data || {}) };
+    delete restoredData.deletedAt;
+
     const { error } = await supabase
       .from("tournaments")
       .update({
-        status: "active",
+        data: restoredData,
         updated_at: new Date().toISOString(),
       })
       .eq("id", tournament.id)
@@ -2533,7 +2545,7 @@ setNewLocation("");
   }
 
   function getTrashDaysLeft(tournament) {
-    const baseDate = tournament.updated_at || tournament.created_at;
+    const baseDate = tournament.data?.deletedAt || tournament.updated_at || tournament.created_at;
     if (!baseDate) return 30;
     const deletedAt = new Date(baseDate).getTime();
     const expiresAt = deletedAt + 30 * 24 * 60 * 60 * 1000;
