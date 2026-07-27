@@ -6911,3 +6911,79 @@ body {
 .secondaryBtn { background: #eef2f7; color: #334155; box-shadow: none; }
 .secondaryBtn:hover { background: #e2e8f0; }
 @media (max-width: 520px) { .photoEditorModal { padding: 20px; } .photoEditorPreview { width: 200px; height: 200px; } .photoEditorActions { grid-template-columns: 1fr; } }
+
+
+/* Ajuste compacto do editor de foto */
+.photoEditorOverlay {
+  padding: 10px !important;
+  align-items: center !important;
+}
+
+.photoEditorModal {
+  width: min(430px, 94vw) !important;
+  max-height: 92vh !important;
+  overflow-y: auto !important;
+  padding: 16px 18px !important;
+  border-radius: 18px !important;
+}
+
+.photoEditorModal h2 {
+  font-size: 1.25rem !important;
+  margin-bottom: 3px !important;
+}
+
+.photoEditorModal p {
+  font-size: 0.82rem !important;
+  margin-bottom: 10px !important;
+}
+
+.photoEditorPreview {
+  width: 150px !important;
+  height: 150px !important;
+  margin-bottom: 12px !important;
+  border-width: 2px !important;
+}
+
+.photoEditorControls {
+  gap: 8px !important;
+}
+
+.photoEditorControls label {
+  gap: 3px !important;
+  font-size: 0.78rem !important;
+}
+
+.photoEditorControls input[type="range"] {
+  height: 22px !important;
+}
+
+.photoEditorActions {
+  gap: 10px !important;
+  margin-top: 12px !important;
+}
+
+.photoEditorActions button {
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  font-size: 0.82rem !important;
+}
+
+@media (max-height: 700px) {
+  .photoEditorModal {
+    padding: 12px 14px !important;
+  }
+
+  .photoEditorPreview {
+    width: 120px !important;
+    height: 120px !important;
+    margin-bottom: 8px !important;
+  }
+
+  .photoEditorControls {
+    gap: 5px !important;
+  }
+
+  .photoEditorActions {
+    margin-top: 8px !important;
+  }
+}
