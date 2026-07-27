@@ -6896,348 +6896,135 @@ body {
 .removePhotoBtn:hover { background: #e2e8f0; }
 
 
-/* Editor de foto de perfil */
-.photoEditorOverlay { position: fixed; inset: 0; z-index: 80; display: grid; place-items: center; padding: 18px; background: rgba(15, 23, 42, 0.48); backdrop-filter: blur(8px); }
-.photoEditorModal { width: min(520px, 100%); border-radius: 24px; background: #ffffff; padding: 24px; box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28); text-align: center; }
-.photoEditorModal h2 { margin: 0 0 6px; }
-.photoEditorModal p { margin: 0 0 18px; color: #64748b; font-size: 0.92rem; }
-.photoEditorPreview { width: 230px; height: 230px; margin: 0 auto 20px; border-radius: 999px; overflow: hidden; border: 3px solid #dbeafe; background: #f8fafc; display: grid; place-items: center; box-shadow: 0 14px 32px rgba(37, 99, 235, 0.12); }
-.photoEditorPreview img { width: 100%; height: 100%; object-fit: cover; transform-origin: center; }
-.photoEditorControls { display: grid; gap: 12px; text-align: left; }
-.photoEditorControls label { display: grid; gap: 6px; font-weight: 800; color: #0f172a; font-size: 0.88rem; }
-.photoEditorControls input[type="range"] { width: 100%; accent-color: #2554d8; }
-.photoEditorActions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
-.photoEditorActions button { min-height: 42px; }
-.secondaryBtn { background: #eef2f7; color: #334155; box-shadow: none; }
-.secondaryBtn:hover { background: #e2e8f0; }
-@media (max-width: 520px) { .photoEditorModal { padding: 20px; } .photoEditorPreview { width: 200px; height: 200px; } .photoEditorActions { grid-template-columns: 1fr; } }
 
 
-/* Ajuste compacto do editor de foto */
+/* =========================
+   EDITOR DE FOTO DE PERFIL
+   ========================= */
 .photoEditorOverlay {
-  padding: 10px !important;
-  align-items: center !important;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 92px 16px 28px;
+  overflow-y: auto;
+  box-sizing: border-box;
+  background: rgba(15, 23, 42, 0.48);
+  backdrop-filter: blur(8px);
 }
 
 .photoEditorModal {
-  width: min(430px, 94vw) !important;
-  max-height: 92vh !important;
-  overflow-y: auto !important;
-  padding: 16px 18px !important;
-  border-radius: 18px !important;
+  width: min(460px, 92vw);
+  max-height: calc(100vh - 120px);
+  overflow-y: auto;
+  margin: auto;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(15, 23, 42, 0.28);
+  text-align: center;
 }
 
 .photoEditorModal h2 {
-  font-size: 1.25rem !important;
-  margin-bottom: 3px !important;
+  margin: 0 0 4px;
+  font-size: 1.25rem;
 }
 
 .photoEditorModal p {
-  font-size: 0.82rem !important;
-  margin-bottom: 10px !important;
+  margin: 0 0 10px;
+  color: #64748b;
+  font-size: 0.82rem;
 }
 
 .photoEditorPreview {
-  width: 150px !important;
-  height: 150px !important;
-  margin-bottom: 12px !important;
-  border-width: 2px !important;
+  width: 190px;
+  height: 190px;
+  margin: 0 auto 12px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 3px solid #dbeafe;
+  background: #f8fafc;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 32px rgba(37, 99, 235, 0.12);
+}
+
+.photoEditorPreview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform-origin: center;
 }
 
 .photoEditorControls {
-  gap: 8px !important;
+  display: grid;
+  gap: 7px;
+  text-align: left;
 }
 
 .photoEditorControls label {
-  gap: 3px !important;
-  font-size: 0.78rem !important;
+  display: grid;
+  gap: 2px;
+  font-weight: 800;
+  color: #0f172a;
+  font-size: 0.76rem;
 }
 
 .photoEditorControls input[type="range"] {
-  height: 22px !important;
+  width: 100%;
+  height: 18px;
+  accent-color: #2554d8;
 }
 
 .photoEditorActions {
-  gap: 10px !important;
-  margin-top: 12px !important;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 10px;
 }
 
 .photoEditorActions button {
-  min-height: 36px !important;
-  padding: 8px 12px !important;
-  font-size: 0.82rem !important;
-}
-
-@media (max-height: 700px) {
-  .photoEditorModal {
-    padding: 12px 14px !important;
-  }
-
-  .photoEditorPreview {
-    width: 120px !important;
-    height: 120px !important;
-    margin-bottom: 8px !important;
-  }
-
-  .photoEditorControls {
-    gap: 5px !important;
-  }
-
-  .photoEditorActions {
-    margin-top: 8px !important;
-  }
-}
-
-/* Editor de foto ultra compacto - mantém botões sempre visíveis */
-.photoEditorOverlay {
-  padding: 6px !important;
-  align-items: flex-start !important;
-  overflow-y: auto !important;
-}
-
-.photoEditorModal {
-  width: min(360px, 92vw) !important;
-  max-height: none !important;
-  margin: 8px auto !important;
-  padding: 10px 12px !important;
-  border-radius: 14px !important;
-  overflow: visible !important;
-}
-
-.photoEditorModal h2 {
-  font-size: 1rem !important;
-  line-height: 1.15 !important;
-  margin: 0 0 2px !important;
-}
-
-.photoEditorModal p {
-  font-size: 0.72rem !important;
-  line-height: 1.2 !important;
-  margin: 0 0 6px !important;
-}
-
-.photoEditorPreview {
-  width: 92px !important;
-  height: 92px !important;
-  margin: 0 auto 7px !important;
-  border-width: 2px !important;
-  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.10) !important;
-}
-
-.photoEditorControls {
-  gap: 4px !important;
-}
-
-.photoEditorControls label {
-  gap: 0 !important;
-  font-size: 0.68rem !important;
-  line-height: 1.05 !important;
-}
-
-.photoEditorControls input[type="range"] {
-  height: 14px !important;
-  margin: 0 !important;
-}
-
-.photoEditorActions {
-  gap: 8px !important;
-  margin-top: 7px !important;
-}
-
-.photoEditorActions button {
-  min-height: 30px !important;
-  padding: 6px 10px !important;
-  border-radius: 9px !important;
-  font-size: 0.72rem !important;
-}
-
-@media (max-height: 620px) {
-  .photoEditorModal {
-    width: min(330px, 92vw) !important;
-    padding: 8px 10px !important;
-    margin: 4px auto !important;
-  }
-
-  .photoEditorPreview {
-    width: 72px !important;
-    height: 72px !important;
-    margin-bottom: 4px !important;
-  }
-
-  .photoEditorModal p {
-    display: none !important;
-  }
-
-  .photoEditorControls {
-    gap: 2px !important;
-  }
-
-  .photoEditorActions {
-    margin-top: 5px !important;
-  }
-}
-
-/* Editor de foto - centralizado com prévia maior */
-.photoEditorOverlay {
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  padding: 12px !important;
-  overflow-y: auto !important;
-}
-
-.photoEditorModal {
-  width: min(380px, 92vw) !important;
-  margin: auto !important;
-  padding: 12px 14px !important;
-  border-radius: 16px !important;
-  max-height: calc(100vh - 24px) !important;
-  overflow-y: auto !important;
-}
-
-.photoEditorPreview {
-  width: 135px !important;
-  height: 135px !important;
-  margin: 0 auto 9px !important;
-}
-
-.photoEditorControls {
-  gap: 5px !important;
-}
-
-.photoEditorControls label {
-  font-size: 0.7rem !important;
-  gap: 1px !important;
-}
-
-.photoEditorControls input[type="range"] {
-  height: 16px !important;
-}
-
-.photoEditorActions {
-  margin-top: 8px !important;
-}
-
-.photoEditorActions button {
-  min-height: 32px !important;
-}
-
-@media (max-height: 620px) {
-  .photoEditorOverlay {
-    align-items: center !important;
-  }
-
-  .photoEditorModal {
-    max-height: calc(100vh - 12px) !important;
-    padding: 8px 10px !important;
-  }
-
-  .photoEditorPreview {
-    width: 105px !important;
-    height: 105px !important;
-  }
-}
-
-/* Correção final: editor realmente afastado do topo e prévia maior */
-.photoEditorOverlay {
-  position: fixed !important;
-  top: 0 !important;
-  right: 0 !important;
-  bottom: 0 !important;
-  left: 0 !important;
-  width: 100vw !important;
-  height: 100vh !important;
-  min-height: 100vh !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  box-sizing: border-box !important;
-  padding: 96px 16px 28px !important;
-  overflow-y: auto !important;
-}
-
-.photoEditorModal {
-  width: min(460px, 92vw) !important;
-  max-height: calc(100vh - 124px) !important;
-  margin: auto !important;
-  padding: 16px 18px !important;
-  border-radius: 18px !important;
-  overflow-y: auto !important;
-}
-
-.photoEditorModal h2 {
-  font-size: 1.25rem !important;
-  margin: 0 0 4px !important;
-}
-
-.photoEditorModal p {
-  display: block !important;
-  font-size: 0.82rem !important;
-  margin: 0 0 10px !important;
-}
-
-.photoEditorPreview {
-  width: 190px !important;
-  height: 190px !important;
-  margin: 0 auto 12px !important;
-}
-
-.photoEditorControls {
-  gap: 7px !important;
-}
-
-.photoEditorControls label {
-  font-size: 0.76rem !important;
-  gap: 2px !important;
-}
-
-.photoEditorControls input[type="range"] {
-  height: 18px !important;
-}
-
-.photoEditorActions {
-  margin-top: 10px !important;
-  gap: 10px !important;
-}
-
-.photoEditorActions button {
-  min-height: 36px !important;
-  font-size: 0.8rem !important;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
 }
 
 @media (max-height: 760px) {
   .photoEditorOverlay {
-    align-items: flex-start !important;
-    padding-top: 82px !important;
-    padding-bottom: 18px !important;
+    align-items: flex-start;
+    padding-top: 82px;
+    padding-bottom: 18px;
   }
 
   .photoEditorModal {
-    max-height: calc(100vh - 100px) !important;
+    max-height: calc(100vh - 100px);
   }
 
   .photoEditorPreview {
-    width: 155px !important;
-    height: 155px !important;
+    width: 155px;
+    height: 155px;
   }
 }
 
 @media (max-height: 620px) {
   .photoEditorOverlay {
-    padding-top: 70px !important;
+    padding-top: 70px;
   }
 
   .photoEditorPreview {
-    width: 125px !important;
-    height: 125px !important;
+    width: 125px;
+    height: 125px;
   }
 
   .photoEditorModal p {
-    display: none !important;
+    display: none;
   }
 }
-
-
 /* Lixeira de torneios */
 .trashCard { display: flex; flex-direction: column; gap: 16px; }
 .trashHeader { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
