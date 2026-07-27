@@ -2292,6 +2292,9 @@ const [newLocation, setNewLocation] = useState("");
   const [notice, setNotice] = useState(null);
   const [activePanel, setActivePanel] = useState("inicio");
   const [photoEditor, setPhotoEditor] = useState(null);
+  const photoPointersRef = useRef(new Map());
+  const lastPhotoDragRef = useRef(null);
+  const lastPhotoPinchRef = useRef(null);
   const [organizerProfile, setOrganizerProfile] = useState(() => {
     const saved = localStorage.getItem(`organizerProfile:${user.id}`);
     if (saved) {
@@ -2352,8 +2355,86 @@ const [newLocation, setNewLocation] = useState("");
     reader.readAsDataURL(file);
   }
 
-  function updatePhotoEditor(field, value) {
-    setPhotoEditor((prev) => (prev ? { ...prev, [field]: value } : prev));
+  function clampPhotoZoom(value) {
+    return Math.min(4, Math.max(1, Number(value) || 1));
+  }
+
+  function clampPhotoOffset(value) {
+    return Math.min(160, Math.max(-160, Number(value) || 0));
+  }
+
+  function handlePhotoPointerDown(e) {
+    e.preventDefault();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    photoPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (photoPointersRef.current.size === 1) {
+      lastPhotoDragRef.current = { x: e.clientX, y: e.clientY };
+      lastPhotoPinchRef.current = null;
+    }
+
+    if (photoPointersRef.current.size === 2) {
+      const points = Array.from(photoPointersRef.current.values());
+      lastPhotoPinchRef.current = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+      lastPhotoDragRef.current = null;
+    }
+  }
+
+  function handlePhotoPointerMove(e) {
+    if (!photoPointersRef.current.has(e.pointerId)) return;
+    e.preventDefault();
+    photoPointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (photoPointersRef.current.size === 1 && lastPhotoDragRef.current) {
+      const dx = e.clientX - lastPhotoDragRef.current.x;
+      const dy = e.clientY - lastPhotoDragRef.current.y;
+      lastPhotoDragRef.current = { x: e.clientX, y: e.clientY };
+
+      setPhotoEditor((prev) => prev ? {
+        ...prev,
+        x: clampPhotoOffset((prev.x || 0) + dx),
+        y: clampPhotoOffset((prev.y || 0) + dy),
+      } : prev);
+    }
+
+    if (photoPointersRef.current.size === 2 && lastPhotoPinchRef.current) {
+      const points = Array.from(photoPointersRef.current.values());
+      const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+      const ratio = distance / lastPhotoPinchRef.current;
+      lastPhotoPinchRef.current = distance;
+
+      setPhotoEditor((prev) => prev ? {
+        ...prev,
+        zoom: clampPhotoZoom((prev.zoom || 1) * ratio),
+      } : prev);
+    }
+  }
+
+  function handlePhotoPointerEnd(e) {
+    photoPointersRef.current.delete(e.pointerId);
+    lastPhotoDragRef.current = null;
+    lastPhotoPinchRef.current = null;
+
+    if (photoPointersRef.current.size === 1) {
+      const point = Array.from(photoPointersRef.current.values())[0];
+      lastPhotoDragRef.current = { x: point.x, y: point.y };
+    }
+  }
+
+  function handlePhotoWheel(e) {
+    e.preventDefault();
+    const direction = e.deltaY > 0 ? -0.08 : 0.08;
+    setPhotoEditor((prev) => prev ? {
+      ...prev,
+      zoom: clampPhotoZoom((prev.zoom || 1) + direction),
+    } : prev);
+  }
+
+  function nudgePhotoZoom(amount) {
+    setPhotoEditor((prev) => prev ? {
+      ...prev,
+      zoom: clampPhotoZoom((prev.zoom || 1) + amount),
+    } : prev);
   }
 
   function applyEditedOrganizerPhoto() {
@@ -2375,8 +2456,10 @@ const [newLocation, setNewLocation] = useState("");
       const scale = baseScale * Number(photoEditor.zoom || 1);
       const drawWidth = image.width * scale;
       const drawHeight = image.height * scale;
-      const offsetX = Number(photoEditor.x || 0) * 1.25;
-      const offsetY = Number(photoEditor.y || 0) * 1.25;
+      const previewSize = 190;
+      const offsetScale = size / previewSize;
+      const offsetX = Number(photoEditor.x || 0) * offsetScale;
+      const offsetY = Number(photoEditor.y || 0) * offsetScale;
       ctx.drawImage(image, (size - drawWidth) / 2 + offsetX, (size - drawHeight) / 2 + offsetY, drawWidth, drawHeight);
       ctx.restore();
       const photoUrl = canvas.toDataURL("image/png", 0.92);
@@ -2633,14 +2716,27 @@ setNewLocation("");
         <div className="photoEditorOverlay" role="dialog" aria-modal="true">
           <div className="photoEditorModal">
             <h2>Ajustar foto de perfil</h2>
-            <p>Use o zoom e mova a imagem para alinhar dentro do círculo.</p>
-            <div className="photoEditorPreview">
-              <img src={photoEditor.imageUrl} alt="Prévia da foto" style={{ transform: `translate(${photoEditor.x}px, ${photoEditor.y}px) scale(${photoEditor.zoom})` }} />
+            <p>Arraste a imagem para alinhar. Use o movimento de pinça no celular ou a roda do mouse para aproximar.</p>
+            <div
+              className="photoEditorPreview"
+              onPointerDown={handlePhotoPointerDown}
+              onPointerMove={handlePhotoPointerMove}
+              onPointerUp={handlePhotoPointerEnd}
+              onPointerCancel={handlePhotoPointerEnd}
+              onWheel={handlePhotoWheel}
+            >
+              <img
+                src={photoEditor.imageUrl}
+                alt="Prévia da foto"
+                draggable="false"
+                style={{ transform: `translate(${photoEditor.x}px, ${photoEditor.y}px) scale(${photoEditor.zoom})` }}
+              />
             </div>
-            <div className="photoEditorControls">
-              <label>Zoom<input type="range" min="1" max="3" step="0.01" value={photoEditor.zoom} onChange={(e) => updatePhotoEditor("zoom", Number(e.target.value))} /></label>
-              <label>Mover horizontal<input type="range" min="-120" max="120" step="1" value={photoEditor.x} onChange={(e) => updatePhotoEditor("x", Number(e.target.value))} /></label>
-              <label>Mover vertical<input type="range" min="-120" max="120" step="1" value={photoEditor.y} onChange={(e) => updatePhotoEditor("y", Number(e.target.value))} /></label>
+            <div className="photoEditorHint">Toque e arraste para mover • Pinça ou roda do mouse para zoom</div>
+            <div className="photoZoomButtons" aria-label="Controles de zoom">
+              <button type="button" className="secondaryBtn" onClick={() => nudgePhotoZoom(-0.12)}>−</button>
+              <span>{Math.round((photoEditor.zoom || 1) * 100)}%</span>
+              <button type="button" className="secondaryBtn" onClick={() => nudgePhotoZoom(0.12)}>+</button>
             </div>
             <div className="photoEditorActions">
               <button type="button" className="secondaryBtn" onClick={() => setPhotoEditor(null)}>Cancelar</button>
