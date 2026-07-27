@@ -7247,3 +7247,57 @@ body {
 .trashTournamentItem { border-color: #e2e8f0; background: #fbfdff; }
 .trashTournamentItem .tournamentActions button { background: linear-gradient(135deg, #16a34a, #22c55e); }
 @media (max-width: 720px) { .trashHeader { flex-direction: column; } }
+
+/* Mobile: mostrar todas as abas, incluindo Lixeira */
+@media (max-width: 900px) {
+  .playSidebar {
+    height: 84px !important;
+    min-height: 84px !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(54px, 1fr)) !important;
+    align-items: center !important;
+    justify-content: stretch !important;
+    gap: 4px !important;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom)) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .playSidebar .playSideLogo {
+    display: none !important;
+  }
+
+  .playNavItem {
+    width: 100% !important;
+    min-width: 54px !important;
+    height: 64px !important;
+    min-height: 64px !important;
+    margin: 0 !important;
+    padding: 6px 4px !important;
+    border-radius: 14px !important;
+  }
+
+  .playNavItem span:not(.navIcon) {
+    font-size: 19px !important;
+    line-height: 1 !important;
+  }
+
+  .playNavItem small {
+    display: block !important;
+    font-size: 9px !important;
+    line-height: 1.1 !important;
+    white-space: nowrap !important;
+  }
+
+  .playMain {
+    padding-bottom: 96px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .playSidebar {
+    grid-template-columns: repeat(5, 58px) !important;
+    justify-content: flex-start !important;
+  }
+}
