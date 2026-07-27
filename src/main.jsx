@@ -2290,6 +2290,7 @@ const [newLocation, setNewLocation] = useState("");
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
   const [activePanel, setActivePanel] = useState("inicio");
+  const [photoEditor, setPhotoEditor] = useState(null);
   const [organizerProfile, setOrganizerProfile] = useState(() => {
     const saved = localStorage.getItem(`organizerProfile:${user.id}`);
     if (saved) {
@@ -2328,6 +2329,72 @@ const [newLocation, setNewLocation] = useState("");
   function saveOrganizerProfile() {
     localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(organizerProfile));
     showNotice("success", "Perfil salvo", "Os dados do organizador foram salvos neste dispositivo.");
+  }
+
+
+  function handleOrganizerPhotoFile(file) {
+    if (!file) return;
+    if (!file.type?.startsWith("image/")) {
+      showNotice("warning", "Arquivo inválido", "Escolha uma imagem para usar como foto de perfil.");
+      return;
+    }
+    const maxSize = 3 * 1024 * 1024;
+    if (file.size > maxSize) {
+      showNotice("warning", "Imagem muito grande", "Escolha uma imagem com até 3 MB.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setPhotoEditor({ imageUrl: String(reader.result || ""), zoom: 1, x: 0, y: 0 });
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function updatePhotoEditor(field, value) {
+    setPhotoEditor((prev) => (prev ? { ...prev, [field]: value } : prev));
+  }
+
+  function applyEditedOrganizerPhoto() {
+    if (!photoEditor?.imageUrl) return;
+    const image = new Image();
+    image.onload = () => {
+      const size = 360;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.clearRect(0, 0, size, size);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      ctx.clip();
+      const baseScale = Math.max(size / image.width, size / image.height);
+      const scale = baseScale * Number(photoEditor.zoom || 1);
+      const drawWidth = image.width * scale;
+      const drawHeight = image.height * scale;
+      const offsetX = Number(photoEditor.x || 0) * 1.25;
+      const offsetY = Number(photoEditor.y || 0) * 1.25;
+      ctx.drawImage(image, (size - drawWidth) / 2 + offsetX, (size - drawHeight) / 2 + offsetY, drawWidth, drawHeight);
+      ctx.restore();
+      const photoUrl = canvas.toDataURL("image/png", 0.92);
+      setOrganizerProfile((prev) => {
+        const next = { ...prev, photoUrl };
+        localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(next));
+        return next;
+      });
+      setPhotoEditor(null);
+      showNotice("success", "Foto atualizada", "A foto de perfil foi ajustada e salva.");
+    };
+    image.src = photoEditor.imageUrl;
+  }
+
+  function removeOrganizerPhoto() {
+    setOrganizerProfile((prev) => {
+      const next = { ...prev, photoUrl: "" };
+      localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(next));
+      return next;
+    });
   }
 
   async function loadTournaments() {
@@ -2504,6 +2571,27 @@ setNewLocation("");
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDeleteTournament}
       />
+
+      {photoEditor ? (
+        <div className="photoEditorOverlay" role="dialog" aria-modal="true">
+          <div className="photoEditorModal">
+            <h2>Ajustar foto de perfil</h2>
+            <p>Use o zoom e mova a imagem para alinhar dentro do círculo.</p>
+            <div className="photoEditorPreview">
+              <img src={photoEditor.imageUrl} alt="Prévia da foto" style={{ transform: `translate(${photoEditor.x}px, ${photoEditor.y}px) scale(${photoEditor.zoom})` }} />
+            </div>
+            <div className="photoEditorControls">
+              <label>Zoom<input type="range" min="1" max="3" step="0.01" value={photoEditor.zoom} onChange={(e) => updatePhotoEditor("zoom", Number(e.target.value))} /></label>
+              <label>Mover horizontal<input type="range" min="-120" max="120" step="1" value={photoEditor.x} onChange={(e) => updatePhotoEditor("x", Number(e.target.value))} /></label>
+              <label>Mover vertical<input type="range" min="-120" max="120" step="1" value={photoEditor.y} onChange={(e) => updatePhotoEditor("y", Number(e.target.value))} /></label>
+            </div>
+            <div className="photoEditorActions">
+              <button type="button" className="secondaryBtn" onClick={() => setPhotoEditor(null)}>Cancelar</button>
+              <button type="button" onClick={applyEditedOrganizerPhoto}>Aplicar foto</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <aside className="playSidebar">
         <div className="playSideLogo"><BeachLogo /><strong>Torneio<br/>Fácil BT</strong></div>
@@ -2792,14 +2880,19 @@ setNewLocation("");
     <p className="profileSectionHint">Essas informações podem ser usadas como dados públicos da arena e do organizador.</p>
 
     <div className="organizerPhotoArea">
-      <div className="organizerPhotoPreview">
-        {organizerProfile.photoUrl ? (
-          <img src={organizerProfile.photoUrl} alt="Foto de perfil" />
-        ) : (
-          <span>📷</span>
-        )}
-      </div>
-      <strong>Foto de perfil</strong>
+      <label className="organizerPhotoDropzone" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); handleOrganizerPhotoFile(e.dataTransfer.files?.[0]); }}>
+        <input type="file" accept="image/*" onChange={(e) => handleOrganizerPhotoFile(e.target.files?.[0])} />
+        <div className="organizerPhotoPreview">
+          {organizerProfile.photoUrl ? (
+            <img src={organizerProfile.photoUrl} alt="Foto de perfil" />
+          ) : (
+            <span>📷</span>
+          )}
+        </div>
+        <strong>Foto de perfil</strong>
+        <small>Clique ou arraste uma imagem aqui</small>
+      </label>
+      {organizerProfile.photoUrl ? <button className="removePhotoBtn" type="button" onClick={removeOrganizerPhoto}>Remover foto</button> : null}
     </div>
 
     <div className="organizerProfileGrid">
@@ -4059,9 +4152,6 @@ function ScheduleView({
                   {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
                   Quadra {game.court}
                 </strong>
-                <span className={`gameStatusPill ${isFinished ? "finished" : "waiting"}`}>
-                  {isFinished ? "Concluída" : "Aguardando"}
-                </span>
               </div>
 
               <div className="gameTeams">
@@ -4399,9 +4489,6 @@ function BracketColumn({
               <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
                 <div className="gameTopLine">
                   <strong>Quadra {game.court}</strong>
-                  <span className={`gameStatusPill ${isFinished ? "finished" : "waiting"}`}>
-                    {isFinished ? "Concluída" : "Aguardando"}
-                  </span>
                 </div>
 
                 <div className="gameTeams">
