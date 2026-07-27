@@ -2308,6 +2308,7 @@ const [newLocation, setNewLocation] = useState("");
       email: user.email || "",
       whatsapp: profile.phone || "",
       address: profile.address || "",
+      mapsLink: profile.maps_link || "",
       city: profile.city || "",
       state: profile.state || "",
       instagramHandle: profile.instagram_handle || "",
@@ -2936,6 +2937,11 @@ setNewLocation("");
         <input value={organizerProfile.address} onChange={(e) => updateOrganizerProfile("address", e.target.value)} placeholder="Rua, número, bairro" />
       </div>
 
+      <div className="formField fullField">
+        <label>Link do endereço da arena</label>
+        <input value={organizerProfile.mapsLink || ""} onChange={(e) => updateOrganizerProfile("mapsLink", e.target.value)} placeholder="Link do Google Maps" />
+      </div>
+
       <div className="formField">
         <label>Cidade</label>
         <input value={organizerProfile.city} onChange={(e) => updateOrganizerProfile("city", e.target.value)} placeholder="Fortaleza" />
@@ -2946,10 +2952,6 @@ setNewLocation("");
         <input value={organizerProfile.state} onChange={(e) => updateOrganizerProfile("state", e.target.value)} placeholder="CE" />
       </div>
 
-      <div className="formField fullField">
-        <label>URL da foto de perfil</label>
-        <input value={organizerProfile.photoUrl} onChange={(e) => updateOrganizerProfile("photoUrl", e.target.value)} placeholder="https://..." />
-      </div>
     </div>
 
     <button className="saveProfileBtn" type="button" onClick={saveOrganizerProfile}>Salvar alterações</button>
