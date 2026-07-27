@@ -1263,19 +1263,23 @@ function syncCupBracketScores(currentData) {
 }
 
 function calculateParallelRanking(data, rankingCriteriaValue = defaultRankingCriteria) {
-  const games = (data.brackets || []).filter(
-    (game) => game.phase === "repechage" && game.roundName === "Disputa Paralela"
+  const allRepechageGames = (data.brackets || []).filter((game) => game.phase === "repechage");
+  const games = allRepechageGames.map((game) =>
+    resolveBracketGame(game, data.brackets || [], data)
   );
 
   const winningScore = getWinningScore(data);
-  
+
+  const qualified = getCupQualified(data);
+  const baseIds = (qualified.repechage || []).map((item) => item.id);
   const ids = Array.from(
-    new Set(
-      games.flatMap((game) => [
+    new Set([
+      ...baseIds,
+      ...games.flatMap((game) => [
         ...(game.ids1 || []),
         ...(game.ids2 || []),
-      ])
-    )
+      ]),
+    ])
   );
 
   const rows = ids.map((id) => ({
@@ -1303,11 +1307,14 @@ function calculateParallelRanking(data, rankingCriteriaValue = defaultRankingCri
 
     if (id1 === undefined || id2 === undefined) return;
 
-    const winnerSide = getScoreWinnerSide(game, winningScore);
-if (!winnerSide) return;
+    if (!tableById[id1]) return;
+    if (!tableById[id2]) return;
 
-const win1 = winnerSide === "team1";
-const win2 = winnerSide === "team2";
+    const winnerSide = getScoreWinnerSide(game, winningScore);
+    if (!winnerSide) return;
+
+    const win1 = winnerSide === "team1";
+    const win2 = winnerSide === "team2";
 
     tableById[id1].pts += s1;
     tableById[id1].bal += s1 - s2;
@@ -1320,9 +1327,20 @@ const win2 = winnerSide === "team2";
     if (win2) tableById[id2].w += 1;
   });
 
+  const finalGame = games.find((game) => game.roundName === "Final");
+  const finalWinnerId = finalGame ? getGameWinnerId(finalGame, data) : null;
+  const finalLoserId = finalGame ? getGameLoserId(finalGame, data) : null;
+
+  if (finalWinnerId !== null && tableById[finalWinnerId]) tableById[finalWinnerId].parallelPosition = 1;
+  if (finalLoserId !== null && tableById[finalLoserId]) tableById[finalLoserId].parallelPosition = 2;
+
   const criteria = getRankingCriteria(rankingCriteriaValue);
 
   return rows.sort((a, b) => {
+    if (a.parallelPosition && b.parallelPosition) return a.parallelPosition - b.parallelPosition;
+    if (a.parallelPosition) return -1;
+    if (b.parallelPosition) return 1;
+
     for (const key of criteria.order) {
       const diff = b[key] - a[key];
       if (diff !== 0) return diff;
