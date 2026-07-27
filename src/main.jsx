@@ -2278,6 +2278,7 @@ function Blocked({ profile }) {
 
 function Dashboard({ profile, user }) {
   const [tournaments, setTournaments] = useState([]);
+  const [trashTournaments, setTrashTournaments] = useState([]);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("");
@@ -2399,6 +2400,16 @@ const [newLocation, setNewLocation] = useState("");
   }
 
   async function loadTournaments() {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    await supabase
+      .from("tournaments")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("status", "trash")
+      .lt("updated_at", thirtyDaysAgo.toISOString());
+
     const { data, error } = await supabase
       .from("tournaments")
       .select("*")
@@ -2411,7 +2422,9 @@ const [newLocation, setNewLocation] = useState("");
       return;
     }
 
-    setTournaments(data || []);
+    const allTournaments = data || [];
+    setTournaments(allTournaments.filter((item) => item.status !== "trash"));
+    setTrashTournaments(allTournaments.filter((item) => item.status === "trash"));
   }
 
   useEffect(() => {
@@ -2481,19 +2494,50 @@ setNewLocation("");
 
     const { error } = await supabase
       .from("tournaments")
-      .delete()
+      .update({
+        status: "trash",
+        updated_at: new Date().toISOString(),
+      })
       .eq("id", deleteTarget.id)
       .eq("user_id", user.id);
 
     if (error) {
-      showNotice("error", "Erro ao excluir", "Não foi possível excluir este torneio.");
+      showNotice("error", "Erro ao mover", "Não foi possível mover este torneio para a lixeira.");
       console.error(error);
       return;
     }
 
     setDeleteTarget(null);
     await loadTournaments();
-    showNotice("success", "Torneio excluído", "O torneio foi removido.");
+    showNotice("success", "Torneio movido para a lixeira", "Você pode recuperar este torneio em até 30 dias.");
+  }
+
+  async function restoreTournament(tournament) {
+    const { error } = await supabase
+      .from("tournaments")
+      .update({
+        status: "active",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", tournament.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      showNotice("error", "Erro ao recuperar", "Não foi possível recuperar este torneio.");
+      console.error(error);
+      return;
+    }
+
+    await loadTournaments();
+    showNotice("success", "Torneio recuperado", "O torneio voltou para o histórico.");
+  }
+
+  function getTrashDaysLeft(tournament) {
+    const baseDate = tournament.updated_at || tournament.created_at;
+    if (!baseDate) return 30;
+    const deletedAt = new Date(baseDate).getTime();
+    const expiresAt = deletedAt + 30 * 24 * 60 * 60 * 1000;
+    return Math.max(0, Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
   }
 
   async function openTournament(tournament) {
@@ -2600,6 +2644,7 @@ setNewLocation("");
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
         <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
         <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>👤</span><small>Perfil</small></button>
+        <button className={`playNavItem ${activePanel === "lixeira" ? "active" : ""}`} type="button" onClick={() => setActivePanel("lixeira")}><span>🗑️</span><small>Lixeira</small></button>
       </aside>
 
       <div className="playMain">
@@ -2617,8 +2662,8 @@ setNewLocation("");
         <main className="playContent">
           <section className="playTitleBlock">
             <div>
-              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Perfil"}</h1>
-              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Gerencie os dados públicos do organizador e da arena."}</p>
+              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : activePanel === "lixeira" ? "Lixeira" : "Perfil"}</h1>
+              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : activePanel === "lixeira" ? "Recupere torneios apagados nos últimos 30 dias." : "Gerencie os dados públicos do organizador e da arena."}</p>
             </div>
             <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
           </section>
@@ -2871,6 +2916,51 @@ setNewLocation("");
       />
     )}
   </div>
+</section>
+)}
+
+{activePanel === "lixeira" && (
+<section className="card trashCard">
+  <div className="trashHeader">
+    <div>
+      <h2>Lixeira</h2>
+      <p>Torneios apagados ficam aqui por 30 dias antes da exclusão definitiva.</p>
+    </div>
+    <span>{trashTournaments.length} item(ns)</span>
+  </div>
+
+  {trashTournaments.length === 0 ? (
+    <p>Nenhum torneio na lixeira.</p>
+  ) : (
+    <div className="tournamentList trashList">
+      {trashTournaments.map((t) => {
+        const details = t.data || {};
+        const daysLeft = getTrashDaysLeft(t);
+
+        return (
+          <div className="tournamentItem trashTournamentItem" key={t.id}>
+            <div className="tournamentInfo">
+              <div className="tournamentTitleRow">
+                <strong>{t.name}</strong>
+                <span className="tournamentTypeBadge">{t.type}</span>
+              </div>
+
+              <div className="tournamentMeta">
+                {details.gender ? <span>👥 {details.gender}</span> : null}
+                {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
+                {details.location ? <span>📍 {details.location}</span> : null}
+                <span>🗑️ Exclui definitivamente em {daysLeft} dia(s)</span>
+              </div>
+            </div>
+
+            <div className="tournamentActions">
+              <button type="button" onClick={() => restoreTournament(t)}>Recuperar</button>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  )}
 </section>
 )}
 
