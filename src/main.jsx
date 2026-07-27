@@ -3688,7 +3688,6 @@ function PlayerInputs({ type, data, updatePlayer }) {
           />
         </div>
       ))}
-      </div>
     </div>
   );
 }
@@ -4194,9 +4193,8 @@ function BracketColumn({
     <div className="bracketColumn">
       <h3>{title}</h3>
 
-      <div className="bracketPathScroll">
       {rounds.map((round, roundIndex) => (
-        <div className="roundCard bracketPathRound" key={roundIndex}>
+        <div className="roundCard" key={roundIndex}>
           <div className="roundHeader">
             <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
 
