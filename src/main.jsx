@@ -2294,6 +2294,7 @@ const [newLocation, setNewLocation] = useState("");
   const [photoEditor, setPhotoEditor] = useState(null);
   const photoPointersRef = useRef(new Map());
   const photoPreviewRef = useRef(null);
+  const photoCanvasRef = useRef(null);
   const lastPhotoDragRef = useRef(null);
   const lastPhotoPinchRef = useRef(null);
   const [organizerProfile, setOrganizerProfile] = useState(() => {
@@ -2438,33 +2439,58 @@ const [newLocation, setNewLocation] = useState("");
     } : prev);
   }
 
-  function applyEditedOrganizerPhoto() {
-    if (!photoEditor?.imageUrl) return;
+  function drawPhotoEditorCanvas(canvas, outputSize, onDone) {
+    if (!canvas || !photoEditor?.imageUrl) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
     const image = new Image();
     image.onload = () => {
-      const size = 360;
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      ctx.clearRect(0, 0, size, size);
+      canvas.width = outputSize;
+      canvas.height = outputSize;
+
+      ctx.clearRect(0, 0, outputSize, outputSize);
       ctx.save();
       ctx.beginPath();
-      ctx.arc(size / 2, size / 2, size / 2, 0, Math.PI * 2);
+      ctx.arc(outputSize / 2, outputSize / 2, outputSize / 2, 0, Math.PI * 2);
       ctx.clip();
-      const baseScale = Math.max(size / image.width, size / image.height);
+
+      const baseScale = Math.max(outputSize / image.width, outputSize / image.height);
       const scale = baseScale * Number(photoEditor.zoom || 1);
       const drawWidth = image.width * scale;
       const drawHeight = image.height * scale;
-      const previewRect = photoPreviewRef.current?.getBoundingClientRect();
-      const previewSize = previewRect?.width || 220;
-      const offsetScale = size / previewSize;
+      const previewSize = photoPreviewRef.current?.getBoundingClientRect()?.width || outputSize;
+      const offsetScale = outputSize / previewSize;
       const offsetX = Number(photoEditor.x || 0) * offsetScale;
       const offsetY = Number(photoEditor.y || 0) * offsetScale;
-      ctx.drawImage(image, (size - drawWidth) / 2 + offsetX, (size - drawHeight) / 2 + offsetY, drawWidth, drawHeight);
+
+      ctx.drawImage(
+        image,
+        (outputSize - drawWidth) / 2 + offsetX,
+        (outputSize - drawHeight) / 2 + offsetY,
+        drawWidth,
+        drawHeight
+      );
       ctx.restore();
-      const photoUrl = canvas.toDataURL("image/png", 0.92);
+
+      onDone?.(canvas);
+    };
+    image.src = photoEditor.imageUrl;
+  }
+
+  useEffect(() => {
+    if (!photoEditor?.imageUrl || !photoCanvasRef.current || !photoPreviewRef.current) return;
+    const previewSize = Math.round(photoPreviewRef.current.getBoundingClientRect().width || 220);
+    drawPhotoEditorCanvas(photoCanvasRef.current, previewSize);
+  }, [photoEditor]);
+
+  function applyEditedOrganizerPhoto() {
+    if (!photoEditor?.imageUrl) return;
+
+    const canvas = document.createElement("canvas");
+    drawPhotoEditorCanvas(canvas, 360, (finalCanvas) => {
+      const photoUrl = finalCanvas.toDataURL("image/png", 0.92);
       setOrganizerProfile((prev) => {
         const next = { ...prev, photoUrl };
         localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(next));
@@ -2472,8 +2498,7 @@ const [newLocation, setNewLocation] = useState("");
       });
       setPhotoEditor(null);
       showNotice("success", "Foto atualizada", "A foto de perfil foi ajustada e salva.");
-    };
-    image.src = photoEditor.imageUrl;
+    });
   }
 
   function removeOrganizerPhoto() {
@@ -2728,12 +2753,7 @@ setNewLocation("");
               onPointerCancel={handlePhotoPointerEnd}
               onWheel={handlePhotoWheel}
             >
-              <img
-                src={photoEditor.imageUrl}
-                alt="Prévia da foto"
-                draggable="false"
-                style={{ transform: `translate(${photoEditor.x}px, ${photoEditor.y}px) scale(${photoEditor.zoom})` }}
-              />
+              <canvas ref={photoCanvasRef} aria-label="Prévia da foto ajustada" />
             </div>
             <div className="photoEditorHint">Toque e arraste para mover • Pinça ou roda do mouse para zoom</div>
             <div className="photoZoomButtons" aria-label="Controles de zoom">
