@@ -4210,7 +4210,7 @@ function BracketColumn({
   winningScore = 4,
 }) {
   return (
-    <div className="bracketColumn">
+    <div className={`bracketColumn ${rounds?.[0]?.games?.[0]?.phase === "repechage" ? "repechageBracket" : "mainBracket"}`}>
       <h3>{title}</h3>
 
       {rounds.map((round, roundIndex) => (
