@@ -192,6 +192,7 @@ const allowedByPlan = {
     "Simples 8",
     "Copa - 12 ou 24 duplas",
     "Copa - 18 duplas",
+    "Copa - 21 duplas",
   ],
 };
 
@@ -264,6 +265,17 @@ const modalityConfig = {
     defaultRepechageName: "Disputa Paralela",
     courts: 6,
   },
+
+  "Copa - 21 duplas": {
+    type: "cup21",
+    cupMode: "cup21",
+    allowedTeamCounts: [21],
+    defaultTeams: 21,
+    groupSize: 3,
+    defaultMainBracketName: "Principal",
+    defaultRepechageName: "Disputa Paralela",
+    courts: 7,
+  },
 };
 
 function getWinningScore(data) {
@@ -298,7 +310,7 @@ function isGameFinished(game, winningScore = 4) {
 }
 
 function isCupType(config) {
-  return config?.type === "cup" || config?.type === "cup18";
+  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21";
 }
 
 const super8Template = [
@@ -702,6 +714,27 @@ function seedBracket(teamIds, bracketType) {
     }));
   }
 
+  if (teamIds.length === 7) {
+    return [
+      [teamIds[1], teamIds[6]],
+      [teamIds[2], teamIds[5]],
+      [teamIds[3], teamIds[4]],
+    ].map((pair, index) => ({
+      phase: bracketType,
+      roundName: "Preliminar",
+      matchKey: `${bracketType}_pre_${index + 1}`,
+      source1: null,
+      source2: null,
+      ids1: [pair[0]],
+      ids2: [pair[1]],
+      team1: null,
+      team2: null,
+      s1: "",
+      s2: "",
+      court: index + 1,
+    }));
+  }
+
   if (teamIds.length === 8) {
     return [
       [teamIds[0], teamIds[7]],
@@ -920,7 +953,7 @@ function generateCupBrackets(data) {
   const mainRounds = [];
   const repechageRounds = [];
 
-  if (teamCount === 18 && mainIds.length === 14) {
+  if ((teamCount === 18 || teamCount === 21) && mainIds.length === 14) {
     const preliminary = seedBracket(mainIds, "main");
 
     const quarterfinals = [
@@ -1107,6 +1140,41 @@ function generateCupBrackets(data) {
 
     if (repechageIds.length === 4) {
       // Disputa Paralela: todos contra todos. Não gera final.
+    } else if (repechageIds.length === 7) {
+      const semifinals = [
+        {
+          phase: "repechage",
+          roundName: "Semifinal",
+          matchKey: "repechage_sf_1",
+          source1: null,
+          source2: repechageFirstRound[2].matchKey,
+          ids1: [repechageIds[0]],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 1,
+        },
+        {
+          phase: "repechage",
+          roundName: "Semifinal",
+          matchKey: "repechage_sf_2",
+          source1: repechageFirstRound[0].matchKey,
+          source2: repechageFirstRound[1].matchKey,
+          ids1: [],
+          ids2: [],
+          team1: null,
+          team2: null,
+          s1: "",
+          s2: "",
+          court: 2,
+        },
+      ];
+      const final = buildNextRound(semifinals, "repechage", "Final", "final");
+
+      repechageRounds.push({ title: "Semifinal", bracketTitle: repechageName, games: semifinals });
+      repechageRounds.push({ title: "Final", bracketTitle: repechageName, games: final });
     } else if (repechageIds.length === 8) {
       const semifinals = buildNextRound(repechageFirstRound, "repechage", "Semifinal", "sf");
       const final = buildNextRound(semifinals, "repechage", "Final", "final");
@@ -3478,6 +3546,7 @@ return (
 function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   const cupConfig = data.cupConfig || {};
   const isCup18 = config.type === "cup18";
+  const isCup21 = config.type === "cup21";
 
   return (
     <div className="cupConfigBox">
@@ -3487,7 +3556,7 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
           <select
             value={cupConfig.teamCount || config.defaultTeams}
             onChange={(e) => updateCupConfig("teamCount", Number(e.target.value))}
-            disabled={isCup18}
+            disabled={isCup18 || isCup21}
           >
             {config.allowedTeamCounts.map((count) => (
               <option key={count} value={count}>{count} duplas</option>
@@ -3524,6 +3593,14 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
             <p><strong>Chave principal:</strong> 14 duplas, com os 2 melhores gerais entrando direto nas quartas.</p>
             <p><strong>Disputa paralela:</strong> os 4 terceiros restantes jogam todos contra todos.</p>
           </>
+        ) : isCup21 ? (
+          <>
+            <p><strong>Formato:</strong> 21 duplas divididas em 7 grupos de 3.</p>
+            <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
+            <p><strong>Classificação:</strong> 1º e 2º de cada grupo avançam para a chave principal.</p>
+            <p><strong>Chave principal:</strong> 14 duplas, com os 2 melhores gerais em BYE direto para as quartas.</p>
+            <p><strong>Disputa paralela:</strong> os 7 terceiros colocados disputam a paralela; o melhor terceiro recebe BYE direto para a semifinal.</p>
+          </>
         ) : (
           <>
             <p><strong>Formato:</strong> grupos de 3 duplas.</p>
@@ -3554,7 +3631,8 @@ function PlayerInputs({ type, data, updatePlayer }) {
                 onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)}
               />
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div>
@@ -3610,6 +3688,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
           />
         </div>
       ))}
+      </div>
     </div>
   );
 }
@@ -3754,6 +3833,21 @@ function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
   );
 }
 
+
+function getGameResultClasses(game, winningScore = 4) {
+  const winnerSide = getScoreWinnerSide(game, winningScore);
+  return {
+    team1: winnerSide === "team1" ? "gameTeamWinner" : winnerSide === "team2" ? "gameTeamLoser" : "",
+    team2: winnerSide === "team2" ? "gameTeamWinner" : winnerSide === "team1" ? "gameTeamLoser" : "",
+  };
+}
+
+function isByeSide(game, side) {
+  const ids = side === "team1" ? game.ids1 : game.ids2;
+  const team = side === "team1" ? game.team1 : game.team2;
+  return ids?.length && (!team?.length || team[0] === "Aguardando") ? false : false;
+}
+
 function ScheduleView({
   schedule,
   updateScore,
@@ -3798,7 +3892,10 @@ function ScheduleView({
             </div>
           </div>
 
-          {round.map((game, gameIndex) => (
+          {round.map((game, gameIndex) => {
+            const resultClasses = getGameResultClasses(game, winningScore);
+
+            return (
             <div className="gameCard" key={gameIndex}>
               <strong>
                 {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
@@ -3806,9 +3903,9 @@ function ScheduleView({
               </strong>
 
               <div className="gameTeams">
-                <div>{game.team1.join(" + ")}</div>
+                <div className={resultClasses.team1}>{game.team1.join(" + ")}</div>
                 <span>x</span>
-                <div>{game.team2.join(" + ")}</div>
+                <div className={resultClasses.team2}>{game.team2.join(" + ")}</div>
               </div>
 
               <div className="scoreRow">
@@ -4097,8 +4194,9 @@ function BracketColumn({
     <div className="bracketColumn">
       <h3>{title}</h3>
 
+      <div className="bracketPathScroll">
       {rounds.map((round, roundIndex) => (
-        <div className="roundCard" key={roundIndex}>
+        <div className="roundCard bracketPathRound" key={roundIndex}>
           <div className="roundHeader">
             <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
 
@@ -4127,15 +4225,24 @@ function BracketColumn({
               !game.ids2?.length ||
               game.team1?.[0] === "Aguardando" ||
               game.team2?.[0] === "Aguardando";
+            const resultClasses = getGameResultClasses(game, winningScore);
+            const team1Bye = blocked && game.ids1?.length && (!game.ids2?.length || game.team2?.[0] === "Aguardando");
+            const team2Bye = blocked && game.ids2?.length && (!game.ids1?.length || game.team1?.[0] === "Aguardando");
 
             return (
               <div className="gameCard" key={game.matchKey}>
                 <strong>Quadra {game.court}</strong>
 
                 <div className="gameTeams">
-                  <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                  <div className={`${resultClasses.team1} ${team1Bye ? "gameTeamBye" : ""}`}>
+                    {team1Bye && <em>BYE</em>}
+                    {game.team1?.join(" + ") || "Aguardando"}
+                  </div>
                   <span>x</span>
-                  <div>{game.team2?.join(" + ") || "Aguardando"}</div>
+                  <div className={`${resultClasses.team2} ${team2Bye ? "gameTeamBye" : ""}`}>
+                    {team2Bye && <em>BYE</em>}
+                    {game.team2?.join(" + ") || "Aguardando"}
+                  </div>
                 </div>
 
                 <div className="scoreRow">
