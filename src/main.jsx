@@ -2290,11 +2290,44 @@ const [newLocation, setNewLocation] = useState("");
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
   const [activePanel, setActivePanel] = useState("inicio");
+  const [organizerProfile, setOrganizerProfile] = useState(() => {
+    const saved = localStorage.getItem(`organizerProfile:${user.id}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        localStorage.removeItem(`organizerProfile:${user.id}`);
+      }
+    }
+
+    return {
+      photoUrl: profile.photo_url || "",
+      arenaName: profile.arena_name || "",
+      organizerName: profile.name || "",
+      email: user.email || "",
+      whatsapp: profile.phone || "",
+      address: profile.address || "",
+      city: profile.city || "",
+      state: profile.state || "",
+      instagramHandle: profile.instagram_handle || "",
+      instagramLink: profile.instagram_link || "",
+      whatsappGroupLink: profile.whatsapp_group_link || "",
+    };
+  });
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
+  }
+
+  function updateOrganizerProfile(field, value) {
+    setOrganizerProfile((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function saveOrganizerProfile() {
+    localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(organizerProfile));
+    showNotice("success", "Perfil salvo", "Os dados do organizador foram salvos neste dispositivo.");
   }
 
   async function loadTournaments() {
@@ -2477,7 +2510,7 @@ setNewLocation("");
         <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => setActivePanel("inicio")}><span>🏠</span><small>Início</small></button>
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
         <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
-        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>⚙️</span><small>Ajustes</small></button>
+        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>👤</span><small>Perfil</small></button>
       </aside>
 
       <div className="playMain">
@@ -2495,8 +2528,8 @@ setNewLocation("");
         <main className="playContent">
           <section className="playTitleBlock">
             <div>
-              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Assinatura"}</h1>
-              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Consulte plano, status e dados da sua conta."}</p>
+              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : "Perfil"}</h1>
+              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : "Gerencie os dados públicos do organizador e da arena."}</p>
             </div>
             <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
           </section>
@@ -2524,7 +2557,7 @@ setNewLocation("");
 {activePanel === "inicio" && (
 <section className="card">
   <h2>Resumo da plataforma</h2>
-  <p>Use o menu lateral para criar torneios, consultar modalidades liberadas e acompanhar sua assinatura.</p>
+  <p>Use o menu lateral para criar torneios, consultar modalidades liberadas e atualizar o perfil do organizador.</p>
 </section>
 )}
 
@@ -2753,13 +2786,92 @@ setNewLocation("");
 )}
 
 {activePanel === "ajustes" && (
-<section className="card">
-  <h2>Assinatura e conta</h2>
-  <p><strong>Plano:</strong> {profile.plan}</p>
-  <p><strong>Status:</strong> {formatStatusBR(profile.status)}</p>
-  <p><strong>Vencimento:</strong> {profile.expires_at ? formatDateBR(profile.expires_at) : "não definido"}</p>
-  <p><strong>E-mail:</strong> {user.email}</p>
-</section>
+<>
+  <section className="card organizerProfileCard">
+    <h2>Dados do organizador</h2>
+    <p className="profileSectionHint">Essas informações podem ser usadas como dados públicos da arena e do organizador.</p>
+
+    <div className="organizerPhotoArea">
+      <div className="organizerPhotoPreview">
+        {organizerProfile.photoUrl ? (
+          <img src={organizerProfile.photoUrl} alt="Foto de perfil" />
+        ) : (
+          <span>📷</span>
+        )}
+      </div>
+      <strong>Foto de perfil</strong>
+    </div>
+
+    <div className="organizerProfileGrid">
+      <div className="formField">
+        <label>Nome da arena</label>
+        <input value={organizerProfile.arenaName} onChange={(e) => updateOrganizerProfile("arenaName", e.target.value)} placeholder="Ex: Arena Beach Sports" />
+      </div>
+
+      <div className="formField">
+        <label>Nome do organizador</label>
+        <input value={organizerProfile.organizerName} onChange={(e) => updateOrganizerProfile("organizerName", e.target.value)} placeholder="Ex: Cristiano Sampaio" />
+      </div>
+
+      <div className="formField">
+        <label>E-mail</label>
+        <input type="email" value={organizerProfile.email} onChange={(e) => updateOrganizerProfile("email", e.target.value)} placeholder="contato@arena.com" />
+      </div>
+
+      <div className="formField">
+        <label>WhatsApp</label>
+        <input value={organizerProfile.whatsapp} onChange={(e) => updateOrganizerProfile("whatsapp", e.target.value)} placeholder="(85) 99999-9999" />
+      </div>
+
+      <div className="formField">
+        <label>@ do Instagram</label>
+        <input value={organizerProfile.instagramHandle} onChange={(e) => updateOrganizerProfile("instagramHandle", e.target.value)} placeholder="@suaarena" />
+      </div>
+
+      <div className="formField">
+        <label>Link do Instagram</label>
+        <input value={organizerProfile.instagramLink} onChange={(e) => updateOrganizerProfile("instagramLink", e.target.value)} placeholder="https://instagram.com/suaarena" />
+      </div>
+
+      <div className="formField fullField">
+        <label>Link do grupo de WhatsApp</label>
+        <input value={organizerProfile.whatsappGroupLink} onChange={(e) => updateOrganizerProfile("whatsappGroupLink", e.target.value)} placeholder="https://chat.whatsapp.com/..." />
+      </div>
+
+      <div className="formField fullField">
+        <label>Endereço da arena</label>
+        <input value={organizerProfile.address} onChange={(e) => updateOrganizerProfile("address", e.target.value)} placeholder="Rua, número, bairro" />
+      </div>
+
+      <div className="formField">
+        <label>Cidade</label>
+        <input value={organizerProfile.city} onChange={(e) => updateOrganizerProfile("city", e.target.value)} placeholder="Fortaleza" />
+      </div>
+
+      <div className="formField">
+        <label>Estado</label>
+        <input value={organizerProfile.state} onChange={(e) => updateOrganizerProfile("state", e.target.value)} placeholder="CE" />
+      </div>
+
+      <div className="formField fullField">
+        <label>URL da foto de perfil</label>
+        <input value={organizerProfile.photoUrl} onChange={(e) => updateOrganizerProfile("photoUrl", e.target.value)} placeholder="https://..." />
+      </div>
+    </div>
+
+    <button className="saveProfileBtn" type="button" onClick={saveOrganizerProfile}>Salvar alterações</button>
+  </section>
+
+  <section className="card subscriptionSummaryCard">
+    <h2>Assinatura</h2>
+    <div className="subscriptionSummaryGrid">
+      <p><strong>Plano:</strong> {profile.plan}</p>
+      <p><strong>Status:</strong> {formatStatusBR(profile.status)}</p>
+      <p><strong>Vencimento:</strong> {profile.expires_at ? formatDateBR(profile.expires_at) : "não definido"}</p>
+      <p><strong>E-mail da conta:</strong> {user.email}</p>
+    </div>
+  </section>
+</>
 )}
 
         </main>
