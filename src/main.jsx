@@ -3505,7 +3505,7 @@ return (
               ) : (
             <>
   <CupBracketView
-    groupedBrackets={currentBrackets}
+    groupedBrackets={{ main: currentBrackets.main, repechage: [] }}
     data={data}
     updateBracketScore={updateBracketScore}
     voiceRepeat={voiceRepeat}
@@ -4178,21 +4178,25 @@ function CupBracketView({
       />
 
       <div className="cupBrackets">
-        <BracketColumn
-  title={data.cupConfig?.mainBracketName || "Principal"}
-  rounds={groupedBrackets.main}
-  updateBracketScore={updateBracketScore}
-  voiceRepeat={voiceRepeat}
-  winningScore={winningScore}
-/>
+        {groupedBrackets.main?.length > 0 && (
+          <BracketColumn
+            title={data.cupConfig?.mainBracketName || "Principal"}
+            rounds={groupedBrackets.main}
+            updateBracketScore={updateBracketScore}
+            voiceRepeat={voiceRepeat}
+            winningScore={winningScore}
+          />
+        )}
 
-        <BracketColumn
-  title={data.cupConfig?.repechageName || "Repescagem"}
-  rounds={groupedBrackets.repechage}
-  updateBracketScore={updateBracketScore}
-  voiceRepeat={voiceRepeat}
-  winningScore={winningScore}
-/>
+        {groupedBrackets.repechage?.length > 0 && (
+          <BracketColumn
+            title={data.cupConfig?.repechageName || "Repescagem"}
+            rounds={groupedBrackets.repechage}
+            updateBracketScore={updateBracketScore}
+            voiceRepeat={voiceRepeat}
+            winningScore={winningScore}
+          />
+        )}
       </div>
     </div>
   );
