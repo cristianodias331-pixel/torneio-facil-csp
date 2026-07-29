@@ -2307,6 +2307,10 @@ function Dashboard({ profile, user }) {
   const [newType, setNewType] = useState("");
 const [newGender, setNewGender] = useState("");
 const [newDate, setNewDate] = useState("");
+const [newEndDate, setNewEndDate] = useState("");
+const [newRegistrationDeadline, setNewRegistrationDeadline] = useState("");
+const [newEventStartTime, setNewEventStartTime] = useState("");
+const [newDailyStartTimes, setNewDailyStartTimes] = useState({});
 const [newDay, setNewDay] = useState("");
 const [newLocation, setNewLocation] = useState("");
 const [newWinningScore, setNewWinningScore] = useState(4);
@@ -2593,6 +2597,16 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
       return;
     }
 
+    if (newDate && newEndDate && newEndDate < newDate) {
+      showNotice("warning", "Período inválido", "A data final do torneio não pode ser anterior à data inicial.");
+      return;
+    }
+
+    if (newRegistrationDeadline && newDate && newRegistrationDeadline > newDate) {
+      showNotice("warning", "Inscrições após o início", "A data de encerramento das inscrições não pode ser depois do início do torneio.");
+      return;
+    }
+
     setSaving(true);
 
     const config = modalityConfig[newType];
@@ -2601,7 +2615,13 @@ const initialData = {
   ...createInitialData(newType, config),
   gender: newGender,
   eventDate: newDate,
-  eventDay: getWeekdayBR(newDate),
+  eventStartDate: newDate,
+  eventEndDate: newEndDate || newDate,
+  eventPeriodLabel: newEndDate && newEndDate !== newDate ? `${formatDateBR(newDate)} até ${formatDateBR(newEndDate)}` : formatDateBR(newDate),
+  eventDay: newEndDate && newEndDate !== newDate ? `${getWeekdayBR(newDate)} até ${getWeekdayBR(newEndDate)}` : getWeekdayBR(newDate),
+  registrationDeadline: newRegistrationDeadline,
+  eventStartTime: newEventStartTime,
+  dailyStartTimes: newDailyStartTimes,
   location: newLocation.trim(),
   winningScore: Number(newWinningScore) || 4,
   rankingCriteria: newRankingCriteria || defaultRankingCriteria,
@@ -2626,6 +2646,10 @@ const initialData = {
     setNewType("");
 setNewGender("");
 setNewDate("");
+setNewEndDate("");
+setNewRegistrationDeadline("");
+setNewEventStartTime("");
+setNewDailyStartTimes({});
 setNewDay("");
 setNewLocation("");
 setNewWinningScore(4);
@@ -2728,6 +2752,31 @@ setNewRankingCriteria(defaultRankingCriteria);
     setSelected(updated);
     setTournaments((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     return true;
+  }
+
+  function getEventDateRange() {
+    if (!newDate) return [];
+
+    const endDate = newEndDate || newDate;
+    if (endDate < newDate) return [];
+
+    const dates = [];
+    const current = new Date(`${newDate}T00:00:00`);
+    const end = new Date(`${endDate}T00:00:00`);
+
+    while (current <= end) {
+      dates.push(current.toISOString().slice(0, 10));
+      current.setDate(current.getDate() + 1);
+    }
+
+    return dates;
+  }
+
+  const eventDateRange = getEventDateRange();
+  const isMultiDayEvent = eventDateRange.length > 1;
+
+  function updateDailyStartTime(date, time) {
+    setNewDailyStartTimes((prev) => ({ ...prev, [date]: time }));
   }
 
   function moveTournamentByDrag(fromId, toId) {
@@ -2880,24 +2929,76 @@ setNewRankingCriteria(defaultRankingCriteria);
     </select>
   </div>
 
-  <div className="formField">
-    <label>Data</label>
-    <div
-      className="dateInputClickArea"
-      onClick={() => {
-        const input = document.getElementById("newTournamentDate");
-        if (input?.showPicker) input.showPicker();
-        else input?.click();
-      }}
-    >
-      <input
-        id="newTournamentDate"
-        className="dateInputLeft"
-        type="date"
-        value={newDate}
-        onChange={(e) => setNewDate(e.target.value)}
-      />
+  <div className="formField fullField eventScheduleBox">
+    <div className="eventScheduleHeader">
+      <strong>📅 Datas e horários do evento</strong>
+      <span>Organize o período do torneio, inscrições e início dos jogos.</span>
     </div>
+
+    <div className="eventScheduleGrid">
+      <div className="formField compactField">
+        <label>Início do torneio</label>
+        <input
+          type="date"
+          value={newDate}
+          onChange={(e) => {
+            setNewDate(e.target.value);
+            if (newEndDate && e.target.value && newEndDate < e.target.value) setNewEndDate(e.target.value);
+          }}
+        />
+      </div>
+
+      <div className="formField compactField">
+        <label>Fim do torneio</label>
+        <input
+          type="date"
+          value={newEndDate}
+          min={newDate || undefined}
+          onChange={(e) => setNewEndDate(e.target.value)}
+        />
+      </div>
+
+      <div className="formField compactField">
+        <label>Encerramento das inscrições</label>
+        <input
+          type="date"
+          value={newRegistrationDeadline}
+          max={newDate || undefined}
+          onChange={(e) => setNewRegistrationDeadline(e.target.value)}
+        />
+      </div>
+
+      <div className="formField compactField">
+        <label>{isMultiDayEvent ? "Horário padrão de início" : "Horário de início"}</label>
+        <input
+          type="time"
+          value={newEventStartTime}
+          onChange={(e) => setNewEventStartTime(e.target.value)}
+        />
+      </div>
+    </div>
+
+    {isMultiDayEvent && (
+      <div className="dailyTimesBox">
+        <div className="dailyTimesIntro">
+          <strong>Horário por dia</strong>
+          <span>Use quando cada dia do torneio começar em um horário diferente.</span>
+        </div>
+
+        <div className="dailyTimesGrid">
+          {eventDateRange.map((date) => (
+            <div className="dailyTimeItem" key={date}>
+              <label>{formatDateBR(date)} · {getWeekdayBR(date)}</label>
+              <input
+                type="time"
+                value={newDailyStartTimes[date] || newEventStartTime}
+                onChange={(e) => updateDailyStartTime(date, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
   </div>
 
   <div className="formField">
