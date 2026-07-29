@@ -5410,46 +5410,51 @@ function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
 
 function ScheduleView({
   schedule,
-  updateScore,
+  updateScore = () => {},
   showGroupName = false,
   voiceRepeat = 1,
-  setVoiceRepeat,
+  setVoiceRepeat = () => {},
   winningScore = 4,
+  readOnly = false,
 }) {
   return (
     <div className="schedule">
-      <VoiceRepeatSelector
-        voiceRepeat={voiceRepeat}
-        setVoiceRepeat={setVoiceRepeat}
-      />
+      {!readOnly ? (
+        <VoiceRepeatSelector
+          voiceRepeat={voiceRepeat}
+          setVoiceRepeat={setVoiceRepeat}
+        />
+      ) : null}
 
       {schedule.map((round, roundIndex) => (
         <div className="roundCard" key={roundIndex}>
           <div className="roundHeader">
             <h3>Rodada {roundIndex + 1}</h3>
 
-            <div className="voiceActions">
-              <button
-                type="button"
-                className="voiceBtn"
-                onClick={() =>
-                  speakRound(round, roundIndex, {
-                    includeGroup: showGroupName,
-                    repeat: voiceRepeat,
-                  })
-                }
-              >
-                     Chamar rodada
-              </button>
+            {!readOnly ? (
+              <div className="voiceActions">
+                <button
+                  type="button"
+                  className="voiceBtn"
+                  onClick={() =>
+                    speakRound(round, roundIndex, {
+                      includeGroup: showGroupName,
+                      repeat: voiceRepeat,
+                    })
+                  }
+                >
+                  Chamar rodada
+                </button>
 
-              <button
-                type="button"
-                className="secondaryBtn"
-                onClick={stopSpeech}
-              >
-                ⏹️ Parar
-              </button>
-            </div>
+                <button
+                  type="button"
+                  className="secondaryBtn"
+                  onClick={stopSpeech}
+                >
+                  ⏹️ Parar
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {round.map((game, gameIndex) => {
@@ -5480,6 +5485,8 @@ function ScheduleView({
   pattern="[0-9]*"
   value={game.s1}
   onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
+  readOnly={readOnly}
+  disabled={readOnly}
 />
 
                 <span>—</span>
@@ -5492,24 +5499,28 @@ function ScheduleView({
   pattern="[0-9]*"
   value={game.s2}
   onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
+  readOnly={readOnly}
+  disabled={readOnly}
 />
               </div>
 
-              <div className="voiceActions gameVoiceActions">
-                <button
-                  type="button"
-                  className="voiceBtn"
-                  onClick={() =>
-                    speakGame(game, {
-                      roundLabel: `Rodada ${roundIndex + 1}`,
-                      includeGroup: showGroupName,
-                      repeat: voiceRepeat,
-                    })
-                  }
-                >
-                  🔊 Chamar jogo
-                </button>
-              </div>
+              {!readOnly ? (
+                <div className="voiceActions gameVoiceActions">
+                  <button
+                    type="button"
+                    className="voiceBtn"
+                    onClick={() =>
+                      speakGame(game, {
+                        roundLabel: `Rodada ${roundIndex + 1}`,
+                        includeGroup: showGroupName,
+                        repeat: voiceRepeat,
+                      })
+                    }
+                  >
+                    🔊 Chamar jogo
+                  </button>
+                </div>
+              ) : null}
             </div>
             );
           })}
@@ -5721,10 +5732,12 @@ function CupBracketView({
 }) {
   return (
     <div>
-      <VoiceRepeatSelector
-        voiceRepeat={voiceRepeat}
-        setVoiceRepeat={setVoiceRepeat}
-      />
+      {!readOnly ? (
+        <VoiceRepeatSelector
+          voiceRepeat={voiceRepeat}
+          setVoiceRepeat={setVoiceRepeat}
+        />
+      ) : null}
 
       <div className="cupBrackets">
         {groupedBrackets.main?.length > 0 && (
@@ -5754,9 +5767,10 @@ function CupBracketView({
 function BracketColumn({
   title,
   rounds,
-  updateBracketScore,
+  updateBracketScore = () => {},
   voiceRepeat = 1,
   winningScore = 4,
+  readOnly = false,
 }) {
   return (
     <div className={`bracketColumn ${rounds?.[0]?.games?.[0]?.phase === "repechage" ? "repechageBracket" : "mainBracket"}`}>
@@ -5767,23 +5781,25 @@ function BracketColumn({
           <div className="roundHeader">
             <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
 
-            <div className="voiceActions">
-              <button
-                type="button"
-                className="voiceBtn"
-                onClick={() => speakBracketRound(round, voiceRepeat)}
-              >
-                🔊 Chamar fase
-              </button>
+            {!readOnly ? (
+              <div className="voiceActions">
+                <button
+                  type="button"
+                  className="voiceBtn"
+                  onClick={() => speakBracketRound(round, voiceRepeat)}
+                >
+                  🔊 Chamar fase
+                </button>
 
-              <button
-                type="button"
-                className="secondaryBtn"
-                onClick={stopSpeech}
-              >
-                ⏹️ Parar
-              </button>
-            </div>
+                <button
+                  type="button"
+                  className="secondaryBtn"
+                  onClick={stopSpeech}
+                >
+                  ⏹️ Parar
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {round.games.map((game) => {
@@ -5817,7 +5833,8 @@ function BracketColumn({
   pattern="[0-9]*"
   value={game.s1}
   onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
-  disabled={blocked}
+  readOnly={readOnly}
+  disabled={readOnly || blocked}
 />
 
                   <span>—</span>
@@ -5830,26 +5847,29 @@ function BracketColumn({
   pattern="[0-9]*"
   value={game.s2}
   onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
-  disabled={blocked}
+  readOnly={readOnly}
+  disabled={readOnly || blocked}
 />
                 </div>
 
-                <div className="voiceActions gameVoiceActions">
-                  <button
-                    type="button"
-                    className="voiceBtn"
-                    onClick={() =>
-                      speakGame(game, {
-                        roundLabel: `${round.title} da chave ${title}`,
-                        includeGroup: false,
-                        repeat: voiceRepeat,
-                      })
-                    }
-                    disabled={blocked}
-                  >
-                    🔊 Chamar jogo
-                  </button>
-                </div>
+                {!readOnly ? (
+                  <div className="voiceActions gameVoiceActions">
+                    <button
+                      type="button"
+                      className="voiceBtn"
+                      onClick={() =>
+                        speakGame(game, {
+                          roundLabel: `${round.title} da chave ${title}`,
+                          includeGroup: false,
+                          repeat: voiceRepeat,
+                        })
+                      }
+                      disabled={blocked}
+                    >
+                      🔊 Chamar jogo
+                    </button>
+                  </div>
+                ) : null}
               </div>
             );
           })}
@@ -6120,7 +6140,7 @@ function PublicTournamentScreen({ tournament }) {
             {!data.schedule || data.schedule.length === 0 ? (
               <p>A tabela ainda não foi gerada pelo organizador.</p>
             ) : (
-              <PublicScheduleView schedule={data.schedule} showGroupName={isCup} />
+              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} readOnly />
             )}
           </div>
 
@@ -6239,44 +6259,12 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
 function PublicCupBracketView({ groupedBrackets }) {
   return (
     <div className="cupBrackets">
-      <PublicBracketColumn rounds={groupedBrackets.main} />
-      <PublicBracketColumn rounds={groupedBrackets.repechage} />
-    </div>
-  );
-}
-
-function PublicBracketColumn({ rounds }) {
-  return (
-    <div className="bracketColumn">
-      {rounds.map((round, roundIndex) => (
-        <div className="roundCard" key={roundIndex}>
-          <h3>
-            {round.title === "Disputa Paralela"
-              ? round.bracketTitle
-              : `${round.bracketTitle} · ${round.title}`}
-          </h3>
-
-          {round.games.map((game) => (
-            <div className="gameCard" key={game.matchKey}>
-              <strong>Quadra {game.court}</strong>
-
-              <div className="gameTeams">
-                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
-                <span>x</span>
-                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
-              </div>
-
-              <div className="publicScore">
-                {game.s1 === "" || game.s2 === "" ? (
-                  <span>Aguardando placar</span>
-                ) : (
-                  <strong>{game.s1} — {game.s2}</strong>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      ))}
+      {groupedBrackets.main?.length > 0 ? (
+        <BracketColumn title="Chave Principal" rounds={groupedBrackets.main} readOnly />
+      ) : null}
+      {groupedBrackets.repechage?.length > 0 ? (
+        <BracketColumn title="Disputa Paralela" rounds={groupedBrackets.repechage} readOnly />
+      ) : null}
     </div>
   );
 }
