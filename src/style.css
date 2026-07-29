@@ -10606,3 +10606,125 @@ button.profileVisibilitySwitch.private strong {
     height: 24px !important;
   }
 }
+
+
+/* CORREÇÃO FINAL DO ESPELHAMENTO: usar o mesmo grid interno do organizador */
+.publicPage .readOnlyRoundCard > .gameCard {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important;
+  grid-template-areas:
+    "team1 score team2"
+    "court court court" !important;
+  column-gap: 12px !important;
+  row-gap: 10px !important;
+  align-items: center !important;
+  padding: 14px 16px !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTopLine {
+  grid-area: court !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+  margin: 0 !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTopLine strong {
+  margin: 0 !important;
+  width: max-content !important;
+  max-width: 100% !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTeams {
+  display: contents !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTeams > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 56px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 11px 12px !important;
+  border-radius: 14px !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  overflow-wrap: anywhere !important;
+  position: static !important;
+  transform: none !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTeams > div:first-child {
+  grid-area: team1 !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTeams > div:last-child {
+  grid-area: team2 !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTeams > span {
+  display: none !important;
+}
+
+.publicPage .readOnlyRoundCard .scoreRow {
+  grid-area: score !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  margin: 0 !important;
+  min-width: 110px !important;
+  width: auto !important;
+  position: static !important;
+  transform: none !important;
+}
+
+.publicPage .readOnlyRoundCard .scoreRow input {
+  width: 42px !important;
+  height: 32px !important;
+  padding: 4px 6px !important;
+  border-radius: 7px !important;
+  font-size: 13px !important;
+  text-align: center !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.publicPage .readOnlyRoundCard .scoreRow span {
+  display: inline !important;
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+  font-size: 13px !important;
+  line-height: 1 !important;
+  position: static !important;
+  transform: none !important;
+}
+
+@media (max-width: 640px) {
+  .publicPage .readOnlyRoundCard > .gameCard {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "court"
+      "team1"
+      "score"
+      "team2" !important;
+  }
+
+  .publicPage .readOnlyRoundCard .scoreRow {
+    width: 100% !important;
+  }
+}
