@@ -1572,7 +1572,7 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
     <div className="confirmOverlay">
       <div className="confirmBox">
         <div className="confirmIcon">🧹</div>
-        <h2>Apagar somente os placares?</h2>
+        <h2>Apagar placares?</h2>
 
         <p>
           Todos os placares preenchidos deste campeonato serão apagados. A tabela
@@ -1582,29 +1582,6 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
         <div className="confirmActions">
           <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
-  if (!open) return null;
-
-  return (
-    <div className="confirmOverlay">
-      <div className="confirmBox">
-        <div className="confirmIcon">🗑️</div>
-        <h2>Apagar todos os jogos e placares?</h2>
-
-        <p>
-          Os participantes serão mantidos, mas todos os jogos, rodadas, placares
-          e chaves deste torneio serão removidos.
-        </p>
-
-        <div className="confirmActions">
-          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
-          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar tudo</button>
         </div>
       </div>
     </div>
@@ -3324,7 +3301,6 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
-  const [clearTableOpen, setClearTableOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -3497,6 +3473,39 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     });
   }
 
+  function refreshGameParticipantNames(nextData) {
+    function getTeamNames(ids = []) {
+      if (!ids.length) return ["Aguardando"];
+
+      if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+        const allPlayers = [...(nextData.players?.men || []), ...(nextData.players?.women || [])];
+        return ids.map((id) => allPlayers[id] || "");
+      }
+
+      if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+        return ids.map((id) => getTeamName(nextData.players?.teams?.[id]));
+      }
+
+      return ids.map((id) => nextData.players?.[id] || "");
+    }
+
+    function refreshGame(game) {
+      return {
+        ...game,
+        team1: game.ids1?.length ? getTeamNames(game.ids1) : game.team1,
+        team2: game.ids2?.length ? getTeamNames(game.ids2) : game.team2,
+      };
+    }
+
+    nextData.schedule = (nextData.schedule || []).map((round) =>
+      round.map((game) => refreshGame(game))
+    );
+
+    nextData.brackets = (nextData.brackets || []).map((game) => refreshGame(game));
+
+    return nextData;
+  }
+
   function updatePlayer(path, value) {
     const copy = structuredClone(data);
 
@@ -3505,12 +3514,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     if (path.kind === "women") copy.players.women[path.index] = value;
     if (path.kind === "team") copy.players.teams[path.index][path.field] = value;
 
-    if (isCupType(config)) {
-      copy.brackets = [];
-      copy.groupsShuffled = false;
-    }
-
-    setData(copy);
+    setData(refreshGameParticipantNames(copy));
   }
 
   function finishShuffle() {
@@ -3577,9 +3581,7 @@ function generate() {
       groupsShuffled: prev.groupsShuffled || false,
     }));
 
-    setActiveTournamentTab("partidas");
-    setActiveMatchesTab("grupos");
-    showNotice("success", "Rodadas e jogos criados", "A fase de grupos da Copa foi montada com sucesso.");
+    showNotice("success", "Tabela gerada", "A fase de grupos da Copa foi montada com sucesso.");
     return;
   }
 
@@ -3590,8 +3592,7 @@ function generate() {
     schedule,
   });
 
-  setActiveTournamentTab("partidas");
-  showNotice("success", "Rodadas e jogos criados", "As rodadas e os jogos foram criados com sucesso.");
+  showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
 }
 
 function generateBrackets() {
@@ -3700,6 +3701,9 @@ function clearScores() {
 }
 
 function clearTable() {
+  const ok = window.confirm("Deseja apagar a tabela gerada? Os participantes serão mantidos, mas rodadas, placares e chaves serão removidos.");
+  if (!ok) return;
+
   const copy = structuredClone(data);
   copy.schedule = [];
 
@@ -3708,8 +3712,7 @@ function clearTable() {
   }
 
   setData(copy);
-  setClearTableOpen(false);
-  showNotice("success", "Jogos e placares apagados", "Todos os jogos e placares foram removidos. Os participantes foram mantidos.");
+  showNotice("success", "Tabela apagada", "A tabela foi removida. Os participantes foram mantidos.");
 }
 
 const currentBrackets = isCupType(config) && data.brackets?.length
@@ -3733,12 +3736,6 @@ return (
       open={clearScoresOpen}
       onCancel={() => setClearScoresOpen(false)}
       onConfirm={clearScores}
-    />
-
-    <ConfirmClearTableModal
-      open={clearTableOpen}
-      onCancel={() => setClearTableOpen(false)}
-      onConfirm={clearTable}
     />
 
     {shuffleOverlay && (
@@ -3879,7 +3876,7 @@ return (
           {!isCupType(config) && (
             <div className="actions">
               <button type="button" onClick={shuffleNames}>Sortear nomes</button>
-              <button type="button" onClick={generate}>Criar rodadas e jogos</button>
+              <button type="button" onClick={generate}>Gerar tabela</button>
             </div>
           )}
         </section>
@@ -3913,7 +3910,7 @@ return (
           <div style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
 
           {!data.schedule || data.schedule.length === 0 ? (
-            <p>Clique em “Criar rodadas e jogos” para montar os jogos.</p>
+            <p>Clique em “Gerar tabela” para montar os jogos.</p>
           ) : (
             <>
              <ScheduleView
@@ -3931,15 +3928,15 @@ return (
                   className="deleteBtn"
                   onClick={() => setClearScoresOpen(true)}
                 >
-                  Apagar somente os placares
+                  Apagar placares
                 </button>
 
                 <button
                   type="button"
                   className="deleteBtn"
-                  onClick={() => setClearTableOpen(true)}
+                  onClick={clearTable}
                 >
-                  Apagar todos os jogos e placares
+                  Apagar tabela
                 </button>
               </div>
             </>
