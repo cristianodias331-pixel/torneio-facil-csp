@@ -6,6 +6,11 @@ import "./style.css";
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const ACTION_BUTTON_STYLES = {
+  edit: { background: "linear-gradient(135deg, #7c3aed, #ec4899)", backgroundColor: "#7c3aed", color: "#ffffff", boxShadow: "0 14px 28px rgba(124, 58, 237, 0.32)" },
+  danger: { background: "linear-gradient(135deg, #ef4444, #dc2626)", backgroundColor: "#dc2626", color: "#ffffff", boxShadow: "0 14px 28px rgba(220, 38, 38, 0.36)" },
+};
+
 
 async function logout() {
   try {
