@@ -6116,28 +6116,39 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
         <div className="roundCard" key={roundIndex}>
           <h3>Rodada {roundIndex + 1}</h3>
 
-          {round.map((game, gameIndex) => (
-            <div className="gameCard" key={gameIndex}>
-              <strong>
-                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                Quadra {game.court}
-              </strong>
+          {round.map((game, gameIndex) => {
+            const winnerSide = getScoreWinnerSide(game);
+            const isFinished = winnerSide !== null;
 
-              <div className="gameTeams">
-                <div>{game.team1.join(" + ")}</div>
-                <span>x</span>
-                <div>{game.team2.join(" + ")}</div>
-              </div>
+            return (
+              <div className={`gameCard publicGameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={gameIndex}>
+                <div className="gameTopLine">
+                  <strong>
+                    {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                    Quadra {game.court}
+                  </strong>
+                </div>
 
-              <div className="publicScore">
-                {game.s1 === "" || game.s2 === "" ? (
-                  <span>Aguardando placar</span>
-                ) : (
-                  <strong>{game.s1} — {game.s2}</strong>
-                )}
+                <div className="gameTeams">
+                  <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
+                  <span>x</span>
+                  <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
+                </div>
+
+                <div className="scoreRow publicScoreRow">
+                  {game.s1 === "" || game.s2 === "" ? (
+                    <span className="publicWaitingScore">Aguardando placar</span>
+                  ) : (
+                    <>
+                      <span className="publicScoreBox">{game.s1}</span>
+                      <span>—</span>
+                      <span className="publicScoreBox">{game.s2}</span>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
@@ -6164,25 +6175,36 @@ function PublicBracketColumn({ rounds }) {
               : `${round.bracketTitle} · ${round.title}`}
           </h3>
 
-          {round.games.map((game) => (
-            <div className="gameCard" key={game.matchKey}>
-              <strong>Quadra {game.court}</strong>
+          {round.games.map((game) => {
+            const winnerSide = getScoreWinnerSide(game);
+            const isFinished = winnerSide !== null;
 
-              <div className="gameTeams">
-                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
-                <span>x</span>
-                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
-              </div>
+            return (
+              <div className={`gameCard publicGameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
+                <div className="gameTopLine">
+                  <strong>Quadra {game.court}</strong>
+                </div>
 
-              <div className="publicScore">
-                {game.s1 === "" || game.s2 === "" ? (
-                  <span>Aguardando placar</span>
-                ) : (
-                  <strong>{game.s1} — {game.s2}</strong>
-                )}
+                <div className="gameTeams">
+                  <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1?.join(" + ") || "Aguardando"}</div>
+                  <span>x</span>
+                  <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
+                </div>
+
+                <div className="scoreRow publicScoreRow">
+                  {game.s1 === "" || game.s2 === "" ? (
+                    <span className="publicWaitingScore">Aguardando placar</span>
+                  ) : (
+                    <>
+                      <span className="publicScoreBox">{game.s1}</span>
+                      <span>—</span>
+                      <span className="publicScoreBox">{game.s2}</span>
+                    </>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </div>
