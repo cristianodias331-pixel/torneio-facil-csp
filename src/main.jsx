@@ -5956,6 +5956,8 @@ function getRegisteredAthletesForPublic(data, config) {
 }
 
 function PublicTournamentScreen({ tournament }) {
+  const [activePublicTab, setActivePublicTab] = useState("participantes");
+  const [activePublicMatchesTab, setActivePublicMatchesTab] = useState("grupos");
   const config = modalityConfig[tournament.type];
   const data = tournament.data || createInitialData(tournament.type, config);
   const publicInfo = data.publicInfo || {};
@@ -6054,9 +6056,19 @@ function PublicTournamentScreen({ tournament }) {
           </section>
         ) : null}
 
-        <section className="card publicAthletesCard">
-          <h2>Atletas cadastrados</h2>
-          <div className="publicAthletesGrid">
+        <nav className="tournamentTopTabs publicTournamentTabs" aria-label="Visualização pública do torneio">
+          <button type="button" className={activePublicTab === "participantes" ? "active" : ""} onClick={() => setActivePublicTab("participantes")}>👥 Participantes</button>
+          {isCup ? <button type="button" className={activePublicTab === "grupos" ? "active" : ""} onClick={() => setActivePublicTab("grupos")}>🧩 Grupos</button> : null}
+          <button type="button" className={activePublicTab === "partidas" ? "active" : ""} onClick={() => setActivePublicTab("partidas")}>🔥 Partidas</button>
+          <button type="button" className={activePublicTab === "ranking" ? "active" : ""} onClick={() => setActivePublicTab("ranking")}>🏆 Ranking</button>
+        </nav>
+
+        <section className="card publicAthletesCard" style={{ display: activePublicTab === "participantes" ? undefined : "none" }}>
+          <div className="cardTitleRow">
+            <h2>Participantes</h2>
+            <span className="readOnlyBadge">Somente visualização</span>
+          </div>
+          <div className="publicAthletesGrid organizerLikeParticipants">
             {publicAthletes.map((group) => (
               <div className="publicAthleteGroup" key={group.title}>
                 <h3>{group.title}</h3>
@@ -6074,16 +6086,75 @@ function PublicTournamentScreen({ tournament }) {
           </div>
         </section>
 
-        <section className="card">
-          <h2>{isCup ? "Fase de grupos" : "Rodadas"}</h2>
+        {isCup ? (
+          <section className="card" style={{ display: activePublicTab === "grupos" ? undefined : "none" }}>
+            <div className="cardTitleRow">
+              <h2>Grupos</h2>
+              <span className="readOnlyBadge">Somente visualização</span>
+            </div>
+            {cupGroupRankings.length > 0 ? (
+              <div className="groupsPreviewBox">
+                <h3>Classificação dos grupos</h3>
+                <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+              </div>
+            ) : (
+              <p>Os grupos ainda não foram gerados pelo organizador.</p>
+            )}
+          </section>
+        ) : null}
 
-          {!data.schedule || data.schedule.length === 0 ? (
-            <p>A tabela ainda não foi gerada pelo organizador.</p>
+        <section className="card" style={{ display: activePublicTab === "partidas" ? undefined : "none" }}>
+          <div className="cardTitleRow">
+            <h2>{isCup ? "Partidas" : "Rodadas"}</h2>
+            <span className="readOnlyBadge">Somente visualização</span>
+          </div>
+          {isCup ? (
+            <div className="matchesSubTabs">
+              <button type="button" className={activePublicMatchesTab === "grupos" ? "active" : ""} onClick={() => setActivePublicMatchesTab("grupos")}>Fase de grupos</button>
+              <button type="button" className={activePublicMatchesTab === "chaves" ? "active" : ""} onClick={() => setActivePublicMatchesTab("chaves")}>Chaves finais</button>
+              <button type="button" className={activePublicMatchesTab === "paralela" ? "active" : ""} onClick={() => setActivePublicMatchesTab("paralela")}>Disputa paralela</button>
+            </div>
+          ) : null}
+
+          <div style={{ display: !isCup || activePublicMatchesTab === "grupos" ? undefined : "none" }}>
+            {!data.schedule || data.schedule.length === 0 ? (
+              <p>A tabela ainda não foi gerada pelo organizador.</p>
+            ) : (
+              <PublicScheduleView schedule={data.schedule} showGroupName={isCup} />
+            )}
+          </div>
+
+          {isCup ? (
+            <div style={{ display: activePublicMatchesTab === "chaves" ? undefined : "none" }}>
+              {!currentBrackets ? <p>As chaves finais ainda não foram geradas pelo organizador.</p> : <PublicCupBracketView groupedBrackets={{ main: currentBrackets.main, repechage: [] }} />}
+            </div>
+          ) : null}
+
+          {isCup ? (
+            <div style={{ display: activePublicMatchesTab === "paralela" ? undefined : "none" }}>
+              {!currentBrackets ? <p>A disputa paralela ainda não foi gerada pelo organizador.</p> : <PublicCupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} />}
+            </div>
+          ) : null}
+        </section>
+
+        <section className="card" style={{ display: activePublicTab === "ranking" ? undefined : "none" }}>
+          <div className="cardTitleRow">
+            <h2>Ranking</h2>
+            <span className="readOnlyBadge">Somente visualização</span>
+          </div>
+          {isCup ? (
+            <div className="cupRankingSplit">
+              <div className="cupRankingPanel">
+                <h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>
+                {mainCupPodium.length > 0 ? <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} /> : <p>Finalize a chave principal para ver o ranking.</p>}
+              </div>
+              <div className="cupRankingPanel">
+                <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
+                {parallelRanking.length > 0 ? <RankingTable title="Classificação" rows={parallelRanking} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} /> : <p>A disputa paralela ainda não tem ranking.</p>}
+              </div>
+            </div>
           ) : (
-            <PublicScheduleView
-              schedule={data.schedule}
-              showGroupName={isCup}
-            />
+            <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
           )}
         </section>
 
