@@ -5875,8 +5875,8 @@ function PublicTournamentPage({ publicId }) {
   const [tournament, setTournament] = useState(null);
   const [error, setError] = useState(null);
 
-  async function loadPublicTournament() {
-    setLoading(true);
+  async function loadPublicTournament({ silent = false } = {}) {
+    if (!silent) setLoading(true);
 
     const { data, error } = await supabase
       .from("tournaments")
@@ -5894,14 +5894,14 @@ function PublicTournamentPage({ publicId }) {
       setError(null);
     }
 
-    setLoading(false);
+    if (!silent) setLoading(false);
   }
 
   useEffect(() => {
     loadPublicTournament();
 
     const interval = setInterval(() => {
-      loadPublicTournament();
+      loadPublicTournament({ silent: true });
     }, 20000);
 
     return () => clearInterval(interval);
@@ -5967,8 +5967,20 @@ function getRegisteredAthletesForPublic(data, config) {
 }
 
 function PublicTournamentScreen({ tournament }) {
-  const [activePublicTab, setActivePublicTab] = useState("participantes");
-  const [activePublicMatchesTab, setActivePublicMatchesTab] = useState("grupos");
+  const publicTabStorageKey = `publicTournamentTab:${tournament.public_id || tournament.id}`;
+  const publicMatchesTabStorageKey = `publicTournamentMatchesTab:${tournament.public_id || tournament.id}`;
+  const [activePublicTab, setActivePublicTabState] = useState(() => sessionStorage.getItem(publicTabStorageKey) || "participantes");
+  const [activePublicMatchesTab, setActivePublicMatchesTabState] = useState(() => sessionStorage.getItem(publicMatchesTabStorageKey) || "grupos");
+
+  function setActivePublicTab(tab) {
+    sessionStorage.setItem(publicTabStorageKey, tab);
+    setActivePublicTabState(tab);
+  }
+
+  function setActivePublicMatchesTab(tab) {
+    sessionStorage.setItem(publicMatchesTabStorageKey, tab);
+    setActivePublicMatchesTabState(tab);
+  }
   const config = modalityConfig[tournament.type];
   const data = tournament.data || createInitialData(tournament.type, config);
   const publicInfo = data.publicInfo || {};
