@@ -9093,3 +9093,61 @@ button.profileVisibilitySwitch.private strong {
     margin-right: 20px !important;
   }
 }
+
+
+/* Correção final: botão voltar fora da logo e título dos links */
+.arenaPublicBackBtn {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  margin: 18px 0 0 24px !important;
+  z-index: 6 !important;
+  width: max-content !important;
+  background: #ffffff !important;
+  color: #075985 !important;
+  border: 1px solid rgba(14, 165, 233, .22) !important;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, .14) !important;
+}
+
+.arenaPublicHero {
+  margin-top: -28px !important;
+  align-items: center !important;
+}
+
+.arenaPublicPhoto {
+  margin-top: 0 !important;
+}
+
+.arenaPublicInfo span {
+  position: static !important;
+  margin-bottom: 8px !important;
+}
+
+.arenaPublicLinksTitle {
+  margin: 24px 34px 8px !important;
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.arenaPublicLinks {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .arenaPublicBackBtn {
+    margin-left: 20px !important;
+    margin-top: 14px !important;
+  }
+
+  .arenaPublicHero {
+    margin-top: -18px !important;
+  }
+
+  .arenaPublicLinksTitle {
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+  }
+}
