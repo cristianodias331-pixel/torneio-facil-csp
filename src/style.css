@@ -7767,3 +7767,12 @@ body {
     flex-direction: column-reverse;
   }
 }
+
+
+/* Botão Editar em roxo, no padrão visual do sorteio */
+.editBtn,
+button.editBtn {
+  background: linear-gradient(135deg, #7c3aed, #db2777) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(124, 58, 237, 0.28) !important;
+}
