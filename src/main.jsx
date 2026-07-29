@@ -3510,7 +3510,7 @@ setNewPublicInfo({
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar campeonato</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
@@ -3575,7 +3575,7 @@ setNewPublicInfo({
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar campeonato</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
@@ -3743,11 +3743,27 @@ setNewPublicInfo({
       ) : tournaments.map((t) => {
         const details = t.data || {};
         return (
-          <article className="profileTournamentPost" key={t.id}>
-            <div className="profileTournamentCover">🏆</div>
-            <strong>{t.name}</strong>
-            <span>{t.type}</span>
-            {details.eventDate ? <small>📅 {formatDateBR(details.eventDate)}</small> : null}
+          <article className="profileTournamentPost tournamentItem" key={t.id}>
+            <div className="tournamentInfo">
+              <div className="tournamentTitleRow">
+                <strong>{t.name}</strong>
+                <span className="tournamentTypeBadge">{t.type}</span>
+              </div>
+              <div className="tournamentMeta">
+                {details.multiCategoryEvent ? <span>🧩 {details.eventName}</span> : null}
+                {details.gender ? <span>🏷️ {details.gender}</span> : null}
+                {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
+                {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
+                {details.location ? <span>📍 {details.location}</span> : null}
+                {details.winningScore ? <span>🎯 {details.winningScore} games</span> : null}
+              </div>
+            </div>
+            <div className="tournamentActions">
+              <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
+              <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+              <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar</button>
+              <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+            </div>
           </article>
         );
       })}
