@@ -2368,6 +2368,9 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
     return groups;
   }, []);
 
+  const multiTournamentGroups = groupedTournaments.filter((group) => group.items.length > 1);
+  const isolatedTournaments = groupedTournaments.flatMap((group) => group.items.length === 1 ? group.items : []);
+
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
   }
@@ -3170,14 +3173,69 @@ setNewRankingCriteria(defaultRankingCriteria);
     <p></p>
   ) : (
     <div className="eventGroupList">
-      {groupedTournaments.map((group) => (
+      {isolatedTournaments.length > 0 && (
+        <div className="tournamentList isolatedTournamentGrid">
+          {isolatedTournaments.map((t) => {
+            const details = t.data || {};
+
+            return (
+                <div
+                  className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
+                  key={t.id}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    moveTournamentByDrag(draggedTournamentId, t.id);
+                    setDraggedTournamentId(null);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="moveLineBtn"
+                    title="Segure e arraste para mover"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedTournamentId(t.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => setDraggedTournamentId(null)}
+                  >
+                    <span>—</span>
+                    <span>—</span>
+                    <span>—</span>
+                  </button>
+
+                  <div className="tournamentInfo">
+                    <div className="tournamentTitleRow">
+                      <strong>{t.name}</strong>
+                      <span className="tournamentTypeBadge">{t.type}</span>
+                    </div>
+
+                    <div className="tournamentMeta">
+                      {details.multiCategoryEvent ? <span>🧩 {details.eventName}</span> : null}
+                      {details.gender ? <span>🏷️ {details.gender}</span> : null}
+                      {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
+                      {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
+                      {details.location ? <span>📍 {details.location}</span> : null}
+                      {details.winningScore ? <span>🎯 {details.winningScore} games</span> : null}
+                    </div>
+                  </div>
+
+                  <div className="tournamentActions">
+                    <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+                  </div>
+                </div>
+            );
+          })}
+        </div>
+      )}
+
+      {multiTournamentGroups.map((group) => (
         <div className="eventGroupCard" key={group.key}>
-          {group.items.length > 1 && (
-            <div className="eventGroupHeader">
-              <strong>{group.name}</strong>
-              <span>{group.items.length} categorias</span>
-            </div>
-          )}
+          <div className="eventGroupHeader">
+            <strong>{group.name}</strong>
+            <span>{group.items.length} categorias</span>
+          </div>
 
           <div className="tournamentList eventTournamentGrid">
             {group.items.map((t) => {
