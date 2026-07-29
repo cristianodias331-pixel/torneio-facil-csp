@@ -8771,3 +8771,212 @@ button.profileVisibilitySwitch.private strong {
     height: 132px;
   }
 }
+
+
+/* Redesign profissional do perfil público da arena */
+.arenaPublicPage {
+  max-width: 1180px;
+  margin: 0 auto 40px;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, .08) !important;
+  border-radius: 34px !important;
+  background: #ffffff !important;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, .10) !important;
+}
+
+.arenaPublicPage::before {
+  content: "";
+  display: block;
+  height: 210px;
+  background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, .28), transparent 28%),
+    linear-gradient(135deg, #0f5bd7 0%, #08b4d8 62%, #16c784 100%);
+}
+
+.arenaPublicBackBtn {
+  position: absolute;
+  z-index: 3;
+  margin: 24px 0 0 24px !important;
+  background: rgba(255, 255, 255, .92) !important;
+  color: #075985 !important;
+  border: 1px solid rgba(255,255,255,.55) !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 14px 30px rgba(15, 23, 42, .16) !important;
+}
+
+.arenaPublicHero {
+  margin: -92px 34px 0;
+  padding: 0 0 28px;
+  display: grid;
+  grid-template-columns: 188px 1fr;
+  gap: 28px;
+  align-items: end;
+  border-bottom: 1px solid #e5edf5;
+}
+
+.arenaPublicPhoto {
+  width: 188px;
+  height: 188px;
+  border-radius: 42px;
+  border: 8px solid #ffffff;
+  background: linear-gradient(135deg, #0f5bd7, #06b6d4);
+  box-shadow: 0 22px 55px rgba(15, 23, 42, .22);
+}
+
+.arenaPublicInfo {
+  padding-bottom: 12px;
+}
+
+.arenaPublicInfo span {
+  background: #e0f7ff !important;
+  color: #04739a !important;
+  letter-spacing: .04em;
+}
+
+.arenaPublicInfo h2 {
+  margin-top: 14px !important;
+  max-width: 760px;
+  font-size: clamp(34px, 5vw, 64px) !important;
+  font-weight: 1000;
+  color: #061226;
+  text-transform: uppercase;
+}
+
+.arenaPublicInfo p {
+  font-size: 18px;
+  color: #0f172a !important;
+}
+
+.arenaPublicInfo small {
+  color: #64748b !important;
+}
+
+.arenaPublicDetailsGrid {
+  margin: 28px 34px 0 !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.arenaPublicDetailsGrid div {
+  min-height: 110px;
+  border: 1px solid #dbe7f3 !important;
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  border-radius: 24px !important;
+  padding: 20px !important;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, .045);
+}
+
+.arenaPublicDetailsGrid strong {
+  color: #64748b !important;
+  letter-spacing: .05em;
+}
+
+.arenaPublicDetailsGrid span {
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.arenaPublicLinks {
+  margin: 24px 34px 0 !important;
+  gap: 12px !important;
+}
+
+.arenaProfileLinks a,
+.arenaPublicTournamentCard button {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px !important;
+  padding: 13px 18px !important;
+  background: linear-gradient(135deg, #1667e8, #08b4d8) !important;
+  box-shadow: 0 14px 26px rgba(22, 103, 232, .22) !important;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.arenaProfileLinks a:hover,
+.arenaPublicTournamentCard button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 34px rgba(22, 103, 232, .28) !important;
+}
+
+.arenaPublicPublicationsHeader {
+  margin: 34px 34px 0 !important;
+  padding-top: 28px !important;
+  border-top: 1px solid #e5edf5 !important;
+}
+
+.arenaPublicPublicationsHeader strong {
+  font-size: 24px !important;
+  color: #061226;
+}
+
+.arenaPublicPublicationsHeader span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #eef6ff;
+  color: #2563eb !important;
+}
+
+.arenaPublicTournamentGrid {
+  margin: 18px 34px 34px !important;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 18px !important;
+}
+
+.arenaPublicTournamentCard {
+  border: 1px solid #dbe7f3 !important;
+  border-radius: 26px !important;
+  padding: 20px !important;
+  background: linear-gradient(180deg, #ffffff, #f8fbff) !important;
+  box-shadow: 0 16px 38px rgba(15, 23, 42, .075) !important;
+}
+
+.arenaPublicTournamentCard::before {
+  content: "Torneio";
+  display: inline-flex;
+  margin-bottom: 14px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #e8f7ee;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.arenaPublicTournamentCard strong {
+  font-size: 22px !important;
+  line-height: 1.08;
+}
+
+.arenaProfileEmpty {
+  margin: 18px 34px 34px !important;
+  padding: 28px !important;
+  border-radius: 24px !important;
+  background: #f8fbff !important;
+  border: 1px dashed #cbd5e1;
+}
+
+@media (max-width: 760px) {
+  .arenaPublicPage::before { height: 170px; }
+  .arenaPublicHero {
+    margin: -78px 20px 0;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    align-items: start;
+  }
+  .arenaPublicPhoto {
+    width: 148px;
+    height: 148px;
+    border-radius: 34px;
+  }
+  .arenaPublicDetailsGrid,
+  .arenaPublicLinks,
+  .arenaPublicPublicationsHeader,
+  .arenaPublicTournamentGrid,
+  .arenaProfileEmpty {
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+  }
+}
