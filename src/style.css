@@ -10376,3 +10376,131 @@ button.profileVisibilitySwitch.private strong {
     height: 24px !important;
   }
 }
+
+
+/* CORREÇÃO DEFINITIVA DO LINK PÚBLICO - classes próprias sem conflito */
+.publicPage .schedule > .roundCard {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(360px, 1fr)) !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+.publicPage .schedule > .roundCard > h3 {
+  grid-column: 1 / -1 !important;
+  width: max-content !important;
+}
+.publicPage .publicGameCard {
+  display: block !important;
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 16px !important;
+  margin: 0 !important;
+  overflow: visible !important;
+}
+.publicPage .publicGameCard .gameTopLine {
+  display: flex !important;
+  justify-content: flex-start !important;
+  margin: 0 0 16px 0 !important;
+}
+.publicPage .publicMirrorTeams {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  width: 100% !important;
+}
+.publicPage .publicMirrorTeams > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 56px !important;
+  padding: 12px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  transform: none !important;
+  position: static !important;
+}
+.publicPage .publicMirrorTeams > span {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 34px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  font-size: 18px !important;
+  font-weight: 950 !important;
+  color: #0f172a !important;
+  transform: none !important;
+  position: static !important;
+}
+.publicPage .publicMirrorTeams > div.winnerTeam { background: #bbf7d0 !important; color: #047857 !important; }
+.publicPage .publicMirrorTeams > div.loserTeam { background: #fecaca !important; color: #b91c1c !important; opacity: 1 !important; }
+.publicPage .publicMirrorScore {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 16px 0 0 0 !important;
+  width: 100% !important;
+  position: static !important;
+  transform: none !important;
+}
+.publicPage .publicMirrorScore input {
+  width: 54px !important;
+  height: 36px !important;
+  border-radius: 12px !important;
+  text-align: center !important;
+  position: static !important;
+  transform: none !important;
+}
+.publicPage .publicMirrorScore > span {
+  width: auto !important;
+  min-width: 0 !important;
+  height: auto !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  position: static !important;
+  transform: none !important;
+}
+@media (max-width: 900px){.publicPage .schedule > .roundCard{grid-template-columns:1fr!important;}}
+@media (max-width: 760px){.publicPage .publicMirrorTeams{grid-template-columns:1fr!important}.publicPage .publicMirrorTeams>span{width:100%!important;height:24px!important}}
+
+
+/* ESPELHAMENTO 100%: link público usa os mesmos componentes do organizador */
+.publicPage .schedule .voiceRepeatBox,
+.publicPage .schedule .voiceActions,
+.publicPage .schedule .gameVoiceActions,
+.publicPage .bracketColumn .voiceActions,
+.publicPage .bracketColumn .gameVoiceActions {
+  display: none !important;
+}
+
+.publicPage .schedule {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(360px, 1fr)) !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.publicPage .scoreRow input:disabled {
+  opacity: 1 !important;
+  -webkit-text-fill-color: #0f172a !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  cursor: default !important;
+}
+
+@media (max-width: 760px) {
+  .publicPage .schedule {
+    grid-template-columns: 1fr !important;
+  }
+}
