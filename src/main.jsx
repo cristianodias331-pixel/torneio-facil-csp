@@ -3473,7 +3473,7 @@ setNewPublicInfo({
       )}
     </div>
     <div className="arenaPublicInfo">
-      <span>Perfil público da arena</span>
+      <span>Arena verificada</span>
       <h2>{selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena cadastrada"}</h2>
       <p>{[selectedArenaProfile.city, selectedArenaProfile.state].filter(Boolean).join("/") || "Local não informado"}</p>
       <small>Organizador: {selectedArenaProfile.name || "Não informado"}</small>
@@ -3498,7 +3498,7 @@ setNewPublicInfo({
   </div>
 
   <div className="arenaProfilePublicationsHeader arenaPublicPublicationsHeader">
-    <strong>Publicações / torneios da arena</strong>
+    <strong>Campeonatos publicados</strong>
     <span>{selectedArenaTournaments.length} publicação(ões)</span>
   </div>
 
