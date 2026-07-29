@@ -2317,6 +2317,16 @@ const [newDay, setNewDay] = useState("");
 const [newLocation, setNewLocation] = useState("");
 const [newWinningScore, setNewWinningScore] = useState(4);
 const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCriteria);
+const [newPublicInfo, setNewPublicInfo] = useState({
+  showArenaName: true,
+  showOrganizerName: true,
+  showWhatsapp: true,
+  showWhatsappGroupLink: true,
+  showInstagram: true,
+  showAddress: true,
+  showMapsLink: true,
+  showCityState: true,
+});
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
@@ -2384,6 +2394,30 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
   function saveOrganizerProfile() {
     localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(organizerProfile));
     showNotice("success", "Perfil salvo", "Os dados do organizador foram salvos neste dispositivo.");
+  }
+
+
+  function toggleNewPublicInfo(field) {
+    setNewPublicInfo((prev) => ({ ...prev, [field]: !prev[field] }));
+  }
+
+  function buildTournamentPublicInfo() {
+    return {
+      visibility: { ...newPublicInfo },
+      organizer: {
+        photoUrl: organizerProfile.photoUrl || "",
+        arenaName: organizerProfile.arenaName || "",
+        organizerName: organizerProfile.organizerName || "",
+        whatsapp: organizerProfile.whatsapp || "",
+        instagramHandle: organizerProfile.instagramHandle || "",
+        instagramLink: organizerProfile.instagramLink || "",
+        whatsappGroupLink: organizerProfile.whatsappGroupLink || "",
+        address: organizerProfile.address || "",
+        mapsLink: organizerProfile.mapsLink || "",
+        city: organizerProfile.city || "",
+        state: organizerProfile.state || "",
+      },
+    };
   }
 
 
@@ -2646,6 +2680,7 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
       eventPeriodLabel: newEndDate && newEndDate !== newDate ? `${formatDateBR(newDate)} até ${formatDateBR(newEndDate)}` : formatDateBR(newDate),
       registrationDeadline: newRegistrationDeadline,
       location: newLocation.trim(),
+      publicInfo: buildTournamentPublicInfo(),
       winningScore: Number(newWinningScore) || 4,
       rankingCriteria: newRankingCriteria || defaultRankingCriteria,
     };
@@ -2704,6 +2739,16 @@ setNewDay("");
 setNewLocation("");
 setNewWinningScore(4);
 setNewRankingCriteria(defaultRankingCriteria);
+setNewPublicInfo({
+  showArenaName: true,
+  showOrganizerName: true,
+  showWhatsapp: true,
+  showWhatsappGroupLink: true,
+  showInstagram: true,
+  showAddress: true,
+  showMapsLink: true,
+  showCityState: true,
+});
     await loadTournaments();
     showNotice("success", isMultiCategory ? "Torneios criados" : "Torneio criado", isMultiCategory ? "As categorias foram criadas como torneios separados dentro do mesmo evento." : "O torneio foi criado com sucesso.");
   }
@@ -3329,6 +3374,24 @@ setNewRankingCriteria(defaultRankingCriteria);
         <option key={option.value} value={option.value}>{option.label}</option>
       ))}
     </select>
+  </div>
+
+  <div className="formField fullField publicInfoBox">
+    <div className="publicInfoIntro">
+      <strong>Informações de divulgação</strong>
+      <span>Usaremos os dados salvos no perfil do organizador. Desmarque o que não quiser mostrar na página pública deste torneio.</span>
+    </div>
+
+    <div className="publicInfoOptions">
+      <label><input type="checkbox" checked={newPublicInfo.showArenaName} onChange={() => toggleNewPublicInfo("showArenaName")} /> Nome da arena</label>
+      <label><input type="checkbox" checked={newPublicInfo.showOrganizerName} onChange={() => toggleNewPublicInfo("showOrganizerName")} /> Nome do organizador</label>
+      <label><input type="checkbox" checked={newPublicInfo.showWhatsapp} onChange={() => toggleNewPublicInfo("showWhatsapp")} /> WhatsApp</label>
+      <label><input type="checkbox" checked={newPublicInfo.showWhatsappGroupLink} onChange={() => toggleNewPublicInfo("showWhatsappGroupLink")} /> Grupo do WhatsApp</label>
+      <label><input type="checkbox" checked={newPublicInfo.showInstagram} onChange={() => toggleNewPublicInfo("showInstagram")} /> Instagram</label>
+      <label><input type="checkbox" checked={newPublicInfo.showAddress} onChange={() => toggleNewPublicInfo("showAddress")} /> Endereço</label>
+      <label><input type="checkbox" checked={newPublicInfo.showMapsLink} onChange={() => toggleNewPublicInfo("showMapsLink")} /> Link do mapa</label>
+      <label><input type="checkbox" checked={newPublicInfo.showCityState} onChange={() => toggleNewPublicInfo("showCityState")} /> Cidade/Estado</label>
+    </div>
   </div>
 
  <button type="button" onClick={createTournament} disabled={saving}>
@@ -5421,6 +5484,10 @@ function getRegisteredAthletesForPublic(data, config) {
 function PublicTournamentScreen({ tournament }) {
   const config = modalityConfig[tournament.type];
   const data = tournament.data || createInitialData(tournament.type, config);
+  const publicInfo = data.publicInfo || {};
+  const publicVisibility = publicInfo.visibility || {};
+  const publicOrganizer = publicInfo.organizer || {};
+  const registrationClosed = data.registrationDeadline ? new Date() > new Date(`${data.registrationDeadline}T23:59:59`) : false;
   const ranking = calculateRanking(data, tournament.type, data.rankingCriteria);
 
   const isCup = isCupType(config);
@@ -5468,11 +5535,51 @@ function PublicTournamentScreen({ tournament }) {
         </div>
 
         <div className="publicBadge">
-          Somente visualização
+          {registrationClosed ? "Inscrições encerradas" : "Somente visualização"}
         </div>
       </header>
 
       <main className="publicContent">
+        <section className="card publicTournamentInfoCard">
+          <h2>Informações do torneio</h2>
+          <div className="publicInfoGrid">
+            {data.registrationDeadline ? <span>📝 Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
+            {registrationClosed ? <span className="closedInfo">🔒 Inscrições encerradas</span> : null}
+            {data.eventStartTime ? <span>⏰ Início {data.eventStartTime}</span> : null}
+            {data.location ? <span>📍 {data.location}</span> : null}
+            {data.winningScore ? <span>🎯 {data.winningScore} games</span> : null}
+          </div>
+        </section>
+
+        {(publicVisibility.showArenaName && publicOrganizer.arenaName) ||
+          (publicVisibility.showOrganizerName && publicOrganizer.organizerName) ||
+          (publicVisibility.showWhatsapp && publicOrganizer.whatsapp) ||
+          (publicVisibility.showWhatsappGroupLink && publicOrganizer.whatsappGroupLink) ||
+          (publicVisibility.showInstagram && (publicOrganizer.instagramHandle || publicOrganizer.instagramLink)) ||
+          (publicVisibility.showAddress && publicOrganizer.address) ||
+          (publicVisibility.showMapsLink && publicOrganizer.mapsLink) ||
+          (publicVisibility.showCityState && (publicOrganizer.city || publicOrganizer.state)) ? (
+          <section className="card publicOrganizerCard">
+            <h2>Organização</h2>
+            <div className="publicOrganizerHeader">
+              {publicOrganizer.photoUrl ? <img src={publicOrganizer.photoUrl} alt="Foto do organizador" /> : null}
+              <div>
+                {publicVisibility.showArenaName && publicOrganizer.arenaName ? <strong>{publicOrganizer.arenaName}</strong> : null}
+                {publicVisibility.showOrganizerName && publicOrganizer.organizerName ? <span>{publicOrganizer.organizerName}</span> : null}
+              </div>
+            </div>
+            <div className="publicOrganizerLinks">
+              {publicVisibility.showWhatsapp && publicOrganizer.whatsapp ? <a href={"https://wa.me/" + String(publicOrganizer.whatsapp).replace(/\D/g, "")} target="_blank" rel="noreferrer">💬 WhatsApp</a> : null}
+              {publicVisibility.showWhatsappGroupLink && publicOrganizer.whatsappGroupLink ? <a href={publicOrganizer.whatsappGroupLink} target="_blank" rel="noreferrer">👥 Grupo do WhatsApp</a> : null}
+              {publicVisibility.showInstagram && publicOrganizer.instagramLink ? <a href={publicOrganizer.instagramLink} target="_blank" rel="noreferrer">📸 {publicOrganizer.instagramHandle || "Instagram"}</a> : null}
+              {publicVisibility.showInstagram && !publicOrganizer.instagramLink && publicOrganizer.instagramHandle ? <span>📸 {publicOrganizer.instagramHandle}</span> : null}
+              {publicVisibility.showAddress && publicOrganizer.address ? <span>📍 {publicOrganizer.address}</span> : null}
+              {publicVisibility.showCityState && (publicOrganizer.city || publicOrganizer.state) ? <span>🏙️ {[publicOrganizer.city, publicOrganizer.state].filter(Boolean).join("/")}</span> : null}
+              {publicVisibility.showMapsLink && publicOrganizer.mapsLink ? <a href={publicOrganizer.mapsLink} target="_blank" rel="noreferrer">🗺️ Ver endereço no mapa</a> : null}
+            </div>
+          </section>
+        ) : null}
+
         <section className="card publicAthletesCard">
           <h2>Atletas cadastrados</h2>
           <div className="publicAthletesGrid">
