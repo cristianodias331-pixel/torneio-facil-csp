@@ -6,11 +6,6 @@ import "./style.css";
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-const ACTION_BUTTON_STYLES = {
-  edit: { background: "linear-gradient(135deg, #7c3aed, #ec4899)", backgroundColor: "#7c3aed", color: "#ffffff", boxShadow: "0 14px 28px rgba(124, 58, 237, 0.32)" },
-  danger: { background: "linear-gradient(135deg, #ef4444, #dc2626)", backgroundColor: "#dc2626", color: "#ffffff", boxShadow: "0 14px 28px rgba(220, 38, 38, 0.36)" },
-};
-
 
 async function logout() {
   try {
@@ -1562,8 +1557,8 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={onCancel}>Cancelar</button>
-          <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={onConfirm}>Mover para lixeira</button>
+          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Mover para lixeira</button>
         </div>
       </div>
     </div>
@@ -1585,8 +1580,8 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={onCancel}>Cancelar</button>
-          <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={onConfirm}>Sim, apagar</button>
+          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
         </div>
       </div>
     </div>
@@ -1608,8 +1603,8 @@ function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={onCancel}>Cancelar</button>
-          <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={onConfirm}>Sim, apagar tudo</button>
+          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar tudo</button>
         </div>
       </div>
     </div>
@@ -2984,7 +2979,7 @@ setNewRankingCriteria(defaultRankingCriteria);
                 <h2>Editar torneio</h2>
                 <p>Atualize as informações principais deste torneio.</p>
               </div>
-              <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={() => { setEditTarget(null); setEditForm(null); }}>Fechar</button>
+              <button type="button" className="deleteBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Fechar</button>
             </div>
 
             <div className="editTournamentGrid">
@@ -3049,7 +3044,7 @@ setNewRankingCriteria(defaultRankingCriteria);
             </div>
 
             <div className="editTournamentActions">
-              <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
+              <button type="button" className="deleteBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
               <button type="button" onClick={saveEditedTournament}>Salvar alterações</button>
             </div>
           </div>
@@ -3079,7 +3074,7 @@ setNewRankingCriteria(defaultRankingCriteria);
               <button type="button" className="secondaryBtn" onClick={() => nudgePhotoZoom(0.12)}>+</button>
             </div>
             <div className="photoEditorActions">
-              <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={() => setPhotoEditor(null)}>Cancelar</button>
+              <button type="button" className="deleteBtn" onClick={() => setPhotoEditor(null)}>Cancelar</button>
               <button type="button" onClick={applyEditedOrganizerPhoto}>Aplicar foto</button>
             </div>
           </div>
@@ -3213,7 +3208,7 @@ setNewRankingCriteria(defaultRankingCriteria);
             />
           </div>
 
-          <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={() => removeCategorySchedule(index)} disabled={newCategorySchedules.length <= 1}>
+          <button type="button" className="deleteBtn" onClick={() => removeCategorySchedule(index)} disabled={newCategorySchedules.length <= 1}>
             Remover
           </button>
         </div>
@@ -3398,9 +3393,9 @@ setNewRankingCriteria(defaultRankingCriteria);
                   </div>
 
                   <div className="tournamentActions">
-                    <button type="button" className="editBtn" style={ACTION_BUTTON_STYLES.edit} onClick={() => openEditTournament(t)}>Editar</button>
+                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={() => setDeleteTarget(t)}>Excluir</button>
+                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
             );
@@ -3462,9 +3457,9 @@ setNewRankingCriteria(defaultRankingCriteria);
                   </div>
 
                   <div className="tournamentActions">
-                    <button type="button" className="editBtn" style={ACTION_BUTTON_STYLES.edit} onClick={() => openEditTournament(t)}>Editar</button>
+                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="deleteBtn" style={ACTION_BUTTON_STYLES.danger} onClick={() => setDeleteTarget(t)}>Excluir</button>
+                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
               );
@@ -3613,7 +3608,7 @@ setNewRankingCriteria(defaultRankingCriteria);
         <strong>Foto de perfil</strong>
         <small>Clique ou arraste uma imagem aqui</small>
       </label>
-      {organizerProfile.photoUrl ? <button className="removePhotoBtn deleteBtn" style={ACTION_BUTTON_STYLES.danger} type="button" onClick={removeOrganizerPhoto}>Remover foto</button> : null}
+      {organizerProfile.photoUrl ? <button className="removePhotoBtn" type="button" onClick={removeOrganizerPhoto}>Remover foto</button> : null}
     </div>
 
     <div className="organizerProfileGrid">
@@ -4346,7 +4341,6 @@ return (
                   <button
                     type="button"
                     className="deleteBtn"
-                    style={ACTION_BUTTON_STYLES.danger}
                     onClick={disablePublicShare}
                     disabled={shareLoading}
                   >
@@ -4455,7 +4449,6 @@ return (
                 <button
                   type="button"
                   className="deleteBtn"
-                  style={ACTION_BUTTON_STYLES.danger}
                   onClick={() => setClearTableOpen(true)}
                 >
                   Apagar todos os jogos e placares
