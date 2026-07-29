@@ -9811,3 +9811,124 @@ button.profileVisibilitySwitch.private strong {
     min-width: 0 !important;
   }
 }
+
+
+/* Página pública: jogos iguais ao visual do organizador, sem inputs */
+.publicPage .publicGameCard {
+  display: block !important;
+  min-height: auto !important;
+  padding: 18px !important;
+  border-radius: 22px !important;
+  background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+}
+
+.publicPage .publicGameCard .gameTopLine {
+  display: flex !important;
+  justify-content: flex-start !important;
+  margin-bottom: 16px !important;
+}
+
+.publicPage .publicGameCard .gameTopLine strong {
+  display: inline-flex !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 7px 11px !important;
+  border-radius: 999px !important;
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+.publicPage .publicGameCard .gameTeams {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.publicPage .publicGameCard .gameTeams > div {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 14px !important;
+  border-radius: 16px !important;
+  background: #f8fafc !important;
+  text-align: center !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+.publicPage .publicGameCard .gameTeams > span {
+  display: grid !important;
+  place-items: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  font-weight: 950 !important;
+}
+
+.publicPage .publicGameCard .winnerTeam {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+}
+
+.publicPage .publicGameCard .loserTeam {
+  opacity: .72 !important;
+}
+
+.publicPage .publicScoreRow {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  margin-top: 16px !important;
+}
+
+.publicPage .publicScoreBox {
+  width: 54px !important;
+  height: 44px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 14px !important;
+  background: #e0f2fe !important;
+  border: 1px solid #bae6fd !important;
+  color: #0f172a !important;
+  font-size: 20px !important;
+  font-weight: 950 !important;
+}
+
+.publicPage .publicWaitingScore {
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  min-height: 40px !important;
+  padding: 9px 14px !important;
+  border-radius: 999px !important;
+  background: #e0f2fe !important;
+  border: 1px solid #bae6fd !important;
+  color: #64748b !important;
+  font-weight: 900 !important;
+}
+
+@media (max-width: 760px) {
+  .publicPage .publicGameCard {
+    padding: 13px !important;
+    border-radius: 17px !important;
+  }
+
+  .publicPage .publicGameCard .gameTeams {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .publicPage .publicGameCard .gameTeams > span {
+    width: 100% !important;
+    height: 28px !important;
+    background: transparent !important;
+  }
+}
