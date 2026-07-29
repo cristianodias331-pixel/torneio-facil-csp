@@ -7902,3 +7902,73 @@ button.deleteBtn:hover,
     grid-template-columns: 1fr;
   }
 }
+
+/* Compartilhamento do campeonato a partir do card */
+.shareTournamentBtn,
+button.shareTournamentBtn {
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.28) !important;
+}
+.shareTournamentModal .publicInfoOptions {
+  margin-top: 14px;
+}
+.publicProfilePreview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+.publicProfilePreview img {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+.publicProfilePreview div {
+  display: grid;
+  gap: 3px;
+}
+.publicProfilePreview strong {
+  color: #0f172a;
+  font-weight: 950;
+}
+.publicProfilePreview span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 750;
+}
+.shareChoiceBox,
+.publishedTournamentsPreview {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+.shareChoiceBox label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 850;
+  color: #0f172a;
+}
+.shareChoiceBox input {
+  width: auto;
+  margin: 0;
+}
+.publicProfileHomeCard p {
+  color: #64748b;
+  font-weight: 700;
+}
+.publishedTournamentsPreview span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 750;
+}
