@@ -3753,6 +3753,14 @@ const mainCupPodium = isCupType(config) && data.brackets?.length
   ? calculateMainCupPodium(data)
   : [];
 
+  function SavingStatusBadge() {
+    return (
+      <span className={`savingBadge ${savingStatus === "Salvando..." ? "saving" : savingStatus === "Erro ao salvar" ? "error" : "saved"}`}>
+        💾 {savingStatus}
+      </span>
+    );
+  }
+
 return (
   <>
     <NoticeModal notice={notice} onClose={() => setNotice(null)} />
@@ -3819,10 +3827,6 @@ return (
         </div>
 
         <div className="actions tournamentHeaderActions">
-          <span className={`savingBadge ${savingStatus === "Salvando..." ? "saving" : savingStatus === "Erro ao salvar" ? "error" : "saved"}`}>
-            💾 {savingStatus}
-          </span>
-
           <button
             type="button"
             className="secondaryBtn"
@@ -3890,7 +3894,10 @@ return (
         </nav>
 
         <section className="card" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
-          <h2>Participantes</h2>
+          <div className="cardTitleRow">
+            <h2>Participantes</h2>
+            <SavingStatusBadge />
+          </div>
 
 
           {isCupType(config) && (
@@ -3917,7 +3924,10 @@ return (
 
         {isCupType(config) && (
           <section className="card" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
-            <h2>Grupos</h2>
+            <div className="cardTitleRow">
+              <h2>Grupos</h2>
+              <SavingStatusBadge />
+            </div>
             <p>Use o sorteio para embaralhar as duplas e depois gere a fase de grupos.</p>
             <div className="actions">
               <button type="button" onClick={shuffleNames}>Sortear grupos</button>
@@ -3933,7 +3943,10 @@ return (
         )}
 
         <section className="card" style={{ display: activeTournamentTab === "partidas" ? undefined : "none" }}>
-          <h2>{isCupType(config) ? "Partidas" : "Rodadas"}</h2>
+          <div className="cardTitleRow">
+            <h2>{isCupType(config) ? "Partidas" : "Rodadas"}</h2>
+            <SavingStatusBadge />
+          </div>
           {isCupType(config) && (
             <div className="matchesSubTabs">
               <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
@@ -3996,7 +4009,10 @@ return (
             </section>
 
             <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "chaves" ? undefined : "none" }}>
-              <h2>Chaves finais</h2>
+              <div className="cardTitleRow">
+                <h2>Chaves finais</h2>
+                <SavingStatusBadge />
+              </div>
 
               {!currentBrackets ? (
                 <>
@@ -4027,7 +4043,10 @@ return (
             </section>
 
             <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
-              <h2>Ranking</h2>
+              <div className="cardTitleRow">
+                <h2>Ranking</h2>
+                <SavingStatusBadge />
+              </div>
 
               <div className="cupRankingSplit">
                 <div className="cupRankingPanel">
@@ -4058,7 +4077,10 @@ return (
             </section>
 
             <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
-              <h2>{data.cupConfig?.repechageName || "Disputa Paralela"}</h2>
+              <div className="cardTitleRow">
+                <h2>{data.cupConfig?.repechageName || "Disputa Paralela"}</h2>
+                <SavingStatusBadge />
+              </div>
               {!currentBrackets ? (
                 <>
                   <p>Gere as chaves finais para visualizar a disputa paralela.</p>
@@ -4076,7 +4098,10 @@ return (
           </>
         ) : (
           <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
-            <h2>Ranking</h2>
+            <div className="cardTitleRow">
+              <h2>Ranking</h2>
+              <SavingStatusBadge />
+            </div>
 
             <RankingView
               ranking={ranking}
