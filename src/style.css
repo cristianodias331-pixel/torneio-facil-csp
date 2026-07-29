@@ -9692,3 +9692,122 @@ button.profileVisibilitySwitch.private strong {
     height: 112px !important;
   }
 }
+
+
+/* Correção urgente: desfazer layout quebrado dos jogos públicos */
+.publicPage .schedule {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 18px !important;
+  overflow: visible !important;
+}
+
+.publicPage .roundCard {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+.publicPage .roundCard > h3,
+.publicPage .schedule > .roundCard > h3,
+.publicPage .roundHeader,
+.publicPage .roundHeader h3 {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 0 14px !important;
+  box-sizing: border-box !important;
+}
+
+.publicPage .roundCard .gameCard {
+  width: 100% !important;
+  min-height: auto !important;
+  display: block !important;
+  padding: 16px !important;
+  margin: 0 0 14px !important;
+  overflow: visible !important;
+}
+
+.publicPage .roundCard .gameCard > strong {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 0 14px !important;
+  white-space: nowrap !important;
+}
+
+.publicPage .gameTeams {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+.publicPage .gameTeams > div {
+  min-width: 0 !important;
+  width: 100% !important;
+  padding: 14px !important;
+  border-radius: 16px !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  text-align: center !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  white-space: normal !important;
+}
+
+.publicPage .gameTeams > span {
+  display: grid !important;
+  place-items: center !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  font-weight: 950 !important;
+}
+
+.publicPage .publicScore {
+  display: block !important;
+  width: max-content !important;
+  min-width: 128px !important;
+  max-width: 100% !important;
+  margin: 14px auto 0 !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 760px) {
+  .publicPage .publicContent {
+    width: calc(100% - 16px) !important;
+    padding-top: 10px !important;
+  }
+
+  .publicPage .roundCard {
+    padding: 12px !important;
+    border-radius: 18px !important;
+  }
+
+  .publicPage .roundCard .gameCard {
+    padding: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .publicPage .gameTeams {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .publicPage .gameTeams > span {
+    width: 100% !important;
+    height: 28px !important;
+    background: transparent !important;
+  }
+
+  .publicPage .publicScore {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+}
