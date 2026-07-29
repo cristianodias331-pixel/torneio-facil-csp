@@ -2304,9 +2304,10 @@ function Dashboard({ profile, user }) {
   const [trashTournaments, setTrashTournaments] = useState([]);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
-  const [newEventName, setNewEventName] = useState("");
   const [newType, setNewType] = useState("");
 const [newGender, setNewGender] = useState("");
+const [newMultiCategoryEvent, setNewMultiCategoryEvent] = useState("nao");
+const [newCategorySchedules, setNewCategorySchedules] = useState([{ category: "", date: "", time: "" }]);
 const [newDate, setNewDate] = useState("");
 const [newEndDate, setNewEndDate] = useState("");
 const [newRegistrationDeadline, setNewRegistrationDeadline] = useState("");
@@ -2614,7 +2615,8 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
 
 const initialData = {
   ...createInitialData(newType, config),
-  eventName: newEventName.trim(),
+  multiCategoryEvent: newMultiCategoryEvent === "sim",
+  categorySchedules: newMultiCategoryEvent === "sim" ? newCategorySchedules : [],
   gender: newGender,
   eventDate: newDate,
   eventStartDate: newDate,
@@ -2645,9 +2647,10 @@ const initialData = {
     }
 
     setNewName("");
-    setNewEventName("");
     setNewType("");
 setNewGender("");
+setNewMultiCategoryEvent("nao");
+setNewCategorySchedules([{ category: "", date: "", time: "" }]);
 setNewDate("");
 setNewEndDate("");
 setNewRegistrationDeadline("");
@@ -2782,6 +2785,20 @@ setNewRankingCriteria(defaultRankingCriteria);
     setNewDailyStartTimes((prev) => ({ ...prev, [date]: time }));
   }
 
+  function updateCategorySchedule(index, field, value) {
+    setNewCategorySchedules((prev) =>
+      prev.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item)
+    );
+  }
+
+  function addCategorySchedule() {
+    setNewCategorySchedules((prev) => [...prev, { category: "", date: "", time: "" }]);
+  }
+
+  function removeCategorySchedule(index) {
+    setNewCategorySchedules((prev) => prev.length <= 1 ? prev : prev.filter((_, itemIndex) => itemIndex !== index));
+  }
+
   function moveTournamentByDrag(fromId, toId) {
     if (!fromId || !toId || fromId === toId) return;
 
@@ -2913,23 +2930,23 @@ setNewRankingCriteria(defaultRankingCriteria);
   <h2>Criar novo torneio</h2>
 
   <div className="formField">
-    <label>Nome do torneio</label>
+    <label>Nome do evento/torneio</label>
     <input
       value={newName}
       onChange={(e) => setNewName(e.target.value)}
-      placeholder="Ex: Masculino iniciante"
-    />
-  </div>
-
-  <div className="formField">
-    <label>Nome do evento/copa</label>
-    <input
-      value={newEventName}
-      onChange={(e) => setNewEventName(e.target.value)}
       placeholder="Ex: Campeão Open"
     />
   </div>
 
+  <div className="formField">
+    <label>Evento com várias categorias e/ou em mais de um dia?</label>
+    <select value={newMultiCategoryEvent} onChange={(e) => setNewMultiCategoryEvent(e.target.value)}>
+      <option value="nao">Não</option>
+      <option value="sim">Sim</option>
+    </select>
+  </div>
+
+  {newMultiCategoryEvent === "nao" && (
   <div className="formField">
     <label>Categoria/Gênero</label>
     <input
@@ -2938,6 +2955,57 @@ setNewRankingCriteria(defaultRankingCriteria);
       placeholder="Ex: Masculino iniciante"
     />
   </div>
+  )}
+
+  {newMultiCategoryEvent === "sim" && (
+  <div className="formField fullField eventScheduleBox">
+    <div className="eventScheduleHeader">
+      <strong>🏷️ Categorias, datas e horários</strong>
+      <span>Cadastre cada categoria do evento com sua data e horário de início.</span>
+    </div>
+
+    <div className="categoryScheduleList">
+      {newCategorySchedules.map((item, index) => (
+        <div className="categoryScheduleItem" key={index}>
+          <div className="formField compactField">
+            <label>Categoria/Gênero</label>
+            <input
+              value={item.category}
+              onChange={(e) => updateCategorySchedule(index, "category", e.target.value)}
+              placeholder="Ex: Masculino iniciante"
+            />
+          </div>
+
+          <div className="formField compactField">
+            <label>Data</label>
+            <input
+              type="date"
+              value={item.date}
+              onChange={(e) => updateCategorySchedule(index, "date", e.target.value)}
+            />
+          </div>
+
+          <div className="formField compactField">
+            <label>Horário</label>
+            <input
+              type="time"
+              value={item.time}
+              onChange={(e) => updateCategorySchedule(index, "time", e.target.value)}
+            />
+          </div>
+
+          <button type="button" className="secondaryBtn" onClick={() => removeCategorySchedule(index)} disabled={newCategorySchedules.length <= 1}>
+            Remover
+          </button>
+        </div>
+      ))}
+    </div>
+
+    <button type="button" className="secondaryBtn" onClick={addCategorySchedule}>
+      + Adicionar categoria
+    </button>
+  </div>
+  )}
 
   <div className="formField fullField eventScheduleBox">
     <div className="eventScheduleHeader">
@@ -3097,8 +3165,8 @@ setNewRankingCriteria(defaultRankingCriteria);
     </div>
 
     <div className="tournamentMeta">
-      {details.eventName ? (
-        <span>🧩 {details.eventName}</span>
+      {details.multiCategoryEvent ? (
+        <span>🧩 Várias categorias</span>
       ) : null}
       {details.gender ? (
         <span>🏷️ {details.gender}</span>
@@ -3237,7 +3305,7 @@ setNewRankingCriteria(defaultRankingCriteria);
               </div>
 
               <div className="tournamentMeta">
-                {details.eventName ? <span>🧩 {details.eventName}</span> : null}
+                {details.multiCategoryEvent ? <span>🧩 Várias categorias</span> : null}
                 {details.gender ? <span>🏷️ {details.gender}</span> : null}
                 {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
                 {details.location ? <span>📍 {details.location}</span> : null}
@@ -3933,7 +4001,7 @@ return (
           <h1>{tournament.name}</h1>
           <div className="tournamentHeaderMeta">
             <span>🏆 {tournament.type}</span>
-            {data.eventName ? <span>🧩 Evento: {data.eventName}</span> : null}
+            {data.multiCategoryEvent ? <span>🧩 Várias categorias</span> : null}
             {data.gender ? <span>🏷️ {data.gender}</span> : null}
             {data.eventPeriodLabel || data.eventDate ? <span>🗓️ {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
             {data.eventDay ? <span>📅 {data.eventDay}</span> : null}
