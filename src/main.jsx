@@ -1557,7 +1557,7 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Mover para lixeira</button>
         </div>
       </div>
@@ -1580,7 +1580,7 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
         </div>
       </div>
@@ -1603,7 +1603,7 @@ function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar tudo</button>
         </div>
       </div>
@@ -3074,7 +3074,7 @@ setNewRankingCriteria(defaultRankingCriteria);
               <button type="button" className="secondaryBtn" onClick={() => nudgePhotoZoom(0.12)}>+</button>
             </div>
             <div className="photoEditorActions">
-              <button type="button" className="deleteBtn" onClick={() => setPhotoEditor(null)}>Cancelar</button>
+              <button type="button" className="secondaryBtn" onClick={() => setPhotoEditor(null)}>Cancelar</button>
               <button type="button" onClick={applyEditedOrganizerPhoto}>Aplicar foto</button>
             </div>
           </div>
@@ -3208,7 +3208,7 @@ setNewRankingCriteria(defaultRankingCriteria);
             />
           </div>
 
-          <button type="button" className="deleteBtn" onClick={() => removeCategorySchedule(index)} disabled={newCategorySchedules.length <= 1}>
+          <button type="button" className="secondaryBtn" onClick={() => removeCategorySchedule(index)} disabled={newCategorySchedules.length <= 1}>
             Remover
           </button>
         </div>
