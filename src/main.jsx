@@ -2304,6 +2304,9 @@ function Dashboard({ profile, user }) {
   const [trashTournaments, setTrashTournaments] = useState([]);
   const [publicArenaProfiles, setPublicArenaProfiles] = useState([]);
   const [arenaProfileSearch, setArenaProfileSearch] = useState("");
+  const [selectedArenaProfile, setSelectedArenaProfile] = useState(null);
+  const [selectedArenaTournaments, setSelectedArenaTournaments] = useState([]);
+  const [selectedArenaLoading, setSelectedArenaLoading] = useState(false);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("");
@@ -2741,6 +2744,29 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const validTournaments = allTournaments.filter((item) => !item.data?.deletedAt || item.data.deletedAt >= deleteLimit);
     setTournaments(validTournaments.filter((item) => !item.data?.deletedAt));
     setTrashTournaments(validTournaments.filter((item) => item.data?.deletedAt));
+  }
+
+  async function openArenaProfile(arena) {
+    setSelectedArenaProfile(arena);
+    setSelectedArenaTournaments([]);
+    setSelectedArenaLoading(true);
+
+    const { data, error } = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("user_id", arena.id)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
+
+    setSelectedArenaLoading(false);
+
+    if (error) {
+      console.error("Erro ao carregar publicações da arena:", error);
+      showNotice("error", "Erro ao abrir arena", "Não foi possível carregar as publicações desta arena.");
+      return;
+    }
+
+    setSelectedArenaTournaments(data || []);
   }
 
   async function loadPublicArenaProfiles() {
@@ -3405,7 +3431,7 @@ setNewPublicInfo({
         </div>
         <strong>{arena.arena_name || arena.name || "Arena cadastrada"}</strong>
         <small>📍 {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</small>
-        <button type="button">Acessar arena</button>
+        <button type="button" onClick={() => openArenaProfile(arena)}>Acessar arena</button>
       </article>
     ))}
   </div>
@@ -4039,6 +4065,84 @@ setNewPublicInfo({
 </>
 )}
 
+
+
+        {selectedArenaProfile ? (
+          <div className="arenaProfileOverlay" onClick={() => setSelectedArenaProfile(null)}>
+            <section className="arenaProfileModal" onClick={(e) => e.stopPropagation()}>
+              <button type="button" className="arenaProfileClose" onClick={() => setSelectedArenaProfile(null)}>×</button>
+
+              <div className="arenaProfileHero">
+                <div className="arenaProfilePhotoBig">
+                  {selectedArenaProfile.photo_url ? (
+                    <img src={selectedArenaProfile.photo_url} alt={selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena"} />
+                  ) : (
+                    <span>{(selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena").slice(0, 2).toUpperCase()}</span>
+                  )}
+                </div>
+                <div>
+                  <h2>{selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena cadastrada"}</h2>
+                  <p>{[selectedArenaProfile.city, selectedArenaProfile.state].filter(Boolean).join("/") || "Local não informado"}</p>
+                  <small>{selectedArenaProfile.name || "Organizador não informado"}</small>
+                </div>
+              </div>
+
+              <div className="arenaProfileLinks">
+                {selectedArenaProfile.instagram_link ? (
+                  <a href={selectedArenaProfile.instagram_link} target="_blank" rel="noreferrer">Instagram</a>
+                ) : selectedArenaProfile.instagram_handle ? (
+                  <a href={"https://instagram.com/" + String(selectedArenaProfile.instagram_handle).replace("@", "")} target="_blank" rel="noreferrer">Instagram</a>
+                ) : null}
+
+                {selectedArenaProfile.whatsapp_group_link ? (
+                  <a href={selectedArenaProfile.whatsapp_group_link} target="_blank" rel="noreferrer">Grupo WhatsApp</a>
+                ) : null}
+
+                {selectedArenaProfile.phone ? (
+                  <a href={"https://wa.me/" + String(selectedArenaProfile.phone).replace(/\D/g, "")} target="_blank" rel="noreferrer">WhatsApp</a>
+                ) : null}
+
+                {selectedArenaProfile.maps_link ? (
+                  <a href={selectedArenaProfile.maps_link} target="_blank" rel="noreferrer">Google Maps</a>
+                ) : null}
+              </div>
+
+              {selectedArenaProfile.address ? <p className="arenaProfileAddress">📍 {selectedArenaProfile.address}</p> : null}
+
+              <div className="arenaProfilePublicationsHeader">
+                <strong>Publicações da arena</strong>
+                <span>{selectedArenaTournaments.length} torneio(s) público(s)</span>
+              </div>
+
+              {selectedArenaLoading ? (
+                <div className="arenaProfileEmpty">Carregando publicações...</div>
+              ) : selectedArenaTournaments.length === 0 ? (
+                <div className="arenaProfileEmpty">Esta arena ainda não publicou torneios.</div>
+              ) : (
+                <div className="arenaProfileTournamentList">
+                  {selectedArenaTournaments.map((t) => {
+                    const details = t.data || {};
+                    return (
+                      <article className="arenaProfileTournament" key={t.id}>
+                        <div>
+                          <strong>{t.name}</strong>
+                          <small>
+                            {t.type}
+                            {details.eventDate ? ` · ${formatDateBR(details.eventDate)}` : ""}
+                            {details.location ? ` · ${details.location}` : ""}
+                          </small>
+                        </div>
+                        {t.public_id ? (
+                          <button type="button" onClick={() => window.open(getPublicUrl(t.public_id), "_blank", "noopener,noreferrer")}>Ver torneio</button>
+                        ) : null}
+                      </article>
+                    );
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+        ) : null}
         </main>
       </div>
     </div>
