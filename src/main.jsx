@@ -3416,8 +3416,7 @@ setNewPublicInfo({
         </div>
       ) : null}
 
-      <aside className="playSidebar">
-        <div className="playSideLogo"><BeachLogo /><strong>Torneio<br/>360</strong></div>
+      <aside className="playSidebar noSideBrand">
         <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => setActivePanel("inicio")}><span>🏠</span><small>Início</small></button>
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
         <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
@@ -3427,9 +3426,11 @@ setNewPublicInfo({
 
       <div className="playMain">
         <header className="playTopbar">
-          <div className="playBrandText">
-            <strong>Torneio 360</strong>
-            <span>Tudo do torneio em um só lugar</span>
+          <div className="playTopBrand">
+            <BeachLogo />
+            <div className="brandTaglineOnly">
+              <span>Tudo do torneio em um só lugar</span>
+            </div>
           </div>
           <div className="playUserBox">
             <span>E aí, {profile.name || user.email?.split("@")[0] || "organizador"}!</span>
