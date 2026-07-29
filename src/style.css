@@ -8413,3 +8413,181 @@ button.profileVisibilitySwitch.private strong {
     flex-direction: column;
   }
 }
+
+
+/* Modal de perfil público da arena */
+.arenaProfileOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(15, 23, 42, .62);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.arenaProfileModal {
+  width: min(760px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: #ffffff;
+  border-radius: 26px;
+  padding: 22px;
+  position: relative;
+  box-shadow: 0 30px 90px rgba(15, 23, 42, .35);
+}
+
+.arenaProfileClose {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  border: 0 !important;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-size: 24px;
+  font-weight: 900;
+  box-shadow: none !important;
+}
+
+.arenaProfileHero {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding-right: 42px;
+}
+
+.arenaProfilePhotoBig {
+  width: 118px;
+  height: 118px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 32px;
+  font-weight: 950;
+  flex: 0 0 auto;
+}
+
+.arenaProfilePhotoBig img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arenaProfileHero h2 {
+  margin: 0 0 6px;
+  font-size: clamp(24px, 4vw, 36px);
+  line-height: 1;
+}
+
+.arenaProfileHero p,
+.arenaProfileHero small {
+  display: block;
+  margin: 4px 0;
+  color: #475569;
+  font-weight: 800;
+}
+
+.arenaProfileLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0 12px;
+}
+
+.arenaProfileLinks a,
+.arenaProfileTournament button {
+  text-decoration: none;
+  border: 0;
+  border-radius: 14px;
+  padding: 11px 14px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff !important;
+  font-weight: 900;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, .18);
+}
+
+.arenaProfileAddress {
+  margin: 8px 0 18px;
+  color: #334155;
+  font-weight: 800;
+}
+
+.arenaProfilePublicationsHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.arenaProfilePublicationsHeader strong {
+  font-size: 18px;
+}
+
+.arenaProfilePublicationsHeader span,
+.arenaProfileEmpty {
+  color: #64748b;
+  font-weight: 800;
+}
+
+.arenaProfileEmpty {
+  padding: 18px;
+  margin-top: 12px;
+  border-radius: 16px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.arenaProfileTournamentList {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.arenaProfileTournament {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  background: #f8fafc;
+}
+
+.arenaProfileTournament strong,
+.arenaProfileTournament small {
+  display: block;
+}
+
+.arenaProfileTournament small {
+  margin-top: 4px;
+  color: #64748b;
+  font-weight: 800;
+}
+
+@media (max-width: 640px) {
+  .arenaProfileHero,
+  .arenaProfileTournament {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .arenaProfilePhotoBig {
+    width: 96px;
+    height: 96px;
+  }
+
+  .arenaProfileTournament button {
+    width: 100%;
+  }
+}
