@@ -8340,3 +8340,76 @@ button.profileVisibilitySwitch.public {
   color: #166534 !important;
   border-color: #bbf7d0 !important;
 }
+
+
+/* Ajuste final: deixar o Perfil público/privado sem caixa de fundo */
+.profileVisibilitySwitch,
+button.profileVisibilitySwitch,
+.profileVisibilitySwitch.public,
+button.profileVisibilitySwitch.public,
+.profileVisibilitySwitch.private,
+button.profileVisibilitySwitch.private {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: auto !important;
+}
+
+.profileVisibilitySwitch.public,
+button.profileVisibilitySwitch.public,
+.profileVisibilitySwitch.public strong,
+button.profileVisibilitySwitch.public strong {
+  color: #166534 !important;
+}
+
+.profileVisibilitySwitch.private,
+button.profileVisibilitySwitch.private,
+.profileVisibilitySwitch.private strong,
+button.profileVisibilitySwitch.private strong {
+  color: #9a3412 !important;
+}
+
+.profileVisibilitySwitch .switchTrack {
+  flex: 0 0 auto;
+}
+
+
+/* Sub abas do Perfil */
+.profileSubtabs {
+  display: flex;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 6px;
+  background: #f1f5f9;
+  border-radius: 16px;
+}
+
+.profileSubtabs button {
+  flex: 1;
+  border: 0 !important;
+  border-radius: 12px;
+  padding: 12px 14px;
+  background: transparent !important;
+  color: #475569 !important;
+  font-weight: 900;
+  box-shadow: none !important;
+  cursor: pointer;
+}
+
+.profileSubtabs button.active {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .10) !important;
+}
+
+.profileSubtabPanel {
+  margin-top: 18px;
+}
+
+@media (max-width: 640px) {
+  .profileSubtabs {
+    flex-direction: column;
+  }
+}
