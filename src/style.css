@@ -9151,3 +9151,115 @@ button.profileVisibilitySwitch.private strong {
     margin-right: 20px !important;
   }
 }
+
+
+/* Ajuste final do topo da arena: remover selo e foto redonda */
+.arenaPublicInfo > span {
+  display: none !important;
+}
+
+.arenaPublicHero {
+  grid-template-columns: 158px minmax(0, 1fr) !important;
+  gap: 26px !important;
+  align-items: center !important;
+  margin-top: 24px !important;
+}
+
+.arenaPublicPhoto {
+  width: 150px !important;
+  height: 150px !important;
+  border-radius: 999px !important;
+  border: 7px solid #ffffff !important;
+  overflow: hidden !important;
+  background: linear-gradient(135deg, #1769e8, #08aeea) !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .20) !important;
+}
+
+.arenaPublicPhoto img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  border-radius: 999px !important;
+}
+
+.arenaPublicBackBtn {
+  position: relative !important;
+  top: auto !important;
+  left: auto !important;
+  margin: 22px 0 0 32px !important;
+  z-index: 5 !important;
+}
+
+.arenaPublicInfo h2 {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .arenaPublicHero {
+    grid-template-columns: 1fr !important;
+    margin-top: 20px !important;
+  }
+
+  .arenaPublicPhoto {
+    width: 132px !important;
+    height: 132px !important;
+  }
+
+  .arenaPublicBackBtn {
+    margin-left: 20px !important;
+  }
+}
+
+
+/* Correção definitiva: botão Voltar fora da foto e selo visível */
+.arenaPublicPage .arenaPublicInfo > span {
+  display: inline-flex !important;
+  position: static !important;
+  width: max-content !important;
+  margin: 0 0 10px 0 !important;
+}
+
+.arenaPublicPage .arenaPublicBackBtn {
+  position: static !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: max-content !important;
+  margin: 22px 0 0 32px !important;
+  transform: none !important;
+  z-index: 1 !important;
+}
+
+.arenaPublicPage .arenaPublicHero {
+  margin: 24px 32px 0 !important;
+  padding-top: 0 !important;
+  display: grid !important;
+  grid-template-columns: 158px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 26px !important;
+  overflow: visible !important;
+}
+
+.arenaPublicPage .arenaPublicPhoto {
+  position: static !important;
+  margin: 0 !important;
+  width: 150px !important;
+  height: 150px !important;
+  border-radius: 999px !important;
+}
+
+.arenaPublicPage .arenaPublicInfo h2 {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .arenaPublicPage .arenaPublicBackBtn {
+    margin-left: 20px !important;
+    margin-top: 18px !important;
+  }
+
+  .arenaPublicPage .arenaPublicHero {
+    margin: 22px 20px 0 !important;
+    grid-template-columns: 1fr !important;
+  }
+}
