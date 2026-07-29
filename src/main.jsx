@@ -2248,8 +2248,11 @@ function Login() {
 
                   <label>Data de nascimento</label>
                   <input
+                    className="clickableDateInput"
                     type="date"
                     value={birthDate}
+                    onClick={(e) => e.currentTarget.showPicker?.()}
+                    onFocus={(e) => e.currentTarget.showPicker?.()}
                     onChange={(e) => setBirthDate(e.target.value)}
                   />
                 </>
@@ -2409,6 +2412,10 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   function updateOrganizerProfile(field, value) {
     setOrganizerProfile((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function openDatePicker(e) {
+    e.currentTarget.showPicker?.();
   }
 
   function buildOrganizerProfilePayload(nextVisibility = organizerProfile.isPublic !== false) {
@@ -3336,19 +3343,19 @@ setNewPublicInfo({
 
               <div className="formField">
                 <label>Início</label>
-                <input type="date" value={editForm.eventDate} onChange={(e) => updateEditForm("eventDate", e.target.value)} />
+                <input className="clickableDateInput" type="date" value={editForm.eventDate} onClick={openDatePicker} onFocus={openDatePicker} onChange={(e) => updateEditForm("eventDate", e.target.value)} />
               </div>
 
               {!editTarget.data?.multiCategoryEvent && (
               <div className="formField">
                 <label>Fim</label>
-                <input type="date" value={editForm.eventEndDate} min={editForm.eventDate || undefined} onChange={(e) => updateEditForm("eventEndDate", e.target.value)} />
+                <input className="clickableDateInput" type="date" value={editForm.eventEndDate} min={editForm.eventDate || undefined} onClick={openDatePicker} onFocus={openDatePicker} onChange={(e) => updateEditForm("eventEndDate", e.target.value)} />
               </div>
               )}
 
               <div className="formField">
                 <label>Encerramento das inscrições</label>
-                <input type="date" value={editForm.registrationDeadline} onChange={(e) => updateEditForm("registrationDeadline", e.target.value)} />
+                <input className="clickableDateInput" type="date" value={editForm.registrationDeadline} onClick={openDatePicker} onFocus={openDatePicker} onChange={(e) => updateEditForm("registrationDeadline", e.target.value)} />
               </div>
 
               <div className="formField">
@@ -3628,8 +3635,11 @@ setNewPublicInfo({
           <div className="formField compactField">
             <label>Data</label>
             <input
+              className="clickableDateInput"
               type="date"
               value={item.date}
+              onClick={openDatePicker}
+              onFocus={openDatePicker}
               onChange={(e) => updateCategorySchedule(index, "date", e.target.value)}
             />
           </div>
@@ -3666,8 +3676,11 @@ setNewPublicInfo({
       <div className="formField compactField">
         <label>Início do torneio</label>
         <input
+          className="clickableDateInput"
           type="date"
           value={newDate}
+          onClick={openDatePicker}
+          onFocus={openDatePicker}
           onChange={(e) => {
             setNewDate(e.target.value);
             if (newEndDate && e.target.value && newEndDate < e.target.value) setNewEndDate(e.target.value);
@@ -3678,8 +3691,11 @@ setNewPublicInfo({
       <div className="formField compactField">
         <label>Fim do torneio</label>
         <input
+          className="clickableDateInput"
           type="date"
           value={newEndDate}
+          onClick={openDatePicker}
+          onFocus={openDatePicker}
           min={newDate || undefined}
           onChange={(e) => setNewEndDate(e.target.value)}
         />
@@ -3688,8 +3704,11 @@ setNewPublicInfo({
       <div className="formField compactField">
         <label>Encerramento das inscrições</label>
         <input
+          className="clickableDateInput"
           type="date"
           value={newRegistrationDeadline}
+          onClick={openDatePicker}
+          onFocus={openDatePicker}
           max={newDate || undefined}
           onChange={(e) => setNewRegistrationDeadline(e.target.value)}
         />
