@@ -11126,3 +11126,194 @@ button.profileVisibilitySwitch.private strong {
     padding-top: 84px !important;
   }
 }
+
+
+/* Página inicial em fundo branco: logo azul maior e legível */
+.landingHeader .landingBrand {
+  gap: 14px !important;
+  align-items: center !important;
+}
+
+.landingHeader .landingBrand .torneio360LogoBlue {
+  width: 150px !important;
+  height: 62px !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+}
+
+.landingHeader .landingBrand .torneio360LogoBlue img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 5px 8px rgba(15, 76, 150, 0.18)) !important;
+}
+
+.landingHeader .landingBrand .brandTaglineOnly span {
+  color: #123f7a !important;
+  font-size: 14px !important;
+  font-weight: 900 !important;
+  line-height: 1.15 !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 760px) {
+  .landingHeader .landingBrand {
+    gap: 8px !important;
+  }
+
+  .landingHeader .landingBrand .torneio360LogoBlue {
+    width: 116px !important;
+    height: 50px !important;
+  }
+
+  .landingHeader .landingBrand .brandTaglineOnly span {
+    font-size: 11px !important;
+    white-space: normal !important;
+  }
+}
+
+/* MOBILE FINAL: topo e menu inferior ajustados para smartphones */
+@media (max-width: 760px) {
+  .playTopbar {
+    left: 0 !important;
+    right: 0 !important;
+    top: 0 !important;
+    height: 74px !important;
+    min-height: 74px !important;
+    padding: 8px 8px 8px 10px !important;
+    gap: 6px !important;
+    overflow: hidden !important;
+  }
+
+  .playTopbar .playTopBrand {
+    height: 58px !important;
+    gap: 6px !important;
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .playTopbar .playTopBrand .torneio360Logo {
+    width: 108px !important;
+    height: 48px !important;
+    min-width: 108px !important;
+    max-width: 108px !important;
+    margin: 0 !important;
+  }
+
+  .playTopbar .playTopBrand .torneio360Logo img {
+    object-fit: contain !important;
+    filter: drop-shadow(0 4px 7px rgba(0, 0, 0, 0.25)) !important;
+  }
+
+  .playTopbar .playTopBrand .brandTaglineOnly {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    max-width: 118px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .playTopbar .playTopBrand .brandTaglineOnly span {
+    font-size: 8.5px !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+    overflow-wrap: normal !important;
+    word-break: normal !important;
+  }
+
+  .playTopbar .playUserBox {
+    flex: 0 0 auto !important;
+    margin-left: 4px !important;
+  }
+
+  .playTopbar .playUserBox span {
+    display: none !important;
+  }
+
+  .playTopbar .playUserBox button {
+    min-height: 34px !important;
+    height: 34px !important;
+    padding: 0 10px !important;
+    border-radius: 10px !important;
+    font-size: 11px !important;
+  }
+
+  .playMain {
+    padding-top: 74px !important;
+    padding-bottom: 82px !important;
+  }
+
+  .playContent {
+    padding: 18px 12px 92px !important;
+    margin-top: 0 !important;
+  }
+
+  .playSidebar,
+  .playSidebar.noSideBrand {
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    height: 72px !important;
+    min-height: 72px !important;
+    padding: 7px 6px calc(7px + env(safe-area-inset-bottom)) !important;
+    z-index: 9998 !important;
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    border-right: 0 !important;
+    border-top: 1px solid rgba(148, 163, 184, 0.28) !important;
+    box-shadow: 0 -10px 28px rgba(15, 23, 42, 0.10) !important;
+    background: rgba(255, 255, 255, 0.96) !important;
+    backdrop-filter: blur(16px) !important;
+  }
+
+  .playSidebar .playNavItem {
+    width: 100% !important;
+    height: 58px !important;
+    min-height: 58px !important;
+    padding: 6px 2px !important;
+    border-radius: 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 3px !important;
+  }
+
+  .playSidebar .playNavItem span {
+    font-size: 17px !important;
+    line-height: 1 !important;
+  }
+
+  .playSidebar .playNavItem small {
+    font-size: 9px !important;
+    line-height: 1.05 !important;
+    white-space: nowrap !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .playTopbar .playTopBrand .torneio360Logo {
+    width: 96px !important;
+    min-width: 96px !important;
+    max-width: 96px !important;
+    height: 44px !important;
+  }
+
+  .playTopbar .playTopBrand .brandTaglineOnly {
+    max-width: 96px !important;
+  }
+
+  .playTopbar .playTopBrand .brandTaglineOnly span {
+    font-size: 7.5px !important;
+  }
+
+  .playTopbar .playUserBox button {
+    padding: 0 8px !important;
+    font-size: 10px !important;
+  }
+}
