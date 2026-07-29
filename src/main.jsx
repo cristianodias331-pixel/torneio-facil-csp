@@ -2337,6 +2337,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [profileVisibilitySaving, setProfileVisibilitySaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
+  const [shareTargetSaving, setShareTargetSaving] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
@@ -2828,6 +2829,47 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     loadPublicArenaProfiles();
   }, []);
 
+  async function confirmShareTarget() {
+    if (!shareTarget || shareTargetSaving) return;
+
+    setShareTargetSaving(true);
+    const publicId = shareTarget.public_id || generatePublicId();
+    const nextData = {
+      ...(shareTarget.data || {}),
+      publicInfo: buildTournamentPublicInfo(),
+      publishedOnProfile: true,
+      publishedAt: new Date().toISOString(),
+    };
+
+    const { data, error } = await supabase
+      .from("tournaments")
+      .update({
+        public_id: publicId,
+        is_public: true,
+        data: nextData,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", shareTarget.id)
+      .select("*")
+      .single();
+
+    setShareTargetSaving(false);
+
+    if (error) {
+      console.error("Erro ao publicar torneio:", error);
+      showNotice("error", "Torneio não publicado", `Não foi possível publicar esse torneio. Detalhe: ${error.message || "erro desconhecido"}`);
+      return;
+    }
+
+    if (data) {
+      setTournaments((prev) => prev.map((item) => item.id === data.id ? data : item));
+      setSelectedArenaTournaments((prev) => prev.map((item) => item.id === data.id ? data : item));
+    }
+
+    setShareTarget(null);
+    showNotice("success", "Torneio publicado", "O campeonato foi publicado no perfil da arena e já pode aparecer para outros usuários.");
+  }
+
   async function createTournament() {
     if (!newName.trim()) {
       showNotice("warning", "Nome obrigatório", "Digite um nome para este torneio.");
@@ -3252,7 +3294,7 @@ setNewPublicInfo({
 
             <div className="editTournamentActions">
               <button type="button" className="deleteBtn" onClick={() => setShareTarget(null)}>Cancelar</button>
-              <button type="button" onClick={() => setShareTarget(null)}>Confirmar compartilhamento</button>
+              <button type="button" onClick={confirmShareTarget} disabled={shareTargetSaving}>{shareTargetSaving ? "Publicando..." : "Confirmar compartilhamento"}</button>
             </div>
           </div>
         </div>
