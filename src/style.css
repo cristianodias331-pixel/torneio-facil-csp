@@ -9888,3 +9888,72 @@ button.profileVisibilitySwitch.public strong {
 button.profileVisibilitySwitch.private strong {
   color: #9a3412 !important;
 }
+
+
+/* CORREÇÃO REAL: sobrescrever regra geral .playAppShell button:not(...) */
+.playAppShell button.profileVisibilitySwitch,
+.playAppShell button.profileVisibilitySwitch.public,
+.playAppShell button.profileVisibilitySwitch.private,
+.playAppShell button.profileVisibilitySwitch:not(.playNavItem),
+.playAppShell button.profileVisibilitySwitch.public:not(.playNavItem),
+.playAppShell button.profileVisibilitySwitch.private:not(.playNavItem),
+.instagramProfileInfo button.profileVisibilitySwitch,
+.instagramProfileInfo button.profileVisibilitySwitch.public,
+.instagramProfileInfo button.profileVisibilitySwitch.private {
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+  border-radius: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+}
+
+.playAppShell button.profileVisibilitySwitch:hover,
+.playAppShell button.profileVisibilitySwitch.public:hover,
+.playAppShell button.profileVisibilitySwitch.private:hover,
+.playAppShell button.profileVisibilitySwitch:not(.playNavItem):hover {
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.playAppShell button.profileVisibilitySwitch strong,
+.instagramProfileInfo button.profileVisibilitySwitch strong {
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-shadow: none !important;
+}
+
+.playAppShell button.profileVisibilitySwitch.public strong,
+.instagramProfileInfo button.profileVisibilitySwitch.public strong {
+  color: #166534 !important;
+}
+
+.playAppShell button.profileVisibilitySwitch.private strong,
+.instagramProfileInfo button.profileVisibilitySwitch.private strong {
+  color: #9a3412 !important;
+}
+
+.playAppShell button.profileVisibilitySwitch .switchTrack,
+.instagramProfileInfo button.profileVisibilitySwitch .switchTrack {
+  width: 38px !important;
+  height: 20px !important;
+  padding: 2px !important;
+  border-radius: 999px !important;
+  flex: 0 0 auto !important;
+}
