@@ -9849,3 +9849,42 @@ input[type="date"]::-webkit-calendar-picker-indicator,
   color: transparent !important;
   background: transparent !important;
 }
+
+
+/* Remover definitivamente o fundo retangular do Perfil público/privado */
+.profileVisibilitySwitch,
+button.profileVisibilitySwitch,
+.profileVisibilitySwitch.public,
+button.profileVisibilitySwitch.public,
+.profileVisibilitySwitch.private,
+button.profileVisibilitySwitch.private,
+.instagramProfileCard .profileVisibilitySwitch,
+.instagramProfileCard button.profileVisibilitySwitch {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  min-height: auto !important;
+  width: max-content !important;
+}
+
+.profileVisibilitySwitch strong,
+button.profileVisibilitySwitch strong {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.profileVisibilitySwitch.public strong,
+button.profileVisibilitySwitch.public strong {
+  color: #166534 !important;
+}
+
+.profileVisibilitySwitch.private strong,
+button.profileVisibilitySwitch.private strong {
+  color: #9a3412 !important;
+}
