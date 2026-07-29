@@ -8591,3 +8591,183 @@ button.profileVisibilitySwitch.private strong {
     width: 100%;
   }
 }
+
+
+/* Página completa do perfil público da arena */
+.arenaPublicPage {
+  padding: clamp(18px, 4vw, 34px) !important;
+  border-radius: 28px !important;
+}
+
+.arenaPublicBackBtn {
+  border: 0 !important;
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  box-shadow: none !important;
+  border-radius: 999px;
+  padding: 11px 16px;
+  font-weight: 950;
+  margin-bottom: 22px;
+}
+
+.arenaPublicHero {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 24px;
+  align-items: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.arenaPublicPhoto {
+  width: 180px;
+  height: 180px;
+  border-radius: 34px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  color: #ffffff;
+  font-size: 44px;
+  font-weight: 950;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  box-shadow: 0 20px 45px rgba(37, 99, 235, .18);
+}
+
+.arenaPublicPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.arenaPublicInfo span {
+  display: inline-flex;
+  width: max-content;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-weight: 950;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.arenaPublicInfo h2 {
+  margin: 12px 0 8px;
+  font-size: clamp(32px, 6vw, 56px);
+  line-height: .95;
+  letter-spacing: -0.05em;
+}
+
+.arenaPublicInfo p,
+.arenaPublicInfo small {
+  display: block;
+  color: #475569;
+  font-weight: 900;
+  margin: 5px 0;
+}
+
+.arenaPublicDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.arenaPublicDetailsGrid div {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 18px;
+  padding: 15px;
+}
+
+.arenaPublicDetailsGrid strong,
+.arenaPublicDetailsGrid span {
+  display: block;
+}
+
+.arenaPublicDetailsGrid strong {
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+  font-weight: 950;
+  margin-bottom: 6px;
+}
+
+.arenaPublicDetailsGrid span {
+  color: #0f172a;
+  font-weight: 900;
+}
+
+.arenaPublicLinks {
+  margin-top: 20px !important;
+}
+
+.arenaPublicPublicationsHeader {
+  margin-top: 26px !important;
+}
+
+.arenaPublicTournamentGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.arenaPublicTournamentCard {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  border-radius: 22px;
+  padding: 18px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, .07);
+}
+
+.arenaPublicTournamentCard strong {
+  display: block;
+  font-size: 18px;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.arenaPublicTournamentCard small {
+  display: block;
+  color: #64748b;
+  font-weight: 900;
+  margin-bottom: 12px;
+}
+
+.arenaPublicTournamentCard .tournamentMeta {
+  margin-bottom: 14px;
+}
+
+.arenaPublicTournamentCard button {
+  width: 100%;
+  border: 0 !important;
+  border-radius: 14px;
+  padding: 12px 14px;
+  color: #ffffff !important;
+  font-weight: 950;
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+  box-shadow: 0 10px 24px rgba(37, 99, 235, .20);
+}
+
+.arenaTournamentDraftBadge {
+  display: inline-flex;
+  border-radius: 999px;
+  padding: 9px 12px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+@media (max-width: 760px) {
+  .arenaPublicHero,
+  .arenaPublicDetailsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .arenaPublicPhoto {
+    width: 132px;
+    height: 132px;
+  }
+}
