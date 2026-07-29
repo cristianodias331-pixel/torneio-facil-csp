@@ -9829,3 +9829,23 @@ button.profileVisibilitySwitch.private strong {
   background: #ecfdf5 !important;
   color: #166534 !important;
 }
+
+
+/* Campos de data totalmente clicáveis */
+input[type="date"],
+.clickableDateInput {
+  cursor: pointer !important;
+  position: relative;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator,
+.clickableDateInput::-webkit-calendar-picker-indicator {
+  cursor: pointer !important;
+  opacity: 1 !important;
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute !important;
+  inset: 0 !important;
+  color: transparent !important;
+  background: transparent !important;
+}
