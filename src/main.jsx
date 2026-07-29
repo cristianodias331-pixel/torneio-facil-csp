@@ -2919,14 +2919,12 @@ setNewRankingCriteria(defaultRankingCriteria);
   </div>
 
   <div className="formField">
-    <label>Gênero</label>
-    <select value={newGender} onChange={(e) => setNewGender(e.target.value)}>
-      <option value="">Escolha o gênero</option>
-      <option value="Masculino">Masculino</option>
-      <option value="Feminino">Feminino</option>
-      <option value="Misto">Misto</option>
-      <option value="Livre">Livre</option>
-    </select>
+    <label>Categoria/Gênero</label>
+    <input
+      value={newGender}
+      onChange={(e) => setNewGender(e.target.value)}
+      placeholder="Ex: Masculino iniciante"
+    />
   </div>
 
   <div className="formField fullField eventScheduleBox">
@@ -3088,7 +3086,7 @@ setNewRankingCriteria(defaultRankingCriteria);
 
     <div className="tournamentMeta">
       {details.gender ? (
-        <span>👥 {details.gender}</span>
+        <span>🏷️ {details.gender}</span>
       ) : null}
       {details.eventDate ? (
         <span>📅 {formatDateBR(details.eventDate)}</span>
@@ -3224,7 +3222,7 @@ setNewRankingCriteria(defaultRankingCriteria);
               </div>
 
               <div className="tournamentMeta">
-                {details.gender ? <span>👥 {details.gender}</span> : null}
+                {details.gender ? <span>🏷️ {details.gender}</span> : null}
                 {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
                 {details.location ? <span>📍 {details.location}</span> : null}
                 <span>🗑️ Exclui definitivamente em {daysLeft} dia(s)</span>
@@ -3919,9 +3917,14 @@ return (
           <h1>{tournament.name}</h1>
           <div className="tournamentHeaderMeta">
             <span>🏆 {tournament.type}</span>
-            {data.gender ? <span>👥 {data.gender}</span> : null}
-            {data.eventDate ? <span>🗓️ {formatDateBR(data.eventDate)}</span> : null}
+            {data.gender ? <span>🏷️ {data.gender}</span> : null}
+            {data.eventPeriodLabel || data.eventDate ? <span>🗓️ {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
             {data.eventDay ? <span>📅 {data.eventDay}</span> : null}
+            {data.registrationDeadline ? <span>📝 Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
+            {data.eventStartTime ? <span>⏰ Início {data.eventStartTime}</span> : null}
+            {data.dailyStartTimes && Object.keys(data.dailyStartTimes).length > 0 ? (
+              <span>🕒 Horários por dia definidos</span>
+            ) : null}
             {data.location ? <span>📍 {data.location}</span> : null}
             {data.winningScore ? <span>🎯 {data.winningScore} games</span> : null}
           </div>
