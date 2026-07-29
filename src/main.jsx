@@ -3486,6 +3486,8 @@ setNewPublicInfo({
     {selectedArenaProfile.instagram_handle ? <div><strong>Instagram</strong><span>{selectedArenaProfile.instagram_handle}</span></div> : null}
   </div>
 
+  <div className="arenaPublicLinksTitle">Links</div>
+
   <div className="arenaProfileLinks arenaPublicLinks">
     {selectedArenaProfile.instagram_link ? (
       <a href={selectedArenaProfile.instagram_link} target="_blank" rel="noreferrer">Instagram</a>
