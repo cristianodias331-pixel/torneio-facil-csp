@@ -2405,12 +2405,12 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   async function saveOrganizerProfile() {
-    localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(organizerProfile));
+    if (!user?.id) return;
 
     const publicProfileData = {
       id: user.id,
-      name: organizerProfile.organizerName || profile.name || "",
-      arena_name: organizerProfile.arenaName || "",
+      name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
+      arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
       phone: organizerProfile.whatsapp || "",
       address: organizerProfile.address || "",
       maps_link: organizerProfile.mapsLink || "",
@@ -2423,18 +2423,51 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       is_public: organizerProfile.isPublic !== false,
     };
 
-    const { error } = await supabase
+    localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify({
+      ...organizerProfile,
+      organizerName: publicProfileData.name,
+      arenaName: publicProfileData.arena_name,
+      isPublic: publicProfileData.is_public,
+    }));
+
+    const { data, error } = await supabase
       .from("profiles")
-      .upsert(publicProfileData, { onConflict: "id" });
+      .upsert(publicProfileData, { onConflict: "id" })
+      .select("*")
+      .single();
 
     if (error) {
-      console.error(error);
-      showNotice("error", "Erro ao salvar", "O perfil foi salvo neste dispositivo, mas não foi publicado para outros usuários.");
+      console.error("Erro ao publicar perfil no Supabase:", error);
+      showNotice(
+        "error",
+        "Perfil não publicado",
+        `O Supabase recusou a publicação do perfil. Verifique se a tabela profiles tem as colunas públicas e as políticas RLS liberadas. Detalhe: ${error.message || "erro desconhecido"}`
+      );
       return;
     }
 
+    if (data) {
+      setProfile((prev) => ({ ...prev, ...data }));
+      setOrganizerProfile((prev) => ({
+        ...prev,
+        photoUrl: data.photo_url || prev.photoUrl || "",
+        arenaName: data.arena_name || prev.arenaName || "",
+        organizerName: data.name || prev.organizerName || "",
+        email: user.email || prev.email || "",
+        whatsapp: data.phone || prev.whatsapp || "",
+        address: data.address || prev.address || "",
+        mapsLink: data.maps_link || prev.mapsLink || "",
+        city: data.city || prev.city || "",
+        state: data.state || prev.state || "",
+        instagramHandle: data.instagram_handle || prev.instagramHandle || "",
+        instagramLink: data.instagram_link || prev.instagramLink || "",
+        whatsappGroupLink: data.whatsapp_group_link || prev.whatsappGroupLink || "",
+        isPublic: data.is_public !== false,
+      }));
+    }
+
     await loadPublicArenaProfiles();
-    showNotice("success", "Perfil salvo", "Os dados do organizador foram salvos e publicados para outros usuários.");
+    showNotice("success", "Perfil público salvo", "Agora seu perfil está publicado para aparecer na aba Início dos outros usuários.");
   }
 
 
@@ -2669,28 +2702,36 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   async function loadPublicArenaProfiles() {
     const currentArenaProfile = {
       id: user.id,
-      name: organizerProfile.organizerName || profile.name || "Organizador",
+      name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
       arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
       city: organizerProfile.city || profile.city || "",
       state: organizerProfile.state || profile.state || "",
       photo_url: organizerProfile.photoUrl || profile.photo_url || "",
-      is_public: true,
+      phone: organizerProfile.whatsapp || profile.phone || "",
+      address: organizerProfile.address || profile.address || "",
+      maps_link: organizerProfile.mapsLink || profile.maps_link || "",
+      instagram_handle: organizerProfile.instagramHandle || profile.instagram_handle || "",
+      instagram_link: organizerProfile.instagramLink || profile.instagram_link || "",
+      whatsapp_group_link: organizerProfile.whatsappGroupLink || profile.whatsapp_group_link || "",
+      is_public: organizerProfile.isPublic !== false,
     };
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("*")
-      .order("name", { ascending: true });
+      .select("id, name, arena_name, city, state, photo_url, phone, address, maps_link, instagram_handle, instagram_link, whatsapp_group_link, is_public")
+      .eq("is_public", true)
+      .order("arena_name", { ascending: true });
 
     if (error) {
-      console.error(error);
-      setPublicArenaProfiles([currentArenaProfile]);
+      console.error("Erro ao carregar perfis públicos:", error);
+      setPublicArenaProfiles(currentArenaProfile.is_public ? [currentArenaProfile] : []);
       return;
     }
 
     const profiles = (data || [])
-      .filter((item) => item.is_public !== false)
+      .filter((item) => item?.id && item.is_public === true)
       .map((item) => ({ ...item, is_public: true }));
+
     const withoutCurrent = profiles.filter((item) => item.id !== user.id);
     setPublicArenaProfiles(currentArenaProfile.is_public ? [currentArenaProfile, ...withoutCurrent] : withoutCurrent);
   }
