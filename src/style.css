@@ -10807,3 +10807,63 @@ button.profileVisibilitySwitch.private strong {
 .publicBrandRow strong {
   letter-spacing: -0.03em;
 }
+
+
+/* Logo Torneio 360 em destaque na barra horizontal */
+.playTopBrand,
+.publicBrandRow {
+  gap: 14px !important;
+  align-items: center !important;
+}
+
+.playTopBrand .torneio360Logo,
+.publicBrandRow .torneio360Logo {
+  width: 170px !important;
+  height: 72px !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+}
+
+.playTopBrand .torneio360Logo img,
+.publicBrandRow .torneio360Logo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.25)) !important;
+}
+
+.playTopBrand .brandTaglineOnly,
+.publicBrandRow .brandTaglineOnly {
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+.playTopBrand .brandTaglineOnly span,
+.publicBrandRow .brandTaglineOnly span {
+  color: rgba(255, 255, 255, 0.82) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+.playSideLogo .torneio360Logo {
+  width: 48px !important;
+  height: 36px !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 760px) {
+  .playTopBrand .torneio360Logo,
+  .publicBrandRow .torneio360Logo {
+    width: 132px !important;
+    height: 56px !important;
+  }
+
+  .playTopBrand .brandTaglineOnly span,
+  .publicBrandRow .brandTaglineOnly span {
+    font-size: 11px !important;
+  }
+}
