@@ -10759,3 +10759,51 @@ button.profileVisibilitySwitch.private strong {
     align-self: stretch !important;
   }
 }
+
+/* Identidade oficial Torneio 360 */
+.beachLogo.torneio360Logo,
+.torneio360Logo {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border: 0 !important;
+  overflow: hidden !important;
+  display: grid !important;
+  place-items: center !important;
+}
+
+.beachLogo.torneio360Logo img,
+.torneio360Logo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  display: block !important;
+}
+
+.beachLogo.torneio360Logo .beachLogoSand,
+.beachLogo.torneio360Logo .beachLogoBall,
+.beachLogo.torneio360Logo .beachLogoRacket,
+.torneio360Logo .beachLogoSand,
+.torneio360Logo .beachLogoBall,
+.torneio360Logo .beachLogoRacket {
+  display: none !important;
+}
+
+.playSideLogo .torneio360Logo {
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 14px !important;
+}
+
+.publicBrandRow .torneio360Logo,
+.playBrand .torneio360Logo,
+.loginHero .torneio360Logo {
+  width: 52px !important;
+  height: 52px !important;
+}
+
+.playSideLogo strong,
+.playBrand strong,
+.publicBrandRow strong {
+  letter-spacing: -0.03em;
+}
