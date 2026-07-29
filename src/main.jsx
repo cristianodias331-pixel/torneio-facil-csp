@@ -2329,6 +2329,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 });
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [shareTarget, setShareTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
@@ -3016,6 +3017,49 @@ setNewPublicInfo({
         onConfirm={confirmDeleteTournament}
       />
 
+      {shareTarget ? (
+        <div className="editTournamentOverlay" role="dialog" aria-modal="true">
+          <div className="editTournamentModal shareTournamentModal">
+            <div className="editTournamentHeader">
+              <div>
+                <h2>Compartilhar campeonato</h2>
+                <p>Confira as informações do perfil que podem aparecer na publicação pública deste torneio.</p>
+              </div>
+              <button type="button" className="deleteBtn" onClick={() => setShareTarget(null)}>Fechar</button>
+            </div>
+
+            <div className="publicProfilePreview">
+              {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do organizador" /> : null}
+              <div>
+                <strong>{organizerProfile.arenaName || "Nome da arena não informado"}</strong>
+                <span>{organizerProfile.organizerName || "Organizador não informado"}</span>
+              </div>
+            </div>
+
+            <div className="publicInfoOptions shareInfoOptions">
+              <label><input type="checkbox" defaultChecked /> Nome da arena: {organizerProfile.arenaName || "não informado"}</label>
+              <label><input type="checkbox" defaultChecked /> Nome do organizador: {organizerProfile.organizerName || "não informado"}</label>
+              <label><input type="checkbox" defaultChecked /> WhatsApp: {organizerProfile.whatsapp || "não informado"}</label>
+              <label><input type="checkbox" defaultChecked /> Grupo do WhatsApp: {organizerProfile.whatsappGroupLink || "não informado"}</label>
+              <label><input type="checkbox" defaultChecked /> Instagram: {organizerProfile.instagramHandle || organizerProfile.instagramLink || "não informado"}</label>
+              <label><input type="checkbox" defaultChecked /> Endereço: {organizerProfile.address || "não informado"}</label>
+              <label><input type="checkbox" defaultChecked /> Link do mapa: {organizerProfile.mapsLink || "não informado"}</label>
+              <label><input type="checkbox" defaultChecked /> Cidade/Estado: {[organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") || "não informado"}</label>
+            </div>
+
+            <div className="shareChoiceBox">
+              <label><input type="radio" name="shareMode" defaultChecked /> Publicar no meu perfil e compartilhar torneio</label>
+              <label><input type="radio" name="shareMode" /> Somente compartilhar torneio</label>
+            </div>
+
+            <div className="editTournamentActions">
+              <button type="button" className="deleteBtn" onClick={() => setShareTarget(null)}>Cancelar</button>
+              <button type="button" onClick={() => setShareTarget(null)}>Confirmar compartilhamento</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {editTarget && editForm ? (
         <div className="editTournamentOverlay" role="dialog" aria-modal="true">
           <div className="editTournamentModal">
@@ -3177,9 +3221,20 @@ setNewPublicInfo({
           )}
 
 {activePanel === "inicio" && (
-<section className="card">
-  <h2>Resumo da plataforma</h2>
-  <p>Use o menu lateral para criar torneios, consultar modalidades liberadas e atualizar o perfil do organizador.</p>
+<section className="card publicProfileHomeCard">
+  <h2>Perfil público do organizador</h2>
+  <div className="publicProfilePreview">
+    {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do organizador" /> : null}
+    <div>
+      <strong>{organizerProfile.arenaName || profile.name || "Organizador"}</strong>
+      <span>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</span>
+    </div>
+  </div>
+  <p>Este será o espaço público da arena/organizador, onde visitantes poderão ver as informações permitidas e os campeonatos publicados.</p>
+  <div className="publishedTournamentsPreview">
+    <strong>Publicações de campeonatos</strong>
+    <span>Os campeonatos só aparecerão aqui quando você escolher “Publicar no meu perfil” na aba Compartilhar campeonato.</span>
+  </div>
 </section>
 )}
 
@@ -3376,24 +3431,6 @@ setNewPublicInfo({
     </select>
   </div>
 
-  <div className="formField fullField publicInfoBox">
-    <div className="publicInfoIntro">
-      <strong>Informações de divulgação</strong>
-      <span>Usaremos os dados salvos no perfil do organizador. Desmarque o que não quiser mostrar na página pública deste torneio.</span>
-    </div>
-
-    <div className="publicInfoOptions">
-      <label><input type="checkbox" checked={newPublicInfo.showArenaName} onChange={() => toggleNewPublicInfo("showArenaName")} /> Nome da arena</label>
-      <label><input type="checkbox" checked={newPublicInfo.showOrganizerName} onChange={() => toggleNewPublicInfo("showOrganizerName")} /> Nome do organizador</label>
-      <label><input type="checkbox" checked={newPublicInfo.showWhatsapp} onChange={() => toggleNewPublicInfo("showWhatsapp")} /> WhatsApp</label>
-      <label><input type="checkbox" checked={newPublicInfo.showWhatsappGroupLink} onChange={() => toggleNewPublicInfo("showWhatsappGroupLink")} /> Grupo do WhatsApp</label>
-      <label><input type="checkbox" checked={newPublicInfo.showInstagram} onChange={() => toggleNewPublicInfo("showInstagram")} /> Instagram</label>
-      <label><input type="checkbox" checked={newPublicInfo.showAddress} onChange={() => toggleNewPublicInfo("showAddress")} /> Endereço</label>
-      <label><input type="checkbox" checked={newPublicInfo.showMapsLink} onChange={() => toggleNewPublicInfo("showMapsLink")} /> Link do mapa</label>
-      <label><input type="checkbox" checked={newPublicInfo.showCityState} onChange={() => toggleNewPublicInfo("showCityState")} /> Cidade/Estado</label>
-    </div>
-  </div>
-
  <button type="button" onClick={createTournament} disabled={saving}>
   {saving ? "Salvando..." : "Criar torneio"}
 </button>
@@ -3458,6 +3495,7 @@ setNewPublicInfo({
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar campeonato</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
@@ -3522,6 +3560,7 @@ setNewPublicInfo({
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar campeonato</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
