@@ -7806,3 +7806,43 @@ button.removePhotoBtn.deleteBtn {
     width: 100%;
   }
 }
+
+/* Correção final específica dos cards do histórico */
+.tournamentItem .actions button.editBtn,
+.historyGroupCard .actions button.editBtn,
+button.editBtn {
+  background: linear-gradient(135deg, #7c3aed, #ec4899) !important;
+  background-color: #7c3aed !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(124, 58, 237, 0.32) !important;
+}
+
+.tournamentItem .actions button.deleteBtn,
+.historyGroupCard .actions button.deleteBtn,
+button.deleteBtn {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  background-color: #dc2626 !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.36) !important;
+}
+
+@media (max-width: 768px) {
+  .tournamentItem .actions,
+  .historyGroupCard .actions {
+    width: 100%;
+  }
+
+  .tournamentItem .actions button,
+  .historyGroupCard .actions button {
+    min-width: 0;
+    flex: 1 1 120px;
+  }
+}
+
+@media (max-width: 420px) {
+  .tournamentItem .actions button,
+  .historyGroupCard .actions button {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
