@@ -2302,6 +2302,7 @@ function Blocked({ profile }) {
 function Dashboard({ profile, user }) {
   const [tournaments, setTournaments] = useState([]);
   const [trashTournaments, setTrashTournaments] = useState([]);
+  const [publicArenaProfiles, setPublicArenaProfiles] = useState([]);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("");
@@ -2628,8 +2629,25 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setTrashTournaments(validTournaments.filter((item) => item.data?.deletedAt));
   }
 
+  async function loadPublicArenaProfiles() {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, name, arena_name, city, state, photo_url, is_public")
+      .neq("id", user.id)
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      setPublicArenaProfiles([]);
+      return;
+    }
+
+    setPublicArenaProfiles((data || []).filter((item) => item.is_public !== false));
+  }
+
   useEffect(() => {
     loadTournaments();
+    loadPublicArenaProfiles();
   }, []);
 
   async function createTournament() {
@@ -3224,28 +3242,26 @@ setNewPublicInfo({
 
 {activePanel === "inicio" && (
 <section className="arenaFeedSection">
-  <div className="arenaSearchBox">
-    <input placeholder="Busque por uma arena..." />
-    <button type="button" aria-label="Buscar arena">🔍</button>
+  <div className="arenaSearchBox mapsSearchBox">
+    <input readOnly value="Arenas próximas no Google Maps" />
+    <button
+      type="button"
+      aria-label="Buscar arenas próximas"
+      onClick={() => window.open("https://www.google.com/maps/search/arena+beach+tennis+perto+de+mim", "_blank", "noopener,noreferrer")}
+    >
+      🔍
+    </button>
   </div>
+  <p className="mapsSearchHint">Use este atalho para abrir o Google Maps filtrando arenas próximas conforme a localização/GPS de quem clicar.</p>
 
   <div className="arenaFeedGrid">
-    {[
-      { name: "Hype Beach Arena", city: "Maracanaú", color: "#dc2626", label: "ARENA HYPE" },
-      { name: "Arena Duvale", city: "Russas", color: "#020617", label: "DUVALE ARENA" },
-      { name: "Arena Look Net", city: "Antônio Diogo - CE060", color: "#1d4ed8", label: "ARENA LOOK NET" },
-      { name: "JL Arena", city: "Senador Pompeu", color: "#3f5f3a", label: "JL ARENA SPORT" },
-      { name: "Arena Beluar Sport Beach", city: "Redenção", color: "#7c3aed", label: "ARENA BELUAR" },
-      { name: "Arena Conexão FGTECH", city: "Capistrano", color: "#f97316", label: "ARENA CONEXÃO" },
-      { name: "Arena Maciço Play", city: "Aracoiaba", color: "#2563eb", label: "Maciço Play" },
-      { name: "CT JEFIM BEACHTENNIS", city: "Baturité", color: "#0891b2", label: "CTJEFIN" },
-    ].map((arena) => (
-      <article className="arenaFeedCard" key={arena.name}>
-        <div className="arenaFeedCover" style={{ background: arena.color }}>
-          <span>{arena.label}</span>
+    {publicArenaProfiles.map((arena) => (
+      <article className="arenaFeedCard" key={arena.id}>
+        <div className="arenaFeedCover registeredArenaCover">
+          {arena.photo_url ? <img src={arena.photo_url} alt={arena.arena_name || arena.name || "Arena"} /> : <span>{(arena.arena_name || arena.name || "Arena").slice(0, 2).toUpperCase()}</span>}
         </div>
-        <strong>{arena.name}</strong>
-        <small>📍 {arena.city}</small>
+        <strong>{arena.arena_name || arena.name || "Arena cadastrada"}</strong>
+        <small>📍 {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</small>
         <button type="button">Acessar arena</button>
       </article>
     ))}
