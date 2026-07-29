@@ -10020,3 +10020,162 @@ button.profileVisibilitySwitch.private strong {
     padding: 10px 8px !important;
   }
 }
+
+
+/* FINAL: compartilhamento com partidas iguais à tela do organizador */
+.publicPage .schedule {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(360px, 1fr)) !important;
+  gap: 18px !important;
+  align-items: start !important;
+}
+
+.publicPage .roundCard {
+  padding: 16px !important;
+  border-radius: 20px !important;
+  margin-bottom: 14px !important;
+  overflow: visible !important;
+  background: linear-gradient(180deg, #ffffff, #f8fafc) !important;
+}
+
+.publicPage .roundCard > h3,
+.publicPage .roundHeader h3 {
+  display: inline-flex !important;
+  width: auto !important;
+  margin: 0 0 12px !important;
+  padding: 12px 16px !important;
+  border-radius: 16px !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+}
+
+.publicPage .publicGameCard.gameCard {
+  display: block !important;
+  padding: 14px !important;
+  border-radius: 18px !important;
+  margin-bottom: 12px !important;
+  min-height: auto !important;
+  background: #ffffff !important;
+  border: 1px solid #dbeafe !important;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, .06) !important;
+}
+
+.publicPage .publicGameCard .gameTopLine {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 12px !important;
+}
+
+.publicPage .publicGameCard .gameTopLine strong {
+  display: inline-flex !important;
+  width: auto !important;
+  max-width: max-content !important;
+  margin: 0 !important;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  background: #e0f2fe !important;
+  color: #0369a1 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+}
+
+.publicPage .publicGameCard .gameTeams {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr) !important;
+  gap: 10px !important;
+  margin-top: 10px !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.publicPage .publicGameCard .gameTeams div {
+  padding: 11px 12px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+  min-width: 0 !important;
+  text-align: center !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+}
+
+.publicPage .publicGameCard .gameTeams span {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  display: grid !important;
+  place-items: center !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+  color: #0f172a !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+}
+
+.publicPage .publicGameCard .winnerTeam {
+  background: #bbf7d0 !important;
+  color: #047857 !important;
+}
+
+.publicPage .publicGameCard .loserTeam {
+  background: #fecaca !important;
+  color: #b91c1c !important;
+  opacity: 1 !important;
+}
+
+.publicPage .publicReadOnlyScoreRow.scoreRow {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  margin-top: 12px !important;
+}
+
+.publicPage .publicReadOnlyScoreRow input {
+  width: 86px !important;
+  height: 36px !important;
+  padding: 6px 8px !important;
+  border-radius: 14px !important;
+  border: 1px solid #cbd5e1 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: #0f172a !important;
+}
+
+.publicPage .publicReadOnlyScoreRow span {
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  color: #0f172a !important;
+}
+
+@media (max-width: 760px) {
+  .publicPage .schedule {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .publicPage .publicGameCard .gameTeams {
+    grid-template-columns: 1fr !important;
+    gap: 8px !important;
+  }
+
+  .publicPage .publicGameCard .gameTeams span {
+    width: 100% !important;
+    height: 24px !important;
+  }
+
+  .publicPage .publicReadOnlyScoreRow input {
+    width: 72px !important;
+  }
+}
