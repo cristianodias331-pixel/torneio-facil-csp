@@ -8196,3 +8196,21 @@ button.shareTournamentBtn:hover,
 .profileTournamentPost .tournamentActions {
   margin-top: 14px;
 }
+
+/* Feed somente com arenas cadastradas e atalho para Google Maps */
+.mapsSearchHint {
+  margin: -8px auto 4px;
+  max-width: 680px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 750;
+}
+.registeredArenaCover {
+  background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
+}
+.registeredArenaCover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
