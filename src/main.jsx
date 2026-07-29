@@ -3221,19 +3221,32 @@ setNewPublicInfo({
           )}
 
 {activePanel === "inicio" && (
-<section className="card publicProfileHomeCard">
-  <h2>Perfil público do organizador</h2>
-  <div className="publicProfilePreview">
-    {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do organizador" /> : null}
-    <div>
-      <strong>{organizerProfile.arenaName || profile.name || "Organizador"}</strong>
-      <span>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</span>
-    </div>
+<section className="arenaFeedSection">
+  <div className="arenaSearchBox">
+    <input placeholder="Busque por uma arena..." />
+    <button type="button" aria-label="Buscar arena">🔍</button>
   </div>
-  <p>Este será o espaço público da arena/organizador, onde visitantes poderão ver as informações permitidas e os campeonatos publicados.</p>
-  <div className="publishedTournamentsPreview">
-    <strong>Publicações de campeonatos</strong>
-    <span>Os campeonatos só aparecerão aqui quando você escolher “Publicar no meu perfil” na aba Compartilhar campeonato.</span>
+
+  <div className="arenaFeedGrid">
+    {[
+      { name: "Hype Beach Arena", city: "Maracanaú", color: "#dc2626", label: "ARENA HYPE" },
+      { name: "Arena Duvale", city: "Russas", color: "#020617", label: "DUVALE ARENA" },
+      { name: "Arena Look Net", city: "Antônio Diogo - CE060", color: "#1d4ed8", label: "ARENA LOOK NET" },
+      { name: "JL Arena", city: "Senador Pompeu", color: "#3f5f3a", label: "JL ARENA SPORT" },
+      { name: "Arena Beluar Sport Beach", city: "Redenção", color: "#7c3aed", label: "ARENA BELUAR" },
+      { name: "Arena Conexão FGTECH", city: "Capistrano", color: "#f97316", label: "ARENA CONEXÃO" },
+      { name: "Arena Maciço Play", city: "Aracoiaba", color: "#2563eb", label: "Maciço Play" },
+      { name: "CT JEFIM BEACHTENNIS", city: "Baturité", color: "#0891b2", label: "CTJEFIN" },
+    ].map((arena) => (
+      <article className="arenaFeedCard" key={arena.name}>
+        <div className="arenaFeedCover" style={{ background: arena.color }}>
+          <span>{arena.label}</span>
+        </div>
+        <strong>{arena.name}</strong>
+        <small>📍 {arena.city}</small>
+        <button type="button">Acessar arena</button>
+      </article>
+    ))}
   </div>
 </section>
 )}
@@ -3693,6 +3706,22 @@ setNewPublicInfo({
 
 {activePanel === "ajustes" && (
 <>
+  <section className="card publicProfileHomeCard">
+    <h2>Perfil público do usuário</h2>
+    <div className="publicProfilePreview">
+      {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do organizador" /> : null}
+      <div>
+        <strong>{organizerProfile.arenaName || profile.name || "Organizador"}</strong>
+        <span>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</span>
+      </div>
+    </div>
+    <p>As publicações pessoais e campeonatos publicados no perfil ficarão nesta área.</p>
+    <div className="publishedTournamentsPreview">
+      <strong>Minhas publicações</strong>
+      <span>Os campeonatos aparecerão aqui quando você escolher “Publicar no meu perfil” em Compartilhar campeonato.</span>
+    </div>
+  </section>
+
   <section className="card organizerProfileCard">
     <h2>Dados do organizador</h2>
     <p className="profileSectionHint">Essas informações podem ser usadas como dados públicos da arena e do organizador.</p>
