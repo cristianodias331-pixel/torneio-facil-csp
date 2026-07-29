@@ -2407,23 +2407,25 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   async function saveOrganizerProfile() {
     localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(organizerProfile));
 
+    const publicProfileData = {
+      id: user.id,
+      name: organizerProfile.organizerName || profile.name || "",
+      arena_name: organizerProfile.arenaName || "",
+      phone: organizerProfile.whatsapp || "",
+      address: organizerProfile.address || "",
+      maps_link: organizerProfile.mapsLink || "",
+      city: organizerProfile.city || "",
+      state: organizerProfile.state || "",
+      photo_url: organizerProfile.photoUrl || "",
+      instagram_handle: organizerProfile.instagramHandle || "",
+      instagram_link: organizerProfile.instagramLink || "",
+      whatsapp_group_link: organizerProfile.whatsappGroupLink || "",
+      is_public: organizerProfile.isPublic !== false,
+    };
+
     const { error } = await supabase
       .from("profiles")
-      .update({
-        name: organizerProfile.organizerName || profile.name || "",
-        arena_name: organizerProfile.arenaName || "",
-        phone: organizerProfile.whatsapp || "",
-        address: organizerProfile.address || "",
-        maps_link: organizerProfile.mapsLink || "",
-        city: organizerProfile.city || "",
-        state: organizerProfile.state || "",
-        photo_url: organizerProfile.photoUrl || "",
-        instagram_handle: organizerProfile.instagramHandle || "",
-        instagram_link: organizerProfile.instagramLink || "",
-        whatsapp_group_link: organizerProfile.whatsappGroupLink || "",
-        is_public: organizerProfile.isPublic !== false,
-      })
-      .eq("id", user.id);
+      .upsert(publicProfileData, { onConflict: "id" });
 
     if (error) {
       console.error(error);
@@ -2677,7 +2679,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, name, arena_name, city, state, photo_url")
+      .select("*")
       .order("name", { ascending: true });
 
     if (error) {
@@ -2686,9 +2688,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
-    const profiles = (data || []).map((item) => ({ ...item, is_public: true }));
+    const profiles = (data || [])
+      .filter((item) => item.is_public !== false)
+      .map((item) => ({ ...item, is_public: true }));
     const withoutCurrent = profiles.filter((item) => item.id !== user.id);
-    setPublicArenaProfiles([currentArenaProfile, ...withoutCurrent]);
+    setPublicArenaProfiles(currentArenaProfile.is_public ? [currentArenaProfile, ...withoutCurrent] : withoutCurrent);
   }
 
   useEffect(() => {
