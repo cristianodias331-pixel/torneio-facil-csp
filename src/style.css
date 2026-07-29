@@ -7776,3 +7776,33 @@ button.editBtn {
   color: #ffffff !important;
   box-shadow: 0 14px 28px rgba(124, 58, 237, 0.28) !important;
 }
+
+
+/* Ajuste solicitado: ações destrutivas em vermelho e Editar em roxo/rosa */
+.editBtn,
+button.editBtn {
+  background: linear-gradient(135deg, #7c3aed, #ec4899) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(124, 58, 237, 0.30) !important;
+}
+
+.deleteBtn,
+button.deleteBtn,
+.danger,
+button.danger,
+.removePhotoBtn.deleteBtn,
+button.removePhotoBtn.deleteBtn {
+  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.34) !important;
+}
+
+@media (max-width: 768px) {
+  .actions button,
+  .editTournamentActions button,
+  .deleteBtn,
+  .editBtn {
+    min-width: 0;
+    width: 100%;
+  }
+}
