@@ -7345,3 +7345,34 @@ body {
     width: 100%;
   }
 }
+
+
+/* Cabeçalho das abas com status de salvamento no canto superior direito */
+.cardTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.cardTitleRow h2 {
+  margin: 0 !important;
+}
+
+.cardTitleRow .savingBadge {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 720px) {
+  .cardTitleRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .cardTitleRow .savingBadge {
+    width: auto;
+    margin-left: 0;
+  }
+}
