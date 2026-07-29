@@ -7298,3 +7298,50 @@ body {
 .photoEditorPreview img {
   display: none !important;
 }
+
+
+/* Status de salvamento no canto superior direito do cabeçalho do torneio */
+.tournamentHeaderActions {
+  align-items: flex-end;
+}
+
+.savingBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid #bbf7d0;
+  background: #ecfdf5;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+  box-shadow: 0 10px 22px rgba(21, 128, 61, 0.10);
+  white-space: nowrap;
+}
+
+.savingBadge.saving {
+  border-color: #fed7aa;
+  background: #fff7ed;
+  color: #ea580c;
+  box-shadow: 0 10px 22px rgba(234, 88, 12, 0.12);
+}
+
+.savingBadge.error {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #dc2626;
+  box-shadow: 0 10px 22px rgba(220, 38, 38, 0.12);
+}
+
+@media (max-width: 720px) {
+  .tournamentHeaderActions {
+    align-items: stretch;
+  }
+
+  .savingBadge {
+    width: 100%;
+  }
+}
