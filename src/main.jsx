@@ -3810,7 +3810,6 @@ return (
           <h1>{tournament.name}</h1>
           <div className="tournamentHeaderMeta">
             <span>🏆 {tournament.type}</span>
-            <span>💾 {savingStatus}</span>
             {data.gender ? <span>👥 {data.gender}</span> : null}
             {data.eventDate ? <span>🗓️ {formatDateBR(data.eventDate)}</span> : null}
             {data.eventDay ? <span>📅 {data.eventDay}</span> : null}
@@ -3819,7 +3818,11 @@ return (
           </div>
         </div>
 
-        <div className="actions">
+        <div className="actions tournamentHeaderActions">
+          <span className={`savingBadge ${savingStatus === "Salvando..." ? "saving" : savingStatus === "Erro ao salvar" ? "error" : "saved"}`}>
+            💾 {savingStatus}
+          </span>
+
           <button
             type="button"
             className="secondaryBtn"
