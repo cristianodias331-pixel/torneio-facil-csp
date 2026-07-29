@@ -2286,6 +2286,8 @@ const [newGender, setNewGender] = useState("");
 const [newDate, setNewDate] = useState("");
 const [newDay, setNewDay] = useState("");
 const [newLocation, setNewLocation] = useState("");
+const [newWinningScore, setNewWinningScore] = useState(4);
+const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCriteria);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
@@ -2578,6 +2580,8 @@ const initialData = {
   eventDate: newDate,
   eventDay: getWeekdayBR(newDate),
   location: newLocation.trim(),
+  winningScore: Number(newWinningScore) || 4,
+  rankingCriteria: newRankingCriteria || defaultRankingCriteria,
 };
     const { error } = await supabase.from("tournaments").insert({
       user_id: user.id,
@@ -2601,6 +2605,8 @@ setNewGender("");
 setNewDate("");
 setNewDay("");
 setNewLocation("");
+setNewWinningScore(4);
+setNewRankingCriteria(defaultRankingCriteria);
     await loadTournaments();
     showNotice("success", "Torneio criado", "O torneio foi criado com sucesso.");
   }
@@ -2886,6 +2892,23 @@ setNewLocation("");
       <option value="">Escolha a modalidade</option>
       {allowedTypes.map((type) => (
         <option key={type} value={type}>{type}</option>
+      ))}
+    </select>
+  </div>
+
+  <div className="formField">
+    <label>Set para vencer</label>
+    <select value={newWinningScore} onChange={(e) => setNewWinningScore(Number(e.target.value))}>
+      <option value={4}>Até 4 games</option>
+      <option value={6}>Até 6 games</option>
+    </select>
+  </div>
+
+  <div className="formField fullField">
+    <label>Critério do ranking</label>
+    <select value={newRankingCriteria} onChange={(e) => setNewRankingCriteria(e.target.value)}>
+      {rankingCriteriaOptions.map((option) => (
+        <option key={option.value} value={option.value}>{option.label}</option>
       ))}
     </select>
   </div>
@@ -3808,7 +3831,7 @@ return (
           <h2>Participantes</h2>
 
           <div className="rankingCriteriaBox">
-  <label>Pontuação para vencer</label>
+  <label>Set para vencer</label>
   <select
     value={data.winningScore || 4}
     onChange={(e) =>
@@ -3818,8 +3841,8 @@ return (
       }))
     }
   >
-    <option value={4}>Até 4 pontos</option>
-    <option value={6}>Até 6 pontos</option>
+    <option value={4}>Até 4 games</option>
+    <option value={6}>Até 6 games</option>
   </select>
 </div>
 
