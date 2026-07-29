@@ -8176,3 +8176,23 @@ button.shareTournamentBtn {
   .profilePublicToggle { margin: 0 auto; }
   .profileTournamentGrid { grid-template-columns: 1fr; }
 }
+
+/* Botão Compartilhar em verde */
+.shareTournamentBtn,
+button.shareTournamentBtn,
+.playAppShell .tournamentActions button.shareTournamentBtn {
+  background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(34, 197, 94, 0.30) !important;
+}
+.shareTournamentBtn:hover,
+button.shareTournamentBtn:hover,
+.playAppShell .tournamentActions button.shareTournamentBtn:hover {
+  background: linear-gradient(135deg, #22c55e, #15803d) !important;
+}
+.profileTournamentPost.tournamentItem {
+  min-height: 280px;
+}
+.profileTournamentPost .tournamentActions {
+  margin-top: 14px;
+}
