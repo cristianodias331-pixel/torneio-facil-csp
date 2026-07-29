@@ -3760,18 +3760,19 @@ setNewPublicInfo({
         <div className="instagramProfileTopline">
           <h2>{organizerProfile.arenaName || profile.name || "Meu perfil"}</h2>
           <button type="button" className="secondaryBtn" onClick={() => setProfileEditing((prev) => !prev)}>
-            {profileEditing ? "Fechar edição" : "Editar perfil"}
+            {profileEditing ? "Voltar ao perfil" : "Editar perfil"}
           </button>
         </div>
         <p>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</p>
-        <label className="profilePublicToggle">
-          <input
-            type="checkbox"
-            checked={organizerProfile.isPublic !== false}
-            onChange={(e) => updateOrganizerProfile("isPublic", e.target.checked)}
-          />
-          Perfil público
-        </label>
+        <button
+          type="button"
+          className={`profileVisibilitySwitch ${organizerProfile.isPublic !== false ? "public" : "private"}`}
+          onClick={() => updateOrganizerProfile("isPublic", organizerProfile.isPublic === false)}
+          aria-pressed={organizerProfile.isPublic !== false}
+        >
+          <span className="switchTrack"><span className="switchThumb" /></span>
+          <strong>{organizerProfile.isPublic !== false ? "Perfil público" : "Perfil privado"}</strong>
+        </button>
       </div>
     </div>
 
@@ -3814,8 +3815,14 @@ setNewPublicInfo({
   </section>
 
   {profileEditing ? (
-  <section className="card organizerProfileCard">
-    <h2>Dados do organizador</h2>
+  <section className="card organizerProfileCard profileEditSubtab">
+    <div className="profileEditSubtabHeader">
+      <div>
+        <span>Sub aba do perfil</span>
+        <h2>Editar perfil</h2>
+      </div>
+      <button type="button" className="secondaryBtn" onClick={() => setProfileEditing(false)}>Voltar</button>
+    </div>
     <p className="profileSectionHint">Essas informações podem ser usadas como dados públicos da arena e do organizador.</p>
 
     <div className="organizerPhotoArea">
