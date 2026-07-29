@@ -5875,8 +5875,8 @@ function PublicTournamentPage({ publicId }) {
   const [tournament, setTournament] = useState(null);
   const [error, setError] = useState(null);
 
-  async function loadPublicTournament() {
-    setLoading(true);
+  async function loadPublicTournament({ silent = false } = {}) {
+    if (!silent) setLoading(true);
 
     const { data, error } = await supabase
       .from("tournaments")
@@ -5894,14 +5894,14 @@ function PublicTournamentPage({ publicId }) {
       setError(null);
     }
 
-    setLoading(false);
+    if (!silent) setLoading(false);
   }
 
   useEffect(() => {
     loadPublicTournament();
 
     const interval = setInterval(() => {
-      loadPublicTournament();
+      loadPublicTournament({ silent: true });
     }, 20000);
 
     return () => clearInterval(interval);
