@@ -2751,22 +2751,38 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setSelectedArenaTournaments([]);
     setSelectedArenaLoading(true);
 
-    const { data, error } = await supabase
+    let result = await supabase
       .from("tournaments")
       .select("*")
       .eq("user_id", arena.id)
       .eq("is_public", true)
       .order("created_at", { ascending: false });
 
+    if (result.error || !result.data?.length) {
+      const fallback = await supabase
+        .from("tournaments")
+        .select("*")
+        .eq("user_id", arena.id)
+        .order("created_at", { ascending: false });
+
+      if (!fallback.error && fallback.data?.length) result = fallback;
+    }
+
     setSelectedArenaLoading(false);
 
-    if (error) {
-      console.error("Erro ao carregar publicações da arena:", error);
+    if (result.error) {
+      console.error("Erro ao carregar publicações da arena:", result.error);
       showNotice("error", "Erro ao abrir arena", "Não foi possível carregar as publicações desta arena.");
       return;
     }
 
-    setSelectedArenaTournaments(data || []);
+    const visibleTournaments = (result.data || []).filter((item) => !item.data?.deletedAt);
+    setSelectedArenaTournaments(visibleTournaments);
+  }
+
+  function closeArenaProfilePage() {
+    setSelectedArenaProfile(null);
+    setSelectedArenaTournaments([]);
   }
 
   async function loadPublicArenaProfiles() {
@@ -3402,7 +3418,80 @@ setNewPublicInfo({
             </>
           )}
 
-{activePanel === "inicio" && (
+{activePanel === "inicio" && selectedArenaProfile ? (
+<section className="arenaPublicPage card">
+  <button type="button" className="arenaPublicBackBtn" onClick={closeArenaProfilePage}>← Voltar para arenas</button>
+
+  <div className="arenaPublicHero">
+    <div className="arenaPublicPhoto">
+      {selectedArenaProfile.photo_url ? (
+        <img src={selectedArenaProfile.photo_url} alt={selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena"} />
+      ) : (
+        <span>{(selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena").slice(0, 2).toUpperCase()}</span>
+      )}
+    </div>
+    <div className="arenaPublicInfo">
+      <span>Perfil público da arena</span>
+      <h2>{selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena cadastrada"}</h2>
+      <p>{[selectedArenaProfile.city, selectedArenaProfile.state].filter(Boolean).join("/") || "Local não informado"}</p>
+      <small>Organizador: {selectedArenaProfile.name || "Não informado"}</small>
+    </div>
+  </div>
+
+  <div className="arenaPublicDetailsGrid">
+    {selectedArenaProfile.address ? <div><strong>Endereço</strong><span>📍 {selectedArenaProfile.address}</span></div> : null}
+    {selectedArenaProfile.phone ? <div><strong>WhatsApp</strong><span>{selectedArenaProfile.phone}</span></div> : null}
+    {selectedArenaProfile.instagram_handle ? <div><strong>Instagram</strong><span>{selectedArenaProfile.instagram_handle}</span></div> : null}
+  </div>
+
+  <div className="arenaProfileLinks arenaPublicLinks">
+    {selectedArenaProfile.instagram_link ? (
+      <a href={selectedArenaProfile.instagram_link} target="_blank" rel="noreferrer">Instagram</a>
+    ) : selectedArenaProfile.instagram_handle ? (
+      <a href={"https://instagram.com/" + String(selectedArenaProfile.instagram_handle).replace("@", "")} target="_blank" rel="noreferrer">Instagram</a>
+    ) : null}
+    {selectedArenaProfile.whatsapp_group_link ? <a href={selectedArenaProfile.whatsapp_group_link} target="_blank" rel="noreferrer">Grupo WhatsApp</a> : null}
+    {selectedArenaProfile.phone ? <a href={"https://wa.me/" + String(selectedArenaProfile.phone).replace(/\D/g, "")} target="_blank" rel="noreferrer">WhatsApp</a> : null}
+    {selectedArenaProfile.maps_link ? <a href={selectedArenaProfile.maps_link} target="_blank" rel="noreferrer">Google Maps</a> : null}
+  </div>
+
+  <div className="arenaProfilePublicationsHeader arenaPublicPublicationsHeader">
+    <strong>Publicações / torneios da arena</strong>
+    <span>{selectedArenaTournaments.length} publicação(ões)</span>
+  </div>
+
+  {selectedArenaLoading ? (
+    <div className="arenaProfileEmpty">Carregando publicações...</div>
+  ) : selectedArenaTournaments.length === 0 ? (
+    <div className="arenaProfileEmpty">Esta arena ainda não publicou torneios.</div>
+  ) : (
+    <div className="arenaPublicTournamentGrid">
+      {selectedArenaTournaments.map((t) => {
+        const details = t.data || {};
+        return (
+          <article className="arenaPublicTournamentCard" key={t.id}>
+            <div>
+              <strong>{t.name}</strong>
+              <small>{t.type}</small>
+            </div>
+            <div className="tournamentMeta">
+              {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
+              {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
+              {details.location ? <span>📍 {details.location}</span> : null}
+              {details.gender ? <span>🏷️ {details.gender}</span> : null}
+            </div>
+            {t.public_id && t.is_public ? (
+              <button type="button" onClick={() => window.open(getPublicUrl(t.public_id), "_blank", "noopener,noreferrer")}>Ver torneio público</button>
+            ) : (
+              <span className="arenaTournamentDraftBadge">Publicação do perfil</span>
+            )}
+          </article>
+        );
+      })}
+    </div>
+  )}
+</section>
+) : activePanel === "inicio" && (
 <section className="arenaFeedSection">
   <div className="arenaSearchRow">
     <div className="arenaSearchBox platformSearchBox">
@@ -4067,82 +4156,6 @@ setNewPublicInfo({
 
 
 
-        {selectedArenaProfile ? (
-          <div className="arenaProfileOverlay" onClick={() => setSelectedArenaProfile(null)}>
-            <section className="arenaProfileModal" onClick={(e) => e.stopPropagation()}>
-              <button type="button" className="arenaProfileClose" onClick={() => setSelectedArenaProfile(null)}>×</button>
-
-              <div className="arenaProfileHero">
-                <div className="arenaProfilePhotoBig">
-                  {selectedArenaProfile.photo_url ? (
-                    <img src={selectedArenaProfile.photo_url} alt={selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena"} />
-                  ) : (
-                    <span>{(selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena").slice(0, 2).toUpperCase()}</span>
-                  )}
-                </div>
-                <div>
-                  <h2>{selectedArenaProfile.arena_name || selectedArenaProfile.name || "Arena cadastrada"}</h2>
-                  <p>{[selectedArenaProfile.city, selectedArenaProfile.state].filter(Boolean).join("/") || "Local não informado"}</p>
-                  <small>{selectedArenaProfile.name || "Organizador não informado"}</small>
-                </div>
-              </div>
-
-              <div className="arenaProfileLinks">
-                {selectedArenaProfile.instagram_link ? (
-                  <a href={selectedArenaProfile.instagram_link} target="_blank" rel="noreferrer">Instagram</a>
-                ) : selectedArenaProfile.instagram_handle ? (
-                  <a href={"https://instagram.com/" + String(selectedArenaProfile.instagram_handle).replace("@", "")} target="_blank" rel="noreferrer">Instagram</a>
-                ) : null}
-
-                {selectedArenaProfile.whatsapp_group_link ? (
-                  <a href={selectedArenaProfile.whatsapp_group_link} target="_blank" rel="noreferrer">Grupo WhatsApp</a>
-                ) : null}
-
-                {selectedArenaProfile.phone ? (
-                  <a href={"https://wa.me/" + String(selectedArenaProfile.phone).replace(/\D/g, "")} target="_blank" rel="noreferrer">WhatsApp</a>
-                ) : null}
-
-                {selectedArenaProfile.maps_link ? (
-                  <a href={selectedArenaProfile.maps_link} target="_blank" rel="noreferrer">Google Maps</a>
-                ) : null}
-              </div>
-
-              {selectedArenaProfile.address ? <p className="arenaProfileAddress">📍 {selectedArenaProfile.address}</p> : null}
-
-              <div className="arenaProfilePublicationsHeader">
-                <strong>Publicações da arena</strong>
-                <span>{selectedArenaTournaments.length} torneio(s) público(s)</span>
-              </div>
-
-              {selectedArenaLoading ? (
-                <div className="arenaProfileEmpty">Carregando publicações...</div>
-              ) : selectedArenaTournaments.length === 0 ? (
-                <div className="arenaProfileEmpty">Esta arena ainda não publicou torneios.</div>
-              ) : (
-                <div className="arenaProfileTournamentList">
-                  {selectedArenaTournaments.map((t) => {
-                    const details = t.data || {};
-                    return (
-                      <article className="arenaProfileTournament" key={t.id}>
-                        <div>
-                          <strong>{t.name}</strong>
-                          <small>
-                            {t.type}
-                            {details.eventDate ? ` · ${formatDateBR(details.eventDate)}` : ""}
-                            {details.location ? ` · ${details.location}` : ""}
-                          </small>
-                        </div>
-                        {t.public_id ? (
-                          <button type="button" onClick={() => window.open(getPublicUrl(t.public_id), "_blank", "noopener,noreferrer")}>Ver torneio</button>
-                        ) : null}
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </section>
-          </div>
-        ) : null}
         </main>
       </div>
     </div>
