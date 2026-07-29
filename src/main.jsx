@@ -2867,7 +2867,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     setShareTarget(null);
-    showNotice("success", "Torneio publicado", "O campeonato foi publicado no perfil da arena e já pode aparecer para outros usuários.");
+    showNotice("success", "Torneio publicado", "O campeonato foi publicado no perfil da arena com chamada para inscrição pelo WhatsApp.");
   }
 
   async function createTournament() {
@@ -3524,10 +3524,12 @@ setNewPublicInfo({
               {details.location ? <span>📍 {details.location}</span> : null}
               {details.gender ? <span>🏷️ {details.gender}</span> : null}
             </div>
-            {t.public_id && t.is_public ? (
-              <button type="button" onClick={() => window.open(getPublicUrl(t.public_id), "_blank", "noopener,noreferrer")}>Ver torneio público</button>
+            {selectedArenaProfile.whatsapp_group_link ? (
+              <button type="button" onClick={() => window.open(selectedArenaProfile.whatsapp_group_link, "_blank", "noopener,noreferrer")}>Inscreva-se</button>
+            ) : selectedArenaProfile.phone ? (
+              <button type="button" onClick={() => window.open("https://wa.me/" + String(selectedArenaProfile.phone).replace(/\D/g, ""), "_blank", "noopener,noreferrer")}>Inscreva-se</button>
             ) : (
-              <span className="arenaTournamentDraftBadge">Publicação do perfil</span>
+              <span className="arenaTournamentDraftBadge">Inscrições pelo organizador</span>
             )}
           </article>
         );
@@ -6116,39 +6118,28 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
         <div className="roundCard" key={roundIndex}>
           <h3>Rodada {roundIndex + 1}</h3>
 
-          {round.map((game, gameIndex) => {
-            const winnerSide = getScoreWinnerSide(game);
-            const isFinished = winnerSide !== null;
+          {round.map((game, gameIndex) => (
+            <div className="gameCard" key={gameIndex}>
+              <strong>
+                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                Quadra {game.court}
+              </strong>
 
-            return (
-              <div className={`gameCard publicGameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={gameIndex}>
-                <div className="gameTopLine">
-                  <strong>
-                    {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                    Quadra {game.court}
-                  </strong>
-                </div>
-
-                <div className="gameTeams">
-                  <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
-                  <span>x</span>
-                  <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
-                </div>
-
-                <div className="scoreRow publicScoreRow">
-                  {game.s1 === "" || game.s2 === "" ? (
-                    <span className="publicWaitingScore">Aguardando placar</span>
-                  ) : (
-                    <>
-                      <span className="publicScoreBox">{game.s1}</span>
-                      <span>—</span>
-                      <span className="publicScoreBox">{game.s2}</span>
-                    </>
-                  )}
-                </div>
+              <div className="gameTeams">
+                <div>{game.team1.join(" + ")}</div>
+                <span>x</span>
+                <div>{game.team2.join(" + ")}</div>
               </div>
-            );
-          })}
+
+              <div className="publicScore">
+                {game.s1 === "" || game.s2 === "" ? (
+                  <span>Aguardando placar</span>
+                ) : (
+                  <strong>{game.s1} — {game.s2}</strong>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       ))}
     </div>
@@ -6175,36 +6166,25 @@ function PublicBracketColumn({ rounds }) {
               : `${round.bracketTitle} · ${round.title}`}
           </h3>
 
-          {round.games.map((game) => {
-            const winnerSide = getScoreWinnerSide(game);
-            const isFinished = winnerSide !== null;
+          {round.games.map((game) => (
+            <div className="gameCard" key={game.matchKey}>
+              <strong>Quadra {game.court}</strong>
 
-            return (
-              <div className={`gameCard publicGameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
-                <div className="gameTopLine">
-                  <strong>Quadra {game.court}</strong>
-                </div>
-
-                <div className="gameTeams">
-                  <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1?.join(" + ") || "Aguardando"}</div>
-                  <span>x</span>
-                  <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
-                </div>
-
-                <div className="scoreRow publicScoreRow">
-                  {game.s1 === "" || game.s2 === "" ? (
-                    <span className="publicWaitingScore">Aguardando placar</span>
-                  ) : (
-                    <>
-                      <span className="publicScoreBox">{game.s1}</span>
-                      <span>—</span>
-                      <span className="publicScoreBox">{game.s2}</span>
-                    </>
-                  )}
-                </div>
+              <div className="gameTeams">
+                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                <span>x</span>
+                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
               </div>
-            );
-          })}
+
+              <div className="publicScore">
+                {game.s1 === "" || game.s2 === "" ? (
+                  <span>Aguardando placar</span>
+                ) : (
+                  <strong>{game.s1} — {game.s2}</strong>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       ))}
     </div>
