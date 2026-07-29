@@ -7555,3 +7555,38 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Lista de categorias quando o evento tem várias categorias/dias */
+.categoryScheduleList {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.categoryScheduleItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid #dbeafe;
+}
+
+@media (max-width: 1024px) {
+  .categoryScheduleItem {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .categoryScheduleItem {
+    grid-template-columns: 1fr;
+  }
+
+  .categoryScheduleItem button {
+    width: 100%;
+  }
+}
