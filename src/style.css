@@ -10728,3 +10728,46 @@ button.profileVisibilitySwitch.private strong {
     width: 100% !important;
   }
 }
+
+
+/* Ajustes finais do link público: quadra acima da 1ª dupla e atualização sem reset visual */
+.publicPage .readOnlyRoundCard > .gameCard {
+  grid-template-areas:
+    "court score team2"
+    "team1 score team2" !important;
+  align-items: center !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTopLine {
+  grid-area: court !important;
+  align-self: end !important;
+  justify-self: start !important;
+  margin: 0 0 -2px 0 !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTeams > div:first-child {
+  grid-area: team1 !important;
+}
+
+.publicPage .readOnlyRoundCard .scoreRow {
+  grid-area: score !important;
+  align-self: center !important;
+}
+
+.publicPage .readOnlyRoundCard .gameTeams > div:last-child {
+  grid-area: team2 !important;
+}
+
+@media (max-width: 640px) {
+  .publicPage .readOnlyRoundCard > .gameCard {
+    grid-template-areas:
+      "court"
+      "team1"
+      "score"
+      "team2" !important;
+  }
+
+  .publicPage .readOnlyRoundCard .gameTopLine {
+    margin: 0 !important;
+  }
+}
