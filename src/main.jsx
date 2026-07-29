@@ -3827,26 +3827,40 @@ return (
         </div>
 
         <div className="actions tournamentHeaderActions">
-          <button
-            type="button"
-            className="secondaryBtn"
-            onClick={() => setShareOpen((prev) => !prev)}
-          >
-            🔗 Compartilhar tabela
-          </button>
-
           <button type="button" onClick={handleBack}>Voltar</button>
         </div>
       </header>
 
+        <section className="shareHighlightBox">
+          <div>
+            <strong>🔗 Compartilhar tabela pública</strong>
+            <p>Envie um link para atletas e convidados acompanharem o torneio sem acessar sua área de edição.</p>
+          </div>
+
+          <button
+            type="button"
+            className="shareHighlightBtn"
+            onClick={() => setShareOpen((prev) => !prev)}
+          >
+            {shareOpen ? "Ocultar compartilhamento" : "Compartilhar tabela"}
+          </button>
+        </section>
+
               {shareOpen && (
           <section className="card shareCard">
-            <h2>Compartilhar tabela</h2>
+            <h2>Como funciona o compartilhamento?</h2>
 
             <p>
-              Gere um link público para os participantes acompanharem jogos, placares e ranking
-              sem poder editar nada.
+              Ao ativar o link público, você gera uma página de visualização para atletas,
+              convidados e organização acompanharem o torneio em tempo real.
             </p>
+
+            <ul className="shareExplanationList">
+              <li>Quem receber o link poderá ver participantes, jogos, placares, chaves e ranking.</li>
+              <li>O acesso é somente para visualização: ninguém consegue editar nomes, placares ou configurações.</li>
+              <li>Quando você alterar algo no torneio, a tabela pública acompanha as atualizações salvas.</li>
+              <li>Se não quiser mais compartilhar, basta desativar o link público.</li>
+            </ul>
 
             {!shareInfo.is_public ? (
               <button type="button" onClick={enablePublicShare} disabled={shareLoading}>
