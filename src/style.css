@@ -11038,3 +11038,91 @@ button.profileVisibilitySwitch.private strong {
     padding-top: 24px !important;
   }
 }
+
+/* CORREÇÃO DA SOBREPOSIÇÃO: azul por cima da lateral branca, botões descidos */
+.playTopbar {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 9999 !important;
+  min-height: 96px !important;
+  height: 96px !important;
+  padding: 12px 24px 12px 130px !important;
+  box-sizing: border-box !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  overflow: hidden !important;
+}
+
+.playTopbar .playTopBrand {
+  height: 72px !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+}
+
+.playTopbar .playTopBrand .torneio360Logo {
+  width: 170px !important;
+  height: 66px !important;
+  margin: 0 !important;
+}
+
+.playTopbar .playTopBrand .brandTaglineOnly {
+  padding: 0 !important;
+  margin: 0 !important;
+  align-self: center !important;
+}
+
+.playSidebar,
+.playSidebar.noSideBrand {
+  position: fixed !important;
+  top: 96px !important;
+  left: 0 !important;
+  z-index: 1000 !important;
+  height: calc(100vh - 96px) !important;
+  padding-top: 20px !important;
+  box-sizing: border-box !important;
+}
+
+.playMain {
+  padding-top: 96px !important;
+}
+
+.playContent {
+  padding-top: 28px !important;
+  margin-top: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .playTopbar {
+    min-height: 84px !important;
+    height: 84px !important;
+    padding: 10px 12px 10px 96px !important;
+  }
+
+  .playTopbar .playTopBrand {
+    height: 62px !important;
+    gap: 8px !important;
+  }
+
+  .playTopbar .playTopBrand .torneio360Logo {
+    width: 126px !important;
+    height: 54px !important;
+  }
+
+  .playSidebar,
+  .playSidebar.noSideBrand {
+    top: 84px !important;
+    height: calc(100vh - 84px) !important;
+    padding-top: 18px !important;
+  }
+
+  .playMain {
+    padding-top: 84px !important;
+  }
+}
