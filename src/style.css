@@ -8980,3 +8980,116 @@ button.profileVisibilitySwitch.private strong {
     margin-right: 20px !important;
   }
 }
+
+
+/* Correção do layout do perfil da arena: sem corte na foto */
+.arenaPublicPage {
+  position: relative;
+  max-width: 1120px !important;
+  margin: 0 auto 40px !important;
+  padding: 0 0 34px !important;
+  overflow: visible !important;
+  border-radius: 28px !important;
+  background: #ffffff !important;
+}
+
+.arenaPublicPage::before {
+  content: "" !important;
+  display: block !important;
+  height: 155px !important;
+  border-radius: 28px 28px 0 0 !important;
+  background: linear-gradient(135deg, #1769e8 0%, #08aeea 62%, #11c98f 100%) !important;
+}
+
+.arenaPublicBackBtn {
+  position: absolute !important;
+  top: 22px !important;
+  left: 24px !important;
+  margin: 0 !important;
+  z-index: 5 !important;
+}
+
+.arenaPublicHero {
+  position: relative !important;
+  margin: -58px 32px 0 !important;
+  padding: 0 0 28px !important;
+  display: grid !important;
+  grid-template-columns: 154px minmax(0, 1fr) !important;
+  gap: 28px !important;
+  align-items: end !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  overflow: visible !important;
+}
+
+.arenaPublicPhoto {
+  width: 154px !important;
+  height: 154px !important;
+  border-radius: 32px !important;
+  border: 7px solid #ffffff !important;
+  overflow: hidden !important;
+  box-shadow: 0 18px 42px rgba(15, 23, 42, .22) !important;
+}
+
+.arenaPublicPhoto img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+.arenaPublicInfo {
+  min-width: 0 !important;
+  padding: 0 0 14px !important;
+}
+
+.arenaPublicInfo h2 {
+  margin: 10px 0 8px !important;
+  font-size: clamp(28px, 4.4vw, 50px) !important;
+  line-height: 1 !important;
+  word-break: break-word !important;
+}
+
+.arenaPublicDetailsGrid,
+.arenaPublicLinks,
+.arenaPublicPublicationsHeader,
+.arenaPublicTournamentGrid,
+.arenaProfileEmpty {
+  margin-left: 32px !important;
+  margin-right: 32px !important;
+}
+
+@media (max-width: 760px) {
+  .arenaPublicPage::before {
+    height: 135px !important;
+  }
+
+  .arenaPublicBackBtn {
+    top: 16px !important;
+    left: 16px !important;
+  }
+
+  .arenaPublicHero {
+    margin: -44px 20px 0 !important;
+    grid-template-columns: 1fr !important;
+    gap: 14px !important;
+    align-items: start !important;
+  }
+
+  .arenaPublicPhoto {
+    width: 132px !important;
+    height: 132px !important;
+    border-radius: 28px !important;
+  }
+
+  .arenaPublicInfo {
+    padding-bottom: 8px !important;
+  }
+
+  .arenaPublicDetailsGrid,
+  .arenaPublicLinks,
+  .arenaPublicPublicationsHeader,
+  .arenaPublicTournamentGrid,
+  .arenaProfileEmpty {
+    margin-left: 20px !important;
+    margin-right: 20px !important;
+  }
+}
