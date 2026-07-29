@@ -2319,6 +2319,8 @@ const [newWinningScore, setNewWinningScore] = useState(4);
 const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCriteria);
   const [saving, setSaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [editTarget, setEditTarget] = useState(null);
+  const [editForm, setEditForm] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
   const [activePanel, setActivePanel] = useState("inicio");
@@ -2802,6 +2804,75 @@ setNewRankingCriteria(defaultRankingCriteria);
     return true;
   }
 
+  function openEditTournament(tournament) {
+    const details = tournament.data || {};
+    setEditTarget(tournament);
+    setEditForm({
+      name: tournament.name || "",
+      type: tournament.type || "",
+      eventName: details.eventName || "",
+      gender: details.gender || "",
+      eventDate: details.eventDate || "",
+      eventEndDate: details.eventEndDate || details.eventDate || "",
+      registrationDeadline: details.registrationDeadline || "",
+      eventStartTime: details.eventStartTime || "",
+      location: details.location || "",
+      winningScore: Number(details.winningScore || 4),
+      rankingCriteria: details.rankingCriteria || defaultRankingCriteria,
+    });
+  }
+
+  function updateEditForm(field, value) {
+    setEditForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function saveEditedTournament() {
+    if (!editTarget || !editForm) return;
+
+    if (!editForm.name.trim()) {
+      showNotice("warning", "Nome obrigatório", "Digite um nome para este torneio.");
+      return;
+    }
+
+    if (editForm.eventDate && editForm.eventEndDate && editForm.eventEndDate < editForm.eventDate) {
+      showNotice("warning", "Período inválido", "A data final não pode ser anterior à data inicial.");
+      return;
+    }
+
+    const updatedData = {
+      ...(editTarget.data || {}),
+      eventName: editForm.eventName.trim(),
+      gender: editForm.gender,
+      eventDate: editForm.eventDate,
+      eventStartDate: editForm.eventDate,
+      eventEndDate: editForm.eventEndDate || editForm.eventDate,
+      eventPeriodLabel: editForm.eventEndDate && editForm.eventEndDate !== editForm.eventDate ? `${formatDateBR(editForm.eventDate)} até ${formatDateBR(editForm.eventEndDate)}` : formatDateBR(editForm.eventDate),
+      eventDay: editForm.eventEndDate && editForm.eventEndDate !== editForm.eventDate ? `${getWeekdayBR(editForm.eventDate)} até ${getWeekdayBR(editForm.eventEndDate)}` : getWeekdayBR(editForm.eventDate),
+      registrationDeadline: editForm.registrationDeadline,
+      eventStartTime: editForm.eventStartTime,
+      location: editForm.location.trim(),
+      winningScore: Number(editForm.winningScore) || 4,
+      rankingCriteria: editForm.rankingCriteria || defaultRankingCriteria,
+    };
+
+    const updated = {
+      ...editTarget,
+      name: editForm.name.trim(),
+      type: editForm.type,
+      data: updatedData,
+    };
+
+    const ok = await saveTournament(updated);
+    if (!ok) {
+      showNotice("error", "Erro ao salvar", "Não foi possível atualizar este torneio.");
+      return;
+    }
+
+    setEditTarget(null);
+    setEditForm(null);
+    showNotice("success", "Torneio atualizado", "As informações foram atualizadas com sucesso.");
+  }
+
   function getEventDateRange() {
     if (!newDate) return [];
 
@@ -2878,6 +2949,84 @@ setNewRankingCriteria(defaultRankingCriteria);
         onCancel={() => setDeleteTarget(null)}
         onConfirm={confirmDeleteTournament}
       />
+
+      {editTarget && editForm ? (
+        <div className="editTournamentOverlay" role="dialog" aria-modal="true">
+          <div className="editTournamentModal">
+            <div className="editTournamentHeader">
+              <div>
+                <h2>Editar torneio</h2>
+                <p>Atualize as informações principais deste torneio.</p>
+              </div>
+              <button type="button" className="secondaryBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Fechar</button>
+            </div>
+
+            <div className="editTournamentGrid">
+              <div className="formField">
+                <label>Nome do evento/torneio</label>
+                <input value={editForm.name} onChange={(e) => updateEditForm("name", e.target.value)} />
+              </div>
+
+              <div className="formField">
+                <label>Categoria/Gênero</label>
+                <input value={editForm.gender} onChange={(e) => updateEditForm("gender", e.target.value)} placeholder="Ex: Masculino iniciante" />
+              </div>
+
+              <div className="formField">
+                <label>Modalidade</label>
+                <select value={editForm.type} onChange={(e) => updateEditForm("type", e.target.value)}>
+                  {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </div>
+
+              <div className="formField">
+                <label>Local</label>
+                <input value={editForm.location} onChange={(e) => updateEditForm("location", e.target.value)} />
+              </div>
+
+              <div className="formField">
+                <label>Início</label>
+                <input type="date" value={editForm.eventDate} onChange={(e) => updateEditForm("eventDate", e.target.value)} />
+              </div>
+
+              <div className="formField">
+                <label>Fim</label>
+                <input type="date" value={editForm.eventEndDate} min={editForm.eventDate || undefined} onChange={(e) => updateEditForm("eventEndDate", e.target.value)} />
+              </div>
+
+              <div className="formField">
+                <label>Encerramento das inscrições</label>
+                <input type="date" value={editForm.registrationDeadline} onChange={(e) => updateEditForm("registrationDeadline", e.target.value)} />
+              </div>
+
+              <div className="formField">
+                <label>Horário de início</label>
+                <input type="time" value={editForm.eventStartTime} onChange={(e) => updateEditForm("eventStartTime", e.target.value)} />
+              </div>
+
+              <div className="formField">
+                <label>Set para vencer</label>
+                <select value={editForm.winningScore} onChange={(e) => updateEditForm("winningScore", Number(e.target.value))}>
+                  <option value={4}>4 games</option>
+                  <option value={6}>6 games</option>
+                </select>
+              </div>
+
+              <div className="formField fullField">
+                <label>Critério do ranking</label>
+                <select value={editForm.rankingCriteria} onChange={(e) => updateEditForm("rankingCriteria", e.target.value)}>
+                  {rankingCriteriaOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                </select>
+              </div>
+            </div>
+
+            <div className="editTournamentActions">
+              <button type="button" className="secondaryBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
+              <button type="button" onClick={saveEditedTournament}>Salvar alterações</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {photoEditor ? (
         <div className="photoEditorOverlay" role="dialog" aria-modal="true">
@@ -3221,6 +3370,7 @@ setNewRankingCriteria(defaultRankingCriteria);
                   </div>
 
                   <div className="tournamentActions">
+                    <button type="button" className="secondaryBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
@@ -3284,6 +3434,7 @@ setNewRankingCriteria(defaultRankingCriteria);
                   </div>
 
                   <div className="tournamentActions">
+                    <button type="button" className="secondaryBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
