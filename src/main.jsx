@@ -2404,9 +2404,35 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setOrganizerProfile((prev) => ({ ...prev, [field]: value }));
   }
 
-  function saveOrganizerProfile() {
+  async function saveOrganizerProfile() {
     localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(organizerProfile));
-    showNotice("success", "Perfil salvo", "Os dados do organizador foram salvos neste dispositivo.");
+
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        name: organizerProfile.organizerName || profile.name || "",
+        arena_name: organizerProfile.arenaName || "",
+        phone: organizerProfile.whatsapp || "",
+        address: organizerProfile.address || "",
+        maps_link: organizerProfile.mapsLink || "",
+        city: organizerProfile.city || "",
+        state: organizerProfile.state || "",
+        photo_url: organizerProfile.photoUrl || "",
+        instagram_handle: organizerProfile.instagramHandle || "",
+        instagram_link: organizerProfile.instagramLink || "",
+        whatsapp_group_link: organizerProfile.whatsappGroupLink || "",
+        is_public: organizerProfile.isPublic !== false,
+      })
+      .eq("id", user.id);
+
+    if (error) {
+      console.error(error);
+      showNotice("error", "Erro ao salvar", "O perfil foi salvo neste dispositivo, mas não foi publicado para outros usuários.");
+      return;
+    }
+
+    await loadPublicArenaProfiles();
+    showNotice("success", "Perfil salvo", "Os dados do organizador foram salvos e publicados para outros usuários.");
   }
 
 
