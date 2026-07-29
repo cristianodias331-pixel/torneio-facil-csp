@@ -3553,7 +3553,9 @@ function generate() {
       groupsShuffled: prev.groupsShuffled || false,
     }));
 
-    showNotice("success", "Tabela gerada", "A fase de grupos da Copa foi montada com sucesso.");
+    setActiveTournamentTab("partidas");
+    setActiveMatchesTab("grupos");
+    showNotice("success", "Rodadas e jogos criados", "A fase de grupos da Copa foi montada com sucesso.");
     return;
   }
 
@@ -3564,7 +3566,8 @@ function generate() {
     schedule,
   });
 
-  showNotice("success", "Tabela gerada", "A tabela foi montada com sucesso.");
+  setActiveTournamentTab("partidas");
+  showNotice("success", "Rodadas e jogos criados", "As rodadas e os jogos foram criados com sucesso.");
 }
 
 function generateBrackets() {
@@ -3848,7 +3851,7 @@ return (
           {!isCupType(config) && (
             <div className="actions">
               <button type="button" onClick={shuffleNames}>Sortear nomes</button>
-              <button type="button" onClick={generate}>Gerar tabela</button>
+              <button type="button" onClick={generate}>Criar rodadas e jogos</button>
             </div>
           )}
         </section>
@@ -3882,7 +3885,7 @@ return (
           <div style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
 
           {!data.schedule || data.schedule.length === 0 ? (
-            <p>Clique em “Gerar tabela” para montar os jogos.</p>
+            <p>Clique em “Criar rodadas e jogos” para montar os jogos.</p>
           ) : (
             <>
              <ScheduleView
