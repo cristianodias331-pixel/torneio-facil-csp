@@ -2303,6 +2303,7 @@ function Dashboard({ profile, user }) {
   const [tournaments, setTournaments] = useState([]);
   const [trashTournaments, setTrashTournaments] = useState([]);
   const [publicArenaProfiles, setPublicArenaProfiles] = useState([]);
+  const [arenaProfileSearch, setArenaProfileSearch] = useState("");
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("");
@@ -2386,6 +2387,14 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   const multiTournamentGroups = groupedTournaments.filter((group) => group.items.length > 1);
   const isolatedTournaments = groupedTournaments.flatMap((group) => group.items.length === 1 ? group.items : []);
+
+  const filteredArenaProfiles = publicArenaProfiles.filter((arena) => {
+    const term = arenaProfileSearch.trim().toLowerCase();
+    if (!term) return true;
+    return [arena.arena_name, arena.name, arena.city, arena.state]
+      .filter(Boolean)
+      .some((value) => String(value).toLowerCase().includes(term));
+  });
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -2633,7 +2642,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const { data, error } = await supabase
       .from("profiles")
       .select("id, name, arena_name, city, state, photo_url, is_public")
-      .neq("id", user.id)
       .order("name", { ascending: true });
 
     if (error) {
@@ -2642,7 +2650,19 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
-    setPublicArenaProfiles((data || []).filter((item) => item.is_public !== false));
+    const visibleProfiles = (data || []).filter((item) => item.is_public !== false);
+    const currentArenaProfile = {
+      id: user.id,
+      name: organizerProfile.organizerName || profile.name || "Organizador",
+      arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
+      city: organizerProfile.city || profile.city || "",
+      state: organizerProfile.state || profile.state || "",
+      photo_url: organizerProfile.photoUrl || profile.photo_url || "",
+      is_public: organizerProfile.isPublic !== false,
+    };
+
+    const withoutCurrent = visibleProfiles.filter((item) => item.id !== user.id);
+    setPublicArenaProfiles(currentArenaProfile.is_public ? [currentArenaProfile, ...withoutCurrent] : withoutCurrent);
   }
 
   useEffect(() => {
@@ -3242,20 +3262,27 @@ setNewPublicInfo({
 
 {activePanel === "inicio" && (
 <section className="arenaFeedSection">
-  <div className="arenaSearchBox mapsSearchBox">
-    <input readOnly value="Arenas próximas no Google Maps" />
+  <div className="arenaSearchRow">
+    <div className="arenaSearchBox platformSearchBox">
+      <input
+        value={arenaProfileSearch}
+        onChange={(e) => setArenaProfileSearch(e.target.value)}
+        placeholder="Busque perfis públicos da plataforma..."
+      />
+      <span>🔍</span>
+    </div>
+
     <button
       type="button"
-      aria-label="Buscar arenas próximas"
+      className="mapsMiniBtn"
       onClick={() => window.open("https://www.google.com/maps/search/arena+beach+tennis+perto+de+mim", "_blank", "noopener,noreferrer")}
     >
-      🔍
+      Google Maps
     </button>
   </div>
-  <p className="mapsSearchHint">Use este atalho para abrir o Google Maps filtrando arenas próximas conforme a localização/GPS de quem clicar.</p>
 
   <div className="arenaFeedGrid">
-    {publicArenaProfiles.map((arena) => (
+    {filteredArenaProfiles.map((arena) => (
       <article className="arenaFeedCard" key={arena.id}>
         <div className="arenaFeedCover registeredArenaCover">
           {arena.photo_url ? <img src={arena.photo_url} alt={arena.arena_name || arena.name || "Arena"} /> : <span>{(arena.arena_name || arena.name || "Arena").slice(0, 2).toUpperCase()}</span>}
