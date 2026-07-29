@@ -7776,3 +7776,28 @@ button.editBtn {
   color: #ffffff !important;
   box-shadow: 0 14px 28px rgba(124, 58, 237, 0.28) !important;
 }
+
+/* Correção final: botões de negação em vermelho */
+button.deleteBtn,
+.playAppShell button.deleteBtn,
+.playAppShell .tournamentActions button.deleteBtn,
+.editTournamentHeader button.deleteBtn,
+.editTournamentActions button.deleteBtn,
+.confirmActions button.deleteBtn,
+.photoEditorActions button.deleteBtn,
+.categoryScheduleItem button.deleteBtn {
+  background: linear-gradient(135deg, #dc2626, #991b1b) !important;
+  color: #ffffff !important;
+  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.36) !important;
+}
+
+button.deleteBtn:hover,
+.playAppShell button.deleteBtn:hover,
+.playAppShell .tournamentActions button.deleteBtn:hover,
+.editTournamentHeader button.deleteBtn:hover,
+.editTournamentActions button.deleteBtn:hover,
+.confirmActions button.deleteBtn:hover,
+.photoEditorActions button.deleteBtn:hover,
+.categoryScheduleItem button.deleteBtn:hover {
+  background: linear-gradient(135deg, #ef4444, #b91c1c) !important;
+}
