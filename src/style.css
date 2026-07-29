@@ -8198,14 +8198,6 @@ button.shareTournamentBtn:hover,
 }
 
 /* Feed somente com arenas cadastradas e atalho para Google Maps */
-.mapsSearchHint {
-  margin: -8px auto 4px;
-  max-width: 680px;
-  text-align: center;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 750;
-}
 .registeredArenaCover {
   background: linear-gradient(135deg, #2563eb, #06b6d4) !important;
 }
@@ -8213,4 +8205,50 @@ button.shareTournamentBtn:hover,
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Busca de perfis publicados + botão discreto do Google Maps */
+.arenaSearchRow {
+  width: min(720px, 100%);
+  margin: 0 auto 4px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+.platformSearchBox {
+  width: 100% !important;
+  margin: 0 !important;
+  grid-template-columns: 1fr auto !important;
+}
+.platformSearchBox span {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 950;
+}
+.mapsMiniBtn,
+button.mapsMiniBtn {
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  box-shadow: none !important;
+  border: 1px solid #dbeafe;
+  font-size: 12px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+.mapsMiniBtn:hover,
+button.mapsMiniBtn:hover {
+  background: #e2e8f0 !important;
+}
+@media (max-width: 640px) {
+  .arenaSearchRow { grid-template-columns: 1fr; }
+  .mapsMiniBtn, button.mapsMiniBtn { width: 100%; }
 }
