@@ -2639,18 +2639,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   async function loadPublicArenaProfiles() {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, name, arena_name, city, state, photo_url, is_public")
-      .order("name", { ascending: true });
-
-    if (error) {
-      console.error(error);
-      setPublicArenaProfiles([]);
-      return;
-    }
-
-    const visibleProfiles = (data || []).filter((item) => item.is_public !== false);
     const currentArenaProfile = {
       id: user.id,
       name: organizerProfile.organizerName || profile.name || "Organizador",
@@ -2658,11 +2646,23 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       city: organizerProfile.city || profile.city || "",
       state: organizerProfile.state || profile.state || "",
       photo_url: organizerProfile.photoUrl || profile.photo_url || "",
-      is_public: organizerProfile.isPublic !== false,
+      is_public: true,
     };
 
-    const withoutCurrent = visibleProfiles.filter((item) => item.id !== user.id);
-    setPublicArenaProfiles(currentArenaProfile.is_public ? [currentArenaProfile, ...withoutCurrent] : withoutCurrent);
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, name, arena_name, city, state, photo_url")
+      .order("name", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      setPublicArenaProfiles([currentArenaProfile]);
+      return;
+    }
+
+    const profiles = (data || []).map((item) => ({ ...item, is_public: true }));
+    const withoutCurrent = profiles.filter((item) => item.id !== user.id);
+    setPublicArenaProfiles([currentArenaProfile, ...withoutCurrent]);
   }
 
   useEffect(() => {
