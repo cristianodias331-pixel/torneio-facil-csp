@@ -2304,6 +2304,7 @@ function Dashboard({ profile, user }) {
   const [trashTournaments, setTrashTournaments] = useState([]);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
+  const [newEventName, setNewEventName] = useState("");
   const [newType, setNewType] = useState("");
 const [newGender, setNewGender] = useState("");
 const [newDate, setNewDate] = useState("");
@@ -2613,6 +2614,7 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
 
 const initialData = {
   ...createInitialData(newType, config),
+  eventName: newEventName.trim(),
   gender: newGender,
   eventDate: newDate,
   eventStartDate: newDate,
@@ -2643,6 +2645,7 @@ const initialData = {
     }
 
     setNewName("");
+    setNewEventName("");
     setNewType("");
 setNewGender("");
 setNewDate("");
@@ -2914,7 +2917,16 @@ setNewRankingCriteria(defaultRankingCriteria);
     <input
       value={newName}
       onChange={(e) => setNewName(e.target.value)}
-      placeholder="Ex: Torneio de sábado"
+      placeholder="Ex: Masculino iniciante"
+    />
+  </div>
+
+  <div className="formField">
+    <label>Nome do evento/copa</label>
+    <input
+      value={newEventName}
+      onChange={(e) => setNewEventName(e.target.value)}
+      placeholder="Ex: Campeão Open"
     />
   </div>
 
@@ -3085,6 +3097,9 @@ setNewRankingCriteria(defaultRankingCriteria);
     </div>
 
     <div className="tournamentMeta">
+      {details.eventName ? (
+        <span>🧩 {details.eventName}</span>
+      ) : null}
       {details.gender ? (
         <span>🏷️ {details.gender}</span>
       ) : null}
@@ -3222,6 +3237,7 @@ setNewRankingCriteria(defaultRankingCriteria);
               </div>
 
               <div className="tournamentMeta">
+                {details.eventName ? <span>🧩 {details.eventName}</span> : null}
                 {details.gender ? <span>🏷️ {details.gender}</span> : null}
                 {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
                 {details.location ? <span>📍 {details.location}</span> : null}
@@ -3917,6 +3933,7 @@ return (
           <h1>{tournament.name}</h1>
           <div className="tournamentHeaderMeta">
             <span>🏆 {tournament.type}</span>
+            {data.eventName ? <span>🧩 Evento: {data.eventName}</span> : null}
             {data.gender ? <span>🏷️ {data.gender}</span> : null}
             {data.eventPeriodLabel || data.eventDate ? <span>🗓️ {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
             {data.eventDay ? <span>📅 {data.eventDay}</span> : null}
