@@ -2336,6 +2336,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [notice, setNotice] = useState(null);
   const [activePanel, setActivePanel] = useState("inicio");
   const [photoEditor, setPhotoEditor] = useState(null);
+  const [profileEditing, setProfileEditing] = useState(false);
   const photoPointersRef = useRef(new Map());
   const photoPreviewRef = useRef(null);
   const photoCanvasRef = useRef(null);
@@ -2364,6 +2365,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       instagramHandle: profile.instagram_handle || "",
       instagramLink: profile.instagram_link || "",
       whatsappGroupLink: profile.whatsapp_group_link || "",
+      isPublic: profile.is_public !== false,
     };
   });
 
@@ -3706,22 +3708,53 @@ setNewPublicInfo({
 
 {activePanel === "ajustes" && (
 <>
-  <section className="card publicProfileHomeCard">
-    <h2>Perfil público do usuário</h2>
-    <div className="publicProfilePreview">
-      {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do organizador" /> : null}
-      <div>
-        <strong>{organizerProfile.arenaName || profile.name || "Organizador"}</strong>
-        <span>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</span>
+  <section className="card instagramProfileCard">
+    <div className="instagramProfileHeader">
+      <div className="instagramProfilePhoto">
+        {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do perfil" /> : <span>📷</span>}
+      </div>
+      <div className="instagramProfileInfo">
+        <div className="instagramProfileTopline">
+          <h2>{organizerProfile.arenaName || profile.name || "Meu perfil"}</h2>
+          <button type="button" className="secondaryBtn" onClick={() => setProfileEditing((prev) => !prev)}>
+            {profileEditing ? "Fechar edição" : "Editar perfil"}
+          </button>
+        </div>
+        <p>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</p>
+        <label className="profilePublicToggle">
+          <input
+            type="checkbox"
+            checked={organizerProfile.isPublic !== false}
+            onChange={(e) => updateOrganizerProfile("isPublic", e.target.checked)}
+          />
+          Perfil público
+        </label>
       </div>
     </div>
-    <p>As publicações pessoais e campeonatos publicados no perfil ficarão nesta área.</p>
-    <div className="publishedTournamentsPreview">
-      <strong>Minhas publicações</strong>
-      <span>Os campeonatos aparecerão aqui quando você escolher “Publicar no meu perfil” em Compartilhar campeonato.</span>
+
+    <div className="profilePublicationsHeader">
+      <strong>Publicações</strong>
+      <span>{tournaments.length} campeonato(s) criado(s)</span>
+    </div>
+
+    <div className="profileTournamentGrid">
+      {tournaments.length === 0 ? (
+        <div className="profileEmptyPost">Nenhum campeonato criado ainda.</div>
+      ) : tournaments.map((t) => {
+        const details = t.data || {};
+        return (
+          <article className="profileTournamentPost" key={t.id}>
+            <div className="profileTournamentCover">🏆</div>
+            <strong>{t.name}</strong>
+            <span>{t.type}</span>
+            {details.eventDate ? <small>📅 {formatDateBR(details.eventDate)}</small> : null}
+          </article>
+        );
+      })}
     </div>
   </section>
 
+  {profileEditing ? (
   <section className="card organizerProfileCard">
     <h2>Dados do organizador</h2>
     <p className="profileSectionHint">Essas informações podem ser usadas como dados públicos da arena e do organizador.</p>
@@ -3802,6 +3835,7 @@ setNewPublicInfo({
 
     <button className="saveProfileBtn" type="button" onClick={saveOrganizerProfile}>Salvar alterações</button>
   </section>
+  ) : null}
 
   <section className="card subscriptionSummaryCard">
     <h2>Assinatura</h2>
