@@ -5410,46 +5410,51 @@ function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
 
 function ScheduleView({
   schedule,
-  updateScore,
+  updateScore = () => {},
   showGroupName = false,
   voiceRepeat = 1,
-  setVoiceRepeat,
+  setVoiceRepeat = () => {},
   winningScore = 4,
+  readOnly = false,
 }) {
   return (
-    <div className="schedule">
-      <VoiceRepeatSelector
-        voiceRepeat={voiceRepeat}
-        setVoiceRepeat={setVoiceRepeat}
-      />
+    <div className={`schedule ${readOnly ? "readOnlySchedule" : ""}`}>
+      {!readOnly ? (
+        <VoiceRepeatSelector
+          voiceRepeat={voiceRepeat}
+          setVoiceRepeat={setVoiceRepeat}
+        />
+      ) : null}
 
       {schedule.map((round, roundIndex) => (
-        <div className="roundCard" key={roundIndex}>
+        <div className={`roundCard ${readOnly ? "readOnlyRoundCard" : ""}`} key={roundIndex}>
           <div className="roundHeader">
             <h3>Rodada {roundIndex + 1}</h3>
 
-            <div className="voiceActions">
-              <button
-                type="button"
-                className="voiceBtn"
-                onClick={() =>
-                  speakRound(round, roundIndex, {
-                    includeGroup: showGroupName,
-                    repeat: voiceRepeat,
-                  })
-                }
-              >
-                     Chamar rodada
-              </button>
+            {!readOnly ? (
+              <div className="voiceActions">
+                <button
+                  type="button"
+                  className="voiceBtn"
+                  onClick={() =>
+                    speakRound(round, roundIndex, {
+                      includeGroup: showGroupName,
+                      repeat: voiceRepeat,
+                    })
+                  }
+                >
+                  Chamar rodada
+                </button>
 
-              <button
-                type="button"
-                className="secondaryBtn"
-                onClick={stopSpeech}
-              >
-                ⏹️ Parar
-              </button>
-            </div>
+                <button
+                  type="button"
+                  className="secondaryBtn"
+                  onClick={stopSpeech}
+                >
+                  ⏹️ Parar
+                </button>
+              </div>
+            ) : null}
           </div>
 
           {round.map((game, gameIndex) => {
@@ -5465,7 +5470,7 @@ function ScheduleView({
                 </strong>
               </div>
 
-              <div className="gameTeams publicMirrorTeams">
+              <div className="gameTeams">
                 <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
                 <span>x</span>
                 <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
@@ -5480,6 +5485,8 @@ function ScheduleView({
   pattern="[0-9]*"
   value={game.s1}
   onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
+  readOnly={readOnly}
+  disabled={readOnly}
 />
 
                 <span>—</span>
@@ -5492,24 +5499,28 @@ function ScheduleView({
   pattern="[0-9]*"
   value={game.s2}
   onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
+  readOnly={readOnly}
+  disabled={readOnly}
 />
               </div>
 
-              <div className="voiceActions gameVoiceActions">
-                <button
-                  type="button"
-                  className="voiceBtn"
-                  onClick={() =>
-                    speakGame(game, {
-                      roundLabel: `Rodada ${roundIndex + 1}`,
-                      includeGroup: showGroupName,
-                      repeat: voiceRepeat,
-                    })
-                  }
-                >
-                  🔊 Chamar jogo
-                </button>
-              </div>
+              {!readOnly ? (
+                <div className="voiceActions gameVoiceActions">
+                  <button
+                    type="button"
+                    className="voiceBtn"
+                    onClick={() =>
+                      speakGame(game, {
+                        roundLabel: `Rodada ${roundIndex + 1}`,
+                        includeGroup: showGroupName,
+                        repeat: voiceRepeat,
+                      })
+                    }
+                  >
+                    🔊 Chamar jogo
+                  </button>
+                </div>
+              ) : null}
             </div>
             );
           })}
@@ -5802,7 +5813,7 @@ function BracketColumn({
                   <strong>Quadra {game.court}</strong>
                 </div>
 
-                <div className="gameTeams publicMirrorTeams">
+                <div className="gameTeams">
                   <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1?.join(" + ") || "Aguardando"}</div>
                   <span>x</span>
                   <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
@@ -6120,7 +6131,7 @@ function PublicTournamentScreen({ tournament }) {
             {!data.schedule || data.schedule.length === 0 ? (
               <p>A tabela ainda não foi gerada pelo organizador.</p>
             ) : (
-              <PublicScheduleView schedule={data.schedule} showGroupName={isCup} />
+              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} readOnly />
             )}
           </div>
 
@@ -6215,7 +6226,7 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
                 Quadra {game.court}
               </strong>
 
-              <div className="gameTeams publicMirrorTeams">
+              <div className="gameTeams">
                 <div>{game.team1.join(" + ")}</div>
                 <span>x</span>
                 <div>{game.team2.join(" + ")}</div>
@@ -6260,7 +6271,7 @@ function PublicBracketColumn({ rounds }) {
             <div className="gameCard" key={game.matchKey}>
               <strong>Quadra {game.court}</strong>
 
-              <div className="gameTeams publicMirrorTeams">
+              <div className="gameTeams">
                 <div>{game.team1?.join(" + ") || "Aguardando"}</div>
                 <span>x</span>
                 <div>{game.team2?.join(" + ") || "Aguardando"}</div>
