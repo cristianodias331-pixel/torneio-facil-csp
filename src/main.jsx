@@ -2330,6 +2330,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   showCityState: true,
 });
   const [saving, setSaving] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileVisibilitySaving, setProfileVisibilitySaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
@@ -2339,6 +2341,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [activePanel, setActivePanel] = useState("inicio");
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
+  const [profileSubtab, setProfileSubtab] = useState("publicacoes");
   const photoPointersRef = useRef(new Map());
   const photoPreviewRef = useRef(null);
   const photoCanvasRef = useRef(null);
@@ -2404,10 +2407,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setOrganizerProfile((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function saveOrganizerProfile() {
-    if (!user?.id) return;
-
-    const publicProfileData = {
+  function buildOrganizerProfilePayload(nextVisibility = organizerProfile.isPublic !== false) {
+    return {
       id: user.id,
       name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
       arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
@@ -2420,8 +2421,15 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       instagram_handle: organizerProfile.instagramHandle || "",
       instagram_link: organizerProfile.instagramLink || "",
       whatsapp_group_link: organizerProfile.whatsappGroupLink || "",
-      is_public: organizerProfile.isPublic !== false,
+      is_public: nextVisibility,
     };
+  }
+
+  async function saveOrganizerProfile() {
+    if (!user?.id || profileSaving) return;
+    setProfileSaving(true);
+
+    const publicProfileData = buildOrganizerProfilePayload();
 
     localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify({
       ...organizerProfile,
@@ -2435,6 +2443,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       .upsert(publicProfileData, { onConflict: "id" })
       .select("*")
       .single();
+
+    setProfileSaving(false);
 
     if (error) {
       console.error("Erro ao salvar perfil no Supabase:", error);
@@ -2463,12 +2473,44 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     await loadPublicArenaProfiles();
+    showNotice("success", "Perfil salvo", "As alterações do perfil foram salvas com sucesso.");
+  }
+
+  async function toggleOrganizerProfileVisibility() {
+    if (!user?.id || profileVisibilitySaving) return;
+
+    const nextVisibility = organizerProfile.isPublic === false;
+    const previousProfile = organizerProfile;
+    const nextProfile = { ...organizerProfile, isPublic: nextVisibility };
+
+    setProfileVisibilitySaving(true);
+    setOrganizerProfile(nextProfile);
+    localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(nextProfile));
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .upsert(buildOrganizerProfilePayload(nextVisibility), { onConflict: "id" })
+      .select("*")
+      .single();
+
+    setProfileVisibilitySaving(false);
+
+    if (error) {
+      console.error("Erro ao alterar visibilidade do perfil:", error);
+      setOrganizerProfile(previousProfile);
+      localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify(previousProfile));
+      showNotice("error", "Visibilidade não alterada", `Não foi possível alterar o perfil. Detalhe: ${error.message || "erro desconhecido"}`);
+      return;
+    }
+
+    if (data) setProfile((prev) => ({ ...prev, ...data }));
+    await loadPublicArenaProfiles();
     showNotice(
       "success",
-      publicProfileData.is_public ? "Perfil público salvo" : "Perfil privado salvo",
-      publicProfileData.is_public
-        ? "Seu perfil está público e pode aparecer na aba Início dos outros usuários."
-        : "Seu perfil está privado e não aparecerá na aba Início dos outros usuários."
+      nextVisibility ? "Perfil público" : "Perfil privado",
+      nextVisibility
+        ? "Seu perfil agora aparece na aba Início dos outros usuários."
+        : "Seu perfil foi ocultado da aba Início dos outros usuários."
     );
   }
 
@@ -3833,23 +3875,28 @@ setNewPublicInfo({
       <div className="instagramProfileInfo">
         <div className="instagramProfileTopline">
           <h2>{organizerProfile.arenaName || profile.name || "Meu perfil"}</h2>
-          <button type="button" className="secondaryBtn" onClick={() => setProfileEditing((prev) => !prev)}>
-            {profileEditing ? "Voltar ao perfil" : "Editar perfil"}
-          </button>
         </div>
         <p>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</p>
         <button
           type="button"
           className={`profileVisibilitySwitch ${organizerProfile.isPublic !== false ? "public" : "private"}`}
-          onClick={() => updateOrganizerProfile("isPublic", organizerProfile.isPublic === false)}
+          onClick={toggleOrganizerProfileVisibility}
+          disabled={profileVisibilitySaving}
           aria-pressed={organizerProfile.isPublic !== false}
         >
           <span className="switchTrack"><span className="switchThumb" /></span>
-          <strong>{organizerProfile.isPublic !== false ? "Perfil público" : "Perfil privado"}</strong>
+          <strong>{profileVisibilitySaving ? "Salvando..." : organizerProfile.isPublic !== false ? "Perfil público" : "Perfil privado"}</strong>
         </button>
       </div>
     </div>
 
+    <div className="profileSubtabs">
+      <button type="button" className={profileSubtab === "publicacoes" ? "active" : ""} onClick={() => setProfileSubtab("publicacoes")}>Publicações</button>
+      <button type="button" className={profileSubtab === "editar" ? "active" : ""} onClick={() => setProfileSubtab("editar")}>Editar perfil</button>
+    </div>
+
+    {profileSubtab === "publicacoes" ? (
+      <div className="profileSubtabPanel">
     <div className="profilePublicationsHeader">
       <strong>Publicações</strong>
       <span>{tournaments.length} campeonato(s) criado(s)</span>
@@ -3886,16 +3933,19 @@ setNewPublicInfo({
         );
       })}
     </div>
+
+      </div>
+    ) : null}
   </section>
 
-  {profileEditing ? (
+  {profileSubtab === "editar" ? (
   <section className="card organizerProfileCard profileEditSubtab">
     <div className="profileEditSubtabHeader">
       <div>
-        <span>Sub aba do perfil</span>
+        <span>Informações do usuário</span>
         <h2>Editar perfil</h2>
       </div>
-      <button type="button" className="secondaryBtn" onClick={() => setProfileEditing(false)}>Voltar</button>
+      <button type="button" className="secondaryBtn" onClick={() => setProfileSubtab("publicacoes")}>Voltar às publicações</button>
     </div>
     <p className="profileSectionHint">Essas informações podem ser usadas como dados públicos da arena e do organizador.</p>
 
@@ -3973,7 +4023,7 @@ setNewPublicInfo({
 
     </div>
 
-    <button className="saveProfileBtn" type="button" onClick={saveOrganizerProfile}>Salvar alterações</button>
+    <button className="saveProfileBtn" type="button" onClick={saveOrganizerProfile} disabled={profileSaving}>{profileSaving ? "Salvando..." : "Salvar alterações"}</button>
   </section>
   ) : null}
 
