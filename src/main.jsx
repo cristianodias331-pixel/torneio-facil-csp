@@ -1783,7 +1783,7 @@ function Login() {
       }
 
       if (!birthDate) {
-        showNotice("warning", "Data de nascimento obrigatória", "Informe sua data de nascimento.");
+        showNotice("warning", "Data de nascimento obrigat  ria", "Informe sua data de nascimento.");
         return;
       }
     }
@@ -2899,8 +2899,8 @@ setNewRankingCriteria(defaultRankingCriteria);
   <div className="formField">
     <label>Set para vencer</label>
     <select value={newWinningScore} onChange={(e) => setNewWinningScore(Number(e.target.value))}>
-      <option value={4}>Até 4 games</option>
-      <option value={6}>Até 6 games</option>
+      <option value={4}>4 games</option>
+      <option value={6}>6 games</option>
     </select>
   </div>
 
@@ -2976,7 +2976,7 @@ setNewRankingCriteria(defaultRankingCriteria);
         <span>📍 {details.location}</span>
       ) : null}
       {details.winningScore ? (
-        <span>🎯 Até {details.winningScore} pontos</span>
+        <span>🎯 {details.winningScore} games</span>
       ) : null}
     </div>
   </div>
@@ -3756,7 +3756,7 @@ return (
             {data.eventDate ? <span>🗓️ {formatDateBR(data.eventDate)}</span> : null}
             {data.eventDay ? <span>📅 {data.eventDay}</span> : null}
             {data.location ? <span>📍 {data.location}</span> : null}
-            {data.winningScore ? <span>🎯 Até {data.winningScore} pontos</span> : null}
+            {data.winningScore ? <span>🎯 {data.winningScore} games</span> : null}
           </div>
         </div>
 
@@ -3830,33 +3830,6 @@ return (
         <section className="card" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
           <h2>Participantes</h2>
 
-          <div className="rankingCriteriaBox">
-  <label>Set para vencer</label>
-  <select
-    value={data.winningScore || 4}
-    onChange={(e) =>
-      setData((prev) => ({
-        ...prev,
-        winningScore: Number(e.target.value),
-      }))
-    }
-  >
-    <option value={4}>Até 4 games</option>
-    <option value={6}>Até 6 games</option>
-  </select>
-</div>
-
-          <div className="rankingCriteriaBox">
-            <label>Critério do ranking</label>
-            <select
-              value={data.rankingCriteria || defaultRankingCriteria}
-              onChange={(e) => updateRankingCriteria(e.target.value)}
-            >
-              {rankingCriteriaOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </div>
 
           {isCupType(config) && (
             <CupConfigPanel
