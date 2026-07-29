@@ -10867,3 +10867,60 @@ button.profileVisibilitySwitch.private strong {
     font-size: 11px !important;
   }
 }
+
+
+/* Ajuste pedido: logo só na linha horizontal azul; lateral só com abas */
+.playSidebar.noSideBrand {
+  padding-top: 18px !important;
+}
+
+.playSidebar.noSideBrand .playSideLogo {
+  display: none !important;
+}
+
+.playTopbar .playTopBrand {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+}
+
+.playTopbar .playTopBrand .torneio360Logo {
+  width: 190px !important;
+  height: 74px !important;
+  border-radius: 0 !important;
+  overflow: visible !important;
+  flex: 0 0 auto !important;
+}
+
+.playTopbar .playTopBrand .torneio360Logo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.28)) !important;
+}
+
+.playTopbar .playTopBrand .brandTaglineOnly span {
+  display: block !important;
+  color: rgba(255, 255, 255, 0.86) !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  white-space: nowrap !important;
+}
+
+@media (max-width: 760px) {
+  .playTopbar .playTopBrand {
+    gap: 8px !important;
+  }
+
+  .playTopbar .playTopBrand .torneio360Logo {
+    width: 138px !important;
+    height: 54px !important;
+  }
+
+  .playTopbar .playTopBrand .brandTaglineOnly span {
+    font-size: 10px !important;
+    white-space: normal !important;
+  }
+}
