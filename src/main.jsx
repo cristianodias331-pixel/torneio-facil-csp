@@ -2839,15 +2839,24 @@ setNewRankingCriteria(defaultRankingCriteria);
       return;
     }
 
+    const isGroupedCategory = Boolean(editTarget.data?.multiCategoryEvent);
     const updatedData = {
       ...(editTarget.data || {}),
       eventName: editForm.eventName.trim(),
       gender: editForm.gender,
       eventDate: editForm.eventDate,
       eventStartDate: editForm.eventDate,
-      eventEndDate: editForm.eventEndDate || editForm.eventDate,
-      eventPeriodLabel: editForm.eventEndDate && editForm.eventEndDate !== editForm.eventDate ? `${formatDateBR(editForm.eventDate)} até ${formatDateBR(editForm.eventEndDate)}` : formatDateBR(editForm.eventDate),
-      eventDay: editForm.eventEndDate && editForm.eventEndDate !== editForm.eventDate ? `${getWeekdayBR(editForm.eventDate)} até ${getWeekdayBR(editForm.eventEndDate)}` : getWeekdayBR(editForm.eventDate),
+      eventEndDate: isGroupedCategory ? editForm.eventDate : (editForm.eventEndDate || editForm.eventDate),
+      eventPeriodLabel: isGroupedCategory
+        ? formatDateBR(editForm.eventDate)
+        : editForm.eventEndDate && editForm.eventEndDate !== editForm.eventDate
+          ? `${formatDateBR(editForm.eventDate)} até ${formatDateBR(editForm.eventEndDate)}`
+          : formatDateBR(editForm.eventDate),
+      eventDay: isGroupedCategory
+        ? getWeekdayBR(editForm.eventDate)
+        : editForm.eventEndDate && editForm.eventEndDate !== editForm.eventDate
+          ? `${getWeekdayBR(editForm.eventDate)} até ${getWeekdayBR(editForm.eventEndDate)}`
+          : getWeekdayBR(editForm.eventDate),
       registrationDeadline: editForm.registrationDeadline,
       eventStartTime: editForm.eventStartTime,
       location: editForm.location.trim(),
@@ -2862,12 +2871,24 @@ setNewRankingCriteria(defaultRankingCriteria);
       data: updatedData,
     };
 
-    const ok = await saveTournament(updated);
-    if (!ok) {
+    const { error } = await supabase
+      .from("tournaments")
+      .update({
+        name: updated.name,
+        type: updated.type,
+        data: updated.data,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", updated.id)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error(error);
       showNotice("error", "Erro ao salvar", "Não foi possível atualizar este torneio.");
       return;
     }
 
+    setTournaments((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
     setEditTarget(null);
     setEditForm(null);
     showNotice("success", "Torneio atualizado", "As informações foram atualizadas com sucesso.");
@@ -2958,7 +2979,7 @@ setNewRankingCriteria(defaultRankingCriteria);
                 <h2>Editar torneio</h2>
                 <p>Atualize as informações principais deste torneio.</p>
               </div>
-              <button type="button" className="secondaryBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Fechar</button>
+              <button type="button" className="deleteBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Fechar</button>
             </div>
 
             <div className="editTournamentGrid">
@@ -2989,10 +3010,12 @@ setNewRankingCriteria(defaultRankingCriteria);
                 <input type="date" value={editForm.eventDate} onChange={(e) => updateEditForm("eventDate", e.target.value)} />
               </div>
 
+              {!editTarget.data?.multiCategoryEvent && (
               <div className="formField">
                 <label>Fim</label>
                 <input type="date" value={editForm.eventEndDate} min={editForm.eventDate || undefined} onChange={(e) => updateEditForm("eventEndDate", e.target.value)} />
               </div>
+              )}
 
               <div className="formField">
                 <label>Encerramento das inscrições</label>
@@ -3021,7 +3044,7 @@ setNewRankingCriteria(defaultRankingCriteria);
             </div>
 
             <div className="editTournamentActions">
-              <button type="button" className="secondaryBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
+              <button type="button" className="deleteBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
               <button type="button" onClick={saveEditedTournament}>Salvar alterações</button>
             </div>
           </div>
@@ -3370,7 +3393,7 @@ setNewRankingCriteria(defaultRankingCriteria);
                   </div>
 
                   <div className="tournamentActions">
-                    <button type="button" className="secondaryBtn" onClick={() => openEditTournament(t)}>Editar</button>
+                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
@@ -3434,7 +3457,7 @@ setNewRankingCriteria(defaultRankingCriteria);
                   </div>
 
                   <div className="tournamentActions">
-                    <button type="button" className="secondaryBtn" onClick={() => openEditTournament(t)}>Editar</button>
+                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
