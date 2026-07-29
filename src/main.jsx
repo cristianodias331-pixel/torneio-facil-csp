@@ -2355,6 +2355,18 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
   });
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
+  const eventGroupKey = newName.trim().toLowerCase().replace(/\s+/g, "-") || null;
+
+  const groupedTournaments = tournaments.reduce((groups, item) => {
+    const groupKey = item.data?.eventGroupKey || item.id;
+    const groupName = item.data?.eventName || item.name;
+    const existing = groups.find((group) => group.key === groupKey);
+
+    if (existing) existing.items.push(item);
+    else groups.push({ key: groupKey, name: groupName, items: [item] });
+
+    return groups;
+  }, []);
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -2609,34 +2621,61 @@ const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCrite
       return;
     }
 
+    const config = modalityConfig[newType];
+    const isMultiCategory = newMultiCategoryEvent === "sim";
+    const validCategorySchedules = newCategorySchedules.filter((item) => item.category.trim());
+
+    if (isMultiCategory && validCategorySchedules.length === 0) {
+      showNotice("warning", "Categoria obrigatória", "Adicione pelo menos uma categoria para este evento.");
+      return;
+    }
+
     setSaving(true);
 
-    const config = modalityConfig[newType];
+    const baseData = {
+      eventName: newName.trim(),
+      eventGroupKey,
+      multiCategoryEvent: isMultiCategory,
+      eventStartDate: newDate,
+      eventEndDate: newEndDate || newDate,
+      eventPeriodLabel: newEndDate && newEndDate !== newDate ? `${formatDateBR(newDate)} até ${formatDateBR(newEndDate)}` : formatDateBR(newDate),
+      registrationDeadline: newRegistrationDeadline,
+      location: newLocation.trim(),
+      winningScore: Number(newWinningScore) || 4,
+      rankingCriteria: newRankingCriteria || defaultRankingCriteria,
+    };
 
-const initialData = {
-  ...createInitialData(newType, config),
-  multiCategoryEvent: newMultiCategoryEvent === "sim",
-  categorySchedules: newMultiCategoryEvent === "sim" ? newCategorySchedules : [],
-  gender: newGender,
-  eventDate: newDate,
-  eventStartDate: newDate,
-  eventEndDate: newEndDate || newDate,
-  eventPeriodLabel: newEndDate && newEndDate !== newDate ? `${formatDateBR(newDate)} até ${formatDateBR(newEndDate)}` : formatDateBR(newDate),
-  eventDay: newEndDate && newEndDate !== newDate ? `${getWeekdayBR(newDate)} até ${getWeekdayBR(newEndDate)}` : getWeekdayBR(newDate),
-  registrationDeadline: newRegistrationDeadline,
-  eventStartTime: newEventStartTime,
-  dailyStartTimes: newDailyStartTimes,
-  location: newLocation.trim(),
-  winningScore: Number(newWinningScore) || 4,
-  rankingCriteria: newRankingCriteria || defaultRankingCriteria,
-};
-    const { error } = await supabase.from("tournaments").insert({
-      user_id: user.id,
-      name: newName.trim(),
-      type: newType,
-      data: initialData,
-      status: "active",
-    });
+    const rowsToInsert = isMultiCategory
+      ? validCategorySchedules.map((item) => ({
+          user_id: user.id,
+          name: item.category.trim(),
+          type: newType,
+          data: {
+            ...createInitialData(newType, config),
+            ...baseData,
+            gender: item.category.trim(),
+            eventDate: item.date || newDate,
+            eventDay: getWeekdayBR(item.date || newDate),
+            eventStartTime: item.time,
+          },
+          status: "active",
+        }))
+      : [{
+          user_id: user.id,
+          name: newName.trim(),
+          type: newType,
+          data: {
+            ...createInitialData(newType, config),
+            ...baseData,
+            gender: newGender,
+            eventDate: newDate,
+            eventDay: getWeekdayBR(newDate),
+            eventStartTime: newEventStartTime,
+          },
+          status: "active",
+        }];
+
+    const { error } = await supabase.from("tournaments").insert(rowsToInsert);
 
     setSaving(false);
 
@@ -2661,7 +2700,7 @@ setNewLocation("");
 setNewWinningScore(4);
 setNewRankingCriteria(defaultRankingCriteria);
     await loadTournaments();
-    showNotice("success", "Torneio criado", "O torneio foi criado com sucesso.");
+    showNotice("success", isMultiCategory ? "Torneios criados" : "Torneio criado", isMultiCategory ? "As categorias foram criadas como torneios separados dentro do mesmo evento." : "O torneio foi criado com sucesso.");
   }
 
   async function confirmDeleteTournament() {
@@ -3046,6 +3085,7 @@ setNewRankingCriteria(defaultRankingCriteria);
         />
       </div>
 
+      {newMultiCategoryEvent === "nao" && (
       <div className="formField compactField">
         <label>{isMultiDayEvent ? "Horário padrão de início" : "Horário de início"}</label>
         <input
@@ -3054,9 +3094,10 @@ setNewRankingCriteria(defaultRankingCriteria);
           onChange={(e) => setNewEventStartTime(e.target.value)}
         />
       </div>
+      )}
     </div>
 
-    {isMultiDayEvent && (
+    {newMultiCategoryEvent === "nao" && isMultiDayEvent && (
       <div className="dailyTimesBox">
         <div className="dailyTimesIntro">
           <strong>Horário por dia</strong>
@@ -3128,80 +3169,72 @@ setNewRankingCriteria(defaultRankingCriteria);
   ) : (false) ? (
     <p></p>
   ) : (
-    <div className="tournamentList">
-      {tournaments.map((t, index) => {
-        const details = t.data || {};
+    <div className="eventGroupList">
+      {groupedTournaments.map((group) => (
+        <div className="eventGroupCard" key={group.key}>
+          {group.items.length > 1 && (
+            <div className="eventGroupHeader">
+              <strong>{group.name}</strong>
+              <span>{group.items.length} categorias</span>
+            </div>
+          )}
 
-        return (
-      <div
-        className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
-        key={t.id}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={() => {
-          moveTournamentByDrag(draggedTournamentId, t.id);
-          setDraggedTournamentId(null);
-        }}
-      >
-  <button
-    type="button"
-    className="moveLineBtn"
-    title="Segure e arraste para mover"
-    draggable
-    onDragStart={(e) => {
-      setDraggedTournamentId(t.id);
-      e.dataTransfer.effectAllowed = "move";
-    }}
-    onDragEnd={() => setDraggedTournamentId(null)}
-  >
-    <span>—</span>
-    <span>—</span>
-    <span>—</span>
-  </button>
+          <div className="tournamentList eventTournamentGrid">
+            {group.items.map((t) => {
+              const details = t.data || {};
 
-  <div className="tournamentInfo">
-    <div className="tournamentTitleRow">
-      <strong>{t.name}</strong>
-      <span className="tournamentTypeBadge">{t.type}</span>
-    </div>
+              return (
+                <div
+                  className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
+                  key={t.id}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    moveTournamentByDrag(draggedTournamentId, t.id);
+                    setDraggedTournamentId(null);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="moveLineBtn"
+                    title="Segure e arraste para mover"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedTournamentId(t.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => setDraggedTournamentId(null)}
+                  >
+                    <span>—</span>
+                    <span>—</span>
+                    <span>—</span>
+                  </button>
 
-    <div className="tournamentMeta">
-      {details.multiCategoryEvent ? (
-        <span>🧩 Várias categorias</span>
-      ) : null}
-      {details.gender ? (
-        <span>🏷️ {details.gender}</span>
-      ) : null}
-      {details.eventDate ? (
-        <span>📅 {formatDateBR(details.eventDate)}</span>
-      ) : null}
-      {details.eventDay ? (
-        <span>🗓️ {details.eventDay}</span>
-      ) : null}
-      {details.location ? (
-        <span>📍 {details.location}</span>
-      ) : null}
-      {details.winningScore ? (
-        <span>🎯 {details.winningScore} games</span>
-      ) : null}
-    </div>
-  </div>
+                  <div className="tournamentInfo">
+                    <div className="tournamentTitleRow">
+                      <strong>{t.name}</strong>
+                      <span className="tournamentTypeBadge">{t.type}</span>
+                    </div>
 
-  <div className="tournamentActions">
-    <button type="button" onClick={() => openTournament(t)}>
-      Abrir
-    </button>
-    <button
-      type="button"
-      className="deleteBtn"
-      onClick={() => setDeleteTarget(t)}
-    >
-      Excluir
-    </button>
-  </div>
+                    <div className="tournamentMeta">
+                      {details.multiCategoryEvent ? <span>🧩 {details.eventName}</span> : null}
+                      {details.gender ? <span>🏷️ {details.gender}</span> : null}
+                      {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
+                      {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
+                      {details.location ? <span>📍 {details.location}</span> : null}
+                      {details.winningScore ? <span>🎯 {details.winningScore} games</span> : null}
+                    </div>
+                  </div>
 
-</div>
-        );
-      })}
+                  <div className="tournamentActions">
+                    <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )}
 </section>
