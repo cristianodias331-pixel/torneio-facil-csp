@@ -8057,3 +8057,122 @@ button.shareTournamentBtn {
 @media (max-width: 640px) {
   .arenaFeedGrid { grid-template-columns: 1fr; }
 }
+
+/* Perfil em formato de publicações */
+.instagramProfileCard {
+  display: grid;
+  gap: 22px;
+}
+.instagramProfileHeader {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 24px;
+  align-items: center;
+}
+.instagramProfilePhoto {
+  width: 112px;
+  height: 112px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  background: #eff6ff;
+  border: 3px solid #dbeafe;
+  font-size: 36px;
+}
+.instagramProfilePhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.instagramProfileInfo {
+  display: grid;
+  gap: 8px;
+}
+.instagramProfileTopline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+.instagramProfileTopline h2 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 950;
+  color: #0f172a;
+}
+.instagramProfileTopline button {
+  padding: 10px 16px;
+  border-radius: 12px;
+}
+.instagramProfileInfo p {
+  margin: 0;
+  color: #64748b;
+  font-weight: 800;
+}
+.profilePublicToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: max-content;
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-weight: 900;
+}
+.profilePublicToggle input {
+  width: auto;
+  margin: 0;
+}
+.profilePublicationsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+}
+.profilePublicationsHeader strong {
+  color: #0f172a;
+  font-size: 16px;
+  font-weight: 950;
+}
+.profilePublicationsHeader span {
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 800;
+}
+.profileTournamentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+.profileTournamentPost,
+.profileEmptyPost {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #dbeafe;
+  background: #ffffff;
+}
+.profileTournamentCover {
+  min-height: 118px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff;
+  font-size: 34px;
+}
+.profileTournamentPost strong { color: #0f172a; font-weight: 950; }
+.profileTournamentPost span,
+.profileTournamentPost small,
+.profileEmptyPost { color: #64748b; font-weight: 800; }
+@media (max-width: 760px) {
+  .instagramProfileHeader { grid-template-columns: 1fr; text-align: center; justify-items: center; }
+  .instagramProfileTopline { justify-content: center; }
+  .profilePublicToggle { margin: 0 auto; }
+  .profileTournamentGrid { grid-template-columns: 1fr; }
+}
