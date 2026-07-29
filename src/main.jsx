@@ -1572,7 +1572,7 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
     <div className="confirmOverlay">
       <div className="confirmBox">
         <div className="confirmIcon">🧹</div>
-        <h2>Apagar placares?</h2>
+        <h2>Apagar somente os placares?</h2>
 
         <p>
           Todos os placares preenchidos deste campeonato serão apagados. A tabela
@@ -1582,6 +1582,29 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
         <div className="confirmActions">
           <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
+  if (!open) return null;
+
+  return (
+    <div className="confirmOverlay">
+      <div className="confirmBox">
+        <div className="confirmIcon">🗑️</div>
+        <h2>Apagar todos os jogos e placares?</h2>
+
+        <p>
+          Os participantes serão mantidos, mas todos os jogos, rodadas, placares
+          e chaves deste torneio serão removidos.
+        </p>
+
+        <div className="confirmActions">
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar tudo</button>
         </div>
       </div>
     </div>
@@ -3301,6 +3324,7 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [notice, setNotice] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
+  const [clearTableOpen, setClearTableOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -3676,9 +3700,6 @@ function clearScores() {
 }
 
 function clearTable() {
-  const ok = window.confirm("Deseja apagar a tabela gerada? Os participantes serão mantidos, mas rodadas, placares e chaves serão removidos.");
-  if (!ok) return;
-
   const copy = structuredClone(data);
   copy.schedule = [];
 
@@ -3687,7 +3708,8 @@ function clearTable() {
   }
 
   setData(copy);
-  showNotice("success", "Tabela apagada", "A tabela foi removida. Os participantes foram mantidos.");
+  setClearTableOpen(false);
+  showNotice("success", "Jogos e placares apagados", "Todos os jogos e placares foram removidos. Os participantes foram mantidos.");
 }
 
 const currentBrackets = isCupType(config) && data.brackets?.length
@@ -3711,6 +3733,12 @@ return (
       open={clearScoresOpen}
       onCancel={() => setClearScoresOpen(false)}
       onConfirm={clearScores}
+    />
+
+    <ConfirmClearTableModal
+      open={clearTableOpen}
+      onCancel={() => setClearTableOpen(false)}
+      onConfirm={clearTable}
     />
 
     {shuffleOverlay && (
@@ -3903,15 +3931,15 @@ return (
                   className="deleteBtn"
                   onClick={() => setClearScoresOpen(true)}
                 >
-                  Apagar placares
+                  Apagar somente os placares
                 </button>
 
                 <button
                   type="button"
                   className="deleteBtn"
-                  onClick={clearTable}
+                  onClick={() => setClearTableOpen(true)}
                 >
-                  Apagar tabela
+                  Apagar todos os jogos e placares
                 </button>
               </div>
             </>
