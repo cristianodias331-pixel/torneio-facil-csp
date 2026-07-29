@@ -7778,71 +7778,37 @@ button.editBtn {
 }
 
 
-/* Ajuste solicitado: ações destrutivas em vermelho e Editar em roxo/rosa */
+/* =========================
+   CORES FIXAS DOS BOTÕES
+   ========================= */
+
+/* Editar sempre roxo/rosa */
 .editBtn,
-button.editBtn {
+button.editBtn,
+.actions button.editBtn,
+.tournamentItem .actions button.editBtn {
   background: linear-gradient(135deg, #7c3aed, #ec4899) !important;
   color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(124, 58, 237, 0.30) !important;
+  box-shadow: 0 14px 28px rgba(124, 58, 237, 0.3) !important;
 }
 
+/* Ações destrutivas/negativas sempre vermelhas */
 .deleteBtn,
 button.deleteBtn,
 .danger,
 button.danger,
-.removePhotoBtn.deleteBtn,
-button.removePhotoBtn.deleteBtn {
+.actions button.deleteBtn,
+.tournamentItem .actions button.deleteBtn {
   background: linear-gradient(135deg, #ef4444, #dc2626) !important;
-  color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(220, 38, 38, 0.34) !important;
-}
-
-@media (max-width: 768px) {
-  .actions button,
-  .editTournamentActions button,
-  .deleteBtn,
-  .editBtn {
-    min-width: 0;
-    width: 100%;
-  }
-}
-
-/* Correção final específica dos cards do histórico */
-.tournamentItem .actions button.editBtn,
-.historyGroupCard .actions button.editBtn,
-button.editBtn {
-  background: linear-gradient(135deg, #7c3aed, #ec4899) !important;
-  background-color: #7c3aed !important;
-  color: #ffffff !important;
-  box-shadow: 0 14px 28px rgba(124, 58, 237, 0.32) !important;
-}
-
-.tournamentItem .actions button.deleteBtn,
-.historyGroupCard .actions button.deleteBtn,
-button.deleteBtn {
-  background: linear-gradient(135deg, #ef4444, #dc2626) !important;
-  background-color: #dc2626 !important;
   color: #ffffff !important;
   box-shadow: 0 14px 28px rgba(220, 38, 38, 0.36) !important;
 }
 
 @media (max-width: 768px) {
-  .tournamentItem .actions,
-  .historyGroupCard .actions {
-    width: 100%;
-  }
-
-  .tournamentItem .actions button,
-  .historyGroupCard .actions button {
+  .actions button.editBtn,
+  .actions button.deleteBtn,
+  .tournamentItem .actions button.editBtn,
+  .tournamentItem .actions button.deleteBtn {
     min-width: 0;
-    flex: 1 1 120px;
-  }
-}
-
-@media (max-width: 420px) {
-  .tournamentItem .actions button,
-  .historyGroupCard .actions button {
-    flex: 1 1 100%;
-    width: 100%;
   }
 }
