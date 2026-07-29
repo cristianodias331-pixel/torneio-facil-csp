@@ -2407,44 +2407,32 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   async function saveOrganizerProfile() {
     if (!user?.id) return;
 
-    const fullProfileData = {
+    const baseProfileData = {
       id: user.id,
       name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
       arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
       city: organizerProfile.city || profile.city || "",
       state: organizerProfile.state || profile.state || "",
       photo_url: organizerProfile.photoUrl || profile.photo_url || "",
-      is_public: organizerProfile.isPublic !== false,
     };
 
     localStorage.setItem(`organizerProfile:${user.id}`, JSON.stringify({
       ...organizerProfile,
-      organizerName: fullProfileData.name,
-      arenaName: fullProfileData.arena_name,
-      isPublic: fullProfileData.is_public,
+      organizerName: baseProfileData.name,
+      arenaName: baseProfileData.arena_name,
+      isPublic: organizerProfile.isPublic !== false,
     }));
 
     const saveAttempts = [
-      fullProfileData,
+      baseProfileData,
       {
         id: user.id,
-        name: fullProfileData.name,
-        arena_name: fullProfileData.arena_name,
-        city: fullProfileData.city,
-        state: fullProfileData.state,
-        photo_url: fullProfileData.photo_url,
-        is_public: fullProfileData.is_public,
+        name: baseProfileData.name,
+        arena_name: baseProfileData.arena_name,
       },
       {
         id: user.id,
-        name: fullProfileData.name,
-        arena_name: fullProfileData.arena_name,
-        is_public: fullProfileData.is_public,
-      },
-      {
-        id: user.id,
-        name: fullProfileData.name,
-        is_public: fullProfileData.is_public,
+        name: baseProfileData.name,
       },
     ];
 
@@ -2473,7 +2461,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       showNotice(
         "error",
         "Perfil não publicado",
-        `O Supabase recusou a publicação. A tabela profiles precisa ter pelo menos as colunas id, name e is_public, e RLS permitindo o usuário salvar o próprio perfil. Detalhe: ${lastError.message || "erro desconhecido"}`
+        `O Supabase recusou a publicação. Detalhe: ${lastError.message || "erro desconhecido"}`
       );
       return;
     }
@@ -2488,12 +2476,12 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         email: user.email || prev.email || "",
         city: savedData.city || prev.city || "",
         state: savedData.state || prev.state || "",
-        isPublic: savedData.is_public !== false,
+        isPublic: prev.isPublic !== false,
       }));
     }
 
     await loadPublicArenaProfiles();
-    showNotice("success", "Perfil público salvo", "Agora seu perfil está publicado para aparecer na aba Início dos outros usuários.");
+    showNotice("success", "Perfil salvo", "Seu perfil foi salvo no banco e já pode aparecer na aba Início dos outros usuários.");
   }
 
 
@@ -2737,9 +2725,9 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     };
 
     const selectAttempts = [
-      "id, name, arena_name, city, state, photo_url, is_public",
-      "id, name, arena_name, is_public",
-      "id, name, is_public",
+      "id, name, arena_name, city, state, photo_url",
+      "id, name, arena_name",
+      "id, name",
       "*",
     ];
 
@@ -2749,8 +2737,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     for (const columns of selectAttempts) {
       const result = await supabase
         .from("profiles")
-        .select(columns)
-        .eq("is_public", true);
+        .select(columns);
 
       if (!result.error) {
         data = result.data || [];
@@ -2759,17 +2746,17 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       }
 
       lastError = result.error;
-      console.warn("Tentativa de carregar perfis públicos falhou:", result.error.message || result.error);
+      console.warn("Tentativa de carregar perfis falhou:", result.error.message || result.error);
     }
 
     if (lastError) {
-      console.error("Erro ao carregar perfis públicos:", lastError);
+      console.error("Erro ao carregar perfis:", lastError);
       setPublicArenaProfiles(currentArenaProfile.is_public ? [currentArenaProfile] : []);
       return;
     }
 
     const profiles = (data || [])
-      .filter((item) => item?.id && item.is_public === true)
+      .filter((item) => item?.id)
       .map((item) => ({ ...item, is_public: true }));
 
     const withoutCurrent = profiles.filter((item) => item.id !== user.id);
