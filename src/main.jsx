@@ -2536,6 +2536,36 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   useEffect(() => {
     localStorage.setItem(`activePanel:${user.id}`, activePanel);
   }, [activePanel, user.id]);
+
+  useEffect(() => {
+    if (selected || tournaments.length === 0) return;
+    const savedTournamentId = localStorage.getItem(`selectedTournament:${user.id}`);
+    if (!savedTournamentId) return;
+
+    const savedTournament = tournaments.find((item) => item.id === savedTournamentId);
+    if (savedTournament) setSelected(savedTournament);
+    else localStorage.removeItem(`selectedTournament:${user.id}`);
+  }, [tournaments, selected, user.id]);
+
+  useEffect(() => {
+    const scrollKey = `dashboardScroll:${user.id}`;
+    const savedScroll = Number(localStorage.getItem(scrollKey) || 0);
+    if (savedScroll > 0) {
+      setTimeout(() => window.scrollTo({ top: savedScroll, behavior: "auto" }), 120);
+    }
+
+    const saveScroll = () => localStorage.setItem(scrollKey, String(window.scrollY || 0));
+    window.addEventListener("scroll", saveScroll, { passive: true });
+    window.addEventListener("pagehide", saveScroll);
+    document.addEventListener("visibilitychange", saveScroll);
+
+    return () => {
+      saveScroll();
+      window.removeEventListener("scroll", saveScroll);
+      window.removeEventListener("pagehide", saveScroll);
+      document.removeEventListener("visibilitychange", saveScroll);
+    };
+  }, [user.id]);
   const [circuits, setCircuits] = useState(() => {
     const saved = localStorage.getItem(`circuits:${user.id}`);
     if (!saved) return [];
@@ -2544,7 +2574,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
-  const [profileSubtab, setProfileSubtab] = useState("publicacoes");
+  const [profileSubtab, setProfileSubtab] = useState(() => localStorage.getItem(`profileSubtab:${user.id}`) || "publicacoes");
+
+  useEffect(() => {
+    localStorage.setItem(`profileSubtab:${user.id}`, profileSubtab);
+  }, [profileSubtab, user.id]);
   const photoPointersRef = useRef(new Map());
   const photoPreviewRef = useRef(null);
   const photoCanvasRef = useRef(null);
@@ -3341,6 +3375,7 @@ setNewPublicInfo({
       return;
     }
 
+    localStorage.setItem(`selectedTournament:${user.id}`, data.id);
     setSelected(data);
   }
 
@@ -3517,7 +3552,10 @@ setNewPublicInfo({
     return (
       <TournamentScreen
         tournament={selected}
-        onBack={() => setSelected(null)}
+        onBack={() => {
+          localStorage.removeItem(`selectedTournament:${user.id}`);
+          setSelected(null);
+        }}
         onSave={saveTournament}
       />
     );
@@ -4687,8 +4725,56 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   });
 
   const [voiceRepeat, setVoiceRepeat] = useState(1);
-  const [activeTournamentTab, setActiveTournamentTab] = useState("participantes");
-  const [activeMatchesTab, setActiveMatchesTab] = useState("grupos");
+  const tournamentStateKey = `tournamentState:${tournament.id}`;
+  const savedTournamentState = (() => {
+    try { return JSON.parse(localStorage.getItem(tournamentStateKey) || "{}"); } catch { return {}; }
+  })();
+  const [activeTournamentTab, setActiveTournamentTabState] = useState(savedTournamentState.activeTournamentTab || "participantes");
+  const [activeMatchesTab, setActiveMatchesTabState] = useState(savedTournamentState.activeMatchesTab || "grupos");
+
+  function setActiveTournamentTab(tab) {
+    localStorage.setItem(tournamentStateKey, JSON.stringify({
+      ...savedTournamentState,
+      activeTournamentTab: tab,
+      activeMatchesTab,
+      scrollY: window.scrollY || 0,
+    }));
+    setActiveTournamentTabState(tab);
+  }
+
+  function setActiveMatchesTab(tab) {
+    localStorage.setItem(tournamentStateKey, JSON.stringify({
+      ...savedTournamentState,
+      activeTournamentTab,
+      activeMatchesTab: tab,
+      scrollY: window.scrollY || 0,
+    }));
+    setActiveMatchesTabState(tab);
+  }
+
+  useEffect(() => {
+    const savedScroll = Number(savedTournamentState.scrollY || 0);
+    if (savedScroll > 0) setTimeout(() => window.scrollTo({ top: savedScroll, behavior: "auto" }), 150);
+
+    const saveTournamentPosition = () => {
+      localStorage.setItem(tournamentStateKey, JSON.stringify({
+        activeTournamentTab,
+        activeMatchesTab,
+        scrollY: window.scrollY || 0,
+      }));
+    };
+
+    window.addEventListener("scroll", saveTournamentPosition, { passive: true });
+    window.addEventListener("pagehide", saveTournamentPosition);
+    document.addEventListener("visibilitychange", saveTournamentPosition);
+
+    return () => {
+      saveTournamentPosition();
+      window.removeEventListener("scroll", saveTournamentPosition);
+      window.removeEventListener("pagehide", saveTournamentPosition);
+      document.removeEventListener("visibilitychange", saveTournamentPosition);
+    };
+  }, [tournament.id, activeTournamentTab, activeMatchesTab]);
 
   const saveTimerRef = useRef(null);
   const latestDataRef = useRef(data);
