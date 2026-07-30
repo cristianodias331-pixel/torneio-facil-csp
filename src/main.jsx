@@ -2537,6 +2537,17 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const params = new URLSearchParams(window.location.search);
     return params.get("aba") || "inicio";
   });
+  const [circuits, setCircuits] = useState(() => {
+    const saved = localStorage.getItem(`circuits:${user.id}`);
+    if (!saved) return [];
+    try { return JSON.parse(saved); } catch { return []; }
+  });
+  const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
+  const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
+  const [expandedCircuitId, setExpandedCircuitId] = useState(null);
+  const appStateSaveTimerRef = useRef(null);
+  const restoredAppStateRef = useRef(false);
+
   function updateAppUrl(next = {}) {
     const params = new URLSearchParams(window.location.search);
 
@@ -2642,17 +2653,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       document.removeEventListener("visibilitychange", saveNow);
     };
   }, [activePanel, selected?.id, expandedCircuitId, profileSubtab, user.id]);
-
-  const [circuits, setCircuits] = useState(() => {
-    const saved = localStorage.getItem(`circuits:${user.id}`);
-    if (!saved) return [];
-    try { return JSON.parse(saved); } catch { return []; }
-  });
-  const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
-  const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
-  const [expandedCircuitId, setExpandedCircuitId] = useState(null);
-  const appStateSaveTimerRef = useRef(null);
-  const restoredAppStateRef = useRef(false);
 
   async function saveUserAppState(extra = {}) {
     const params = new URLSearchParams(window.location.search);
