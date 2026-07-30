@@ -1907,10 +1907,11 @@ function Login() {
       });
 
       if (error) {
+        console.error(error);
         showNotice(
           "error",
           "Cadastro não concluído",
-          "Não foi possível criar sua conta agora. Verifique os dados e tente novamente."
+          error.message || "Não foi possível criar sua conta agora. Verifique os dados e tente novamente."
         );
       } else {
         if (data?.user?.id) {
@@ -1924,6 +1925,12 @@ function Login() {
 
           if (profileError) {
             console.error(profileError);
+            showNotice(
+              "error",
+              "Conta criada, mas acesso não liberado",
+              profileError.message || "Não foi possível liberar o plano Premium automaticamente."
+            );
+            return;
           }
         }
 
