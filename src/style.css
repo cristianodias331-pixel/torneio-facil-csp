@@ -12755,3 +12755,46 @@ button.removePhotoBtn:hover {
   width: auto !important;
   align-self: stretch !important;
 }
+
+/* Final containment: reserve the side gutters inside the expanded circuit. */
+.playAppShell .circuitItem > .circuitRankingBox,
+.playAppShell .circuitItem > .circuitRankingEmpty {
+  width: calc(100% - 40px) !important;
+  max-width: calc(100% - 40px) !important;
+  margin: 18px 20px !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+.playAppShell .circuitRankingHeader {
+  width: 100% !important;
+  max-width: 100% !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 300px) !important;
+  box-sizing: border-box !important;
+}
+
+.playAppShell .circuitRankingHeader label,
+.playAppShell .circuitRankingHeader select,
+.playAppShell .circuitRankingBox table {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.playAppShell .circuitRankingBox table {
+  width: 100% !important;
+  table-layout: fixed;
+}
+
+@media (max-width: 760px) {
+  .playAppShell .circuitItem > .circuitRankingBox,
+  .playAppShell .circuitItem > .circuitRankingEmpty {
+    width: calc(100% - 28px) !important;
+    max-width: calc(100% - 28px) !important;
+    margin: 16px 14px !important;
+  }
+
+  .playAppShell .circuitRankingHeader {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
