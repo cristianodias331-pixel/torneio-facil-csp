@@ -12423,3 +12423,52 @@ button.danger:disabled,
 .circuitItem.expanded .circuitItemSummary {
   border-radius: 16px 16px 0 0 !important;
 }
+
+/* Correção mobile: mostrar todas as abas do menu inferior, incluindo Lixeira */
+@media (max-width: 900px) {
+  .playSidebar {
+    height: 82px !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  .playSidebar::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .playNavItem {
+    flex: 0 0 70px !important;
+    width: 70px !important;
+    min-width: 70px !important;
+    max-width: 70px !important;
+    min-height: 62px !important;
+    height: 62px !important;
+    margin: 0 !important;
+    padding: 7px 4px 6px !important;
+    gap: 4px !important;
+  }
+
+  .playNavItem span:not(.navIcon) {
+    font-size: 20px !important;
+  }
+
+  .playNavItem small {
+    max-width: 64px !important;
+    font-size: 9.5px !important;
+    line-height: 1.05 !important;
+    white-space: normal !important;
+    overflow: visible !important;
+  }
+
+  .playContent {
+    padding-bottom: 112px !important;
+  }
+}
