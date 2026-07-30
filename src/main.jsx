@@ -1759,7 +1759,7 @@ function App() {
 
   if (publicId) return <PublicTournamentPage publicId={publicId} />;
 
-  if (loading) return <AccessPreparing />;
+  if (loading) return <div className="center">Carregando...</div>;
   if (!session) return <Login />;
 
   if (!profile) {
@@ -1774,67 +1774,13 @@ function App() {
 
   const today = new Date().toISOString().slice(0, 10);
   const expired = profile.expires_at && profile.expires_at < today;
-  const waitingForRelease = profile.status !== "active" && profile.expires_at && !expired;
   const blocked = profile.status !== "active" || expired;
-
-  if (waitingForRelease) {
-    return <AccessPreparing user={session.user} />;
-  }
 
   if (blocked) return <Blocked profile={profile} />;
 
   return <Dashboard profile={profile} user={session.user} />;
 }
 
-function AccessPreparing({ user }) {
-  useEffect(() => {
-    let cancelled = false;
-
-    async function releaseAccess() {
-      if (!user?.id) {
-        window.location.reload();
-        return;
-      }
-
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-      const trialEndsAtDate = trialEndsAt.toISOString().slice(0, 10);
-
-      const { error } = await supabase
-        .from("profiles")
-        .update({
-          status: "active",
-          plan: "premium",
-          expires_at: trialEndsAtDate,
-        })
-        .eq("id", user.id);
-
-      if (error) {
-        console.error(error);
-      }
-
-      if (!cancelled) {
-        setTimeout(() => window.location.reload(), 900);
-      }
-    }
-
-    releaseAccess();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id]);
-
-  return (
-    <div className="accessPreparingPage">
-      <div className="accessPreparingCard">
-        <div className="accessPreparingSpinner" />
-        <h1>Preparando seu acesso Premium</h1>
-        <p>Estamos liberando seus 14 dias grátis. Aguarde alguns segundos.</p>
-      </div>
-    </div>
-  );
-}
 
 function BeachLogo({ variant = "light" } = {}) {
   const logoSrc = variant === "blue" ? TORNEIO360_LOGO_BLUE : TORNEIO360_LOGO;
