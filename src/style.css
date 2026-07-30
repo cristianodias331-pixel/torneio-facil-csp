@@ -12603,3 +12603,70 @@ button.removePhotoBtn:hover {
   background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
   filter: brightness(1.02);
 }
+
+/* Circuit layout: explicit tracks prevent content-sized grid columns. */
+.playAppShell .circuitsCard,
+.playAppShell .circuitsList,
+.playAppShell .circuitItem {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: stretch !important;
+}
+
+.playAppShell .circuitsList,
+.playAppShell .circuitItem {
+  display: grid !important;
+}
+
+.playAppShell .circuitItem > * {
+  width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.playAppShell .circuitItemSummary,
+.playAppShell .circuitRankingBox,
+.playAppShell .circuitRankingEmpty,
+.playAppShell .circuitItemActions {
+  box-sizing: border-box !important;
+}
+
+/* These selectors outrank the generic blue button rule in this stylesheet. */
+.playAppShell button.cancelBtn:not(.playNavItem):not(.moveLineBtn),
+.playAppShell button.deleteBtn:not(.playNavItem):not(.moveLineBtn),
+.playAppShell button.danger:not(.playNavItem):not(.moveLineBtn),
+.playAppShell button.removePhotoBtn:not(.playNavItem):not(.moveLineBtn) {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 10px 22px rgba(185, 28, 28, 0.28) !important;
+}
+
+.playAppShell button.cancelBtn:not(.playNavItem):not(.moveLineBtn):hover,
+.playAppShell button.deleteBtn:not(.playNavItem):not(.moveLineBtn):hover,
+.playAppShell button.danger:not(.playNavItem):not(.moveLineBtn):hover,
+.playAppShell button.removePhotoBtn:not(.playNavItem):not(.moveLineBtn):hover {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
+  filter: brightness(1.02) !important;
+}
+
+/* Fallback without nested grids: direct circuit sections always stretch. */
+.playAppShell .circuitsCard,
+.playAppShell .circuitsList,
+.playAppShell .circuitItem {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+}
+
+.playAppShell .circuitsList {
+  gap: 16px !important;
+}
+
+.playAppShell .circuitItemSummary {
+  align-self: stretch !important;
+  width: 100% !important;
+  max-width: none !important;
+}
