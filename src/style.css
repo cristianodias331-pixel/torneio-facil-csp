@@ -12403,3 +12403,23 @@ button.danger:disabled,
     margin: 16px 14px 16px 14px !important;
   }
 }
+
+/* Correção: barra azul do circuito ocupando toda a largura */
+.circuitItem {
+  overflow: hidden !important;
+}
+
+.circuitItemSummary {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box !important;
+  border-radius: 16px 16px 0 0 !important;
+}
+
+.circuitItem:not(.expanded) .circuitItemSummary {
+  border-radius: 16px !important;
+}
+
+.circuitItem.expanded .circuitItemSummary {
+  border-radius: 16px 16px 0 0 !important;
+}
