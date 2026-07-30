@@ -2535,11 +2535,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const params = new URLSearchParams(window.location.search);
     return params.get("aba") || "inicio";
   });
-  const [circuits, setCircuits] = useState(() => {
-    const saved = localStorage.getItem(`circuits:${user.id}`);
-    if (!saved) return [];
-    try { return JSON.parse(saved); } catch { return []; }
-  });
+  const [circuits, setCircuits] = useState([]);
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
   const [expandedCircuitId, setExpandedCircuitId] = useState(null);
@@ -2738,9 +2734,88 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       .some((value) => String(value).toLowerCase().includes(term));
   });
 
+  function normalizeCircuitRow(row) {
+    return {
+      id: row.id,
+      name: row.name || "",
+      startDate: row.start_date || "",
+      endDate: row.end_date || "",
+      status: row.status || "draft",
+      tournamentIds: Array.isArray(row.tournament_ids) ? row.tournament_ids : [],
+      rankingHistory: row.rankingHistory || {},
+      updatedAt: row.updated_at,
+    };
+  }
+
+  async function loadCircuits() {
+    const { data, error } = await supabase
+      .from("circuits")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("updated_at", { ascending: false });
+
+    if (error) {
+      console.error("Erro ao carregar circuitos:", error);
+      showNotice("error", "Erro ao carregar circuitos", "Não foi possível carregar seus circuitos do Supabase.");
+      return;
+    }
+
+    const baseCircuits = (data || []).map(normalizeCircuitRow);
+
+    const { data: historyRows, error: historyError } = await supabase
+      .from("circuit_ranking_history")
+      .select("*")
+      .eq("user_id", user.id);
+
+    if (historyError) console.error("Erro ao carregar histórico dos circuitos:", historyError);
+
+    const historyByCircuit = {};
+    (historyRows || []).forEach((row) => {
+      const key = `${row.tournament_id}::${row.group_key || "geral"}::${row.player_key}`;
+      if (!historyByCircuit[row.circuit_id]) historyByCircuit[row.circuit_id] = {};
+      historyByCircuit[row.circuit_id][key] = {
+        tournamentId: row.tournament_id,
+        groupKey: row.group_key || "geral",
+        name: row.player_name,
+        pts: Number(row.pts || 0),
+        w: Number(row.w || 0),
+        bal: Number(row.bal || 0),
+        played: Number(row.played || 0),
+      };
+    });
+
+    setCircuits(baseCircuits.map((circuit) => ({
+      ...circuit,
+      rankingHistory: historyByCircuit[circuit.id] || {},
+    })));
+  }
+
+  async function saveCircuitHistoryToSupabase(circuitId, history) {
+    const rows = Object.entries(history || {}).map(([recordKey, record]) => ({
+      user_id: user.id,
+      circuit_id: circuitId,
+      tournament_id: record.tournamentId,
+      group_key: record.groupKey || "geral",
+      player_key: recordKey.split("::").pop(),
+      player_name: record.name || "Sem nome",
+      pts: Number(record.pts || 0),
+      w: Number(record.w || 0),
+      bal: Number(record.bal || 0),
+      played: Number(record.played || 0),
+      updated_at: new Date().toISOString(),
+    }));
+
+    if (!rows.length) return;
+
+    const { error } = await supabase
+      .from("circuit_ranking_history")
+      .upsert(rows, { onConflict: "user_id,circuit_id,tournament_id,group_key,player_key" });
+
+    if (error) console.error("Erro ao salvar histórico do circuito:", error);
+  }
+
   function saveCircuits(nextCircuits) {
     setCircuits(nextCircuits);
-    localStorage.setItem(`circuits:${user.id}`, JSON.stringify(nextCircuits));
   }
 
   function resetCircuitForm() {
@@ -2759,7 +2834,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     });
   }
 
-  function saveCircuit() {
+  async function saveCircuit() {
     if (!circuitForm.name.trim()) {
       showNotice("warning", "Nome obrigatório", "Digite um nome para o circuito.");
       return;
@@ -2770,20 +2845,36 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
-    const payload = {
-      ...circuitForm,
-      id: circuitForm.id || `circuit-${Date.now()}`,
+    const rowPayload = {
+      user_id: user.id,
       name: circuitForm.name.trim(),
-      updatedAt: new Date().toISOString(),
+      start_date: circuitForm.startDate || null,
+      end_date: circuitForm.endDate || null,
+      status: circuitForm.status || "draft",
+      tournament_ids: circuitForm.tournamentIds || [],
+      updated_at: new Date().toISOString(),
     };
 
+    const query = circuitForm.id
+      ? supabase.from("circuits").update(rowPayload).eq("id", circuitForm.id).eq("user_id", user.id).select("*").single()
+      : supabase.from("circuits").insert(rowPayload).select("*").single();
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error("Erro ao salvar circuito:", error);
+      showNotice("error", "Erro ao salvar", "Não foi possível salvar o circuito no Supabase.");
+      return;
+    }
+
+    const payload = normalizeCircuitRow(data);
     const nextCircuits = circuitForm.id
-      ? circuits.map((item) => item.id === circuitForm.id ? payload : item)
-      : [payload, ...circuits];
+      ? circuits.map((item) => item.id === circuitForm.id ? { ...payload, rankingHistory: item.rankingHistory || {} } : item)
+      : [{ ...payload, rankingHistory: {} }, ...circuits];
 
     saveCircuits(nextCircuits);
     resetCircuitForm();
-    showNotice("success", circuitForm.id ? "Circuito atualizado" : "Circuito criado", "As alterações foram salvas sem mudar a lógica dos torneios.");
+    showNotice("success", circuitForm.id ? "Circuito atualizado" : "Circuito criado", "As alterações foram salvas no Supabase.");
   }
 
   function editCircuit(circuit) {
@@ -2798,68 +2889,83 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function deleteCircuit(circuitId) {
+  async function deleteCircuit(circuitId) {
     if (!window.confirm("Excluir este circuito? Os torneios não serão apagados.")) return;
+    const { error } = await supabase
+      .from("circuits")
+      .delete()
+      .eq("id", circuitId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Erro ao excluir circuito:", error);
+      showNotice("error", "Erro ao excluir", "Não foi possível excluir o circuito no Supabase.");
+      return;
+    }
+
     saveCircuits(circuits.filter((item) => item.id !== circuitId));
     if (circuitForm.id === circuitId) resetCircuitForm();
-    showNotice("success", "Circuito excluído", "Somente o circuito foi removido. Os torneios continuam salvos.");
+    showNotice("success", "Circuito excluído", "O circuito foi removido do Supabase. Os torneios continuam salvos.");
+  }
+
+  function buildCircuitRankingHistory(circuit) {
+    const history = { ...(circuit.rankingHistory || {}) };
+
+    (circuit.tournamentIds || [])
+      .map((id) => tournaments.find((t) => t.id === id))
+      .filter(Boolean)
+      .forEach((tournament) => {
+        const rows = calculateRanking(
+          tournament.data || {},
+          tournament.type,
+          tournament.data?.rankingCriteria || defaultRankingCriteria
+        );
+        const config = modalityConfig[tournament.type];
+        const separated = config?.type === "mixed10" || config?.type === "mixed12" || config?.type === "mixed16";
+
+        rows.forEach((row) => {
+          const groupKey = separated ? (row.id < config.men ? "masculino" : "feminino") : "geral";
+          const name = row.name || "Sem nome";
+          const recordKey = `${tournament.id}::${groupKey}::${name.trim().toLowerCase()}`;
+
+          history[recordKey] = {
+            tournamentId: tournament.id,
+            groupKey,
+            name,
+            pts: Number(row.pts || 0),
+            w: Number(row.w || 0),
+            bal: Number(row.bal || 0),
+            played: Number(row.played || 0),
+          };
+        });
+      });
+
+    return history;
   }
 
   function getCircuitRanking(circuit, criteriaValue = circuitRankingCriteria) {
-    const selectedTournaments = (circuit.tournamentIds || [])
-      .map((id) => tournaments.find((t) => t.id === id))
-      .filter(Boolean);
-
+    const history = buildCircuitRankingHistory(circuit);
     const groups = {
       geral: { title: "Ranking acumulado", rows: new Map() },
       masculino: { title: "Ranking Masculino", rows: new Map() },
       feminino: { title: "Ranking Feminino", rows: new Map() },
     };
 
-    let hasSeparatedRanking = false;
-
-    function addRow(groupKey, row) {
-      const name = row.name || "Sem nome";
+    Object.values(history).forEach((record) => {
+      const groupKey = record.groupKey || "geral";
+      const table = groups[groupKey]?.rows || groups.geral.rows;
+      const name = record.name || "Sem nome";
       const key = name.trim().toLowerCase();
-      const table = groups[groupKey].rows;
-      const current = table.get(key) || {
-        name,
-        pts: 0,
-        w: 0,
-        bal: 0,
-        played: 0,
-        tournaments: 0,
-      };
+      const current = table.get(key) || { name, pts: 0, w: 0, bal: 0, played: 0, tournaments: 0 };
 
       table.set(key, {
         ...current,
         name: current.name || name,
-        pts: current.pts + Number(row.pts || 0),
-        w: current.w + Number(row.w || 0),
-        bal: current.bal + Number(row.bal || 0),
-        played: current.played + Number(row.played || 0),
-        tournaments: current.tournaments + (Number(row.played || 0) > 0 ? 1 : 0),
-      });
-    }
-
-    selectedTournaments.forEach((tournament) => {
-      const rows = calculateRanking(
-        tournament.data || {},
-        tournament.type,
-        tournament.data?.rankingCriteria || defaultRankingCriteria
-      );
-      const config = modalityConfig[tournament.type];
-      const separated = config?.type === "mixed10" || config?.type === "mixed12" || config?.type === "mixed16";
-
-      if (separated) hasSeparatedRanking = true;
-
-      rows.forEach((row) => {
-        if (separated) {
-          const groupKey = row.id < config.men ? "masculino" : "feminino";
-          addRow(groupKey, row);
-        } else {
-          addRow("geral", row);
-        }
+        pts: current.pts + Number(record.pts || 0),
+        w: current.w + Number(record.w || 0),
+        bal: current.bal + Number(record.bal || 0),
+        played: current.played + Number(record.played || 0),
+        tournaments: current.tournaments + (Number(record.played || 0) > 0 ? 1 : 0),
       });
     });
 
@@ -2873,13 +2979,29 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     });
 
     return [
-      ...(hasSeparatedRanking ? [
-        { key: "masculino", title: groups.masculino.title, rows: sortRows(groups.masculino.rows) },
-        { key: "feminino", title: groups.feminino.title, rows: sortRows(groups.feminino.rows) },
-      ] : []),
+      { key: "masculino", title: groups.masculino.title, rows: sortRows(groups.masculino.rows) },
+      { key: "feminino", title: groups.feminino.title, rows: sortRows(groups.feminino.rows) },
       { key: "geral", title: groups.geral.title, rows: sortRows(groups.geral.rows) },
     ].filter((group) => group.rows.length > 0);
   }
+
+  useEffect(() => {
+    if (!circuits.length || !tournaments.length) return;
+
+    let changed = false;
+    const nextCircuits = circuits.map((circuit) => {
+      const rankingHistory = buildCircuitRankingHistory(circuit);
+      const before = JSON.stringify(circuit.rankingHistory || {});
+      const after = JSON.stringify(rankingHistory);
+      if (before !== after) changed = true;
+      return { ...circuit, rankingHistory };
+    });
+
+    if (changed) {
+      saveCircuits(nextCircuits);
+      nextCircuits.forEach((circuit) => saveCircuitHistoryToSupabase(circuit.id, circuit.rankingHistory));
+    }
+  }, [tournaments, circuits.length]);
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -3314,6 +3436,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   useEffect(() => {
     loadTournaments();
+    loadCircuits();
     loadPublicArenaProfiles();
   }, []);
 
