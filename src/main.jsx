@@ -4676,7 +4676,7 @@ setNewPublicInfo({
                     <div className="circuitRankingGroup" key={group.key}>
                       <h4>{group.title}</h4>
                       <div className="circuitRankingTable">
-                        {group.rows.slice(0, 8).map((row, index) => (
+                        {group.rows.map((row, index) => (
                           <div className="circuitRankingRow" key={row.name}>
                             <span>{index + 1}º</span>
                             <b>{row.name}</b>
