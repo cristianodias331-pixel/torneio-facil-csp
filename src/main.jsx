@@ -2530,84 +2530,52 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
   const [profileSubtab, setProfileSubtab] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}");
-      if (saved.profileSubtab) return saved.profileSubtab;
-    } catch {}
-    return localStorage.getItem(`profileSubtab:${user.id}`) || "publicacoes";
+    const params = new URLSearchParams(window.location.search);
+    return params.get("perfil") || "publicacoes";
   });
   const [activePanel, setActivePanel] = useState(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}");
-      if (saved.activePanel) return saved.activePanel;
-    } catch {}
-    return localStorage.getItem(`activePanel:${user.id}`) || "inicio";
+    const params = new URLSearchParams(window.location.search);
+    return params.get("aba") || "inicio";
   });
+  function updateAppUrl(next = {}) {
+    const params = new URLSearchParams(window.location.search);
 
-  function saveAppPosition(extra = {}) {
-    const state = {
-      activePanel,
-      selectedTournamentId: selected?.id || localStorage.getItem(`selectedTournament:${user.id}`) || null,
-      profileSubtab,
-      scrollY: window.scrollY || 0,
-      updatedAt: new Date().toISOString(),
-      ...extra,
-    };
+    if (next.activePanel) params.set("aba", next.activePanel);
+    else if (!params.get("aba")) params.set("aba", activePanel || "inicio");
 
-    localStorage.setItem(`appPosition:${user.id}`, JSON.stringify(state));
-    localStorage.setItem(`activePanel:${user.id}`, state.activePanel || "inicio");
-    if (state.selectedTournamentId) localStorage.setItem(`selectedTournament:${user.id}`, state.selectedTournamentId);
+    if (Object.prototype.hasOwnProperty.call(next, "selectedTournamentId")) {
+      if (next.selectedTournamentId) params.set("torneio", next.selectedTournamentId);
+      else params.delete("torneio");
+    }
+
+    if (Object.prototype.hasOwnProperty.call(next, "profileSubtab")) {
+      if (next.profileSubtab) params.set("perfil", next.profileSubtab);
+      else params.delete("perfil");
+    }
+
+    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash || ""}`;
+    window.history.replaceState(null, "", nextUrl);
+  }
+
+  function goToPanel(panel) {
+    setActivePanel(panel);
+    updateAppUrl({ activePanel: panel, selectedTournamentId: null });
   }
 
   useEffect(() => {
-    saveAppPosition({ activePanel });
+    updateAppUrl({ activePanel });
   }, [activePanel]);
 
   useEffect(() => {
-    localStorage.setItem(`profileSubtab:${user.id}`, profileSubtab);
-    saveAppPosition({ profileSubtab });
-  }, [profileSubtab]);
-
-  useEffect(() => {
     if (selected || tournaments.length === 0) return;
-    let savedPosition = {};
-    try { savedPosition = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}"); } catch {}
-    const savedTournamentId = savedPosition.selectedTournamentId || localStorage.getItem(`selectedTournament:${user.id}`);
-    if (!savedTournamentId) return;
+    const params = new URLSearchParams(window.location.search);
+    const tournamentId = params.get("torneio");
+    if (!tournamentId) return;
 
-    const savedTournament = tournaments.find((item) => item.id === savedTournamentId);
-    if (savedTournament) {
-      localStorage.setItem(`selectedTournament:${user.id}`, savedTournament.id);
-      setSelected(savedTournament);
-    } else {
-      localStorage.removeItem(`selectedTournament:${user.id}`);
-      saveAppPosition({ selectedTournamentId: null });
-    }
-  }, [tournaments, selected, user.id]);
+    const savedTournament = tournaments.find((item) => item.id === tournamentId);
+    if (savedTournament) setSelected(savedTournament);
+  }, [tournaments, selected]);
 
-  useEffect(() => {
-    let savedPosition = {};
-    try { savedPosition = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}"); } catch {}
-    if (!selected && savedPosition.scrollY > 0) {
-      setTimeout(() => window.scrollTo({ top: Number(savedPosition.scrollY) || 0, behavior: "auto" }), 150);
-    }
-
-    const saveNow = () => saveAppPosition({ selectedTournamentId: selected?.id || null });
-    const interval = setInterval(saveNow, 300);
-    window.addEventListener("pagehide", saveNow);
-    window.addEventListener("beforeunload", saveNow);
-    window.addEventListener("blur", saveNow);
-    document.addEventListener("visibilitychange", saveNow);
-
-    return () => {
-      saveNow();
-      clearInterval(interval);
-      window.removeEventListener("pagehide", saveNow);
-      window.removeEventListener("beforeunload", saveNow);
-      window.removeEventListener("blur", saveNow);
-      document.removeEventListener("visibilitychange", saveNow);
-    };
-  }, [activePanel, selected?.id, profileSubtab, user.id]);
   const [circuits, setCircuits] = useState(() => {
     const saved = localStorage.getItem(`circuits:${user.id}`);
     if (!saved) return [];
@@ -3413,8 +3381,7 @@ setNewPublicInfo({
       return;
     }
 
-    localStorage.setItem(`selectedTournament:${user.id}`, data.id);
-    saveAppPosition({ activePanel: "criar", selectedTournamentId: data.id, scrollY: window.scrollY || 0 });
+    updateAppUrl({ activePanel: "criar", selectedTournamentId: data.id });
     setSelected(data);
   }
 
@@ -3592,8 +3559,7 @@ setNewPublicInfo({
       <TournamentScreen
         tournament={selected}
         onBack={() => {
-          localStorage.removeItem(`selectedTournament:${user.id}`);
-          saveAppPosition({ selectedTournamentId: null, scrollY: 0 });
+          updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
           setSelected(null);
         }}
         onSave={saveTournament}
@@ -3765,12 +3731,12 @@ setNewPublicInfo({
       ) : null}
 
       <aside className="playSidebar noSideBrand">
-        <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => setActivePanel("inicio")}><span>🏠</span><small>Início</small></button>
-        <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
-        <button className={`playNavItem ${activePanel === "circuitos" ? "active" : ""}`} type="button" onClick={() => setActivePanel("circuitos")}><span>🏅</span><small>Circuitos</small></button>
-        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
-        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>👤</span><small>Perfil</small></button>
-        <button className={`playNavItem ${activePanel === "lixeira" ? "active" : ""}`} type="button" onClick={() => setActivePanel("lixeira")}><span>🗑️</span><small>Lixeira</small></button>
+        <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => goToPanel("inicio")}><span>🏠</span><small>Início</small></button>
+        <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => goToPanel("criar")}><span>➕</span><small>Criar</small></button>
+        <button className={`playNavItem ${activePanel === "circuitos" ? "active" : ""}`} type="button" onClick={() => goToPanel("circuitos")}><span>🏅</span><small>Circuitos</small></button>
+        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => goToPanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
+        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => goToPanel("ajustes")}><span>👤</span><small>Perfil</small></button>
+        <button className={`playNavItem ${activePanel === "lixeira" ? "active" : ""}`} type="button" onClick={() => goToPanel("lixeira")}><span>🗑️</span><small>Lixeira</small></button>
       </aside>
 
       <div className="playMain">
@@ -3799,13 +3765,13 @@ setNewPublicInfo({
           {activePanel === "inicio" && (
             <>
               <section className="playTabs homeQuickActions homeQuickActionsFour">
-                <button type="button" onClick={() => setActivePanel("criar")}>➕ Criar torneio</button>
+                <button type="button" onClick={() => goToPanel("criar")}>➕ Criar torneio</button>
                 <button type="button" onClick={() => {
-                  setActivePanel("criar");
+                  goToPanel("criar");
                   setTimeout(() => document.getElementById("historico-torneios")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
                 }}>🏆 Ver histórico</button>
-                <button type="button" onClick={() => setActivePanel("circuitos")}>🏅 Ver circuitos</button>
-                <button type="button" onClick={() => setActivePanel("modalidades")}>🎾 Ver modalidades</button>
+                <button type="button" onClick={() => goToPanel("circuitos")}>🏅 Ver circuitos</button>
+                <button type="button" onClick={() => goToPanel("modalidades")}>🎾 Ver modalidades</button>
               </section>
 
               <section className="playStatsGrid">
@@ -4765,57 +4731,38 @@ function TournamentScreen({ tournament, onBack, onSave }) {
   });
 
   const [voiceRepeat, setVoiceRepeat] = useState(1);
-  const tournamentStateKey = `tournamentState:${tournament.id}`;
-  const getSavedTournamentState = () => {
-    try { return JSON.parse(localStorage.getItem(tournamentStateKey) || "{}"); } catch { return {}; }
-  };
-  const initialTournamentState = getSavedTournamentState();
-  const [activeTournamentTab, setActiveTournamentTabState] = useState(initialTournamentState.activeTournamentTab || "participantes");
-  const [activeMatchesTab, setActiveMatchesTabState] = useState(initialTournamentState.activeMatchesTab || "grupos");
+  const [activeTournamentTab, setActiveTournamentTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("tab") || "participantes";
+  });
+  const [activeMatchesTab, setActiveMatchesTabState] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("partidas") || "grupos";
+  });
 
-  function saveTournamentPosition(extra = {}) {
-    const state = {
-      activeTournamentTab,
-      activeMatchesTab,
-      scrollY: window.scrollY || 0,
-      updatedAt: new Date().toISOString(),
-      ...extra,
-    };
-    localStorage.setItem(tournamentStateKey, JSON.stringify(state));
+  function updateTournamentUrl(next = {}) {
+    const params = new URLSearchParams(window.location.search);
+    params.set("aba", "criar");
+    params.set("torneio", tournament.id);
+    params.set("tab", next.activeTournamentTab || activeTournamentTab);
+    params.set("partidas", next.activeMatchesTab || activeMatchesTab);
+    const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash || ""}`;
+    window.history.replaceState(null, "", nextUrl);
   }
 
   function setActiveTournamentTab(tab) {
-    saveTournamentPosition({ activeTournamentTab: tab });
     setActiveTournamentTabState(tab);
+    updateTournamentUrl({ activeTournamentTab: tab });
   }
 
   function setActiveMatchesTab(tab) {
-    saveTournamentPosition({ activeMatchesTab: tab });
     setActiveMatchesTabState(tab);
+    updateTournamentUrl({ activeMatchesTab: tab });
   }
 
   useEffect(() => {
-    const saved = getSavedTournamentState();
-    if (saved.scrollY > 0) {
-      setTimeout(() => window.scrollTo({ top: Number(saved.scrollY) || 0, behavior: "auto" }), 180);
-    }
-
-    const saveNow = () => saveTournamentPosition();
-    const interval = setInterval(saveNow, 300);
-    window.addEventListener("pagehide", saveNow);
-    window.addEventListener("beforeunload", saveNow);
-    window.addEventListener("blur", saveNow);
-    document.addEventListener("visibilitychange", saveNow);
-
-    return () => {
-      saveNow();
-      clearInterval(interval);
-      window.removeEventListener("pagehide", saveNow);
-      window.removeEventListener("beforeunload", saveNow);
-      window.removeEventListener("blur", saveNow);
-      document.removeEventListener("visibilitychange", saveNow);
-    };
-  }, [tournament.id, activeTournamentTab, activeMatchesTab]);
+    updateTournamentUrl();
+  }, []);
 
   const saveTimerRef = useRef(null);
   const latestDataRef = useRef(data);
