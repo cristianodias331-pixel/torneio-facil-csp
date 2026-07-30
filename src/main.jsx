@@ -2810,7 +2810,37 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       .map((id) => tournaments.find((t) => t.id === id))
       .filter(Boolean);
 
-    const table = new Map();
+    const groups = {
+      geral: { title: "Ranking acumulado", rows: new Map() },
+      masculino: { title: "Ranking Masculino", rows: new Map() },
+      feminino: { title: "Ranking Feminino", rows: new Map() },
+    };
+
+    let hasSeparatedRanking = false;
+
+    function addRow(groupKey, row) {
+      const name = row.name || "Sem nome";
+      const key = name.trim().toLowerCase();
+      const table = groups[groupKey].rows;
+      const current = table.get(key) || {
+        name,
+        pts: 0,
+        w: 0,
+        bal: 0,
+        played: 0,
+        tournaments: 0,
+      };
+
+      table.set(key, {
+        ...current,
+        name: current.name || name,
+        pts: current.pts + Number(row.pts || 0),
+        w: current.w + Number(row.w || 0),
+        bal: current.bal + Number(row.bal || 0),
+        played: current.played + Number(row.played || 0),
+        tournaments: current.tournaments + (Number(row.played || 0) > 0 ? 1 : 0),
+      });
+    }
 
     selectedTournaments.forEach((tournament) => {
       const rows = calculateRanking(
@@ -2818,40 +2848,37 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         tournament.type,
         tournament.data?.rankingCriteria || defaultRankingCriteria
       );
+      const config = modalityConfig[tournament.type];
+      const separated = config?.type === "mixed10" || config?.type === "mixed12" || config?.type === "mixed16";
+
+      if (separated) hasSeparatedRanking = true;
 
       rows.forEach((row) => {
-        const name = row.name || "Sem nome";
-        const key = name.trim().toLowerCase();
-        const current = table.get(key) || {
-          name,
-          pts: 0,
-          w: 0,
-          bal: 0,
-          played: 0,
-          tournaments: 0,
-        };
-
-        table.set(key, {
-          ...current,
-          name: current.name || name,
-          pts: current.pts + Number(row.pts || 0),
-          w: current.w + Number(row.w || 0),
-          bal: current.bal + Number(row.bal || 0),
-          played: current.played + Number(row.played || 0),
-          tournaments: current.tournaments + (Number(row.played || 0) > 0 ? 1 : 0),
-        });
+        if (separated) {
+          const groupKey = row.id < config.men ? "masculino" : "feminino";
+          addRow(groupKey, row);
+        } else {
+          addRow("geral", row);
+        }
       });
     });
 
     const criteria = getRankingCriteria(criteriaValue);
-
-    return Array.from(table.values()).sort((a, b) => {
+    const sortRows = (rows) => Array.from(rows.values()).sort((a, b) => {
       for (const key of criteria.order) {
         const diff = Number(b[key] || 0) - Number(a[key] || 0);
         if (diff !== 0) return diff;
       }
       return a.name.localeCompare(b.name);
     });
+
+    return [
+      ...(hasSeparatedRanking ? [
+        { key: "masculino", title: groups.masculino.title, rows: sortRows(groups.masculino.rows) },
+        { key: "feminino", title: groups.feminino.title, rows: sortRows(groups.feminino.rows) },
+      ] : []),
+      { key: "geral", title: groups.geral.title, rows: sortRows(groups.geral.rows) },
+    ].filter((group) => group.rows.length > 0);
   }
 
   function showNotice(type, title, message) {
@@ -4480,8 +4507,8 @@ setNewPublicInfo({
             </button>
 
             {expandedCircuitId === circuit.id ? (() => {
-              const circuitRanking = getCircuitRanking(circuit);
-              return circuitRanking.length ? (
+              const circuitRankingGroups = getCircuitRanking(circuit);
+              return circuitRankingGroups.length ? (
                 <div className="circuitRankingBox">
                   <div className="circuitRankingHeader">
                     <strong>Ranking acumulado</strong>
@@ -4494,16 +4521,21 @@ setNewPublicInfo({
                       </select>
                     </label>
                   </div>
-                  <div className="circuitRankingTable">
-                    {circuitRanking.slice(0, 8).map((row, index) => (
-                      <div className="circuitRankingRow" key={row.name}>
-                        <span>{index + 1}º</span>
-                        <b>{row.name}</b>
-                        <em>{row.pts} pts</em>
-                        <small>{row.w} vit. · saldo {row.bal} · {row.played} jogo(s)</small>
+                  {circuitRankingGroups.map((group) => (
+                    <div className="circuitRankingGroup" key={group.key}>
+                      <h4>{group.title}</h4>
+                      <div className="circuitRankingTable">
+                        {group.rows.slice(0, 8).map((row, index) => (
+                          <div className="circuitRankingRow" key={row.name}>
+                            <span>{index + 1}º</span>
+                            <b>{row.name}</b>
+                            <em>{row.pts} pts</em>
+                            <small>{row.w} vit. · saldo {row.bal} · {row.played} jogo(s)</small>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
               ) : selectedNames.length ? (
                 <div className="circuitRankingEmpty">Ranking aparece quando houver placares lançados nos torneios selecionados.</div>
