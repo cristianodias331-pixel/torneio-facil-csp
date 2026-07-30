@@ -1778,7 +1778,7 @@ function App() {
   const blocked = profile.status !== "active" || expired;
 
   if (waitingForRelease) {
-    return <AccessPreparing />;
+    return <AccessPreparing user={session.user} />;
   }
 
   if (blocked) return <Blocked profile={profile} />;
@@ -1786,14 +1786,44 @@ function App() {
   return <Dashboard profile={profile} user={session.user} />;
 }
 
-function AccessPreparing() {
+function AccessPreparing({ user }) {
   useEffect(() => {
-    const timer = setTimeout(() => {
-      window.location.reload();
-    }, 2500);
+    let cancelled = false;
 
-    return () => clearTimeout(timer);
-  }, []);
+    async function releaseAccess() {
+      if (!user?.id) {
+        window.location.reload();
+        return;
+      }
+
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+      const trialEndsAtDate = trialEndsAt.toISOString().slice(0, 10);
+
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          status: "active",
+          plan: "premium",
+          expires_at: trialEndsAtDate,
+        })
+        .eq("id", user.id);
+
+      if (error) {
+        console.error(error);
+      }
+
+      if (!cancelled) {
+        setTimeout(() => window.location.reload(), 900);
+      }
+    }
+
+    releaseAccess();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   return (
     <div className="accessPreparingPage">
