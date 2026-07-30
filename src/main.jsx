@@ -2555,6 +2555,12 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
     const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash || ""}`;
     window.history.replaceState(null, "", nextUrl);
+    scheduleUserAppStateSave({
+      activePanel: params.get("aba") || activePanel || "inicio",
+      selectedTournamentId: params.get("torneio"),
+      profileSubtab: params.get("perfil") || profileSubtab,
+      circuitId: expandedCircuitId,
+    });
   }
 
   function goToPanel(panel) {
@@ -2576,6 +2582,67 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     if (savedTournament) setSelected(savedTournament);
   }, [tournaments, selected]);
 
+  useEffect(() => {
+    if (restoredAppStateRef.current) return;
+    if (window.location.search) return;
+
+    let cancelled = false;
+
+    async function restoreUserAppState() {
+      try {
+        const { data, error } = await supabase
+          .from("user_app_state")
+          .select("*")
+          .eq("user_id", user.id)
+          .single();
+
+        if (cancelled || error || !data?.last_url) return;
+
+        restoredAppStateRef.current = true;
+        window.history.replaceState(null, "", data.last_url);
+
+        if (data.last_panel) setActivePanel(data.last_panel);
+        if (data.last_profile_subtab) setProfileSubtab(data.last_profile_subtab);
+        if (data.last_circuit_id) setExpandedCircuitId(data.last_circuit_id);
+
+        const params = new URLSearchParams(window.location.search);
+        const tournamentId = data.last_tournament_id || params.get("torneio");
+        if (tournamentId && tournaments.length) {
+          const savedTournament = tournaments.find((item) => item.id === tournamentId);
+          if (savedTournament) setSelected(savedTournament);
+        }
+
+        if (data.scroll_y) {
+          setTimeout(() => window.scrollTo({ top: Number(data.scroll_y) || 0, behavior: "auto" }), 250);
+        }
+      } catch (error) {
+        console.error("Erro ao restaurar posição do usuário", error);
+      }
+    }
+
+    restoreUserAppState();
+
+    return () => { cancelled = true; };
+  }, [user.id, tournaments.length]);
+
+  useEffect(() => {
+    const saveNow = () => saveUserAppState();
+    const interval = setInterval(saveNow, 10000);
+    window.addEventListener("pagehide", saveNow);
+    window.addEventListener("beforeunload", saveNow);
+    window.addEventListener("blur", saveNow);
+    document.addEventListener("visibilitychange", saveNow);
+
+    return () => {
+      saveNow();
+      clearInterval(interval);
+      window.removeEventListener("pagehide", saveNow);
+      window.removeEventListener("beforeunload", saveNow);
+      window.removeEventListener("blur", saveNow);
+      document.removeEventListener("visibilitychange", saveNow);
+    };
+  }, [activePanel, selected?.id, expandedCircuitId, profileSubtab, user.id]);
+
   const [circuits, setCircuits] = useState(() => {
     const saved = localStorage.getItem(`circuits:${user.id}`);
     if (!saved) return [];
@@ -2584,6 +2651,35 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
   const [expandedCircuitId, setExpandedCircuitId] = useState(null);
+  const appStateSaveTimerRef = useRef(null);
+  const restoredAppStateRef = useRef(false);
+
+  async function saveUserAppState(extra = {}) {
+    const params = new URLSearchParams(window.location.search);
+    const payload = {
+      user_id: user.id,
+      last_url: `${window.location.pathname}${window.location.search}${window.location.hash || ""}`,
+      last_panel: extra.activePanel || activePanel || params.get("aba") || "inicio",
+      last_tournament_id: extra.selectedTournamentId ?? params.get("torneio"),
+      last_tournament_tab: extra.tournamentTab || params.get("tab"),
+      last_matches_tab: extra.matchesTab || params.get("partidas"),
+      last_circuit_id: extra.circuitId ?? expandedCircuitId,
+      last_profile_subtab: extra.profileSubtab || profileSubtab,
+      scroll_y: Math.max(0, Math.round(window.scrollY || 0)),
+      updated_at: new Date().toISOString(),
+    };
+
+    try {
+      await supabase.from("user_app_state").upsert(payload, { onConflict: "user_id" });
+    } catch (error) {
+      console.error("Erro ao salvar posição do usuário", error);
+    }
+  }
+
+  function scheduleUserAppStateSave(extra = {}) {
+    if (appStateSaveTimerRef.current) clearTimeout(appStateSaveTimerRef.current);
+    appStateSaveTimerRef.current = setTimeout(() => saveUserAppState(extra), 700);
+  }
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
 
@@ -3611,6 +3707,7 @@ setNewPublicInfo({
         tournament={selected}
         onBack={() => {
           updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
+          saveUserAppState({ activePanel: "criar", selectedTournamentId: null });
           setSelected(null);
         }}
         onSave={saveTournament}
@@ -4373,7 +4470,7 @@ setNewPublicInfo({
             <button
               type="button"
               className="circuitItemSummary"
-              onClick={() => setExpandedCircuitId(expandedCircuitId === circuit.id ? null : circuit.id)}
+              onClick={() => { const nextId = expandedCircuitId === circuit.id ? null : circuit.id; setExpandedCircuitId(nextId); scheduleUserAppStateSave({ circuitId: nextId, activePanel: "circuitos" }); }}
             >
               <div className="circuitItemMain">
                 <span>{circuit.status === "active" ? "Em andamento" : circuit.status === "closed" ? "Encerrado" : circuit.status === "archived" ? "Arquivado" : "Rascunho"}</span>
@@ -4838,6 +4935,21 @@ function TournamentScreen({ tournament, onBack, onSave }) {
     params.set("partidas", next.activeMatchesTab || activeMatchesTab);
     const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash || ""}`;
     window.history.replaceState(null, "", nextUrl);
+
+    try {
+      supabase.from("user_app_state").upsert({
+        user_id: tournament.user_id,
+        last_url: nextUrl,
+        last_panel: "criar",
+        last_tournament_id: tournament.id,
+        last_tournament_tab: params.get("tab"),
+        last_matches_tab: params.get("partidas"),
+        scroll_y: Math.max(0, Math.round(window.scrollY || 0)),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id" });
+    } catch (error) {
+      console.error("Erro ao salvar posição do torneio", error);
+    }
   }
 
   function setActiveTournamentTab(tab) {
