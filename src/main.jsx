@@ -3930,21 +3930,23 @@ setNewPublicInfo({
       return list;
     });
   }
-
-
+  function closeSelectedTournament() {
+    updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
+    saveUserAppState({ activePanel: "criar", selectedTournamentId: null });
+    setSelected(null);
+  }
 
   if (selected) {
     return (
-          <TournamentScreen
-            tournament={selected}
-            userId={user.id}
-            onBack={() => {
-          updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
-          saveUserAppState({ activePanel: "criar", selectedTournamentId: null });
-          setSelected(null);
-        }}
-        onSave={saveTournament}
-      />
+      <TournamentErrorBoundary tournamentId={selected.id} onBack={closeSelectedTournament}>
+        <TournamentScreen
+          key={selected.id}
+          tournament={selected}
+          userId={user.id}
+          onBack={closeSelectedTournament}
+          onSave={saveTournament}
+        />
+      </TournamentErrorBoundary>
     );
   }
 
@@ -5095,6 +5097,10 @@ function createInitialData(type, config) {
   schedule: [],
 };
 
+  if (!config) {
+    return { ...base, players: [] };
+  }
+
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return {
       ...base,
@@ -5141,6 +5147,187 @@ function createInitialData(type, config) {
   };
 }
 
+function isTournamentDataObject(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function normalizeNameList(values, count, label) {
+  const source = Array.isArray(values) ? values : [];
+
+  return Array.from({ length: count }, (_, index) => (
+    typeof source[index] === "string" ? source[index] : `${label} ${index + 1}`
+  ));
+}
+
+function normalizeTeams(values, count) {
+  const source = Array.isArray(values) ? values : [];
+
+  return Array.from({ length: count }, (_, index) => {
+    const team = isTournamentDataObject(source[index]) ? source[index] : {};
+
+    return {
+      a: typeof team.a === "string" ? team.a : `Atleta 1 da dupla ${index + 1}`,
+      b: typeof team.b === "string" ? team.b : `Atleta 2 da dupla ${index + 1}`,
+    };
+  });
+}
+
+function normalizeGameNames(value) {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item !== null && item !== undefined)
+      .map((item) => String(item));
+  }
+
+  return value === null || value === undefined ? [] : [String(value)];
+}
+
+function normalizeGameIds(value) {
+  const source = Array.isArray(value) ? value : value === null || value === undefined ? [] : [value];
+
+  return source
+    .map((item) => Number(item))
+    .filter((item) => Number.isInteger(item) && item >= 0);
+}
+
+function normalizeGame(game, index) {
+  const source = isTournamentDataObject(game) ? game : {};
+  const court = Number(source.court);
+
+  return {
+    ...source,
+    court: Number.isFinite(court) && court > 0 ? court : index + 1,
+    team1: normalizeGameNames(source.team1),
+    team2: normalizeGameNames(source.team2),
+    ids1: normalizeGameIds(source.ids1),
+    ids2: normalizeGameIds(source.ids2),
+    s1: source.s1 ?? "",
+    s2: source.s2 ?? "",
+  };
+}
+
+function normalizeSchedule(schedule) {
+  if (!Array.isArray(schedule)) return [];
+
+  return schedule
+    .filter((round) => Array.isArray(round))
+    .map((round) => round
+      .filter((game) => isTournamentDataObject(game))
+      .map((game, index) => normalizeGame(game, index))
+    );
+}
+
+function normalizeBrackets(brackets) {
+  if (!Array.isArray(brackets)) return [];
+
+  return brackets
+    .filter((game) => isTournamentDataObject(game))
+    .map((game, index) => normalizeGame(game, index));
+}
+
+function normalizeTournamentData(type, rawData) {
+  const config = modalityConfig[type];
+
+  if (!config) {
+    return isTournamentDataObject(rawData) ? rawData : createInitialData(type, config);
+  }
+
+  const defaults = createInitialData(type, config);
+  const source = isTournamentDataObject(rawData) ? rawData : {};
+  const sourcePlayers = isTournamentDataObject(source.players) ? source.players : {};
+  const validWinningScore = [4, 6].includes(Number(source.winningScore));
+  const validRankingCriteria = rankingCriteriaOptions.some((item) => item.value === source.rankingCriteria);
+  const normalized = {
+    ...defaults,
+    ...source,
+    rankingCriteria: validRankingCriteria ? source.rankingCriteria : defaults.rankingCriteria,
+    winningScore: validWinningScore ? Number(source.winningScore) : defaults.winningScore,
+    schedule: normalizeSchedule(source.schedule),
+  };
+
+  if (isCupType(config)) {
+    const sourceCupConfig = isTournamentDataObject(source.cupConfig) ? source.cupConfig : {};
+    const requestedTeamCount = Number(sourceCupConfig.teamCount);
+    const teamCount = config.allowedTeamCounts.includes(requestedTeamCount)
+      ? requestedTeamCount
+      : config.defaultTeams;
+
+    return {
+      ...normalized,
+      cupConfig: {
+        ...defaults.cupConfig,
+        ...sourceCupConfig,
+        teamCount,
+        mainBracketName: typeof sourceCupConfig.mainBracketName === "string"
+          ? sourceCupConfig.mainBracketName
+          : defaults.cupConfig.mainBracketName,
+        repechageName: typeof sourceCupConfig.repechageName === "string"
+          ? sourceCupConfig.repechageName
+          : defaults.cupConfig.repechageName,
+      },
+      players: {
+        teams: normalizeTeams(sourcePlayers.teams, teamCount),
+      },
+      brackets: normalizeBrackets(source.brackets),
+      groupsShuffled: Boolean(source.groupsShuffled),
+    };
+  }
+
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+    return {
+      ...normalized,
+      players: {
+        men: normalizeNameList(sourcePlayers.men, config.men, "Homem"),
+        women: normalizeNameList(sourcePlayers.women, config.women, "Mulher"),
+      },
+    };
+  }
+
+  if (config.type === "fixed12" || config.type === "fixed16") {
+    return {
+      ...normalized,
+      players: {
+        teams: normalizeTeams(sourcePlayers.teams, config.teams),
+      },
+    };
+  }
+
+  return {
+    ...normalized,
+    players: normalizeNameList(source.players, config.total, config.label),
+  };
+}
+
+function needsTournamentDataRepair(type, rawData) {
+  const config = modalityConfig[type];
+  if (!config || !isTournamentDataObject(rawData) || !Array.isArray(rawData.schedule)) return true;
+
+  const players = isTournamentDataObject(rawData.players) ? rawData.players : {};
+
+  if (isCupType(config)) {
+    const cupConfig = isTournamentDataObject(rawData.cupConfig) ? rawData.cupConfig : {};
+    const teamCount = Number(cupConfig.teamCount);
+
+    return !Array.isArray(players.teams)
+      || !config.allowedTeamCounts.includes(teamCount)
+      || players.teams.length !== teamCount
+      || !Array.isArray(rawData.brackets);
+  }
+
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+    return !Array.isArray(players.men)
+      || !Array.isArray(players.women)
+      || players.men.length !== config.men
+      || players.women.length !== config.women;
+  }
+
+  if (config.type === "fixed12" || config.type === "fixed16") {
+    return !Array.isArray(players.teams) || players.teams.length !== config.teams;
+  }
+
+  return !Array.isArray(rawData.players) || rawData.players.length !== config.total;
+}
+
 function getShuffleNames(data, config) {
   if (!data?.players) return [];
 
@@ -5155,11 +5342,70 @@ function getShuffleNames(data, config) {
   return data.players || [];
 }
 
+class TournamentErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    console.error("Erro ao abrir torneio", error, info);
+  }
+
+  componentDidUpdate(previousProps) {
+    if (previousProps.tournamentId !== this.props.tournamentId && this.state.error) {
+      this.setState({ error: null });
+    }
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="playAppShell">
+          <main className="playMain">
+            <section className="card">
+              <h1>Não foi possível abrir este torneio</h1>
+              <p>Os dados salvos dessa edição precisam ser revisados. Sua conta e os outros torneios continuam preservados.</p>
+              <div className="actions">
+                <button type="button" onClick={this.props.onBack}>Voltar aos torneios</button>
+              </div>
+            </section>
+          </main>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 function TournamentScreen({ tournament, userId, onBack, onSave }) {
   const config = modalityConfig[tournament.type];
 
+  if (!config) {
+    return (
+      <div className="playAppShell">
+        <main className="playMain">
+          <section className="card">
+            <h1>Modalidade não reconhecida</h1>
+            <p>Este torneio usa uma modalidade que não existe mais na versão atual da plataforma.</p>
+            <div className="actions">
+              <button type="button" onClick={onBack}>Voltar aos torneios</button>
+            </div>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  const initialDataWasRepairedRef = useRef(needsTournamentDataRepair(tournament.type, tournament.data));
+
   const [data, setData] = useState(
-    tournament.data || createInitialData(tournament.type, config)
+    () => normalizeTournamentData(tournament.type, tournament.data)
   );
 
   const [savingStatus, setSavingStatus] = useState("Salvo");
@@ -5274,6 +5520,27 @@ function TournamentScreen({ tournament, userId, onBack, onSave }) {
       if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
     };
   }, [data]);
+
+  useEffect(() => {
+    if (!initialDataWasRepairedRef.current) return undefined;
+
+    let cancelled = false;
+
+    async function persistRecoveredData() {
+      setSavingStatus("Recuperando dados...");
+      const ok = await onSave({ ...tournament, data });
+
+      if (!cancelled) {
+        setSavingStatus(ok ? "Dados recuperados" : "Erro ao recuperar dados");
+      }
+    }
+
+    persistRecoveredData();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   function handleBack() {
     onBack();
@@ -5644,18 +5911,7 @@ function clearTable() {
   showNotice("success", "Jogos e placares apagados", "Todos os jogos e placares foram removidos. Os participantes foram mantidos.");
 }
 
-const currentBrackets = isCupType(config) && data.brackets?.length
-  ? groupStoredBracketGames(data)
-  : null;
-
-const parallelRanking =
-  isCupType(config) && data.brackets?.length
-    ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
-    : [];
-
-const mainCupPodium = isCupType(config) && data.brackets?.length
-  ? calculateMainCupPodium(data)
-  : [];
+const { currentBrackets, parallelRanking, mainCupPodium } = getSafeCupPresentation(data, config);
 
   function SavingStatusBadge() {
     return (
@@ -6641,6 +6897,23 @@ function groupStoredBracketGames(data) {
   };
 }
 
+function getSafeCupPresentation(data, config) {
+  if (!isCupType(config) || !data?.brackets?.length) {
+    return { currentBrackets: null, parallelRanking: [], mainCupPodium: [] };
+  }
+
+  try {
+    return {
+      currentBrackets: groupStoredBracketGames(data),
+      parallelRanking: calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria),
+      mainCupPodium: calculateMainCupPodium(data),
+    };
+  } catch (error) {
+    console.error("Chaves salvas inválidas; exibindo a Copa sem as chaves", error);
+    return { currentBrackets: null, parallelRanking: [], mainCupPodium: [] };
+  }
+}
+
 function CupBracketView({
   groupedBrackets,
   data,
@@ -6901,7 +7174,19 @@ function PublicTournamentScreen({ tournament }) {
     setActivePublicMatchesTabState(tab);
   }
   const config = modalityConfig[tournament.type];
-  const data = tournament.data || createInitialData(tournament.type, config);
+  const data = normalizeTournamentData(tournament.type, tournament.data);
+
+  if (!config) {
+    return (
+      <div className="publicPage">
+        <div className="center">
+          <h1>Modalidade indisponível</h1>
+          <p>Esta tabela foi criada com uma modalidade que não está disponível na versão atual.</p>
+        </div>
+      </div>
+    );
+  }
+
   const publicInfo = data.publicInfo || {};
   const publicVisibility = publicInfo.visibility || {};
   const publicOrganizer = publicInfo.organizer || {};
@@ -6914,18 +7199,7 @@ function PublicTournamentScreen({ tournament }) {
     ? calculateCupGroupRankings(data, data.rankingCriteria)
     : [];
 
-  const currentBrackets = isCup && data.brackets?.length
-    ? groupStoredBracketGames(data)
-    : null;
-
-  const parallelRanking =
-    isCup && data.brackets?.length
-      ? calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria)
-      : [];
-
-  const mainCupPodium = isCup && data.brackets?.length
-    ? calculateMainCupPodium(data)
-    : [];
+  const { currentBrackets, parallelRanking, mainCupPodium } = getSafeCupPresentation(data, config);
 
   const publicAthletes = getRegisteredAthletesForPublic(data, config);
 
