@@ -2339,6 +2339,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 });
   const [saving, setSaving] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSaveSuccess, setProfileSaveSuccess] = useState(false);
+  const profileSaveSuccessTimerRef = useRef(null);
   const [profileVisibilitySaving, setProfileVisibilitySaving] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [shareTarget, setShareTarget] = useState(null);
@@ -2440,6 +2442,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   async function saveOrganizerProfile() {
     if (!user?.id || profileSaving) return;
+    setProfileSaveSuccess(false);
+    if (profileSaveSuccessTimerRef.current) clearTimeout(profileSaveSuccessTimerRef.current);
     setProfileSaving(true);
 
     const publicProfileData = buildOrganizerProfilePayload();
@@ -2486,7 +2490,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     await loadPublicArenaProfiles();
-    showNotice("success", "Perfil salvo", "As alterações do perfil foram salvas com sucesso.");
+    setProfileSaveSuccess(true);
+    profileSaveSuccessTimerRef.current = setTimeout(() => {
+      setProfileSaveSuccess(false);
+      profileSaveSuccessTimerRef.current = null;
+    }, 2600);
   }
 
   async function toggleOrganizerProfileVisibility() {
@@ -4207,6 +4215,11 @@ setNewPublicInfo({
     </div>
 
     <button className="saveProfileBtn" type="button" onClick={saveOrganizerProfile} disabled={profileSaving}>{profileSaving ? "Salvando..." : "Salvar alterações"}</button>
+    {profileSaveSuccess ? (
+      <div className="profileSaveMiniNotice" role="status" aria-live="polite">
+        ✅ Alterado com sucesso
+      </div>
+    ) : null}
   </section>
   ) : null}
 
