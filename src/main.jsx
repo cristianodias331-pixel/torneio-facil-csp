@@ -2984,7 +2984,15 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       const table = groups[groupKey]?.rows || groups.geral.rows;
       const name = String(record.name || "Sem nome").trim() || "Sem nome";
       const key = String(record.playerKey || name).trim().toLowerCase();
-      const current = table.get(key) || { name, pts: 0, w: 0, bal: 0, played: 0, tournaments: 0 };
+      const current = table.get(key) || {
+        id: `${groupKey}:${key}`,
+        name,
+        pts: 0,
+        w: 0,
+        bal: 0,
+        played: 0,
+        tournaments: 0,
+      };
 
       table.set(key, {
         ...current,
@@ -4662,7 +4670,7 @@ setNewPublicInfo({
               return circuitRankingGroups.length ? (
                 <div className="circuitRankingBox">
                   <div className="circuitRankingHeader">
-                    <strong>Ranking acumulado</strong>
+                    <strong>Ranking do circuito</strong>
                     <label>
                       <span>Critério de desempate</span>
                       <select value={circuitRankingCriteria} onChange={(e) => setCircuitRankingCriteria(e.target.value)}>
@@ -4672,6 +4680,7 @@ setNewPublicInfo({
                       </select>
                     </label>
                   </div>
+                  {/* Legacy card-style circuit ranking kept here only as a reference.
                   {circuitRankingGroups.map((group) => (
                     <div className="circuitRankingGroup" key={group.key}>
                       <h4>{group.title}</h4>
@@ -4687,6 +4696,25 @@ setNewPublicInfo({
                       </div>
                     </div>
                   ))}
+                  */}
+                  {circuitRankingGroups.length === 1 ? (
+                    <RankingTable
+                      title={circuitRankingGroups[0].title}
+                      rows={circuitRankingGroups[0].rows}
+                      rankingCriteria={circuitRankingCriteria}
+                    />
+                  ) : (
+                    <div className="twoCols circuitRankingTables">
+                      {circuitRankingGroups.map((group) => (
+                        <RankingTable
+                          key={group.key}
+                          title={group.title}
+                          rows={group.rows}
+                          rankingCriteria={circuitRankingCriteria}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               ) : selectedNames.length ? (
                 <div className="circuitRankingEmpty">Ranking aparece quando houver placares lançados nos torneios selecionados.</div>
