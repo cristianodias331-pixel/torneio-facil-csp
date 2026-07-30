@@ -1692,20 +1692,38 @@ function App() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  async function loadProfile(userId) {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
+  async function loadProfile(userId, { waitForAccess = false } = {}) {
+    let lastProfile = null;
 
-    if (error) {
-      console.error(error);
-      setProfile(null);
-      return;
+    for (let attempt = 0; attempt < (waitForAccess ? 6 : 1); attempt += 1) {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error(error);
+        setProfile(null);
+        return null;
+      }
+
+      lastProfile = data;
+
+      const today = new Date().toISOString().slice(0, 10);
+      const expired = data.expires_at && data.expires_at < today;
+      const accessReady = data.status === "active" && !expired;
+
+      if (!waitForAccess || accessReady) {
+        setProfile(data);
+        return data;
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
 
-    setProfile(data);
+    setProfile(lastProfile);
+    return lastProfile;
   }
 
   useEffect(() => {
@@ -1714,7 +1732,7 @@ function App() {
       setSession(data.session);
 
       if (data.session?.user?.id) {
-        await loadProfile(data.session.user.id);
+        await loadProfile(data.session.user.id, { waitForAccess: true });
       }
 
       setLoading(false);
@@ -1727,7 +1745,9 @@ function App() {
         setSession(newSession);
 
         if (newSession?.user?.id) {
-          await loadProfile(newSession.user.id);
+          setLoading(true);
+          await loadProfile(newSession.user.id, { waitForAccess: true });
+          setLoading(false);
         } else {
           setProfile(null);
         }
@@ -1739,7 +1759,7 @@ function App() {
 
   if (publicId) return <PublicTournamentPage publicId={publicId} />;
 
-  if (loading) return <div className="center">Carregando...</div>;
+  if (loading) return <div className="center">Preparando seu acesso Premium gratuito...</div>;
   if (!session) return <Login />;
 
   if (!profile) {
