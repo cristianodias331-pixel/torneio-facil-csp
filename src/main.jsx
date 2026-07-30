@@ -2530,6 +2530,12 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
   const [activePanel, setActivePanel] = useState("inicio");
+  const [circuits, setCircuits] = useState(() => {
+    const saved = localStorage.getItem(`circuits:${user.id}`);
+    if (!saved) return [];
+    try { return JSON.parse(saved); } catch { return []; }
+  });
+  const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
   const [profileSubtab, setProfileSubtab] = useState("publicacoes");
@@ -2589,6 +2595,73 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       .filter(Boolean)
       .some((value) => String(value).toLowerCase().includes(term));
   });
+
+  function saveCircuits(nextCircuits) {
+    setCircuits(nextCircuits);
+    localStorage.setItem(`circuits:${user.id}`, JSON.stringify(nextCircuits));
+  }
+
+  function resetCircuitForm() {
+    setCircuitForm({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
+  }
+
+  function toggleCircuitTournament(tournamentId) {
+    setCircuitForm((prev) => {
+      const selected = prev.tournamentIds.includes(tournamentId);
+      return {
+        ...prev,
+        tournamentIds: selected
+          ? prev.tournamentIds.filter((id) => id !== tournamentId)
+          : [...prev.tournamentIds, tournamentId],
+      };
+    });
+  }
+
+  function saveCircuit() {
+    if (!circuitForm.name.trim()) {
+      showNotice("warning", "Nome obrigatório", "Digite um nome para o circuito.");
+      return;
+    }
+
+    if (circuitForm.startDate && circuitForm.endDate && circuitForm.endDate < circuitForm.startDate) {
+      showNotice("warning", "Período inválido", "A data final não pode ser anterior à data inicial.");
+      return;
+    }
+
+    const payload = {
+      ...circuitForm,
+      id: circuitForm.id || `circuit-${Date.now()}`,
+      name: circuitForm.name.trim(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const nextCircuits = circuitForm.id
+      ? circuits.map((item) => item.id === circuitForm.id ? payload : item)
+      : [payload, ...circuits];
+
+    saveCircuits(nextCircuits);
+    resetCircuitForm();
+    showNotice("success", circuitForm.id ? "Circuito atualizado" : "Circuito criado", "As alterações foram salvas sem mudar a lógica dos torneios.");
+  }
+
+  function editCircuit(circuit) {
+    setCircuitForm({
+      id: circuit.id,
+      name: circuit.name || "",
+      startDate: circuit.startDate || "",
+      endDate: circuit.endDate || "",
+      status: circuit.status || "draft",
+      tournamentIds: Array.isArray(circuit.tournamentIds) ? circuit.tournamentIds : [],
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function deleteCircuit(circuitId) {
+    if (!window.confirm("Excluir este circuito? Os torneios não serão apagados.")) return;
+    saveCircuits(circuits.filter((item) => item.id !== circuitId));
+    if (circuitForm.id === circuitId) resetCircuitForm();
+    showNotice("success", "Circuito excluído", "Somente o circuito foi removido. Os torneios continuam salvos.");
+  }
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
@@ -3610,6 +3683,7 @@ setNewPublicInfo({
       <aside className="playSidebar noSideBrand">
         <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => setActivePanel("inicio")}><span>🏠</span><small>Início</small></button>
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => setActivePanel("criar")}><span>➕</span><small>Criar</small></button>
+        <button className={`playNavItem ${activePanel === "circuitos" ? "active" : ""}`} type="button" onClick={() => setActivePanel("circuitos")}><span>🏅</span><small>Circuitos</small></button>
         <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => setActivePanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
         <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => setActivePanel("ajustes")}><span>👤</span><small>Perfil</small></button>
         <button className={`playNavItem ${activePanel === "lixeira" ? "active" : ""}`} type="button" onClick={() => setActivePanel("lixeira")}><span>🗑️</span><small>Lixeira</small></button>
@@ -3632,8 +3706,8 @@ setNewPublicInfo({
         <main className="playContent">
           <section className="playTitleBlock">
             <div>
-              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "modalidades" ? "Modalidades" : activePanel === "lixeira" ? "Lixeira" : "Perfil"}</h1>
-              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : activePanel === "lixeira" ? "Recupere torneios apagados nos últimos 30 dias." : "Gerencie os dados públicos do organizador e da arena."}</p>
+              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "circuitos" ? "Circuitos" : activePanel === "modalidades" ? "Modalidades" : activePanel === "lixeira" ? "Lixeira" : "Perfil"}</h1>
+              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "circuitos" ? "Monte circuitos flexíveis escolhendo quais torneios entram na contagem." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : activePanel === "lixeira" ? "Recupere torneios apagados nos últimos 30 dias." : "Gerencie os dados públicos do organizador e da arena."}</p>
             </div>
             <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
           </section>
@@ -3646,8 +3720,8 @@ setNewPublicInfo({
                   setActivePanel("criar");
                   setTimeout(() => document.getElementById("historico-torneios")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
                 }}>🏆 Ver histórico</button>
+                <button type="button" onClick={() => setActivePanel("circuitos")}>🏅 Ver circuitos</button>
                 <button type="button" onClick={() => setActivePanel("modalidades")}>🎾 Ver modalidades</button>
-                <button type="button" onClick={() => setActivePanel("ajustes")}>💳 Ver assinatura</button>
               </section>
 
               <section className="playStatsGrid">
@@ -4119,6 +4193,97 @@ setNewPublicInfo({
 </section>
     </>
     )}
+
+
+{activePanel === "circuitos" && (
+  <section className="card circuitsCard">
+    <div className="circuitsHeader">
+      <div>
+        <h2>{circuitForm.id ? "Editar circuito" : "Novo circuito"}</h2>
+        <p>Crie períodos flexíveis e escolha manualmente quais torneios entram. Isso não altera os torneios já criados.</p>
+      </div>
+      {circuitForm.id ? <button type="button" className="secondaryBtn" onClick={resetCircuitForm}>Novo circuito</button> : null}
+    </div>
+
+    <div className="circuitsFormGrid">
+      <div className="formField">
+        <label>Nome do circuito</label>
+        <input value={circuitForm.name} onChange={(e) => setCircuitForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Ex: Circuito Verão" />
+      </div>
+      <div className="formField">
+        <label>Data inicial</label>
+        <input className="clickableDateInput" type="date" value={circuitForm.startDate} onClick={openDatePicker} onFocus={openDatePicker} onChange={(e) => setCircuitForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+      </div>
+      <div className="formField">
+        <label>Data final</label>
+        <input className="clickableDateInput" type="date" value={circuitForm.endDate} min={circuitForm.startDate || undefined} onClick={openDatePicker} onFocus={openDatePicker} onChange={(e) => setCircuitForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+      </div>
+      <div className="formField">
+        <label>Status</label>
+        <select value={circuitForm.status} onChange={(e) => setCircuitForm((prev) => ({ ...prev, status: e.target.value }))}>
+          <option value="draft">Rascunho</option>
+          <option value="active">Em andamento</option>
+          <option value="closed">Encerrado</option>
+          <option value="archived">Arquivado</option>
+        </select>
+      </div>
+    </div>
+
+    <div className="circuitTournamentPicker">
+      <div className="circuitPickerTitle">
+        <strong>Torneios deste circuito</strong>
+        <span>{circuitForm.tournamentIds.length} selecionado(s)</span>
+      </div>
+      {tournaments.length === 0 ? (
+        <p>Nenhum torneio criado ainda.</p>
+      ) : (
+        <div className="circuitTournamentList">
+          {tournaments.map((t) => {
+            const details = t.data || {};
+            const checked = circuitForm.tournamentIds.includes(t.id);
+            return (
+              <label className={`circuitTournamentOption ${checked ? "selected" : ""}`} key={t.id}>
+                <input type="checkbox" checked={checked} onChange={() => toggleCircuitTournament(t.id)} />
+                <span>
+                  <strong>{details.eventName || t.name}</strong>
+                  <small>{[t.name, t.type, details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+
+    <div className="circuitFormActions">
+      <button type="button" onClick={saveCircuit}>{circuitForm.id ? "Salvar alterações" : "Criar circuito"}</button>
+      {circuitForm.id ? <button type="button" className="secondaryBtn" onClick={resetCircuitForm}>Cancelar edição</button> : null}
+    </div>
+
+    <div className="circuitsList">
+      <h2>Circuitos criados</h2>
+      {circuits.length === 0 ? (
+        <p>Nenhum circuito criado ainda.</p>
+      ) : circuits.map((circuit) => {
+        const selectedNames = (circuit.tournamentIds || []).map((id) => tournaments.find((t) => t.id === id)).filter(Boolean);
+        return (
+          <article className="circuitItem" key={circuit.id}>
+            <div className="circuitItemMain">
+              <span>{circuit.status === "active" ? "Em andamento" : circuit.status === "closed" ? "Encerrado" : circuit.status === "archived" ? "Arquivado" : "Rascunho"}</span>
+              <h3>{circuit.name}</h3>
+              <p>{circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} até {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim definido"}</p>
+              <small>{selectedNames.length} torneio(s): {selectedNames.length ? selectedNames.map((t) => t.data?.eventName || t.name).join(", ") : "nenhum selecionado"}</small>
+            </div>
+            <div className="circuitItemActions">
+              <button type="button" className="editBtn" onClick={() => editCircuit(circuit)}>Editar</button>
+              <button type="button" className="deleteBtn" onClick={() => deleteCircuit(circuit.id)}>Excluir</button>
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  </section>
+)}
 
 {activePanel === "modalidades" && (
 <section className="card">
