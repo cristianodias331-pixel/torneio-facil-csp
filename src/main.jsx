@@ -2529,43 +2529,85 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [editForm, setEditForm] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [profileSubtab, setProfileSubtab] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}");
+      if (saved.profileSubtab) return saved.profileSubtab;
+    } catch {}
+    return localStorage.getItem(`profileSubtab:${user.id}`) || "publicacoes";
+  });
   const [activePanel, setActivePanel] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}");
+      if (saved.activePanel) return saved.activePanel;
+    } catch {}
     return localStorage.getItem(`activePanel:${user.id}`) || "inicio";
   });
 
+  function saveAppPosition(extra = {}) {
+    const state = {
+      activePanel,
+      selectedTournamentId: selected?.id || localStorage.getItem(`selectedTournament:${user.id}`) || null,
+      profileSubtab,
+      scrollY: window.scrollY || 0,
+      updatedAt: new Date().toISOString(),
+      ...extra,
+    };
+
+    localStorage.setItem(`appPosition:${user.id}`, JSON.stringify(state));
+    localStorage.setItem(`activePanel:${user.id}`, state.activePanel || "inicio");
+    if (state.selectedTournamentId) localStorage.setItem(`selectedTournament:${user.id}`, state.selectedTournamentId);
+  }
+
   useEffect(() => {
-    localStorage.setItem(`activePanel:${user.id}`, activePanel);
-  }, [activePanel, user.id]);
+    saveAppPosition({ activePanel });
+  }, [activePanel]);
+
+  useEffect(() => {
+    localStorage.setItem(`profileSubtab:${user.id}`, profileSubtab);
+    saveAppPosition({ profileSubtab });
+  }, [profileSubtab]);
 
   useEffect(() => {
     if (selected || tournaments.length === 0) return;
-    const savedTournamentId = localStorage.getItem(`selectedTournament:${user.id}`);
+    let savedPosition = {};
+    try { savedPosition = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}"); } catch {}
+    const savedTournamentId = savedPosition.selectedTournamentId || localStorage.getItem(`selectedTournament:${user.id}`);
     if (!savedTournamentId) return;
 
     const savedTournament = tournaments.find((item) => item.id === savedTournamentId);
-    if (savedTournament) setSelected(savedTournament);
-    else localStorage.removeItem(`selectedTournament:${user.id}`);
+    if (savedTournament) {
+      localStorage.setItem(`selectedTournament:${user.id}`, savedTournament.id);
+      setSelected(savedTournament);
+    } else {
+      localStorage.removeItem(`selectedTournament:${user.id}`);
+      saveAppPosition({ selectedTournamentId: null });
+    }
   }, [tournaments, selected, user.id]);
 
   useEffect(() => {
-    const scrollKey = `dashboardScroll:${user.id}`;
-    const savedScroll = Number(localStorage.getItem(scrollKey) || 0);
-    if (savedScroll > 0) {
-      setTimeout(() => window.scrollTo({ top: savedScroll, behavior: "auto" }), 120);
+    let savedPosition = {};
+    try { savedPosition = JSON.parse(localStorage.getItem(`appPosition:${user.id}`) || "{}"); } catch {}
+    if (!selected && savedPosition.scrollY > 0) {
+      setTimeout(() => window.scrollTo({ top: Number(savedPosition.scrollY) || 0, behavior: "auto" }), 150);
     }
 
-    const saveScroll = () => localStorage.setItem(scrollKey, String(window.scrollY || 0));
-    window.addEventListener("scroll", saveScroll, { passive: true });
-    window.addEventListener("pagehide", saveScroll);
-    document.addEventListener("visibilitychange", saveScroll);
+    const saveNow = () => saveAppPosition({ selectedTournamentId: selected?.id || null });
+    const interval = setInterval(saveNow, 300);
+    window.addEventListener("pagehide", saveNow);
+    window.addEventListener("beforeunload", saveNow);
+    window.addEventListener("blur", saveNow);
+    document.addEventListener("visibilitychange", saveNow);
 
     return () => {
-      saveScroll();
-      window.removeEventListener("scroll", saveScroll);
-      window.removeEventListener("pagehide", saveScroll);
-      document.removeEventListener("visibilitychange", saveScroll);
+      saveNow();
+      clearInterval(interval);
+      window.removeEventListener("pagehide", saveNow);
+      window.removeEventListener("beforeunload", saveNow);
+      window.removeEventListener("blur", saveNow);
+      document.removeEventListener("visibilitychange", saveNow);
     };
-  }, [user.id]);
+  }, [activePanel, selected?.id, profileSubtab, user.id]);
   const [circuits, setCircuits] = useState(() => {
     const saved = localStorage.getItem(`circuits:${user.id}`);
     if (!saved) return [];
@@ -2574,11 +2616,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
-  const [profileSubtab, setProfileSubtab] = useState(() => localStorage.getItem(`profileSubtab:${user.id}`) || "publicacoes");
 
-  useEffect(() => {
-    localStorage.setItem(`profileSubtab:${user.id}`, profileSubtab);
-  }, [profileSubtab, user.id]);
   const photoPointersRef = useRef(new Map());
   const photoPreviewRef = useRef(null);
   const photoCanvasRef = useRef(null);
@@ -3376,6 +3414,7 @@ setNewPublicInfo({
     }
 
     localStorage.setItem(`selectedTournament:${user.id}`, data.id);
+    saveAppPosition({ activePanel: "criar", selectedTournamentId: data.id, scrollY: window.scrollY || 0 });
     setSelected(data);
   }
 
@@ -3554,6 +3593,7 @@ setNewPublicInfo({
         tournament={selected}
         onBack={() => {
           localStorage.removeItem(`selectedTournament:${user.id}`);
+          saveAppPosition({ selectedTournamentId: null, scrollY: 0 });
           setSelected(null);
         }}
         onSave={saveTournament}
@@ -4726,53 +4766,54 @@ function TournamentScreen({ tournament, onBack, onSave }) {
 
   const [voiceRepeat, setVoiceRepeat] = useState(1);
   const tournamentStateKey = `tournamentState:${tournament.id}`;
-  const savedTournamentState = (() => {
+  const getSavedTournamentState = () => {
     try { return JSON.parse(localStorage.getItem(tournamentStateKey) || "{}"); } catch { return {}; }
-  })();
-  const [activeTournamentTab, setActiveTournamentTabState] = useState(savedTournamentState.activeTournamentTab || "participantes");
-  const [activeMatchesTab, setActiveMatchesTabState] = useState(savedTournamentState.activeMatchesTab || "grupos");
+  };
+  const initialTournamentState = getSavedTournamentState();
+  const [activeTournamentTab, setActiveTournamentTabState] = useState(initialTournamentState.activeTournamentTab || "participantes");
+  const [activeMatchesTab, setActiveMatchesTabState] = useState(initialTournamentState.activeMatchesTab || "grupos");
 
-  function setActiveTournamentTab(tab) {
-    localStorage.setItem(tournamentStateKey, JSON.stringify({
-      ...savedTournamentState,
-      activeTournamentTab: tab,
+  function saveTournamentPosition(extra = {}) {
+    const state = {
+      activeTournamentTab,
       activeMatchesTab,
       scrollY: window.scrollY || 0,
-    }));
+      updatedAt: new Date().toISOString(),
+      ...extra,
+    };
+    localStorage.setItem(tournamentStateKey, JSON.stringify(state));
+  }
+
+  function setActiveTournamentTab(tab) {
+    saveTournamentPosition({ activeTournamentTab: tab });
     setActiveTournamentTabState(tab);
   }
 
   function setActiveMatchesTab(tab) {
-    localStorage.setItem(tournamentStateKey, JSON.stringify({
-      ...savedTournamentState,
-      activeTournamentTab,
-      activeMatchesTab: tab,
-      scrollY: window.scrollY || 0,
-    }));
+    saveTournamentPosition({ activeMatchesTab: tab });
     setActiveMatchesTabState(tab);
   }
 
   useEffect(() => {
-    const savedScroll = Number(savedTournamentState.scrollY || 0);
-    if (savedScroll > 0) setTimeout(() => window.scrollTo({ top: savedScroll, behavior: "auto" }), 150);
+    const saved = getSavedTournamentState();
+    if (saved.scrollY > 0) {
+      setTimeout(() => window.scrollTo({ top: Number(saved.scrollY) || 0, behavior: "auto" }), 180);
+    }
 
-    const saveTournamentPosition = () => {
-      localStorage.setItem(tournamentStateKey, JSON.stringify({
-        activeTournamentTab,
-        activeMatchesTab,
-        scrollY: window.scrollY || 0,
-      }));
-    };
-
-    window.addEventListener("scroll", saveTournamentPosition, { passive: true });
-    window.addEventListener("pagehide", saveTournamentPosition);
-    document.addEventListener("visibilitychange", saveTournamentPosition);
+    const saveNow = () => saveTournamentPosition();
+    const interval = setInterval(saveNow, 300);
+    window.addEventListener("pagehide", saveNow);
+    window.addEventListener("beforeunload", saveNow);
+    window.addEventListener("blur", saveNow);
+    document.addEventListener("visibilitychange", saveNow);
 
     return () => {
-      saveTournamentPosition();
-      window.removeEventListener("scroll", saveTournamentPosition);
-      window.removeEventListener("pagehide", saveTournamentPosition);
-      document.removeEventListener("visibilitychange", saveTournamentPosition);
+      saveNow();
+      clearInterval(interval);
+      window.removeEventListener("pagehide", saveNow);
+      window.removeEventListener("beforeunload", saveNow);
+      window.removeEventListener("blur", saveNow);
+      document.removeEventListener("visibilitychange", saveNow);
     };
   }, [tournament.id, activeTournamentTab, activeMatchesTab]);
 
