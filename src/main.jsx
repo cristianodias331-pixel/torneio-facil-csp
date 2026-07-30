@@ -2796,7 +2796,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       circuit_id: circuitId,
       tournament_id: record.tournamentId,
       group_key: record.groupKey || "geral",
-      player_key: recordKey.split("::").pop(),
+      player_key: record.playerKey || recordKey.split("::").pop(),
       player_name: record.name || "Sem nome",
       pts: Number(record.pts || 0),
       w: Number(record.w || 0),
@@ -2908,8 +2908,15 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     showNotice("success", "Circuito excluído", "O circuito foi removido do Supabase. Os torneios continuam salvos.");
   }
 
-  function buildCircuitRankingHistory(circuit) {
-    const history = { ...(circuit.rankingHistory || {}) };
+  function isMeaningfulCircuitRecord(record) {
+    return Number(record?.pts || 0) !== 0
+      || Number(record?.w || 0) !== 0
+      || Number(record?.bal || 0) !== 0
+      || Number(record?.played || 0) !== 0;
+  }
+
+  function getCircuitTournamentRankingRecords(circuit) {
+    const records = {};
 
     (circuit.tournamentIds || [])
       .map((id) => tournaments.find((t) => t.id === id))
@@ -2925,22 +2932,35 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
         rows.forEach((row) => {
           const groupKey = separated ? (row.id < config.men ? "masculino" : "feminino") : "geral";
-          const name = row.name || "Sem nome";
-          const recordKey = `${tournament.id}::${groupKey}::${name.trim().toLowerCase()}`;
-
-          history[recordKey] = {
+          const name = String(row.name || "Sem nome").trim() || "Sem nome";
+          const playerKey = name.toLowerCase();
+          const recordKey = `${tournament.id}::${groupKey}::${playerKey}`;
+          const record = {
             tournamentId: tournament.id,
             groupKey,
+            playerKey,
             name,
             pts: Number(row.pts || 0),
             w: Number(row.w || 0),
             bal: Number(row.bal || 0),
             played: Number(row.played || 0),
           };
+
+          // Não grava linhas zeradas. Assim uma pessoa só entra no circuito quando realmente pontuar/jogar.
+          if (isMeaningfulCircuitRecord(record)) records[recordKey] = record;
         });
       });
 
-    return history;
+    return records;
+  }
+
+  function buildCircuitRankingHistory(circuit) {
+    // Mantém o histórico já salvo e atualiza/adiciona somente os registros dos torneios selecionados.
+    // Isso evita que um jogador antigo desapareça quando não participa de um torneio novo.
+    return {
+      ...(circuit.rankingHistory || {}),
+      ...getCircuitTournamentRankingRecords(circuit),
+    };
   }
 
   function getCircuitRanking(circuit, criteriaValue = circuitRankingCriteria) {
@@ -2952,11 +2972,20 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     };
 
     Object.values(history).forEach((record) => {
+      if (!isMeaningfulCircuitRecord(record)) return;
+
       const groupKey = record.groupKey || "geral";
       const table = groups[groupKey]?.rows || groups.geral.rows;
-      const name = record.name || "Sem nome";
-      const key = name.trim().toLowerCase();
-      const current = table.get(key) || { name, pts: 0, w: 0, bal: 0, played: 0, tournaments: 0 };
+      const name = String(record.name || "Sem nome").trim() || "Sem nome";
+      const key = (record.playerKey || name).trim().toLowerCase();
+      const current = table.get(key) || {
+        name,
+        pts: 0,
+        w: 0,
+        bal: 0,
+        played: 0,
+        tournaments: 0,
+      };
 
       table.set(key, {
         ...current,
@@ -2965,7 +2994,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         w: current.w + Number(record.w || 0),
         bal: current.bal + Number(record.bal || 0),
         played: current.played + Number(record.played || 0),
-        tournaments: current.tournaments + (Number(record.played || 0) > 0 ? 1 : 0),
+        tournaments: current.tournaments + 1,
       });
     });
 
@@ -3001,7 +3030,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       saveCircuits(nextCircuits);
       nextCircuits.forEach((circuit) => saveCircuitHistoryToSupabase(circuit.id, circuit.rankingHistory));
     }
-  }, [tournaments, circuits.length]);
+  }, [tournaments, circuits]);
 
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
