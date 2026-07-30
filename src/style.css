@@ -12846,3 +12846,14 @@ button.removePhotoBtn:hover {
     width: 30%;
   }
 }
+
+/* Alignment contract for the circuit ranking table. */
+.playAppShell .circuitRankingBox th,
+.playAppShell .circuitRankingBox td {
+  text-align: center !important;
+}
+
+.playAppShell .circuitRankingBox th:nth-child(2),
+.playAppShell .circuitRankingBox td:nth-child(2) {
+  text-align: left !important;
+}
