@@ -12747,3 +12747,11 @@ button.removePhotoBtn:hover {
     font-size: 11px;
   }
 }
+
+/* Keep horizontal margins inside the circuit card instead of overflowing it. */
+.playAppShell .circuitItem > .circuitRankingBox,
+.playAppShell .circuitItem > .circuitRankingEmpty,
+.playAppShell .circuitItem > .circuitItemActions {
+  width: auto !important;
+  align-self: stretch !important;
+}
