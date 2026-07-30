@@ -2582,6 +2582,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     try { return JSON.parse(saved); } catch { return []; }
   });
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
+  const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
 
@@ -2707,6 +2708,55 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     saveCircuits(circuits.filter((item) => item.id !== circuitId));
     if (circuitForm.id === circuitId) resetCircuitForm();
     showNotice("success", "Circuito excluído", "Somente o circuito foi removido. Os torneios continuam salvos.");
+  }
+
+  function getCircuitRanking(circuit, criteriaValue = circuitRankingCriteria) {
+    const selectedTournaments = (circuit.tournamentIds || [])
+      .map((id) => tournaments.find((t) => t.id === id))
+      .filter(Boolean);
+
+    const table = new Map();
+
+    selectedTournaments.forEach((tournament) => {
+      const rows = calculateRanking(
+        tournament.data || {},
+        tournament.type,
+        tournament.data?.rankingCriteria || defaultRankingCriteria
+      );
+
+      rows.forEach((row) => {
+        const name = row.name || "Sem nome";
+        const key = name.trim().toLowerCase();
+        const current = table.get(key) || {
+          name,
+          pts: 0,
+          w: 0,
+          bal: 0,
+          played: 0,
+          tournaments: 0,
+        };
+
+        table.set(key, {
+          ...current,
+          name: current.name || name,
+          pts: current.pts + Number(row.pts || 0),
+          w: current.w + Number(row.w || 0),
+          bal: current.bal + Number(row.bal || 0),
+          played: current.played + Number(row.played || 0),
+          tournaments: current.tournaments + (Number(row.played || 0) > 0 ? 1 : 0),
+        });
+      });
+    });
+
+    const criteria = getRankingCriteria(criteriaValue);
+
+    return Array.from(table.values()).sort((a, b) => {
+      for (const key of criteria.order) {
+        const diff = Number(b[key] || 0) - Number(a[key] || 0);
+        if (diff !== 0) return diff;
+      }
+      return a.name.localeCompare(b.name);
+    });
   }
 
   function showNotice(type, title, message) {
@@ -4324,6 +4374,36 @@ setNewPublicInfo({
               <h3>{circuit.name}</h3>
               <p>{circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} até {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim definido"}</p>
               <small>{selectedNames.length} torneio(s): {selectedNames.length ? selectedNames.map((t) => t.data?.eventName || t.name).join(", ") : "nenhum selecionado"}</small>
+              {(() => {
+                const circuitRanking = getCircuitRanking(circuit);
+                return circuitRanking.length ? (
+                  <div className="circuitRankingBox">
+                    <div className="circuitRankingHeader">
+                      <strong>Ranking acumulado</strong>
+                      <label>
+                        <span>Critério de desempate</span>
+                        <select value={circuitRankingCriteria} onChange={(e) => setCircuitRankingCriteria(e.target.value)}>
+                          {rankingCriteriaOptions.map((option) => (
+                            <option key={option.value} value={option.value}>{option.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                    <div className="circuitRankingTable">
+                      {circuitRanking.slice(0, 8).map((row, index) => (
+                        <div className="circuitRankingRow" key={row.name}>
+                          <span>{index + 1}º</span>
+                          <b>{row.name}</b>
+                          <em>{row.pts} pts</em>
+                          <small>{row.w} vit. · saldo {row.bal} · {row.played} jogo(s)</small>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : selectedNames.length ? (
+                  <div className="circuitRankingEmpty">Ranking aparece quando houver placares lançados nos torneios selecionados.</div>
+                ) : null;
+              })()}
             </div>
             <div className="circuitItemActions">
               <button type="button" className="editBtn" onClick={() => editCircuit(circuit)}>Editar</button>
