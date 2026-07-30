@@ -1759,7 +1759,16 @@ function App() {
 
   if (publicId) return <PublicTournamentPage publicId={publicId} />;
 
-  if (loading) return <div className="center">Carregando...</div>;
+  if (loading) {
+    return (
+      <div className="loadingPage">
+        <div className="loadingCard">
+          <div className="loadingSpinner" aria-hidden="true" />
+          <p>Carregando Torneio 360...</p>
+        </div>
+      </div>
+    );
+  }
   if (!session) return <Login />;
 
   if (!profile) {
