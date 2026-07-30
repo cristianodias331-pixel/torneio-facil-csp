@@ -4244,7 +4244,8 @@ setNewPublicInfo({
             return (
               <label className={`circuitTournamentOption ${checked ? "selected" : ""}`} key={t.id}>
                 <input type="checkbox" checked={checked} onChange={() => toggleCircuitTournament(t.id)} />
-                <span>
+                <span className="circuitCheckVisual">{checked ? "✓" : ""}</span>
+                <span className="circuitTournamentText">
                   <strong>{details.eventName || t.name}</strong>
                   <small>{[t.name, t.type, details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
                 </span>
