@@ -11579,3 +11579,89 @@ button.profileVisibilitySwitch.private strong {
     border: 2px solid #000000 !important;
   }
 }
+
+/* MINI ABA DE SUCESSO DO PERFIL */
+.profileSaveMiniNotice {
+  width: fit-content !important;
+  max-width: 100% !important;
+  margin: 10px auto 0 !important;
+  padding: 10px 16px !important;
+  border: 2px solid #000000 !important;
+  border-radius: 14px !important;
+  background: #ecfdf5 !important;
+  color: #065f46 !important;
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12) !important;
+}
+
+@media (max-width: 760px) {
+  .profileSaveMiniNotice {
+    width: 100% !important;
+    margin-top: 8px !important;
+    padding: 9px 12px !important;
+    font-size: 12px !important;
+    border-radius: 13px !important;
+  }
+}
+
+
+/* CORREÇÃO FINAL: CANCELAR E REMOVER VERMELHOS COMO PADRÃO */
+button.deleteBtn,
+.deleteBtn,
+button.danger,
+.danger,
+.confirmActions button.deleteBtn,
+.playAppShell button.deleteBtn,
+.playAppShell .deleteBtn,
+.categoryScheduleCard button.deleteBtn,
+button.removePhotoBtn,
+.removePhotoBtn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 10px 22px rgba(220, 38, 38, 0.28) !important;
+}
+
+button.deleteBtn:hover,
+.deleteBtn:hover,
+button.danger:hover,
+.danger:hover,
+.confirmActions button.deleteBtn:hover,
+.playAppShell button.deleteBtn:hover,
+.playAppShell .deleteBtn:hover,
+.categoryScheduleCard button.deleteBtn:hover,
+button.removePhotoBtn:hover,
+.removePhotoBtn:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: #ffffff !important;
+  filter: brightness(1.03) !important;
+}
+
+button.deleteBtn:disabled,
+.deleteBtn:disabled,
+button.danger:disabled,
+.danger:disabled {
+  background: linear-gradient(135deg, #fca5a5 0%, #ef4444 100%) !important;
+  color: #ffffff !important;
+  opacity: 1 !important;
+  cursor: not-allowed !important;
+}
+
+@media (max-width: 760px) {
+  button.deleteBtn,
+  .deleteBtn,
+  button.danger,
+  .danger,
+  .confirmActions button.deleteBtn,
+  .playAppShell button.deleteBtn,
+  .playAppShell .deleteBtn,
+  .categoryScheduleCard button.deleteBtn,
+  button.removePhotoBtn,
+  .removePhotoBtn {
+    min-height: 42px !important;
+    border-radius: 13px !important;
+    font-size: 13px !important;
+  }
+}
