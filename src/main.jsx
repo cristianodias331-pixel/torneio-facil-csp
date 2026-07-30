@@ -1774,9 +1774,11 @@ function App() {
 
   const today = new Date().toISOString().slice(0, 10);
   const expired = profile.expires_at && profile.expires_at < today;
-  const blocked = profile.status !== "active" || expired;
+  const hasFutureAccess = profile.expires_at && profile.expires_at >= today;
+  const isActive = profile.status === "active";
 
-  if (blocked) return <Blocked profile={profile} />;
+  if (!isActive && hasFutureAccess) return <AccessPreparing />;
+  if (expired || !hasFutureAccess) return <Blocked profile={profile} />;
 
   return <Dashboard profile={profile} user={session.user} />;
 }
@@ -2431,6 +2433,26 @@ function Login() {
           </div>
         </section>
       </main>
+    </div>
+  );
+}
+
+function AccessPreparing() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.location.reload();
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="accessPreparingPage">
+      <div className="accessPreparingCard">
+        <div className="accessPreparingSpinner" aria-hidden="true" />
+        <h1>Preparando seu acesso Premium</h1>
+        <p>Estamos liberando seus 14 dias grátis. Aguarde alguns segundos.</p>
+      </div>
     </div>
   );
 }
