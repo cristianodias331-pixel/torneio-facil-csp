@@ -11887,3 +11887,155 @@ button.danger:disabled,
   .circuitItemActions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
   .circuitItemActions button { width:100%; min-height:44px; }
 }
+
+
+/* Ranking acumulado dos circuitos */
+.circuitRankingBox {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.circuitRankingBox > strong {
+  display: block;
+  color: #0f172a;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.circuitRankingTable {
+  display: grid;
+  gap: 7px;
+}
+
+.circuitRankingRow {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 13px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+}
+
+.circuitRankingRow > span {
+  color: #2563eb;
+  font-weight: 950;
+  font-size: 13px;
+}
+
+.circuitRankingRow > b {
+  color: #0f172a;
+  font-size: 13.5px;
+  line-height: 1.2;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.circuitRankingRow > em {
+  color: #16a34a;
+  font-style: normal;
+  font-weight: 950;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.circuitRankingRow > small {
+  grid-column: 2 / 4;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.circuitRankingEmpty {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-weight: 800;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+@media (max-width: 760px) {
+  .circuitRankingBox {
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .circuitRankingRow {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 6px 8px;
+    padding: 9px;
+  }
+
+  .circuitRankingRow > em {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .circuitRankingRow > small {
+    grid-column: 2;
+  }
+}
+
+
+/* Critério do ranking acumulado */
+.circuitRankingHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.circuitRankingHeader > strong {
+  color: #0f172a;
+  font-size: 14px;
+  padding-top: 4px;
+}
+
+.circuitRankingHeader label {
+  display: grid;
+  gap: 5px;
+  min-width: min(330px, 100%);
+}
+
+.circuitRankingHeader label span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.circuitRankingHeader select {
+  width: 100%;
+  min-height: 38px;
+  border-radius: 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 750;
+  padding: 8px 10px;
+}
+
+@media (max-width: 760px) {
+  .circuitRankingHeader {
+    display: grid;
+  }
+
+  .circuitRankingHeader label {
+    min-width: 0;
+  }
+
+  .circuitRankingHeader select {
+    font-size: 12.5px;
+  }
+}
