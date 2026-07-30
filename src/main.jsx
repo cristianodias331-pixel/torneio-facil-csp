@@ -1918,7 +1918,7 @@ function Login() {
             id: data.user.id,
             name: fullName,
             status: "active",
-            plan: "trial",
+            plan: "premium",
             expires_at: trialEndsAtDate,
           });
 
@@ -1930,7 +1930,7 @@ function Login() {
         showNotice(
           "success",
           "Cadastro criado",
-          "Sua conta foi criada com 14 dias grátis de acesso ao Torneio 360."
+          "Sua conta foi criada com 14 dias grátis no plano Premium do Torneio 360."
         );
 
         resetForm();
@@ -2278,7 +2278,7 @@ function Login() {
               {mode === "login"
                 ? "Acesse seus torneios salvos e continue de onde parou."
                 : mode === "signup"
-                  ? "Crie sua conta e ganhe 14 dias grátis para testar a plataforma."
+                  ? "Crie sua conta e ganhe 14 dias grátis no plano Premium."
                   : mode === "forgotPassword"
                     ? "Informe seu e-mail para receber o link de redefinição."
                     : "Digite sua nova senha para voltar a acessar sua conta."}
