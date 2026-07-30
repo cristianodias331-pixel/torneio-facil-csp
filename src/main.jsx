@@ -196,6 +196,7 @@ const allowedByPlan = {
     "Copa - 12 ou 24 duplas",
     "Copa - 18 duplas",
     "Copa - 21 duplas",
+    "Copinha - grupos de 3",
   ],
 };
 
@@ -279,6 +280,17 @@ const modalityConfig = {
     defaultRepechageName: "Disputa Paralela",
     courts: 7,
   },
+
+  "Copinha - grupos de 3": {
+    type: "copinha",
+    cupMode: "copinha",
+    allowedTeamCounts: [6, 9, 12, 15, 18, 21, 24, 27, 30, 33, 36],
+    defaultTeams: 6,
+    groupSize: 3,
+    defaultMainBracketName: "Chave Principal",
+    defaultRepechageName: "Consolação",
+    courts: 4,
+  },
 };
 
 function getWinningScore(data) {
@@ -311,7 +323,7 @@ function isGameFinished(game, winningScore = 4) {
 }
 
 function isCupType(config) {
-  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21";
+  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha";
 }
 
 const super8Template = [
@@ -536,6 +548,121 @@ function generateCupGroupSchedule(players, cupConfig) {
   );
 }
 
+function getCupFormat(data) {
+  return data?.cupConfig?.format || data?.cupConfig?.cupMode || "";
+}
+
+function isCopinhaData(data) {
+  return getCupFormat(data) === "copinha";
+}
+
+function resetCopinhaTieBreaks(data) {
+  if (!isCopinhaData(data)) return data;
+
+  data.cupConfig = {
+    ...(data.cupConfig || {}),
+    tieBreakOverrides: {},
+    groupTieBreakOverrides: {},
+  };
+
+  return data;
+}
+
+function getCopinhaHeadToHeadWinnerId(firstId, secondId, groupGames, winningScore) {
+  const game = groupGames.find((item) => {
+    const id1 = item.ids1?.[0];
+    const id2 = item.ids2?.[0];
+    return (id1 === firstId && id2 === secondId) || (id1 === secondId && id2 === firstId);
+  });
+
+  if (!game) return null;
+
+  const winnerSide = getScoreWinnerSide(game, winningScore);
+  if (!winnerSide) return null;
+
+  return winnerSide === "team1" ? game.ids1?.[0] ?? null : game.ids2?.[0] ?? null;
+}
+
+function getCopinhaManualTieOrder(tiedRows, storedOrder) {
+  const tiedIds = tiedRows.map((row) => row.id);
+  const order = Array.isArray(storedOrder)
+    ? storedOrder.map((id) => Number(id)).filter((id) => tiedIds.includes(id))
+    : [];
+  const uniqueOrder = Array.from(new Set(order));
+
+  return uniqueOrder.length === tiedRows.length ? uniqueOrder : null;
+}
+
+function rankCopinhaGroupRows(rows, groupGames, winningScore, storedTieOrder) {
+  const baseRows = [...rows].sort((a, b) => {
+    const winsDiff = b.w - a.w;
+    if (winsDiff !== 0) return winsDiff;
+
+    const balanceDiff = b.bal - a.bal;
+    if (balanceDiff !== 0) return balanceDiff;
+
+    return a.name.localeCompare(b.name);
+  });
+
+  const allGroupGamesFinished = groupGames.length === 3 && groupGames.every((game) => (
+    getScoreWinnerSide(game, winningScore) !== null
+  ));
+
+  if (!allGroupGamesFinished) {
+    return { rows: baseRows, unresolvedTieIds: [] };
+  }
+
+  const rankedRows = [];
+  const unresolvedTieIds = [];
+
+  for (let start = 0; start < baseRows.length;) {
+    let end = start + 1;
+
+    while (
+      end < baseRows.length &&
+      baseRows[end].w === baseRows[start].w &&
+      baseRows[end].bal === baseRows[start].bal
+    ) {
+      end += 1;
+    }
+
+    const tiedRows = baseRows.slice(start, end);
+
+    if (tiedRows.length === 1) {
+      rankedRows.push(tiedRows[0]);
+    } else {
+      const manualOrder = getCopinhaManualTieOrder(tiedRows, storedTieOrder);
+
+      if (manualOrder) {
+        rankedRows.push(...[...tiedRows].sort((a, b) => manualOrder.indexOf(a.id) - manualOrder.indexOf(b.id)));
+      } else if (tiedRows.length === 2) {
+        const winnerId = getCopinhaHeadToHeadWinnerId(
+          tiedRows[0].id,
+          tiedRows[1].id,
+          groupGames,
+          winningScore
+        );
+
+        if (winnerId !== null) {
+          rankedRows.push(...[...tiedRows].sort((a, b) => (a.id === winnerId ? -1 : 1)));
+        } else {
+          unresolvedTieIds.push(...tiedRows.map((row) => row.id));
+          rankedRows.push(...tiedRows);
+        }
+      } else {
+        // Com três duplas empatadas, o confronto direto pode formar um ciclo.
+        // A planilha determina sorteio; o organizador registra esse sorteio na tela de grupos.
+        unresolvedTieIds.push(...tiedRows.map((row) => row.id));
+        rankedRows.push(...tiedRows);
+      }
+    }
+
+    start = end;
+  }
+
+  return { rows: rankedRows, unresolvedTieIds };
+}
+
 function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCriteria) {
   const cupConfig = data.cupConfig || {};
   const teamCount = cupConfig.teamCount || 12;
@@ -543,6 +670,8 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
   const teamNames = data.players.teams.map((t) => getTeamName(t));
   const criteria = getRankingCriteria(rankingCriteriaValue);
   const winningScore = getWinningScore(data);
+  const isCopinha = isCopinhaData(data);
+  const tieBreakOverrides = cupConfig.tieBreakOverrides || {};
 
   const groupRankings = groups.map((group) => {
     const rows = group.teamIds.map((id) => ({
@@ -561,35 +690,52 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
       tableById[row.id] = row;
     });
 
-    (data.schedule || [])
+    const groupGames = (data.schedule || [])
       .flat()
-      .filter((game) => game.phase === "groups" && game.groupId === group.id)
-      .forEach((game) => {
-        const s1 = Number(game.s1);
-        const s2 = Number(game.s2);
+      .filter((game) => game.phase === "groups" && game.groupId === group.id);
 
-        if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
+    groupGames.forEach((game) => {
+      const s1 = Number(game.s1);
+      const s2 = Number(game.s2);
 
-        const winnerSide = getScoreWinnerSide(game, winningScore);
-if (!winnerSide) return;
+      if (game.s1 === "" || game.s2 === "" || Number.isNaN(s1) || Number.isNaN(s2)) return;
 
-const win1 = winnerSide === "team1";
-const win2 = winnerSide === "team2";
-        
-        game.ids1.forEach((id) => {
-          tableById[id].pts += s1;
-          tableById[id].bal += s1 - s2;
-          tableById[id].played += 1;
-          if (win1) tableById[id].w += 1;
-        });
+      const winnerSide = getScoreWinnerSide(game, winningScore);
+      if (!winnerSide) return;
 
-        game.ids2.forEach((id) => {
-          tableById[id].pts += s2;
-          tableById[id].bal += s2 - s1;
-          tableById[id].played += 1;
-          if (win2) tableById[id].w += 1;
-        });
+      const win1 = winnerSide === "team1";
+      const win2 = winnerSide === "team2";
+
+      game.ids1.forEach((id) => {
+        tableById[id].pts += s1;
+        tableById[id].bal += s1 - s2;
+        tableById[id].played += 1;
+        if (win1) tableById[id].w += 1;
       });
+
+      game.ids2.forEach((id) => {
+        tableById[id].pts += s2;
+        tableById[id].bal += s2 - s1;
+        tableById[id].played += 1;
+        if (win2) tableById[id].w += 1;
+      });
+    });
+
+    if (isCopinha) {
+      const ranked = rankCopinhaGroupRows(
+        rows,
+        groupGames,
+        winningScore,
+        tieBreakOverrides[String(group.id)]
+      );
+
+      return {
+        ...group,
+        rows: ranked.rows,
+        unresolvedTieIds: ranked.unresolvedTieIds,
+        rankingMode: "copinha",
+      };
+    }
 
     rows.sort((a, b) => {
       for (const key of criteria.order) {
@@ -603,6 +749,8 @@ const win2 = winnerSide === "team2";
     return {
       ...group,
       rows,
+      unresolvedTieIds: [],
+      rankingMode: "standard",
     };
   });
 
@@ -690,12 +838,119 @@ function getCup21Qualified(data) {
   return { main, repechage };
 }
 
+function compareCopinhaGroupCampaign(firstGroup, secondGroup) {
+  const first = firstGroup.rows[0] || {};
+  const second = secondGroup.rows[0] || {};
+
+  const winsDiff = Number(second.w || 0) - Number(first.w || 0);
+  if (winsDiff !== 0) return winsDiff;
+
+  const balanceDiff = Number(second.bal || 0) - Number(first.bal || 0);
+  if (balanceDiff !== 0) return balanceDiff;
+
+  return firstGroup.id - secondGroup.id;
+}
+
+function getCopinhaGroupTieKey(group) {
+  const champion = group.rows[0] || {};
+  return `${Number(champion.w || 0)}:${Number(champion.bal || 0)}`;
+}
+
+function getCopinhaSeededGroups(data) {
+  const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
+  const baseGroups = [...groupRankings].sort(compareCopinhaGroupCampaign);
+  const groupsFinished = baseGroups.every((group) => group.rows.every((row) => row.played === 2));
+
+  if (!groupsFinished) {
+    return { rankedGroups: baseGroups, unresolvedGroupTies: [] };
+  }
+
+  const rankedGroups = [];
+  const unresolvedGroupTies = [];
+  const storedOverrides = data.cupConfig?.groupTieBreakOverrides || {};
+
+  for (let start = 0; start < baseGroups.length;) {
+    let end = start + 1;
+    const tieKey = getCopinhaGroupTieKey(baseGroups[start]);
+
+    while (end < baseGroups.length && getCopinhaGroupTieKey(baseGroups[end]) === tieKey) {
+      end += 1;
+    }
+
+    const tiedGroups = baseGroups.slice(start, end);
+
+    if (tiedGroups.length === 1) {
+      rankedGroups.push(tiedGroups[0]);
+    } else {
+      const manualOrder = getCopinhaManualTieOrder(tiedGroups, storedOverrides[tieKey]);
+
+      if (manualOrder) {
+        rankedGroups.push(...[...tiedGroups].sort((a, b) => manualOrder.indexOf(a.id) - manualOrder.indexOf(b.id)));
+      } else {
+        unresolvedGroupTies.push({
+          tieKey,
+          groupIds: tiedGroups.map((group) => group.id),
+        });
+        rankedGroups.push(...tiedGroups);
+      }
+    }
+
+    start = end;
+  }
+
+  return { rankedGroups, unresolvedGroupTies };
+}
+
+function getCopinhaQualified(data) {
+  const { rankedGroups } = getCopinhaSeededGroups(data);
+
+  const champions = rankedGroups
+    .filter((group) => group.rows[0])
+    .map((group, index) => ({
+      ...group.rows[0],
+      groupPosition: 1,
+      groupRank: index + 1,
+    }));
+
+  const runnersUp = rankedGroups
+    .filter((group) => group.rows[1])
+    .map((group, index) => ({
+      ...group.rows[1],
+      groupPosition: 2,
+      groupRank: index + 1,
+    }));
+
+  const thirds = rankedGroups
+    .filter((group) => group.rows[2])
+    .map((group, index) => ({
+      ...group.rows[2],
+      groupPosition: 3,
+      groupRank: index + 1,
+    }));
+
+  return {
+    // Campeões de grupo recebem as melhores sementes; depois vêm os segundos.
+    main: [...champions, ...runnersUp],
+    // Na planilha de 2 grupos os terceiros não disputam consolação.
+    repechage: rankedGroups.length > 2 ? thirds : [],
+  };
+}
+
 function getCupQualified(data) {
-  if ((data.cupConfig?.teamCount || 12) === 18) {
+  const format = getCupFormat(data);
+  const teamCount = data.cupConfig?.teamCount || 12;
+
+  if (format === "copinha") {
+    return getCopinhaQualified(data);
+  }
+
+  // Os torneios antigos não guardavam o formato. Mantemos a compatibilidade
+  // apenas para eles, sem deixar uma Copinha de 18/21 cair na regra errada.
+  if (format === "cup18" || (!format && teamCount === 18)) {
     return getCup18Qualified(data);
   }
 
-  if ((data.cupConfig?.teamCount || 12) === 21) {
+  if (format === "cup21" || (!format && teamCount === 21)) {
     return getCup21Qualified(data);
   }
 
@@ -952,14 +1207,14 @@ function buildNextRound(previousGames, bracketType, roundName, keyPrefix) {
   return games;
 }
 
-function buildThirdPlaceGame(semifinals) {
+function buildThirdPlaceGame(semifinals, bracketType = "main") {
   if (!semifinals || semifinals.length < 2) return [];
 
   return [
     {
-      phase: "main",
+      phase: bracketType,
       roundName: "3º lugar",
-      matchKey: "main_third_1",
+      matchKey: `${bracketType}_third_1`,
       source1: semifinals[0].matchKey,
       source2: semifinals[1].matchKey,
       source1Mode: "loser",
@@ -975,7 +1230,211 @@ function buildThirdPlaceGame(semifinals) {
   ];
 }
 
+function getLargestPowerOfTwo(value) {
+  let power = 1;
+
+  while (power * 2 <= value) {
+    power *= 2;
+  }
+
+  return power;
+}
+
+function getBracketSeedOrder(size) {
+  let order = [1, 2];
+
+  while (order.length < size) {
+    const nextSize = order.length * 2;
+    order = order.flatMap((seed) => [seed, nextSize + 1 - seed]);
+  }
+
+  return order;
+}
+
+function getEliminationRoundName(teamCount) {
+  if (teamCount === 2) return "Final";
+  if (teamCount === 4) return "Semifinal";
+  if (teamCount === 8) return "Quartas de final";
+  if (teamCount === 16) return "Oitavas de final";
+  return `Rodada de ${teamCount}`;
+}
+
+function getCopinhaPreliminaryPairs(entries) {
+  const remaining = [...entries];
+  const pairs = [];
+
+  while (remaining.length > 1) {
+    const first = remaining.shift();
+    let opponentIndex = -1;
+
+    for (let index = remaining.length - 1; index >= 0; index -= 1) {
+      if (remaining[index].groupId !== first.groupId) {
+        opponentIndex = index;
+        break;
+      }
+    }
+
+    if (opponentIndex < 0) opponentIndex = remaining.length - 1;
+
+    pairs.push([first, remaining.splice(opponentIndex, 1)[0]]);
+  }
+
+  return pairs;
+}
+
+function createCopinhaBracketGame({
+  bracketType,
+  roundName,
+  matchKey,
+  entry1,
+  entry2,
+  court,
+}) {
+  return {
+    phase: bracketType,
+    roundName,
+    matchKey,
+    source1: entry1?.sourceMatchKey || null,
+    source2: entry2?.sourceMatchKey || null,
+    ids1: Number.isInteger(entry1?.id) ? [entry1.id] : [],
+    ids2: Number.isInteger(entry2?.id) ? [entry2.id] : [],
+    team1: null,
+    team2: null,
+    s1: "",
+    s2: "",
+    court,
+  };
+}
+
+function buildCopinhaEliminationRounds(entries, bracketType, bracketTitle, includeThirdPlace = false) {
+  if (!Array.isArray(entries) || entries.length < 2) return [];
+
+  const teamCount = entries.length;
+  const targetSize = getLargestPowerOfTwo(teamCount);
+  const preliminaryGameCount = teamCount - targetSize;
+  const directEntryCount = teamCount - preliminaryGameCount * 2;
+  const directEntries = entries.slice(0, directEntryCount);
+  const preliminaryPairs = getCopinhaPreliminaryPairs(entries.slice(directEntryCount));
+  const preliminaryGames = preliminaryPairs.map(([entry1, entry2], index) => (
+    createCopinhaBracketGame({
+      bracketType,
+      roundName: "Preliminar",
+      matchKey: `${bracketType}_pre_${index + 1}`,
+      entry1,
+      entry2,
+      court: index + 1,
+    })
+  ));
+
+  const seededEntries = [
+    ...directEntries,
+    ...preliminaryGames.map((game) => ({ sourceMatchKey: game.matchKey })),
+  ];
+  const seedOrder = getBracketSeedOrder(targetSize);
+  const openingRoundName = getEliminationRoundName(targetSize);
+  const openingGames = [];
+
+  for (let index = 0; index < seedOrder.length; index += 2) {
+    openingGames.push(createCopinhaBracketGame({
+      bracketType,
+      roundName: openingRoundName,
+      matchKey: `${bracketType}_r${targetSize}_${openingGames.length + 1}`,
+      entry1: seededEntries[seedOrder[index] - 1],
+      entry2: seededEntries[seedOrder[index + 1] - 1],
+      court: openingGames.length + 1,
+    }));
+  }
+
+  const rounds = [];
+
+  if (preliminaryGames.length > 0) {
+    rounds.push({
+      title: "Preliminar",
+      bracketTitle,
+      games: preliminaryGames,
+    });
+  }
+
+  rounds.push({
+    title: openingRoundName,
+    bracketTitle,
+    games: openingGames,
+  });
+
+  let currentGames = openingGames;
+  let currentTeamCount = targetSize;
+
+  while (currentGames.length > 1) {
+    const nextTeamCount = currentTeamCount / 2;
+    const nextRoundName = getEliminationRoundName(nextTeamCount);
+    const nextGames = buildNextRound(
+      currentGames,
+      bracketType,
+      nextRoundName,
+      `r${nextTeamCount}`
+    );
+
+    if (nextTeamCount === 2 && includeThirdPlace) {
+      const thirdPlaceGames = buildThirdPlaceGame(currentGames, bracketType);
+
+      if (thirdPlaceGames.length) {
+        rounds.push({
+          title: "3º lugar",
+          bracketTitle,
+          games: thirdPlaceGames,
+        });
+      }
+    }
+
+    rounds.push({
+      title: nextRoundName,
+      bracketTitle,
+      games: nextGames,
+    });
+
+    currentGames = nextGames;
+    currentTeamCount = nextTeamCount;
+  }
+
+  return rounds;
+}
+
+function generateCopinhaBrackets(data) {
+  const qualified = getCopinhaQualified(data);
+  const cupConfig = data.cupConfig || {};
+  const mainName = cupConfig.mainBracketName || "Chave Principal";
+  const repechageName = cupConfig.repechageName || "Consolação";
+  const mainRounds = buildCopinhaEliminationRounds(
+    qualified.main,
+    "main",
+    mainName,
+    true
+  );
+  const repechageRounds = buildCopinhaEliminationRounds(
+    qualified.repechage,
+    "repechage",
+    repechageName,
+    true
+  );
+  const allGames = [...mainRounds, ...repechageRounds].flatMap((round) => round.games);
+
+  return {
+    main: mainRounds.map((round) => ({
+      ...round,
+      games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+    })),
+    repechage: repechageRounds.map((round) => ({
+      ...round,
+      games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+    })),
+  };
+}
+
 function generateCupBrackets(data) {
+  if (isCopinhaData(data)) {
+    return generateCopinhaBrackets(data);
+  }
+
   const qualified = getCupQualified(data);
   const cupConfig = data.cupConfig || {};
   const teamCount = cupConfig.teamCount || 12;
@@ -1242,6 +1701,18 @@ function getCupAllBracketGames(data) {
   return [...brackets.main, ...brackets.repechage].flatMap((round) => round.games);
 }
 
+function rebuildCupBracketGames(currentData, existingScores = {}) {
+  const baseGames = getCupAllBracketGames(currentData).map((game) => ({
+    ...game,
+    s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
+    s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
+  }));
+
+  // Resolve novamente depois de reaplicar os placares. Assim, o vencedor de
+  // uma fase anterior aparece imediatamente na fase seguinte.
+  return baseGames.map((game) => resolveBracketGame(game, baseGames, currentData));
+}
+
 function syncCupBracketScores(currentData) {
   const copy = structuredClone(currentData);
   const existingScores = {};
@@ -1253,13 +1724,7 @@ function syncCupBracketScores(currentData) {
     };
   });
 
-  const freshGames = getCupAllBracketGames(copy).map((game) => ({
-    ...game,
-    s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
-    s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
-  }));
-
-  copy.brackets = freshGames;
+  copy.brackets = rebuildCupBracketGames(copy, existingScores);
   return copy;
 }
 
@@ -1385,6 +1850,44 @@ function calculateMainCupPodium(data) {
   }
 
   return podium;
+}
+
+function calculateCupBracketPodium(data, phase) {
+  const games = data.brackets || [];
+  const finalGame = games.find(
+    (game) => game.phase === phase && game.roundName === "Final"
+  );
+  const thirdPlaceGame = games.find((game) => (
+    game.phase === phase && String(game.roundName || "").includes("3")
+  ));
+
+  if (!finalGame) return [];
+
+  const resolvedFinal = resolveBracketGame(finalGame, games, data);
+  const championId = getGameWinnerId(resolvedFinal, data);
+  const runnerUpId = getGameLoserId(resolvedFinal, data);
+
+  if (championId === null || runnerUpId === null) return [];
+
+  const podium = [
+    { position: "🏆 Campeão", name: getCupTeamName(data, championId) },
+    { position: "🥈 Vice", name: getCupTeamName(data, runnerUpId) },
+  ];
+
+  if (thirdPlaceGame) {
+    const resolvedThirdPlace = resolveBracketGame(thirdPlaceGame, games, data);
+    const thirdId = getGameWinnerId(resolvedThirdPlace, data);
+
+    if (thirdId !== null) {
+      podium.push({ position: "🥉 3º lugar", name: getCupTeamName(data, thirdId) });
+    }
+  }
+
+  return podium;
+}
+
+function calculateCopinhaConsolationPodium(data) {
+  return calculateCupBracketPodium(data, "repechage");
 }
 
 function canUseSpeech() {
@@ -2214,6 +2717,7 @@ function Login() {
                 "Copa - 12 ou 24 duplas",
                 "Copa - 18 duplas",
                 "Copa - 21 duplas",
+                "Copinha - grupos de 3",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -2271,6 +2775,11 @@ function Login() {
             <Info
               title="Copa - 18 duplas"
               text="Formato de Copa com 18 duplas, dividido em 6 grupos de 3 duplas. Cada grupo joga sua fase classificatória, e o sistema calcula a classificação com base nos critérios definidos. Os melhores avançam para a chave principal; os 2 melhores gerais podem receber BYE, entrando em fase mais avançada. Também há disputa paralela para duplas específicas, como terceiros colocados, permitindo manter mais atletas em atividade. É um formato ideal para torneios grandes, com organização mais profissional e várias fases."
+            />
+
+            <Info
+              title="Copinha - grupos de 3"
+              text="Formato flexível para 6 a 36 duplas. As equipes são sorteadas em grupos de três e todas fazem duas partidas. Os primeiros e segundos colocados seguem para a chave principal; a partir de 3 grupos, os terceiros disputam a Consolação. Os empates respeitam vitórias, saldo, confronto direto e, se necessário, sorteio da organização."
             />
           </div>
         </section>
@@ -4849,6 +5358,13 @@ setNewPublicInfo({
         text="Formato de Copa com 18 duplas, dividido em 6 grupos de 3 duplas. Cada grupo joga sua fase classificatória, e o sistema calcula a classificação com base nos critérios definidos. Os melhores avançam para a chave principal; os 2 melhores gerais podem receber BYE, entrando em fase mais avançada. Também há disputa paralela para duplas específicas, como terceiros colocados, permitindo manter mais atletas em atividade. É um formato ideal para torneios grandes, com organização mais profissional e várias fases."
       />
     )}
+
+    {allowedTypes.includes("Copinha - grupos de 3") && (
+      <Info
+        title="Copinha - grupos de 3"
+        text="Formato configurável de 6 a 36 duplas. Cada grupo tem três duplas; 1º e 2º avançam para a Chave Principal e, a partir de 3 grupos, os 3º colocados disputam a Consolação."
+      />
+    )}
   </div>
 </section>
 )}
@@ -5127,9 +5643,12 @@ function createInitialData(type, config) {
     return {
       ...base,
       cupConfig: {
+        format: config.cupMode || "standard",
         teamCount: config.defaultTeams,
         mainBracketName: config.defaultMainBracketName,
         repechageName: config.defaultRepechageName,
+        tieBreakOverrides: {},
+        groupTieBreakOverrides: {},
       },
       players: {
         teams: Array.from({ length: config.defaultTeams }, (_, i) => ({
@@ -5257,6 +5776,9 @@ function normalizeTournamentData(type, rawData) {
       cupConfig: {
         ...defaults.cupConfig,
         ...sourceCupConfig,
+        format: typeof sourceCupConfig.format === "string"
+          ? sourceCupConfig.format
+          : defaults.cupConfig.format,
         teamCount,
         mainBracketName: typeof sourceCupConfig.mainBracketName === "string"
           ? sourceCupConfig.mainBracketName
@@ -5264,6 +5786,12 @@ function normalizeTournamentData(type, rawData) {
         repechageName: typeof sourceCupConfig.repechageName === "string"
           ? sourceCupConfig.repechageName
           : defaults.cupConfig.repechageName,
+        tieBreakOverrides: isTournamentDataObject(sourceCupConfig.tieBreakOverrides)
+          ? sourceCupConfig.tieBreakOverrides
+          : {},
+        groupTieBreakOverrides: isTournamentDataObject(sourceCupConfig.groupTieBreakOverrides)
+          ? sourceCupConfig.groupTieBreakOverrides
+          : {},
       },
       players: {
         teams: normalizeTeams(sourcePlayers.teams, teamCount),
@@ -5491,7 +6019,16 @@ function TournamentScreen({ tournament, userId, onBack, onSave }) {
   );
 
   const cupGroupRankings = useMemo(
-    () => isCupType(config) && data.groupsShuffled ? calculateCupGroupRankings(data, data.rankingCriteria) : [],
+    () => isCupType(config) && (data.groupsShuffled || data.schedule?.length > 0)
+      ? calculateCupGroupRankings(data, data.rankingCriteria)
+      : [],
+    [data, config.type]
+  );
+
+  const copinhaGroupCampaignTies = useMemo(
+    () => isCopinhaData(data) && data.schedule?.length > 0
+      ? getCopinhaSeededGroups(data).unresolvedGroupTies
+      : [],
     [data, config.type]
   );
 
@@ -5660,10 +6197,55 @@ function TournamentScreen({ tournament, userId, onBack, onSave }) {
         copy.schedule = [];
         copy.brackets = [];
         copy.groupsShuffled = false;
+        resetCopinhaTieBreaks(copy);
       }
 
       return copy;
     });
+  }
+
+  function resolveCopinhaTie(groupId, teamIds) {
+    if (!Array.isArray(teamIds) || teamIds.length < 2) return;
+
+    setData((prev) => {
+      const copy = structuredClone(prev);
+      const tieBreakOverrides = {
+        ...(copy.cupConfig?.tieBreakOverrides || {}),
+        [String(groupId)]: shuffleArray([...teamIds]),
+      };
+
+      copy.cupConfig = {
+        ...(copy.cupConfig || {}),
+        tieBreakOverrides,
+      };
+      copy.brackets = [];
+
+      return copy;
+    });
+
+    showNotice("success", "Desempate sorteado", "A ordem do sorteio foi salva e as chaves finais foram atualizadas.");
+  }
+
+  function resolveCopinhaGroupTie(tieKey, groupIds) {
+    if (!Array.isArray(groupIds) || groupIds.length < 2) return;
+
+    setData((prev) => {
+      const copy = structuredClone(prev);
+      const groupTieBreakOverrides = {
+        ...(copy.cupConfig?.groupTieBreakOverrides || {}),
+        [tieKey]: shuffleArray([...groupIds]),
+      };
+
+      copy.cupConfig = {
+        ...(copy.cupConfig || {}),
+        groupTieBreakOverrides,
+      };
+      copy.brackets = [];
+
+      return copy;
+    });
+
+    showNotice("success", "Melhor grupo sorteado", "A ordem dos grupos empatados foi salva e as chaves finais foram atualizadas.");
   }
 
   function refreshGameParticipantNames(nextData) {
@@ -5727,6 +6309,7 @@ function TournamentScreen({ tournament, userId, onBack, onSave }) {
     if (isCupType(config)) {
       copy.brackets = [];
       copy.groupsShuffled = true;
+      resetCopinhaTieBreaks(copy);
     }
 
     setData(copy);
@@ -5817,6 +6400,22 @@ function generateBrackets() {
     return;
   }
 
+  if (isCopinhaData(data)) {
+    const hasUnresolvedTie = calculateCupGroupRankings(data, data.rankingCriteria)
+      .some((group) => group.unresolvedTieIds?.length > 1);
+    const hasUnresolvedGroupTie = getCopinhaSeededGroups(data).unresolvedGroupTies.length > 0;
+
+    if (hasUnresolvedTie || hasUnresolvedGroupTie) {
+      showNotice(
+        "warning",
+        "Desempate pendente",
+        "Realize o sorteio de desempate indicado na aba Grupos antes de gerar as chaves."
+      );
+      setActiveTournamentTab("grupos");
+      return;
+    }
+  }
+
   const copy = syncCupBracketScores(data);
   setData(copy);
 
@@ -5831,6 +6430,7 @@ function updateScore(roundIndex, gameIndex, field, value) {
 
   if (isCupType(config)) {
     copy.brackets = [];
+    resetCopinhaTieBreaks(copy);
   }
 
   setData(copy);
@@ -5841,7 +6441,7 @@ function updateBracketScore(matchKey, field, value) {
     const copy = structuredClone(prev);
 
     if (!copy.brackets || copy.brackets.length === 0) {
-      copy.brackets = getCupAllBracketGames(copy);
+      copy.brackets = rebuildCupBracketGames(copy);
     }
 
     const allResolved = copy.brackets.map((game) =>
@@ -5871,13 +6471,7 @@ copy.brackets = copy.brackets.map((game) =>
       };
     });
 
-    const fresh = getCupAllBracketGames(copy).map((game) => ({
-      ...game,
-      s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
-      s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
-    }));
-
-    copy.brackets = fresh;
+    copy.brackets = rebuildCupBracketGames(copy, existingScores);
     return copy;
   });
 }
@@ -5891,6 +6485,7 @@ function clearScores() {
 
   if (isCupType(config)) {
     copy.brackets = [];
+    resetCopinhaTieBreaks(copy);
   }
 
   setData(copy);
@@ -5904,6 +6499,7 @@ function clearTable() {
 
   if (isCupType(config)) {
     copy.brackets = [];
+    resetCopinhaTieBreaks(copy);
   }
 
   setData(copy);
@@ -5911,7 +6507,7 @@ function clearTable() {
   showNotice("success", "Jogos e placares apagados", "Todos os jogos e placares foram removidos. Os participantes foram mantidos.");
 }
 
-const { currentBrackets, parallelRanking, mainCupPodium } = getSafeCupPresentation(data, config);
+const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
 
   function SavingStatusBadge() {
     return (
@@ -6117,6 +6713,14 @@ return (
               <div className="groupsPreviewBox">
                 <h3>Classificação dos grupos</h3>
                 <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+                {isCopinhaData(data) && (
+                  <CopinhaTieBreakPanel
+                    groupRankings={cupGroupRankings}
+                    onResolveTie={resolveCopinhaTie}
+                    groupCampaignTies={copinhaGroupCampaignTies}
+                    onResolveGroupTie={resolveCopinhaGroupTie}
+                  />
+                )}
               </div>
             )}
           </section>
@@ -6131,7 +6735,7 @@ return (
             <div className="matchesSubTabs">
               <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
               <button type="button" className={activeMatchesTab === "chaves" ? "active" : ""} onClick={() => setActiveMatchesTab("chaves")}>Chaves finais</button>
-              <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>Disputa paralela</button>
+              <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>{data.cupConfig?.repechageName || "Disputa paralela"}</button>
             </div>
           )}
           <div style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
@@ -6240,7 +6844,19 @@ return (
 
                 <div className="cupRankingPanel">
                   <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
-                  {parallelRanking.length > 0 ? (
+                  {isCopinhaData(data) ? (
+                    data.cupConfig?.teamCount === 6 ? (
+                      <p>Com 2 grupos, não há consolação neste formato.</p>
+                    ) : consolationCupPodium.length > 0 ? (
+                      <CupPodiumView
+                        podium={consolationCupPodium}
+                        title={data.cupConfig?.repechageName || "Consolação"}
+                        variant="parallel"
+                      />
+                    ) : (
+                      <p>Finalize a consolação para ver o pódio.</p>
+                    )
+                  ) : parallelRanking.length > 0 ? (
                     <CupPodiumView
                       podium={parallelRanking.slice(0, 3).map((item, index) => ({
                         position: index === 0 ? "🏆 Campeão" : index === 1 ? "🥈 Vice" : "🥉 3º lugar",
@@ -6271,8 +6887,10 @@ return (
                     </button>
                   </div>
                 </>
-              ) : (
+              ) : currentBrackets.repechage?.length > 0 ? (
                 <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
+              ) : (
+                <p>Com 2 grupos, a Copinha segue o modelo da planilha e não possui chave de consolação.</p>
               )}
             </section>
           </>
@@ -6300,6 +6918,7 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   const isFixedCupSize = config.type === "cup18" || config.type === "cup21";
   const isCup18 = config.type === "cup18";
   const isCup21 = config.type === "cup21";
+  const isCopinha = config.type === "copinha";
 
   return (
     <div className="cupConfigBox">
@@ -6327,11 +6946,11 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
         </div>
 
         <div>
-          <label>{isCup18 || isCup21 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
+          <label>{isCopinha ? "Nome da consolação" : isCup18 || isCup21 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
           <input
             value={cupConfig.repechageName || config.defaultRepechageName}
             onChange={(e) => updateCupConfig("repechageName", e.target.value)}
-            placeholder={isCup18 || isCup21 ? "Disputa Paralela" : "Repescagem"}
+            placeholder={isCopinha ? "Consolação" : isCup18 || isCup21 ? "Disputa Paralela" : "Repescagem"}
           />
         </div>
       </div>
@@ -6352,6 +6971,13 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
             <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
             <p><strong>Chave principal:</strong> passam 1º e 2º de cada grupo. As 2 melhores campanhas recebem BYE para as quartas.</p>
             <p><strong>Disputa paralela:</strong> os 7 terceiros colocados entram; o melhor terceiro recebe BYE para a semifinal.</p>
+          </>
+        ) : isCopinha ? (
+          <>
+            <p><strong>Formato:</strong> escolha de 6 a 36 duplas, sempre em grupos de 3.</p>
+            <p><strong>Fase de grupos:</strong> cada dupla joga duas partidas.</p>
+            <p><strong>Classificação:</strong> vitórias, saldo de games, confronto direto e, se ainda necessário, sorteio registrado pelo organizador.</p>
+            <p><strong>Chaves:</strong> 1º e 2º de cada grupo entram na chave principal; a partir de 3 grupos, os 3º colocados seguem para a consolação.</p>
           </>
         ) : (
           <>
@@ -6850,7 +7476,59 @@ function RankingTable({ title, rows, rankingCriteria }) {
   );
 }
 
+function CopinhaTieBreakPanel({
+  groupRankings,
+  onResolveTie,
+  groupCampaignTies = [],
+  onResolveGroupTie,
+}) {
+  const tiedGroups = (groupRankings || []).filter((group) => group.unresolvedTieIds?.length > 1);
+
+  if (!tiedGroups.length && !groupCampaignTies.length) return null;
+
+  return (
+    <div className="infoBox">
+      <p><strong>Desempate por sorteio necessário.</strong> Há três duplas empatadas após vitórias, saldo e confronto direto.</p>
+      {tiedGroups.map((group) => {
+        const tiedRows = group.rows.filter((row) => group.unresolvedTieIds.includes(row.id));
+
+        return (
+          <div className="actions" key={group.id}>
+            <span>{group.name}: {tiedRows.map((row) => row.name).join(" · ")}</span>
+            <button
+              type="button"
+              onClick={() => onResolveTie(group.id, group.unresolvedTieIds)}
+            >
+              Sortear ordem do grupo
+            </button>
+          </div>
+        );
+      })}
+
+      {groupCampaignTies.map((tie) => {
+        const groups = groupRankings.filter((group) => tie.groupIds.includes(group.id));
+
+        return (
+          <div className="actions" key={`campaign-${tie.tieKey}`}>
+            <span>Melhor campanha empatada: {groups.map((group) => group.name).join(" · ")}</span>
+            <button
+              type="button"
+              onClick={() => onResolveGroupTie?.(tie.tieKey, tie.groupIds)}
+            >
+              Sortear melhor grupo
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function CupGroupRankingView({ groupRankings, rankingCriteria }) {
+  const effectiveCriteria = groupRankings?.[0]?.rankingMode === "copinha"
+    ? "wins_balance_points"
+    : rankingCriteria;
+
   return (
     <div className="twoCols">
       {groupRankings.map((group) => (
@@ -6858,7 +7536,7 @@ function CupGroupRankingView({ groupRankings, rankingCriteria }) {
           key={group.id}
           title={group.name}
           rows={group.rows}
-          rankingCriteria={rankingCriteria}
+          rankingCriteria={effectiveCriteria}
         />
       ))}
     </div>
@@ -6899,7 +7577,7 @@ function groupStoredBracketGames(data) {
 
 function getSafeCupPresentation(data, config) {
   if (!isCupType(config) || !data?.brackets?.length) {
-    return { currentBrackets: null, parallelRanking: [], mainCupPodium: [] };
+    return { currentBrackets: null, parallelRanking: [], mainCupPodium: [], consolationCupPodium: [] };
   }
 
   try {
@@ -6907,10 +7585,11 @@ function getSafeCupPresentation(data, config) {
       currentBrackets: groupStoredBracketGames(data),
       parallelRanking: calculateParallelRanking(data, data.rankingCriteria || defaultRankingCriteria),
       mainCupPodium: calculateMainCupPodium(data),
+      consolationCupPodium: isCopinhaData(data) ? calculateCopinhaConsolationPodium(data) : [],
     };
   } catch (error) {
     console.error("Chaves salvas inválidas; exibindo a Copa sem as chaves", error);
-    return { currentBrackets: null, parallelRanking: [], mainCupPodium: [] };
+    return { currentBrackets: null, parallelRanking: [], mainCupPodium: [], consolationCupPodium: [] };
   }
 }
 
@@ -7199,7 +7878,7 @@ function PublicTournamentScreen({ tournament }) {
     ? calculateCupGroupRankings(data, data.rankingCriteria)
     : [];
 
-  const { currentBrackets, parallelRanking, mainCupPodium } = getSafeCupPresentation(data, config);
+  const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
 
   const publicAthletes = getRegisteredAthletesForPublic(data, config);
 
@@ -7327,7 +8006,7 @@ function PublicTournamentScreen({ tournament }) {
             <div className="matchesSubTabs">
               <button type="button" className={activePublicMatchesTab === "grupos" ? "active" : ""} onClick={() => setActivePublicMatchesTab("grupos")}>Fase de grupos</button>
               <button type="button" className={activePublicMatchesTab === "chaves" ? "active" : ""} onClick={() => setActivePublicMatchesTab("chaves")}>Chaves finais</button>
-              <button type="button" className={activePublicMatchesTab === "paralela" ? "active" : ""} onClick={() => setActivePublicMatchesTab("paralela")}>Disputa paralela</button>
+              <button type="button" className={activePublicMatchesTab === "paralela" ? "active" : ""} onClick={() => setActivePublicMatchesTab("paralela")}>{data.cupConfig?.repechageName || "Disputa paralela"}</button>
             </div>
           ) : null}
 
@@ -7347,7 +8026,11 @@ function PublicTournamentScreen({ tournament }) {
 
           {isCup ? (
             <div style={{ display: activePublicMatchesTab === "paralela" ? undefined : "none" }}>
-              {!currentBrackets ? <p>A disputa paralela ainda não foi gerada pelo organizador.</p> : <PublicCupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} />}
+              {!currentBrackets
+                ? <p>A disputa paralela ainda não foi gerada pelo organizador.</p>
+                : currentBrackets.repechage?.length > 0
+                  ? <PublicCupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} />
+                  : <p>Esta Copinha de 2 grupos não possui chave de consolação.</p>}
             </div>
           ) : null}
         </section>
@@ -7365,7 +8048,15 @@ function PublicTournamentScreen({ tournament }) {
               </div>
               <div className="cupRankingPanel">
                 <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
-                {parallelRanking.length > 0 ? <RankingTable title="Classificação" rows={parallelRanking} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} /> : <p>A disputa paralela ainda não tem ranking.</p>}
+                {isCopinhaData(data)
+                  ? (data.cupConfig?.teamCount === 6
+                    ? <p>Com 2 grupos, não há consolação neste formato.</p>
+                    : consolationCupPodium.length > 0
+                    ? <CupPodiumView podium={consolationCupPodium} title={data.cupConfig?.repechageName || "Consolação"} variant="parallel" />
+                    : <p>A consolação ainda não foi finalizada.</p>)
+                  : (parallelRanking.length > 0
+                    ? <RankingTable title="Classificação" rows={parallelRanking} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+                    : <p>A disputa paralela ainda não tem ranking.</p>)}
               </div>
             </div>
           ) : (
@@ -7395,7 +8086,17 @@ function PublicTournamentScreen({ tournament }) {
 
                   <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
 
-                  {parallelRanking.length > 0 && (
+                  {isCopinhaData(data) && consolationCupPodium.length > 0 && (
+                    <div className="parallelRankingBox">
+                      <CupPodiumView
+                        podium={consolationCupPodium}
+                        title={data.cupConfig?.repechageName || "Consolação"}
+                        variant="parallel"
+                      />
+                    </div>
+                  )}
+
+                  {!isCopinhaData(data) && parallelRanking.length > 0 && (
                     <div className="parallelRankingBox">
                       <h3>Ranking da {data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
 
