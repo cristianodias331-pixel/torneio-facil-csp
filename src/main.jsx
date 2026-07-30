@@ -4632,7 +4632,7 @@ setNewPublicInfo({
 
     <div className="circuitFormActions">
       <button type="button" onClick={saveCircuit}>{circuitForm.id ? "Salvar alterações" : "Criar circuito"}</button>
-      {circuitForm.id ? <button type="button" className="secondaryBtn" onClick={resetCircuitForm}>Cancelar edição</button> : null}
+      {circuitForm.id ? <button type="button" className="cancelBtn" onClick={resetCircuitForm}>Cancelar edição</button> : null}
     </div>
 
     <div className="circuitsList">
