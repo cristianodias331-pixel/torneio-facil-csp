@@ -2529,7 +2529,13 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [editForm, setEditForm] = useState(null);
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [activePanel, setActivePanel] = useState("inicio");
+  const [activePanel, setActivePanel] = useState(() => {
+    return localStorage.getItem(`activePanel:${user.id}`) || "inicio";
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`activePanel:${user.id}`, activePanel);
+  }, [activePanel, user.id]);
   const [circuits, setCircuits] = useState(() => {
     const saved = localStorage.getItem(`circuits:${user.id}`);
     if (!saved) return [];
