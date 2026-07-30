@@ -1919,11 +1919,7 @@ function Login() {
     } else {
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-      const trialEndsAtDate = trialEndsAt.toISOString().slice(0, 10);
-
-      const { data, error } = await supabase.auth.signUp({
+      const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -1944,26 +1940,6 @@ function Login() {
           error.message || "Não foi possível criar sua conta agora. Verifique os dados e tente novamente."
         );
       } else {
-        if (data?.user?.id) {
-          const { error: profileError } = await supabase.from("profiles").upsert({
-            id: data.user.id,
-            name: fullName,
-            status: "active",
-            plan: "premium",
-            expires_at: trialEndsAtDate,
-          });
-
-          if (profileError) {
-            console.error(profileError);
-            showNotice(
-              "error",
-              "Conta criada, mas acesso não liberado",
-              profileError.message || "Não foi possível liberar o plano Premium automaticamente."
-            );
-            return;
-          }
-        }
-
         showNotice(
           "success",
           "Cadastro criado",
@@ -3131,7 +3107,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   function buildOrganizerProfilePayload(nextVisibility = organizerProfile.isPublic !== false) {
     return {
-      id: user.id,
       name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
       arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
       phone: organizerProfile.whatsapp || "",
@@ -3164,7 +3139,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
     const { data, error } = await supabase
       .from("profiles")
-      .upsert(publicProfileData, { onConflict: "id" })
+      .update(publicProfileData)
+      .eq("id", user.id)
       .select("*")
       .single();
 
@@ -3217,7 +3193,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
     const { data, error } = await supabase
       .from("profiles")
-      .upsert(buildOrganizerProfilePayload(nextVisibility), { onConflict: "id" })
+      .update(buildOrganizerProfilePayload(nextVisibility))
+      .eq("id", user.id)
       .select("*")
       .single();
 
