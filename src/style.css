@@ -12552,3 +12552,54 @@ button.danger:disabled,
   font-size: 14px;
   font-weight: 950;
 }
+
+/* Circuitos: cada item usa toda a largura do painel, sem área vazia lateral. */
+.circuitsCard {
+  width: 100% !important;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: stretch !important;
+}
+
+.circuitsCard > *,
+.circuitsList,
+.circuitItem {
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.circuitsList {
+  width: 100% !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-items: stretch !important;
+}
+
+.circuitItem {
+  width: 100% !important;
+  justify-self: stretch !important;
+}
+
+.circuitItemSummary,
+.circuitRankingBox,
+.circuitRankingEmpty {
+  box-sizing: border-box;
+}
+
+/* Ações negativas sempre em vermelho, inclusive ao cancelar a edição. */
+button.cancelBtn,
+button.deleteBtn,
+button.danger,
+button.removePhotoBtn {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+  color: #ffffff !important;
+  border: 0 !important;
+  box-shadow: 0 10px 22px rgba(185, 28, 28, 0.28) !important;
+}
+
+button.cancelBtn:hover,
+button.deleteBtn:hover,
+button.danger:hover,
+button.removePhotoBtn:hover {
+  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%) !important;
+  filter: brightness(1.02);
+}
