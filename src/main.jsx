@@ -3882,9 +3882,9 @@ setNewPublicInfo({
         <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => goToPanel("inicio")}><span>🏠</span><small>Início</small></button>
         <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => goToPanel("criar")}><span>➕</span><small>Criar</small></button>
         <button className={`playNavItem ${activePanel === "circuitos" ? "active" : ""}`} type="button" onClick={() => goToPanel("circuitos")}><span>🏅</span><small>Circuitos</small></button>
-        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => goToPanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
         <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => goToPanel("ajustes")}><span>👤</span><small>Perfil</small></button>
         <button className={`playNavItem ${activePanel === "lixeira" ? "active" : ""}`} type="button" onClick={() => goToPanel("lixeira")}><span>🗑️</span><small>Lixeira</small></button>
+        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => goToPanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
       </aside>
 
       <div className="playMain">
