@@ -12125,3 +12125,200 @@ button.danger:disabled,
     grid-template-columns: 1fr 1fr !important;
   }
 }
+
+/* Correção visual dos circuitos: modelo lista suspensa */
+.circuitsList {
+  gap: 16px !important;
+}
+
+.circuitItem {
+  width: 100% !important;
+  display: grid !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+  border: 1px solid #dbe4f0 !important;
+  border-radius: 18px !important;
+  background: #ffffff !important;
+  box-shadow: 0 10px 26px rgba(15, 23, 42, .06) !important;
+}
+
+.circuitItemSummary {
+  width: 100% !important;
+  min-height: 82px !important;
+  display: grid !important;
+  grid-template-columns: 66px minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 14px !important;
+  padding: 16px 18px !important;
+  border: 0 !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.circuitItemSummary::before {
+  content: "CIR";
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: .3px;
+  box-shadow: 0 10px 22px rgba(99, 102, 241, .22);
+}
+
+.circuitItemMain {
+  display: grid !important;
+  gap: 3px !important;
+  min-width: 0 !important;
+}
+
+.circuitItemMain > span {
+  width: max-content !important;
+  padding: 4px 9px !important;
+  border-radius: 999px !important;
+  background: #f5f3ff !important;
+  color: #7c3aed !important;
+  font-size: 11px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.circuitItemMain h3 {
+  margin: 3px 0 0 !important;
+  color: #0f172a !important;
+  font-size: 18px !important;
+  font-weight: 950 !important;
+  line-height: 1.18 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.circuitItemMain p {
+  margin: 0 !important;
+  color: #334155 !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+}
+
+.circuitItemMain small {
+  color: #64748b !important;
+  font-size: 12.5px !important;
+  font-weight: 750 !important;
+  line-height: 1.25 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.circuitExpandIcon {
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  display: grid !important;
+  place-items: center !important;
+  flex-shrink: 0 !important;
+  background: #eef2ff !important;
+  color: #2563eb !important;
+  font-size: 22px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+
+.circuitItem.expanded .circuitExpandIcon {
+  background: #dbeafe !important;
+}
+
+.circuitItem.expanded {
+  border-color: #bfdbfe !important;
+  box-shadow: 0 16px 34px rgba(37, 99, 235, .10) !important;
+}
+
+.circuitRankingBox,
+.circuitRankingEmpty {
+  margin: 0 18px 16px 98px !important;
+}
+
+.circuitItemActions {
+  width: auto !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  gap: 10px !important;
+  padding: 0 18px 16px 98px !important;
+  background: #ffffff !important;
+}
+
+.circuitItemActions button {
+  width: 132px !important;
+  min-height: 42px !important;
+  border-radius: 12px !important;
+  font-weight: 950 !important;
+}
+
+.circuitItemActions .editBtn {
+  background: linear-gradient(135deg, #7c3aed, #a855f7) !important;
+  color: #fff !important;
+  border: 0 !important;
+}
+
+.circuitItemActions .deleteBtn {
+  background: linear-gradient(135deg, #dc2626, #ef4444) !important;
+  color: #fff !important;
+  border: 0 !important;
+}
+
+@media (max-width: 760px) {
+  .circuitItemSummary {
+    grid-template-columns: 54px minmax(0, 1fr) 30px !important;
+    gap: 10px !important;
+    padding: 14px !important;
+    min-height: 76px !important;
+  }
+
+  .circuitItemSummary::before {
+    width: 46px;
+    height: 46px;
+    border-radius: 13px;
+    font-size: 12px;
+  }
+
+  .circuitItemMain h3 {
+    font-size: 16px !important;
+  }
+
+  .circuitItemMain p,
+  .circuitItemMain small {
+    font-size: 12px !important;
+  }
+
+  .circuitExpandIcon {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 20px !important;
+  }
+
+  .circuitRankingBox,
+  .circuitRankingEmpty {
+    margin: 0 14px 14px 14px !important;
+  }
+
+  .circuitItemActions {
+    padding: 0 14px 14px 14px !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .circuitItemActions button {
+    width: 100% !important;
+  }
+}
