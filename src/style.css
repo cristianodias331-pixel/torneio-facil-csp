@@ -12472,3 +12472,65 @@ button.danger:disabled,
     padding-bottom: 112px !important;
   }
 }
+
+/* Correção forte: caber todas as 6 abas no smartphone */
+@media (max-width: 900px) {
+  .playSidebar {
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    top: auto !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 76px !important;
+    display: grid !important;
+    grid-template-columns: repeat(6, 1fr) !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    gap: 3px !important;
+    padding: 6px 4px calc(6px + env(safe-area-inset-bottom)) !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    border-top: 1px solid #dbe7ff !important;
+    z-index: 9999 !important;
+  }
+
+  .playNavItem {
+    display: grid !important;
+    place-items: center !important;
+    flex: none !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    height: 62px !important;
+    min-height: 62px !important;
+    margin: 0 !important;
+    padding: 6px 2px 5px !important;
+    gap: 3px !important;
+    border-radius: 13px !important;
+  }
+
+  .playNavItem span:not(.navIcon) {
+    display: block !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+  }
+
+  .playNavItem small {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    font-size: 8.4px !important;
+    line-height: 1.02 !important;
+    text-align: center !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+  }
+
+  .playContent {
+    padding-bottom: 116px !important;
+  }
+}
