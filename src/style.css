@@ -12534,3 +12534,21 @@ button.danger:disabled,
     padding-bottom: 116px !important;
   }
 }
+
+/* Ranking do circuito separado por categoria quando a modalidade usa rankings separados */
+.circuitRankingGroup {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.circuitRankingGroup:first-of-type {
+  margin-top: 0;
+}
+
+.circuitRankingGroup h4 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 950;
+}
