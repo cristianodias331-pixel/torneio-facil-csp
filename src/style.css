@@ -12670,3 +12670,80 @@ button.removePhotoBtn:hover {
   width: 100% !important;
   max-width: none !important;
 }
+
+/* Ranking: keep the score visually attached to the corresponding athlete. */
+.playAppShell .circuitRankingHeader {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 330px) !important;
+  align-items: end !important;
+  gap: 18px !important;
+  padding: 2px 2px 14px !important;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.playAppShell .circuitRankingHeader label {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.playAppShell .circuitRankingRow {
+  grid-template-columns: 30px minmax(0, 1fr) minmax(82px, auto) !important;
+  grid-template-rows: auto auto !important;
+  column-gap: 12px !important;
+  row-gap: 4px !important;
+  padding: 12px 14px !important;
+  border-color: #dfe7f1 !important;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.035);
+}
+
+.playAppShell .circuitRankingRow > span {
+  grid-column: 1 !important;
+  grid-row: 1 / 3 !important;
+  align-self: center;
+}
+
+.playAppShell .circuitRankingRow > b {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+}
+
+.playAppShell .circuitRankingRow > small {
+  grid-column: 2 !important;
+  grid-row: 2 !important;
+}
+
+.playAppShell .circuitRankingRow > em {
+  grid-column: 3 !important;
+  grid-row: 1 / 3 !important;
+  align-self: center !important;
+  justify-self: end !important;
+  min-width: 82px;
+  padding: 7px 10px;
+  border: 1px solid #bbf7d0;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #15803d;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .playAppShell .circuitRankingHeader {
+    grid-template-columns: 1fr !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+  }
+
+  .playAppShell .circuitRankingRow {
+    grid-template-columns: 28px minmax(0, 1fr) auto !important;
+    column-gap: 8px !important;
+    padding: 11px 10px !important;
+  }
+
+  .playAppShell .circuitRankingRow > em {
+    min-width: 66px;
+    padding: 6px 8px;
+    font-size: 11px;
+  }
+}
