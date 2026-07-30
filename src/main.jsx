@@ -2583,6 +2583,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   });
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
+  const [expandedCircuitId, setExpandedCircuitId] = useState(null);
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
 
@@ -4368,43 +4369,52 @@ setNewPublicInfo({
       ) : circuits.map((circuit) => {
         const selectedNames = (circuit.tournamentIds || []).map((id) => tournaments.find((t) => t.id === id)).filter(Boolean);
         return (
-          <article className="circuitItem" key={circuit.id}>
-            <div className="circuitItemMain">
-              <span>{circuit.status === "active" ? "Em andamento" : circuit.status === "closed" ? "Encerrado" : circuit.status === "archived" ? "Arquivado" : "Rascunho"}</span>
-              <h3>{circuit.name}</h3>
-              <p>{circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} até {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim definido"}</p>
-              <small>{selectedNames.length} torneio(s): {selectedNames.length ? selectedNames.map((t) => t.data?.eventName || t.name).join(", ") : "nenhum selecionado"}</small>
-              {(() => {
-                const circuitRanking = getCircuitRanking(circuit);
-                return circuitRanking.length ? (
-                  <div className="circuitRankingBox">
-                    <div className="circuitRankingHeader">
-                      <strong>Ranking acumulado</strong>
-                      <label>
-                        <span>Critério de desempate</span>
-                        <select value={circuitRankingCriteria} onChange={(e) => setCircuitRankingCriteria(e.target.value)}>
-                          {rankingCriteriaOptions.map((option) => (
-                            <option key={option.value} value={option.value}>{option.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="circuitRankingTable">
-                      {circuitRanking.slice(0, 8).map((row, index) => (
-                        <div className="circuitRankingRow" key={row.name}>
-                          <span>{index + 1}º</span>
-                          <b>{row.name}</b>
-                          <em>{row.pts} pts</em>
-                          <small>{row.w} vit. · saldo {row.bal} · {row.played} jogo(s)</small>
-                        </div>
-                      ))}
-                    </div>
+          <article className={`circuitItem ${expandedCircuitId === circuit.id ? "expanded" : ""}`} key={circuit.id}>
+            <button
+              type="button"
+              className="circuitItemSummary"
+              onClick={() => setExpandedCircuitId(expandedCircuitId === circuit.id ? null : circuit.id)}
+            >
+              <div className="circuitItemMain">
+                <span>{circuit.status === "active" ? "Em andamento" : circuit.status === "closed" ? "Encerrado" : circuit.status === "archived" ? "Arquivado" : "Rascunho"}</span>
+                <h3>{circuit.name}</h3>
+                <p>{circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} até {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim definido"}</p>
+                <small>{selectedNames.length} torneio(s): {selectedNames.length ? selectedNames.map((t) => t.data?.eventName || t.name).join(", ") : "nenhum selecionado"}</small>
+              </div>
+              <strong className="circuitExpandIcon">{expandedCircuitId === circuit.id ? "−" : "+"}</strong>
+            </button>
+
+            {expandedCircuitId === circuit.id ? (() => {
+              const circuitRanking = getCircuitRanking(circuit);
+              return circuitRanking.length ? (
+                <div className="circuitRankingBox">
+                  <div className="circuitRankingHeader">
+                    <strong>Ranking acumulado</strong>
+                    <label>
+                      <span>Critério de desempate</span>
+                      <select value={circuitRankingCriteria} onChange={(e) => setCircuitRankingCriteria(e.target.value)}>
+                        {rankingCriteriaOptions.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
-                ) : selectedNames.length ? (
-                  <div className="circuitRankingEmpty">Ranking aparece quando houver placares lançados nos torneios selecionados.</div>
-                ) : null;
-              })()}
-            </div>
+                  <div className="circuitRankingTable">
+                    {circuitRanking.slice(0, 8).map((row, index) => (
+                      <div className="circuitRankingRow" key={row.name}>
+                        <span>{index + 1}º</span>
+                        <b>{row.name}</b>
+                        <em>{row.pts} pts</em>
+                        <small>{row.w} vit. · saldo {row.bal} · {row.played} jogo(s)</small>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : selectedNames.length ? (
+                <div className="circuitRankingEmpty">Ranking aparece quando houver placares lançados nos torneios selecionados.</div>
+              ) : null;
+            })() : null}
+
             <div className="circuitItemActions">
               <button type="button" className="editBtn" onClick={() => editCircuit(circuit)}>Editar</button>
               <button type="button" className="deleteBtn" onClick={() => deleteCircuit(circuit.id)}>Excluir</button>
