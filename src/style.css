@@ -12798,3 +12798,51 @@ button.removePhotoBtn:hover {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* Circuit table: compact rank/name area and centered score columns. */
+.playAppShell .circuitRankingBox table {
+  table-layout: fixed !important;
+}
+
+.playAppShell .circuitRankingBox th,
+.playAppShell .circuitRankingBox td {
+  vertical-align: middle;
+}
+
+.playAppShell .circuitRankingBox th:nth-child(1),
+.playAppShell .circuitRankingBox td:nth-child(1) {
+  width: 52px;
+  text-align: center;
+}
+
+.playAppShell .circuitRankingBox th:nth-child(2),
+.playAppShell .circuitRankingBox td:nth-child(2) {
+  width: 26%;
+  text-align: left;
+}
+
+.playAppShell .circuitRankingBox th:nth-child(2) {
+  padding-left: 8px;
+}
+
+.playAppShell .circuitRankingBox td:nth-child(2) {
+  padding-left: 8px;
+  font-weight: 850;
+}
+
+.playAppShell .circuitRankingBox th:nth-child(n + 3),
+.playAppShell .circuitRankingBox td:nth-child(n + 3) {
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .playAppShell .circuitRankingBox th:nth-child(1),
+  .playAppShell .circuitRankingBox td:nth-child(1) {
+    width: 42px;
+  }
+
+  .playAppShell .circuitRankingBox th:nth-child(2),
+  .playAppShell .circuitRankingBox td:nth-child(2) {
+    width: 30%;
+  }
+}
