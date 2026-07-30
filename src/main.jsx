@@ -1778,8 +1778,10 @@ function Login() {
   const [birthDate, setBirthDate] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
 
-  const [mode, setMode] = useState("login");
+  const initialAuthMode = window.location.hash.includes("type=recovery") ? "resetPassword" : "login";
+  const [mode, setMode] = useState(initialAuthMode);
   const [notice, setNotice] = useState(null);
 
   function showNotice(type, title, message) {
@@ -1792,10 +1794,57 @@ function Login() {
     setBirthDate("");
     setEmail("");
     setPassword("");
+    setNewPassword("");
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
+
+    if (mode === "forgotPassword") {
+      if (!email.trim()) {
+        showNotice("warning", "E-mail obrigatório", "Informe seu e-mail para receber o link de redefinição.");
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: "https://torneio360.com",
+      });
+
+      if (error) {
+        showNotice("error", "Não foi possível enviar", "Verifique o e-mail informado e tente novamente.");
+      } else {
+        showNotice("success", "Link enviado", "Enviamos um link para você redefinir sua senha.");
+        setMode("login");
+      }
+      return;
+    }
+
+    if (mode === "resetPassword") {
+      if (!newPassword.trim()) {
+        showNotice("warning", "Nova senha obrigatória", "Digite sua nova senha para continuar.");
+        return;
+      }
+
+      if (newPassword.trim().length < 6) {
+        showNotice("warning", "Senha muito curta", "Digite uma senha com pelo menos 6 caracteres.");
+        return;
+      }
+
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword.trim(),
+      });
+
+      if (error) {
+        showNotice("error", "Senha não alterada", "Não foi possível alterar sua senha. Abra novamente o link recebido por e-mail.");
+      } else {
+        showNotice("success", "Senha alterada", "Sua senha foi alterada com sucesso. Faça login novamente.");
+        setNewPassword("");
+        await supabase.auth.signOut();
+        window.history.replaceState(null, "", window.location.pathname);
+        setMode("login");
+      }
+      return;
+    }
 
     if (mode === "signup") {
       if (!firstName.trim()) {
@@ -1840,7 +1889,11 @@ function Login() {
     } else {
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
-      const { error } = await supabase.auth.signUp({
+      const trialEndsAt = new Date();
+      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+      const trialEndsAtDate = trialEndsAt.toISOString().slice(0, 10);
+
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
         options: {
@@ -1860,10 +1913,24 @@ function Login() {
           "Não foi possível criar sua conta agora. Verifique os dados e tente novamente."
         );
       } else {
+        if (data?.user?.id) {
+          const { error: profileError } = await supabase.from("profiles").upsert({
+            id: data.user.id,
+            name: fullName,
+            status: "active",
+            plan: "trial",
+            expires_at: trialEndsAtDate,
+          });
+
+          if (profileError) {
+            console.error(profileError);
+          }
+        }
+
         showNotice(
           "success",
           "Cadastro criado",
-          "Sua conta foi criada. Aguarde a liberação do acesso pelo administrador."
+          "Sua conta foi criada com 14 dias grátis de acesso ao Torneio 360."
         );
 
         resetForm();
@@ -2198,11 +2265,23 @@ function Login() {
         <section id="acesso" className="landingAccessSection">
           <div className="accessText">
             <span>Acesso</span>
-            <h2>{mode === "login" ? "Entre na sua conta" : "Crie sua conta"}</h2>
+            <h2>
+              {mode === "login"
+                ? "Entre na sua conta"
+                : mode === "signup"
+                  ? "Crie sua conta"
+                  : mode === "forgotPassword"
+                    ? "Redefinir senha"
+                    : "Criar nova senha"}
+            </h2>
             <p>
               {mode === "login"
                 ? "Acesse seus torneios salvos e continue de onde parou."
-                : "Preencha seus dados para solicitar acesso à plataforma."}
+                : mode === "signup"
+                  ? "Crie sua conta e ganhe 14 dias grátis para testar a plataforma."
+                  : mode === "forgotPassword"
+                    ? "Informe seu e-mail para receber o link de redefinição."
+                    : "Digite sua nova senha para voltar a acessar sua conta."}
             </p>
           </div>
 
@@ -2267,17 +2346,59 @@ function Login() {
                 placeholder="seuemail@exemplo.com"
               />
 
-              <label>Senha</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Digite sua senha"
-              />
+              {mode === "resetPassword" ? (
+                <>
+                  <label>Nova senha</label>
+                  <input
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Digite sua nova senha"
+                  />
+                </>
+              ) : (
+                mode !== "forgotPassword" && (
+                  <>
+                    <label>Senha</label>
+                    <input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Digite sua senha"
+                    />
+                  </>
+                )
+              )}
 
               <button type="submit">
-                {mode === "login" ? "Entrar" : "Criar conta"}
+                {mode === "login"
+                  ? "Entrar"
+                  : mode === "signup"
+                    ? "Criar conta"
+                    : mode === "forgotPassword"
+                      ? "Enviar link"
+                      : "Salvar nova senha"}
               </button>
+
+              {mode === "login" && (
+                <button
+                  type="button"
+                  className="linkBtn"
+                  onClick={() => setMode("forgotPassword")}
+                >
+                  Esqueci minha senha
+                </button>
+              )}
+
+              {(mode === "forgotPassword" || mode === "resetPassword") && (
+                <button
+                  type="button"
+                  className="linkBtn"
+                  onClick={() => setMode("login")}
+                >
+                  Voltar para o login
+                </button>
+              )}
             </form>
           </div>
         </section>
@@ -2289,8 +2410,8 @@ function Login() {
 function Blocked({ profile }) {
   return (
     <div className="center">
-      <h1>Acesso bloqueado</h1>
-      <p>Seu acesso está pendente, bloqueado ou vencido.</p>
+      <h1>Acesso encerrado</h1>
+      <p>Seu teste grátis terminou. Para continuar usando o Torneio 360, regularize seu acesso.</p>
 
       <div className="infoBox">
         <p><strong>Plano:</strong> {profile.plan}</p>
@@ -2298,7 +2419,7 @@ function Blocked({ profile }) {
         <p><strong>Vencimento:</strong> {profile.expires_at ? formatDateBR(profile.expires_at) : "não definido"}</p>
       </div>
 
-      <p>Entre em contato para regularizar seu acesso.</p>
+      <p>Entre em contato para liberar seu plano.</p>
       <button type="button" onClick={logout}>Sair</button>
     </div>
   );
