@@ -1759,7 +1759,7 @@ function App() {
 
   if (publicId) return <PublicTournamentPage publicId={publicId} />;
 
-  if (loading) return <div className="center">Preparando seu acesso Premium gratuito...</div>;
+  if (loading) return <AccessPreparing />;
   if (!session) return <Login />;
 
   if (!profile) {
@@ -1774,11 +1774,36 @@ function App() {
 
   const today = new Date().toISOString().slice(0, 10);
   const expired = profile.expires_at && profile.expires_at < today;
+  const waitingForRelease = profile.status !== "active" && profile.expires_at && !expired;
   const blocked = profile.status !== "active" || expired;
+
+  if (waitingForRelease) {
+    return <AccessPreparing />;
+  }
 
   if (blocked) return <Blocked profile={profile} />;
 
   return <Dashboard profile={profile} user={session.user} />;
+}
+
+function AccessPreparing() {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      window.location.reload();
+    }, 2500);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="accessPreparingPage">
+      <div className="accessPreparingCard">
+        <div className="accessPreparingSpinner" />
+        <h1>Preparando seu acesso Premium</h1>
+        <p>Estamos liberando seus 14 dias grátis. Aguarde alguns segundos.</p>
+      </div>
+    </div>
+  );
 }
 
 function BeachLogo({ variant = "light" } = {}) {
