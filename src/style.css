@@ -11835,3 +11835,49 @@ button.danger:disabled,
     font-size: 14.5px;
   }
 }
+
+
+/* =========================
+   CIRCUITOS
+   ========================= */
+
+.circuitsCard { display: grid; gap: 22px; }
+.circuitsHeader { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; }
+.circuitsHeader p { margin: 6px 0 0; color:#64748b; font-weight:650; line-height:1.45; }
+.circuitsFormGrid { display:grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap:14px; }
+.circuitTournamentPicker { border:1px solid #e2e8f0; border-radius:22px; padding:16px; background:#f8fafc; }
+.circuitPickerTitle { display:flex; justify-content:space-between; gap:12px; align-items:center; margin-bottom:12px; }
+.circuitPickerTitle strong { color:#0f172a; font-size:16px; }
+.circuitPickerTitle span { color:#2563eb; font-weight:850; font-size:13px; }
+.circuitTournamentList { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
+.circuitTournamentOption { display:flex; gap:10px; align-items:flex-start; padding:13px; border:1px solid #e2e8f0; border-radius:16px; background:#fff; cursor:pointer; transition:.18s ease; }
+.circuitTournamentOption.selected { border-color:#2563eb; background:#eff6ff; box-shadow:0 10px 24px rgba(37,99,235,.10); }
+.circuitTournamentOption input { margin-top:3px; accent-color:#2563eb; }
+.circuitTournamentOption span { display:grid; gap:3px; min-width:0; }
+.circuitTournamentOption strong { color:#0f172a; font-size:14px; line-height:1.2; }
+.circuitTournamentOption small { color:#64748b; font-weight:650; line-height:1.25; }
+.circuitFormActions { display:flex; gap:10px; flex-wrap:wrap; }
+.circuitsList { display:grid; gap:12px; }
+.circuitItem { display:flex; justify-content:space-between; gap:16px; align-items:center; padding:16px; border:1px solid #e2e8f0; border-radius:20px; background:#fff; box-shadow:0 12px 28px rgba(15,23,42,.07); }
+.circuitItemMain { display:grid; gap:5px; min-width:0; }
+.circuitItemMain > span { width:max-content; padding:5px 9px; border-radius:999px; background:#f5f3ff; color:#7c3aed; font-size:12px; font-weight:900; }
+.circuitItemMain h3 { margin:0; color:#0f172a; font-size:18px; }
+.circuitItemMain p { margin:0; color:#334155; font-weight:750; }
+.circuitItemMain small { color:#64748b; font-weight:650; line-height:1.35; }
+.circuitItemActions { display:flex; gap:8px; flex-shrink:0; }
+.circuitItemActions .editBtn { background:linear-gradient(135deg,#7c3aed,#a855f7) !important; color:#fff !important; border:0 !important; }
+.circuitItemActions .deleteBtn { background:linear-gradient(135deg,#dc2626,#ef4444) !important; color:#fff !important; border:0 !important; }
+
+@media (max-width: 760px) {
+  .circuitsHeader { display:grid; }
+  .circuitsHeader .secondaryBtn { width:100%; }
+  .circuitsFormGrid { grid-template-columns:1fr; }
+  .circuitTournamentPicker { padding:13px; border-radius:18px; }
+  .circuitPickerTitle { align-items:flex-start; flex-direction:column; }
+  .circuitTournamentList { grid-template-columns:1fr; }
+  .circuitTournamentOption { padding:12px; }
+  .circuitFormActions button { width:100%; min-height:46px; }
+  .circuitItem { display:grid; gap:14px; padding:14px; border-radius:18px; }
+  .circuitItemActions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+  .circuitItemActions button { width:100%; min-height:44px; }
+}
