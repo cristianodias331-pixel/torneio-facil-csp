@@ -13505,3 +13505,184 @@ button.removePhotoBtn:hover {
     font-size: 14px;
   }
 }
+
+/* Aviso do período gratuito no painel autenticado */
+.playAppShell .freeTrialNotice {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  margin: -4px 0 20px;
+  padding: 16px 18px;
+  overflow: hidden;
+  border: 1px solid #a5d8f3;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 94% 12%, rgba(34, 211, 238, 0.18), transparent 30%),
+    linear-gradient(135deg, #f0f9ff 0%, #ffffff 52%, #ecfeff 100%);
+  box-shadow: 0 12px 28px rgba(14, 116, 144, 0.09);
+}
+
+.playAppShell .freeTrialNotice::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: linear-gradient(180deg, #2563eb, #06b6d4);
+  content: "";
+}
+
+.freeTrialNoticeIcon {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 50px;
+  height: 50px;
+  border: 1px solid rgba(125, 211, 252, 0.75);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #dbeafe, #cffafe);
+  box-shadow: 0 9px 20px rgba(14, 165, 233, 0.14);
+  font-size: 24px;
+}
+
+.freeTrialNoticeCopy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.freeTrialNoticeCopy > span {
+  display: block;
+  margin-bottom: 3px;
+  color: #0369a1;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.055em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.freeTrialNoticeCopy > strong {
+  display: block;
+  color: #0f172a;
+  font-size: 17px;
+  font-weight: 850;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.playAppShell .freeTrialNoticeCopy > p {
+  margin: 4px 0 0 !important;
+  color: #475569 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  line-height: 1.35 !important;
+}
+
+.freeTrialNoticeDays {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  min-width: 74px;
+  min-height: 62px;
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 16px;
+  background: linear-gradient(135deg, #174ea6, #2563eb 58%, #0891b2);
+  box-shadow: 0 10px 22px rgba(37, 99, 235, 0.2);
+  color: #ffffff;
+  text-align: center;
+}
+
+.freeTrialNoticeDays strong {
+  font-size: 27px;
+  font-weight: 900;
+  letter-spacing: -0.06em;
+  line-height: 0.9;
+}
+
+.freeTrialNoticeDays span {
+  margin-top: 4px;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.playAppShell .freeTrialNoticeLastDay {
+  border-color: #f6c453;
+  background:
+    radial-gradient(circle at 94% 12%, rgba(251, 191, 36, 0.17), transparent 30%),
+    linear-gradient(135deg, #fffbeb 0%, #ffffff 55%, #fff7ed 100%);
+  box-shadow: 0 12px 28px rgba(180, 83, 9, 0.09);
+}
+
+.playAppShell .freeTrialNoticeLastDay::before {
+  background: linear-gradient(180deg, #f59e0b, #ea580c);
+}
+
+.freeTrialNoticeLastDay .freeTrialNoticeIcon {
+  border-color: #fde68a;
+  background: linear-gradient(135deg, #fef3c7, #ffedd5);
+  box-shadow: 0 9px 20px rgba(245, 158, 11, 0.14);
+}
+
+.freeTrialNoticeLastDay .freeTrialNoticeCopy > span {
+  color: #b45309;
+}
+
+.freeTrialNoticeLastDay .freeTrialNoticeDays {
+  background: linear-gradient(135deg, #d97706, #f59e0b 58%, #ea580c);
+  box-shadow: 0 10px 22px rgba(217, 119, 6, 0.2);
+}
+
+@media (max-width: 640px) {
+  .playAppShell .freeTrialNotice {
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 12px;
+    margin-top: -2px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .freeTrialNoticeIcon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    font-size: 21px;
+  }
+
+  .freeTrialNoticeCopy > span {
+    font-size: 9.5px;
+  }
+
+  .freeTrialNoticeCopy > strong {
+    font-size: 15px;
+  }
+
+  .playAppShell .freeTrialNoticeCopy > p {
+    font-size: 12px !important;
+  }
+
+  .freeTrialNoticeDays {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    min-width: 0;
+    min-height: 42px;
+    padding: 8px 12px;
+    border-radius: 13px;
+  }
+
+  .freeTrialNoticeDays strong {
+    font-size: 21px;
+    line-height: 1;
+  }
+
+  .freeTrialNoticeDays span {
+    margin: 0 0 0 6px;
+  }
+}

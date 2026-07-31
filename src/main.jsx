@@ -216,6 +216,7 @@ function formatStatusBR(value) {
 }
 
 const TRIAL_DAYS = 7;
+const MILLISECONDS_PER_DAY = 86_400_000;
 const AUTH_FLOW_QUERY_KEY = "auth";
 
 function getBrazilTodayISO(date = new Date()) {
@@ -234,6 +235,92 @@ function getBrazilTodayISO(date = new Date()) {
     const day = String(date.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
   }
+}
+
+function getBrazilDateISO(value) {
+  if (!value) return "";
+
+  const rawValue = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(rawValue)) return rawValue;
+
+  const date = new Date(rawValue);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return getBrazilTodayISO(date);
+}
+
+function isoDateToUtcDay(value) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || ""));
+  if (!match) return null;
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const utcTime = Date.UTC(year, month - 1, day);
+  const parsed = new Date(utcTime);
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return null;
+  }
+
+  return Math.floor(utcTime / MILLISECONDS_PER_DAY);
+}
+
+function getCalendarDayDifference(startValue, endValue) {
+  const startDay = isoDateToUtcDay(getBrazilDateISO(startValue));
+  const endDay = isoDateToUtcDay(getBrazilDateISO(endValue));
+
+  if (startDay === null || endDay === null) return null;
+  return endDay - startDay;
+}
+
+function getFreeTrialDetails(profile, user) {
+  if (String(profile?.status || "").toLowerCase() !== "active") return null;
+
+  const trialEndValue = profile?.trial_ends_at || profile?.trial_end_at;
+  const accessEndValue = trialEndValue || profile?.expires_at;
+  const accessEndDate = getBrazilDateISO(accessEndValue);
+  if (!accessEndDate) return null;
+
+  const accessType = String(
+    profile?.access_type || profile?.access_kind || profile?.subscription_status || ""
+  ).toLowerCase();
+  const hasExplicitTrial =
+    profile?.is_trial === true ||
+    Boolean(trialEndValue) ||
+    ["trial", "free_trial", "free-trial", "gratuito", "teste"].includes(accessType);
+  const hasExplicitPaidAccess =
+    profile?.is_trial === false ||
+    ["paid", "active_paid", "subscribed", "assinante", "pago"].includes(accessType);
+
+  const trialStartValue =
+    profile?.trial_started_at ||
+    profile?.trial_start_at ||
+    user?.email_confirmed_at ||
+    user?.confirmed_at ||
+    profile?.created_at ||
+    user?.created_at;
+  const inferredTrialLength = getCalendarDayDifference(trialStartValue, accessEndDate);
+  const isInitialPremiumTrial =
+    !hasExplicitPaidAccess &&
+    String(profile?.plan || "").toLowerCase() === "premium" &&
+    inferredTrialLength !== null &&
+    inferredTrialLength >= 0 &&
+    inferredTrialLength <= TRIAL_DAYS;
+
+  if (!hasExplicitTrial && !isInitialPremiumTrial) return null;
+
+  const remainingDifference = getCalendarDayDifference(getBrazilTodayISO(), accessEndDate);
+  if (remainingDifference === null || remainingDifference < 0) return null;
+
+  return {
+    daysRemaining: remainingDifference + 1,
+    expiresAt: accessEndDate,
+  };
 }
 
 function getAuthRedirectUrl(flow) {
@@ -3855,6 +3942,37 @@ function Blocked({ profile }) {
   );
 }
 
+function FreeTrialNotice({ details }) {
+  const isLastDay = details.daysRemaining === 1;
+  const dayLabel = details.daysRemaining === 1 ? "dia" : "dias";
+
+  return (
+    <section
+      className={`freeTrialNotice ${isLastDay ? "freeTrialNoticeLastDay" : ""}`}
+      role="status"
+      aria-live="polite"
+      aria-label="Período gratuito"
+    >
+      <div className="freeTrialNoticeIcon" aria-hidden="true">🎁</div>
+
+      <div className="freeTrialNoticeCopy">
+        <span>Seu período gratuito está ativo</span>
+        <strong>
+          {isLastDay
+            ? "Hoje é o seu último dia grátis"
+            : `Você ainda tem ${details.daysRemaining} dias grátis`}
+        </strong>
+        <p>Plano Premium liberado até {formatDateBR(details.expiresAt)}.</p>
+      </div>
+
+      <div className="freeTrialNoticeDays" aria-hidden="true">
+        <strong>{details.daysRemaining}</strong>
+        <span>{dayLabel}</span>
+      </div>
+    </section>
+  );
+}
+
 function Dashboard({ profile, user, onProfileChange }) {
   const [tournaments, setTournaments] = useState([]);
   const [trashTournaments, setTrashTournaments] = useState([]);
@@ -4249,6 +4367,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   });
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
+  const freeTrialDetails = getFreeTrialDetails(profile, user);
   const eventGroupKey = newName.trim().toLowerCase().replace(/\s+/g, "-") || null;
 
   const groupedTournaments = tournaments.reduce((groups, item) => {
@@ -5701,6 +5820,8 @@ setNewPublicInfo({
             </div>
             <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
           </section>
+
+          {freeTrialDetails ? <FreeTrialNotice details={freeTrialDetails} /> : null}
 
           {activePanel === "inicio" && (
             <>
