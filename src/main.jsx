@@ -2583,9 +2583,24 @@ function App() {
   const [authNotice, setAuthNotice] = useState(null);
   const activeUserIdRef = useRef(null);
 
+  async function reconcileOwnProfile() {
+    const { error } = await supabase.rpc("reconcile_my_profile");
+
+    // A função existe na correção de banco desta atualização. Enquanto ela
+    // ainda não tiver sido aplicada, o restante do fluxo continua funcionando
+    // normalmente e não exibe um erro técnico para o organizador.
+    if (error && !/reconcile_my_profile|function.*does not exist/i.test(`${error.message || ""} ${error.code || ""}`)) {
+      console.warn("Não foi possível concluir a preparação do perfil:", error);
+    }
+  }
+
   async function loadProfile(userId, { waitForAccess = false } = {}) {
     const attempts = waitForAccess ? 6 : 1;
     let lastProfile = null;
+
+    if (waitForAccess) {
+      await reconcileOwnProfile();
+    }
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const { data, error } = await supabase
@@ -2604,7 +2619,17 @@ function App() {
       } else if (data) {
         lastProfile = data;
         setProfile(data);
-        return data;
+
+        const status = String(data.status || "").toLowerCase();
+        const isStableProfile =
+          status === "active" ||
+          status === "blocked" ||
+          status === "expired" ||
+          isProfilePendingEmailConfirmation(data);
+
+        if (!waitForAccess || isStableProfile || attempt === attempts - 1) {
+          return data;
+        }
       } else if (!waitForAccess) {
         setProfile(null);
         return null;
@@ -2812,9 +2837,11 @@ function App() {
   const today = getBrazilTodayISO();
   const expired = Boolean(profile.expires_at && profile.expires_at < today);
   const hasActivePeriod = !profile.expires_at || profile.expires_at >= today;
-  const isActive = profile.status === "active";
+  const status = String(profile.status || "").toLowerCase();
+  const isActive = status === "active";
+  const isExplicitlyBlocked = ["blocked", "suspended", "inactive", "expired"].includes(status);
 
-  if (!isActive && !expired && profile.status !== "blocked") {
+  if (!isActive && !expired && !isExplicitlyBlocked) {
     return <AccessPreparing onRetry={refreshProfile} />;
   }
 
@@ -3785,12 +3812,20 @@ function AccessPreparing({ onRetry }) {
     }
   }
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void handleRetry();
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   return (
     <div className="accessPreparingPage">
       <div className="accessPreparingCard">
         <div className="accessPreparingSpinner" aria-hidden="true" />
-        <h1>Estamos conferindo seu acesso</h1>
-        <p>Seu cadastro está em análise ou aguardando uma liberação. Esta tela não será atualizada sozinha.</p>
+        <h1>Estamos finalizando seu acesso</h1>
+        <p>Estamos concluindo a criação do seu perfil. Tentamos atualizar automaticamente; se necessário, você também pode conferir o status abaixo.</p>
         <div className="accessPreparingActions">
           <button type="button" onClick={handleRetry} disabled={retrying}>
             {retrying ? "Conferindo..." : "Atualizar status"}
