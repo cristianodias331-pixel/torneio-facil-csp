@@ -81,6 +81,63 @@ function getPublicShareMessage(publicId) {
 ${url}`;
 }
 
+const USER_APP_STATE_STORAGE_PREFIX = "torneio360:user-app-state:v2:";
+
+function getUserAppStateStorageKey(userId) {
+  return `${USER_APP_STATE_STORAGE_PREFIX}${userId}`;
+}
+
+function getAppStateTimestamp(state) {
+  const time = Date.parse(state?.updated_at || "");
+  return Number.isFinite(time) ? time : 0;
+}
+
+function readLocalUserAppState(userId) {
+  if (!userId) return null;
+
+  const key = getUserAppStateStorageKey(userId);
+  const states = [];
+
+  try {
+    const sessionValue = sessionStorage.getItem(key);
+    if (sessionValue) states.push(JSON.parse(sessionValue));
+  } catch (error) {
+    console.warn("Não foi possível ler a posição salva nesta aba", error);
+  }
+
+  try {
+    const localValue = localStorage.getItem(key);
+    if (localValue) states.push(JSON.parse(localValue));
+  } catch (error) {
+    console.warn("Não foi possível ler a posição salva neste dispositivo", error);
+  }
+
+  return states
+    .filter((state) => state && typeof state === "object")
+    .sort((first, second) => getAppStateTimestamp(second) - getAppStateTimestamp(first))[0] || null;
+}
+
+function saveLocalUserAppState(userId, state) {
+  if (!userId || !state) return;
+
+  const serialized = JSON.stringify(state);
+  const key = getUserAppStateStorageKey(userId);
+
+  try {
+    // sessionStorage recupera a posição imediatamente ao voltar para esta aba.
+    sessionStorage.setItem(key, serialized);
+  } catch (error) {
+    console.warn("Não foi possível salvar a posição nesta aba", error);
+  }
+
+  try {
+    // localStorage é o backup caso o navegador descarregue a aba antes do upsert.
+    localStorage.setItem(key, serialized);
+  } catch (error) {
+    console.warn("Não foi possível salvar a posição neste dispositivo", error);
+  }
+}
+
 async function copyToClipboard(text) {
   try {
     await navigator.clipboard.writeText(text);
@@ -2390,6 +2447,7 @@ function App() {
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const activeUserIdRef = useRef(null);
 
   async function loadProfile(userId, { waitForAccess = false } = {}) {
     let lastProfile = null;
@@ -2429,6 +2487,7 @@ function App() {
     async function init() {
       const { data } = await supabase.auth.getSession();
       setSession(data.session);
+      activeUserIdRef.current = data.session?.user?.id || null;
 
       if (data.session?.user?.id) {
         await loadProfile(data.session.user.id, { waitForAccess: true });
@@ -2440,15 +2499,36 @@ function App() {
     init();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      async (event, newSession) => {
+        const previousUserId = activeUserIdRef.current;
+        const nextUserId = newSession?.user?.id || null;
         setSession(newSession);
 
-        if (newSession?.user?.id) {
-          setLoading(true);
-          await loadProfile(newSession.user.id, { waitForAccess: true });
-          setLoading(false);
-        } else {
+        // A renovação automática de token acontece ao voltar para a aba. Ela
+        // não deve desmontar o Dashboard, pois isso apagava as abas abertas.
+        if (event === "TOKEN_REFRESHED" && previousUserId === nextUserId) return;
+
+        if (!nextUserId) {
+          activeUserIdRef.current = null;
           setProfile(null);
+          setLoading(false);
+          return;
+        }
+
+        activeUserIdRef.current = nextUserId;
+        const isSameUser = previousUserId === nextUserId;
+
+        if (isSameUser) {
+          if (event === "USER_UPDATED") {
+            await loadProfile(nextUserId, { waitForAccess: false });
+          }
+          return;
+        }
+
+        if (nextUserId) {
+          setLoading(true);
+          await loadProfile(nextUserId, { waitForAccess: true });
+          setLoading(false);
         }
       }
     );
@@ -3225,8 +3305,138 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [restoredTournamentId, setRestoredTournamentId] = useState(null);
   const appStateSaveTimerRef = useRef(null);
   const restoredAppStateRef = useRef(false);
-  const initialUrlSearchRef = useRef(window.location.search);
   const appStateRestoreReadyRef = useRef(false);
+  const pendingScrollRestoreRef = useRef(null);
+  const scrollRestoreTimersRef = useRef([]);
+  const initialAppRouteRef = useRef(`${window.location.pathname}${window.location.search}${window.location.hash || ""}`);
+  const initialRouteIsExplicitRef = useRef(isExplicitAppRoute(initialAppRouteRef.current));
+
+  function getRelativeAppRoute() {
+    return `${window.location.pathname}${window.location.search}${window.location.hash || ""}`;
+  }
+
+  function isExplicitAppRoute(route) {
+    try {
+      const url = new URL(route, window.location.origin);
+      const params = url.searchParams;
+
+      return Boolean(
+        params.get("torneio") ||
+        params.get("tab") ||
+        params.get("partidas") ||
+        params.get("perfil") ||
+        (params.get("aba") && params.get("aba") !== "inicio")
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  function getStateRoute(state) {
+    if (!state?.last_url || typeof state.last_url !== "string") return null;
+
+    try {
+      const url = new URL(state.last_url, window.location.origin);
+      if (url.origin !== window.location.origin) return null;
+
+      if (!url.searchParams.get("aba") && state.last_panel) url.searchParams.set("aba", state.last_panel);
+      if (!url.searchParams.get("torneio") && state.last_tournament_id) url.searchParams.set("torneio", state.last_tournament_id);
+      if (!url.searchParams.get("tab") && state.last_tournament_tab) url.searchParams.set("tab", state.last_tournament_tab);
+      if (!url.searchParams.get("partidas") && state.last_matches_tab) url.searchParams.set("partidas", state.last_matches_tab);
+      if (!url.searchParams.get("perfil") && state.last_profile_subtab) url.searchParams.set("perfil", state.last_profile_subtab);
+
+      return `${url.pathname}${url.search}${url.hash || ""}`;
+    } catch {
+      return null;
+    }
+  }
+
+  function areAppRoutesEqual(firstRoute, secondRoute) {
+    try {
+      const first = new URL(firstRoute, window.location.origin);
+      const second = new URL(secondRoute, window.location.origin);
+
+      if (first.pathname !== second.pathname || first.hash !== second.hash) return false;
+
+      return ["aba", "torneio", "tab", "partidas", "perfil"].every(
+        (key) => first.searchParams.get(key) === second.searchParams.get(key)
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  function clearPendingScrollRestore() {
+    scrollRestoreTimersRef.current.forEach((timer) => clearTimeout(timer));
+    scrollRestoreTimersRef.current = [];
+    pendingScrollRestoreRef.current = null;
+  }
+
+  function applyPendingScrollRestore() {
+    const pending = pendingScrollRestoreRef.current;
+    if (!pending || Date.now() > pending.expiresAt) {
+      pendingScrollRestoreRef.current = null;
+      return;
+    }
+
+    const scrollToSavedPosition = () => {
+      if (pendingScrollRestoreRef.current?.token !== pending.token) return;
+      window.scrollTo({ top: pending.top, left: 0, behavior: "auto" });
+    };
+
+    if (typeof window.requestAnimationFrame === "function") {
+      window.requestAnimationFrame(scrollToSavedPosition);
+    } else {
+      scrollToSavedPosition();
+    }
+  }
+
+  function queueScrollRestore(scrollY) {
+    const top = Math.max(0, Math.round(Number(scrollY) || 0));
+    const token = `${Date.now()}:${top}`;
+
+    scrollRestoreTimersRef.current.forEach((timer) => clearTimeout(timer));
+    scrollRestoreTimersRef.current = [];
+    pendingScrollRestoreRef.current = {
+      top,
+      token,
+      expiresAt: Date.now() + 5000,
+    };
+
+    [0, 160, 500, 1100, 2200, 4200].forEach((delay) => {
+      const timer = setTimeout(applyPendingScrollRestore, delay);
+      scrollRestoreTimersRef.current.push(timer);
+    });
+  }
+
+  function applySavedAppState(state, { restoreRoute = false } = {}) {
+    if (!state || typeof state !== "object") return false;
+
+    const savedRoute = getStateRoute(state);
+    const initialRoute = initialAppRouteRef.current;
+    const routeMatchesInitial = savedRoute && areAppRoutesEqual(savedRoute, initialRoute);
+    const canRestoreDetails = restoreRoute || routeMatchesInitial;
+
+    if (restoreRoute && savedRoute) {
+      window.history.replaceState(null, "", savedRoute);
+    }
+
+    if (!canRestoreDetails) return false;
+
+    if (state.last_panel) setActivePanel(state.last_panel);
+    if (state.last_profile_subtab) setProfileSubtab(state.last_profile_subtab);
+    if (state.last_circuit_id) setExpandedCircuitId(state.last_circuit_id);
+
+    const currentParams = new URLSearchParams(window.location.search);
+    const tournamentId = state.last_tournament_id || currentParams.get("torneio");
+    if (tournamentId) setRestoredTournamentId(tournamentId);
+
+    if (state.scroll_y !== undefined && state.scroll_y !== null) {
+      queueScrollRestore(state.scroll_y);
+    }
+
+    return true;
+  }
 
   function updateAppUrl(next = {}) {
     const params = new URLSearchParams(window.location.search);
@@ -3279,15 +3489,13 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   useEffect(() => {
     if (restoredAppStateRef.current) return;
 
-    if (initialUrlSearchRef.current) {
-      restoredAppStateRef.current = true;
-      appStateRestoreReadyRef.current = true;
-      return;
-    }
-
     let cancelled = false;
 
     async function restoreUserAppState() {
+      const localState = readLocalUserAppState(user.id);
+      const restoreRoute = !initialRouteIsExplicitRef.current;
+      const restoredLocally = applySavedAppState(localState, { restoreRoute });
+
       try {
         const { data, error } = await supabase
           .from("user_app_state")
@@ -3297,18 +3505,14 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
         if (cancelled || error || !data?.last_url) return;
 
-        window.history.replaceState(null, "", data.last_url);
+        // A cópia local é síncrona e costuma ser a mais recente ao voltar para
+        // a mesma aba. O Supabase continua como recuperação entre dispositivos.
+        if (!restoredLocally) {
+          applySavedAppState(data, { restoreRoute });
+        }
 
-        if (data.last_panel) setActivePanel(data.last_panel);
-        if (data.last_profile_subtab) setProfileSubtab(data.last_profile_subtab);
-        if (data.last_circuit_id) setExpandedCircuitId(data.last_circuit_id);
-
-        const params = new URLSearchParams(window.location.search);
-        const tournamentId = data.last_tournament_id || params.get("torneio");
-        if (tournamentId) setRestoredTournamentId(tournamentId);
-
-        if (data.scroll_y) {
-          setTimeout(() => window.scrollTo({ top: Number(data.scroll_y) || 0, behavior: "auto" }), 250);
+        if (!localState || getAppStateTimestamp(data) > getAppStateTimestamp(localState)) {
+          saveLocalUserAppState(user.id, data);
         }
       } catch (error) {
         console.error("Erro ao restaurar posição do usuário", error);
@@ -3327,11 +3531,16 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   useEffect(() => {
     const saveNow = () => saveUserAppState();
+    const saveWhenHidden = () => {
+      if (document.visibilityState === "hidden") saveNow();
+    };
+    const saveAfterScroll = () => scheduleUserAppStateSave();
     const interval = setInterval(saveNow, 10000);
     window.addEventListener("pagehide", saveNow);
     window.addEventListener("beforeunload", saveNow);
     window.addEventListener("blur", saveNow);
-    document.addEventListener("visibilitychange", saveNow);
+    window.addEventListener("scroll", saveAfterScroll, { passive: true });
+    document.addEventListener("visibilitychange", saveWhenHidden);
 
     return () => {
       saveNow();
@@ -3339,14 +3548,33 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       window.removeEventListener("pagehide", saveNow);
       window.removeEventListener("beforeunload", saveNow);
       window.removeEventListener("blur", saveNow);
-      document.removeEventListener("visibilitychange", saveNow);
+      window.removeEventListener("scroll", saveAfterScroll);
+      document.removeEventListener("visibilitychange", saveWhenHidden);
     };
   }, [activePanel, selected?.id, expandedCircuitId, profileSubtab, user.id]);
+
+  useEffect(() => {
+    applyPendingScrollRestore();
+  }, [activePanel, selected?.id, tournaments.length]);
+
+  useEffect(() => () => clearPendingScrollRestore(), []);
+
+  useEffect(() => {
+    if (!appStateRestoreReadyRef.current) return;
+    scheduleUserAppStateSave({
+      profileSubtab,
+      circuitId: expandedCircuitId,
+    });
+  }, [profileSubtab, expandedCircuitId]);
 
   async function saveUserAppState(extra = {}) {
     if (!appStateRestoreReadyRef.current) return;
 
     const params = new URLSearchParams(window.location.search);
+    const pendingScroll = pendingScrollRestoreRef.current;
+    const scrollY = pendingScroll && Date.now() <= pendingScroll.expiresAt
+      ? pendingScroll.top
+      : Math.max(0, Math.round(window.scrollY || 0));
     const payload = {
       user_id: user.id,
       last_url: `${window.location.pathname}${window.location.search}${window.location.hash || ""}`,
@@ -3356,9 +3584,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       last_matches_tab: extra.matchesTab || params.get("partidas"),
       last_circuit_id: extra.circuitId ?? expandedCircuitId,
       last_profile_subtab: extra.profileSubtab || profileSubtab,
-      scroll_y: Math.max(0, Math.round(window.scrollY || 0)),
+      scroll_y: scrollY,
       updated_at: new Date().toISOString(),
     };
+
+    saveLocalUserAppState(user.id, payload);
 
     try {
       const { error } = await supabase.from("user_app_state").upsert(payload, { onConflict: "user_id" });
@@ -4643,6 +4873,15 @@ setNewPublicInfo({
     setSelected(null);
   }
 
+  function rememberTournamentNavigation({ tournamentId, tournamentTab, matchesTab }) {
+    saveUserAppState({
+      activePanel: "criar",
+      selectedTournamentId: tournamentId,
+      tournamentTab,
+      matchesTab,
+    });
+  }
+
   if (selected) {
     return (
       <TournamentErrorBoundary tournamentId={selected.id} onBack={closeSelectedTournament}>
@@ -4652,6 +4891,7 @@ setNewPublicInfo({
           userId={user.id}
           onBack={closeSelectedTournament}
           onSave={saveTournament}
+          onNavigationStateChange={rememberTournamentNavigation}
         />
       </TournamentErrorBoundary>
     );
@@ -6109,7 +6349,7 @@ class TournamentErrorBoundary extends React.Component {
   }
 }
 
-function TournamentScreen({ tournament, userId, onBack, onSave }) {
+function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStateChange }) {
   const config = modalityConfig[tournament.type];
 
   if (!config) {
@@ -6165,6 +6405,15 @@ function TournamentScreen({ tournament, userId, onBack, onSave }) {
     params.set("partidas", next.activeMatchesTab || activeMatchesTab);
     const nextUrl = `${window.location.pathname}?${params.toString()}${window.location.hash || ""}`;
     window.history.replaceState(null, "", nextUrl);
+
+    if (onNavigationStateChange) {
+      onNavigationStateChange({
+        tournamentId: tournament.id,
+        tournamentTab: params.get("tab"),
+        matchesTab: params.get("partidas"),
+      });
+      return;
+    }
 
     try {
       const { error } = await supabase.from("user_app_state").upsert({
