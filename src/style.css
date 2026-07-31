@@ -12857,3 +12857,455 @@ button.removePhotoBtn:hover {
 .playAppShell .circuitRankingBox td:nth-child(2) {
   text-align: left !important;
 }
+
+/* =========================================================
+   LINK PÚBLICO — CONTENÇÃO E LEITURA EM SMARTPHONES
+   Este bloco final usa somente classes da página pública para
+   prevalecer sobre regras antigas sem afetar o painel do organizador.
+========================================================= */
+.publicPage,
+.publicPage .publicContent,
+.publicPage .publicContent > *,
+.publicPage .card,
+.publicPage .roundCard,
+.publicPage .publicBracketColumn {
+  min-width: 0 !important;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.publicPage {
+  overflow-x: clip;
+}
+
+.publicPage .publicTitleBlock h1,
+.publicPage .publicTitleBlock p,
+.publicPage .publicInfoGrid span,
+.publicPage .publicOrganizerLinks a,
+.publicPage .publicOrganizerLinks span,
+.publicPage .publicAthleteList span {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.rankingScrollHint {
+  display: none;
+}
+
+.publicPage .rankingTableScroll {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 14px;
+  outline-offset: 3px;
+}
+
+.publicPage .rankingTable {
+  width: 100%;
+  table-layout: auto;
+}
+
+.publicPage .rankingTable th,
+.publicPage .rankingTable td {
+  vertical-align: middle;
+  text-align: center !important;
+}
+
+.publicPage .rankingTable .rankingNameCell {
+  min-width: 170px;
+  text-align: left !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.publicPage .rankingTable .rankingRankCell {
+  min-width: 46px;
+}
+
+.publicPage .rankingTable .rankingStatCell {
+  min-width: 74px;
+}
+
+.publicPage .publicCupBrackets {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  gap: 18px !important;
+  width: 100% !important;
+  overflow: visible !important;
+}
+
+.publicPage .publicBracketColumn {
+  width: 100% !important;
+  flex: none !important;
+}
+
+.publicPage .publicBracketTitle {
+  display: block !important;
+  width: 100% !important;
+  margin: 0 0 12px !important;
+  padding: 12px 14px !important;
+  border-radius: 15px !important;
+  background: #0f172a !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  line-height: 1.2 !important;
+  box-sizing: border-box !important;
+}
+
+.publicPage .publicBracketColumn--repechage .publicBracketTitle {
+  background: #475569 !important;
+}
+
+.publicPage .publicBracketColumn .publicBracketRound {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  margin: 0 0 14px !important;
+  padding: 14px !important;
+  overflow: visible !important;
+}
+
+.publicPage .publicBracketRound > h3 {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.publicPage .readOnlyRoundCard > .gameCard.publicReadOnlyGame,
+.publicPage .publicBracketGame {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) !important;
+  grid-template-areas:
+    "court court court"
+    "team1 score team2" !important;
+  align-items: center !important;
+  column-gap: 12px !important;
+  row-gap: 10px !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 14px !important;
+  box-sizing: border-box !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTopLine,
+.publicPage .publicBracketGame > strong {
+  grid-area: court !important;
+  display: flex !important;
+  justify-self: start !important;
+  align-items: center !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams,
+.publicPage .publicBracketGame .publicBracketTeams {
+  display: contents !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams > div,
+.publicPage .publicBracketGame .publicBracketTeams > div {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 52px !important;
+  padding: 10px 12px !important;
+  border-radius: 13px !important;
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  font-size: 14px !important;
+  font-weight: 850 !important;
+  line-height: 1.28 !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  box-sizing: border-box !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams > div:first-child,
+.publicPage .publicBracketGame .publicBracketTeams > div:first-child {
+  grid-area: team1 !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams > div:last-child,
+.publicPage .publicBracketGame .publicBracketTeams > div:last-child {
+  grid-area: team2 !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams > span,
+.publicPage .publicBracketGame .publicBracketTeams > span {
+  display: none !important;
+}
+
+.publicPage .readOnlyRoundCard .publicReadOnlyScoreRow,
+.publicPage .publicBracketScore {
+  grid-area: score !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  width: auto !important;
+  min-width: 104px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+}
+
+.publicPage .publicReadOnlyScoreRow .publicScoreValue {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  min-width: 42px;
+  height: 34px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 14px;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.publicPage .publicReadOnlyScoreRow > span:not(.publicScorePending),
+.publicPage .publicBracketScore > strong {
+  color: #0f172a !important;
+  font-size: 16px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+.publicPage .publicScorePending {
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .publicPage .publicHeader {
+    position: static !important;
+    padding: 14px 16px !important;
+  }
+
+  .publicPage .publicHeaderWithLogo {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    grid-template-areas:
+      "brand badge"
+      "title title" !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+
+  .publicPage .publicBrandRow {
+    grid-area: brand;
+    min-width: 0 !important;
+    gap: 8px !important;
+  }
+
+  .publicPage .publicTitleBlock {
+    grid-area: title;
+    min-width: 0 !important;
+  }
+
+  .publicPage .publicBadge {
+    grid-area: badge;
+    justify-self: end;
+    max-width: 150px;
+    white-space: normal !important;
+    text-align: center;
+  }
+
+  .publicPage .publicTitleBlock h1 {
+    font-size: clamp(20px, 5.5vw, 28px) !important;
+    line-height: 1.1 !important;
+  }
+
+  .publicPage .publicTitleBlock p {
+    line-height: 1.4 !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .publicPage .publicContent {
+    width: calc(100% - 20px) !important;
+    padding: 12px 0 max(28px, calc(18px + env(safe-area-inset-bottom))) !important;
+  }
+
+  .publicPage .publicBrandRow .brandTaglineOnly {
+    display: none !important;
+  }
+
+  .publicPage .publicBrandRow .beachLogo,
+  .publicPage .publicBrandRow .torneio360Logo {
+    width: 44px !important;
+    height: 44px !important;
+    transform: none !important;
+  }
+
+  .publicPage .publicBadge {
+    min-height: 36px;
+    padding: 7px 9px !important;
+    font-size: 10.5px !important;
+  }
+
+  .publicPage .card {
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .publicPage .cardTitleRow {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .publicPage .readOnlyBadge {
+    max-width: 100%;
+    min-height: 32px;
+    text-align: center;
+  }
+
+  .publicPage .publicInfoGrid,
+  .publicPage .publicOrganizerLinks,
+  .publicPage .publicAthletesGrid,
+  .publicPage .publicGroupRankings,
+  .publicPage .cupRankingSplit {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .publicPage .publicInfoGrid span,
+  .publicPage .publicOrganizerLinks a,
+  .publicPage .publicOrganizerLinks span {
+    width: 100%;
+    min-height: 44px;
+    align-items: center;
+    box-sizing: border-box;
+  }
+
+  .publicPage .publicOrganizerHeader {
+    align-items: flex-start;
+  }
+
+  .publicPage .publicTournamentTabs,
+  .publicPage .matchesSubTabs {
+    min-width: 0 !important;
+  }
+
+  .publicPage .publicTournamentTabs button,
+  .publicPage .matchesSubTabs button {
+    min-width: 0 !important;
+    min-height: 44px !important;
+    overflow-wrap: anywhere;
+  }
+
+  .publicPage .rankingScrollHint {
+    display: block;
+    margin: 0 0 8px;
+    color: #64748b;
+    font-size: 12px;
+    font-weight: 750;
+  }
+
+  .publicPage .rankingTableScroll {
+    border: 1px solid #dbe7f3;
+  }
+
+  .publicPage .rankingTable {
+    min-width: 540px;
+    margin: 0 !important;
+  }
+
+  .publicPage .rankingTable th,
+  .publicPage .rankingTable td {
+    padding: 11px 10px !important;
+    white-space: nowrap;
+  }
+
+  .publicPage .rankingTable .rankingNameCell {
+    min-width: 165px;
+    white-space: normal;
+  }
+
+  .publicPage .publicBracketColumn .publicBracketRound {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding: 12px !important;
+  }
+
+  .publicPage .readOnlyRoundCard > .gameCard.publicReadOnlyGame,
+  .publicPage .publicBracketGame {
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "court"
+      "team1"
+      "score"
+      "team2" !important;
+    row-gap: 9px !important;
+    padding: 12px !important;
+  }
+
+  .publicPage .publicReadOnlyGame .publicGameTopLine,
+  .publicPage .publicBracketGame > strong {
+    justify-self: stretch !important;
+  }
+
+  .publicPage .publicReadOnlyGame .publicGameTopLine strong,
+  .publicPage .publicBracketGame > strong {
+    max-width: 100% !important;
+    white-space: normal !important;
+  }
+
+  .publicPage .publicReadOnlyGame .publicGameTeams > div,
+  .publicPage .publicBracketGame .publicBracketTeams > div {
+    min-height: 48px !important;
+    font-size: 13px !important;
+  }
+
+  .publicPage .readOnlyRoundCard .publicReadOnlyScoreRow,
+  .publicPage .publicBracketScore {
+    justify-self: stretch !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 38px;
+  }
+}
+
+@media (max-width: 390px) {
+  .publicPage .publicHeader {
+    padding-right: 12px !important;
+    padding-left: 12px !important;
+  }
+
+  .publicPage .publicHeaderWithLogo {
+    gap: 8px !important;
+  }
+
+  .publicPage .publicBadge {
+    max-width: 128px;
+    font-size: 10px !important;
+  }
+
+  .publicPage .publicTournamentTabs {
+    padding: 7px !important;
+    gap: 6px !important;
+  }
+
+  .publicPage .publicTournamentTabs button {
+    padding: 8px 5px !important;
+    font-size: 11px !important;
+  }
+}
