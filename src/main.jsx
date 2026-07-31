@@ -81,6 +81,24 @@ function getPublicShareMessage(publicId) {
 ${url}`;
 }
 
+function readPublicViewStorage(key, fallbackValue) {
+  try {
+    return sessionStorage.getItem(key) || fallbackValue;
+  } catch (error) {
+    // Links públicos também precisam funcionar quando o navegador bloqueia
+    // o armazenamento da sessão, como em algumas visualizações dentro de apps.
+    return fallbackValue;
+  }
+}
+
+function savePublicViewStorage(key, value) {
+  try {
+    sessionStorage.setItem(key, value);
+  } catch (error) {
+    // A aba continua navegável mesmo sem persistir a última subaba aberta.
+  }
+}
+
 const USER_APP_STATE_STORAGE_PREFIX = "torneio360:user-app-state:v2:";
 
 function getUserAppStateStorageKey(userId) {
@@ -7159,7 +7177,10 @@ return (
             {cupGroupRankings.length > 0 && (
               <div className="groupsPreviewBox">
                 <h3>Classificação dos grupos</h3>
-                <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+                <CupGroupRankingView
+                  groupRankings={cupGroupRankings}
+                  rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                />
                 {isCopinhaData(data) && (
                   <CopinhaTieBreakPanel
                     groupRankings={cupGroupRankings}
@@ -7666,7 +7687,7 @@ function ScheduleView({
   readOnly = false,
 }) {
   return (
-    <div className={`schedule ${readOnly ? "readOnlySchedule" : ""}`}>
+    <div className={`schedule ${readOnly ? "readOnlySchedule publicSchedule" : ""}`}>
       {!readOnly ? (
         <VoiceRepeatSelector
           voiceRepeat={voiceRepeat}
@@ -7675,7 +7696,7 @@ function ScheduleView({
       ) : null}
 
       {schedule.map((round, roundIndex) => (
-        <div className={`roundCard ${readOnly ? "readOnlyRoundCard" : ""}`} key={roundIndex}>
+        <div className={`roundCard ${readOnly ? "readOnlyRoundCard publicReadOnlyRound" : ""}`} key={roundIndex}>
           <div className="roundHeader">
             <h3>Rodada {roundIndex + 1}</h3>
 
@@ -7708,23 +7729,39 @@ function ScheduleView({
           {round.map((game, gameIndex) => {
             const winnerSide = getScoreWinnerSide(game, winningScore);
             const isFinished = winnerSide !== null;
+            const hasPublicScore = readOnly && game.s1 !== "" && game.s1 != null && game.s2 !== "" && game.s2 != null;
 
             return (
-            <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={gameIndex}>
-              <div className="gameTopLine">
+            <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"} ${readOnly ? "publicReadOnlyGame" : ""}`} key={gameIndex}>
+              <div className={`gameTopLine ${readOnly ? "publicGameTopLine" : ""}`}>
                 <strong>
                   {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
                   Quadra {game.court}
                 </strong>
               </div>
 
-              <div className="gameTeams">
+              <div className={`gameTeams ${readOnly ? "publicGameTeams" : ""}`}>
                 <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
                 <span>x</span>
                 <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
               </div>
 
-              <div className="scoreRow">
+              <div
+                className={`scoreRow ${readOnly ? "publicReadOnlyScoreRow" : ""}`}
+                aria-label={readOnly ? (hasPublicScore ? `Placar: ${game.s1} a ${game.s2}` : "Placar ainda não informado") : undefined}
+              >
+                {readOnly ? (
+                  hasPublicScore ? (
+                    <>
+                      <output className="publicScoreValue">{game.s1}</output>
+                      <span aria-hidden="true">—</span>
+                      <output className="publicScoreValue">{game.s2}</output>
+                    </>
+                  ) : (
+                    <span className="publicScorePending">Aguardando placar</span>
+                  )
+                ) : (
+                  <>
            <input
   type="number"
   min="0"
@@ -7750,6 +7787,8 @@ function ScheduleView({
   readOnly={readOnly}
   disabled={readOnly}
 />
+                  </>
+                )}
               </div>
 
               {!readOnly ? (
@@ -7894,31 +7933,38 @@ function RankingTable({ title, rows, rankingCriteria }) {
     <div>
       <h3>{title}</h3>
 
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Nome</th>
-            {criteria.order.map((key) => (
-              <th key={key}>{getRankingColumnLabel(key)}</th>
-            ))}
-            <th>Jogos</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {rows.map((p, i) => (
-            <tr key={p.id}>
-              <td>{podium(i)}</td>
-              <td>{p.name}</td>
+      <p className="rankingScrollHint" aria-hidden="true">Deslize a tabela para ver todos os dados →</p>
+      <div
+        className="rankingTableScroll"
+        tabIndex="0"
+        aria-label={`Tabela ${title}; deslize horizontalmente para ver todas as colunas`}
+      >
+        <table className="rankingTable">
+          <thead>
+            <tr>
+              <th className="rankingRankCell">#</th>
+              <th className="rankingNameCell">Nome</th>
               {criteria.order.map((key) => (
-                <td key={key}>{p[key]}</td>
+                <th className="rankingStatCell" key={key}>{getRankingColumnLabel(key)}</th>
               ))}
-              <td>{p.played}</td>
+              <th className="rankingStatCell">Jogos</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {rows.map((p, i) => (
+              <tr key={p.id}>
+                <td className="rankingRankCell">{podium(i)}</td>
+                <td className="rankingNameCell">{p.name}</td>
+                {criteria.order.map((key) => (
+                  <td className="rankingStatCell" key={key}>{p[key]}</td>
+                ))}
+                <td className="rankingStatCell">{p.played}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }
@@ -7971,13 +8017,13 @@ function CopinhaTieBreakPanel({
   );
 }
 
-function CupGroupRankingView({ groupRankings, rankingCriteria }) {
+function CupGroupRankingView({ groupRankings, rankingCriteria, className = "" }) {
   const effectiveCriteria = groupRankings?.[0]?.rankingMode === "copinha"
     ? "wins_balance_points"
     : rankingCriteria;
 
   return (
-    <div className="twoCols">
+    <div className={`twoCols ${className}`.trim()}>
       {groupRankings.map((group) => (
         <RankingTable
           key={group.id}
@@ -8287,16 +8333,16 @@ function getRegisteredAthletesForPublic(data, config) {
 function PublicTournamentScreen({ tournament }) {
   const publicTabStorageKey = `publicTournamentTab:${tournament.public_id || tournament.id}`;
   const publicMatchesTabStorageKey = `publicTournamentMatchesTab:${tournament.public_id || tournament.id}`;
-  const [activePublicTab, setActivePublicTabState] = useState(() => sessionStorage.getItem(publicTabStorageKey) || "participantes");
-  const [activePublicMatchesTab, setActivePublicMatchesTabState] = useState(() => sessionStorage.getItem(publicMatchesTabStorageKey) || "grupos");
+  const [activePublicTab, setActivePublicTabState] = useState(() => readPublicViewStorage(publicTabStorageKey, "participantes"));
+  const [activePublicMatchesTab, setActivePublicMatchesTabState] = useState(() => readPublicViewStorage(publicMatchesTabStorageKey, "grupos"));
 
   function setActivePublicTab(tab) {
-    sessionStorage.setItem(publicTabStorageKey, tab);
+    savePublicViewStorage(publicTabStorageKey, tab);
     setActivePublicTabState(tab);
   }
 
   function setActivePublicMatchesTab(tab) {
-    sessionStorage.setItem(publicMatchesTabStorageKey, tab);
+    savePublicViewStorage(publicMatchesTabStorageKey, tab);
     setActivePublicMatchesTabState(tab);
   }
   const config = modalityConfig[tournament.type];
@@ -8436,7 +8482,11 @@ function PublicTournamentScreen({ tournament }) {
             {cupGroupRankings.length > 0 ? (
               <div className="groupsPreviewBox">
                 <h3>Classificação dos grupos</h3>
-                <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+                <CupGroupRankingView
+                  className="publicGroupRankings"
+                  groupRankings={cupGroupRankings}
+                  rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                />
               </div>
             ) : (
               <p>Os grupos ainda não foram gerados pelo organizador.</p>
@@ -8467,7 +8517,12 @@ function PublicTournamentScreen({ tournament }) {
 
           {isCup ? (
             <div style={{ display: activePublicMatchesTab === "chaves" ? undefined : "none" }}>
-              {!currentBrackets ? <p>As chaves finais ainda não foram geradas pelo organizador.</p> : <PublicCupBracketView groupedBrackets={{ main: currentBrackets.main, repechage: [] }} />}
+              {!currentBrackets ? <p>As chaves finais ainda não foram geradas pelo organizador.</p> : (
+                <PublicCupBracketView
+                  groupedBrackets={{ main: currentBrackets.main, repechage: [] }}
+                  mainTitle={data.cupConfig?.mainBracketName || "Chave principal"}
+                />
+              )}
             </div>
           ) : null}
 
@@ -8476,7 +8531,12 @@ function PublicTournamentScreen({ tournament }) {
               {!currentBrackets
                 ? <p>A disputa paralela ainda não foi gerada pelo organizador.</p>
                 : currentBrackets.repechage?.length > 0
-                  ? <PublicCupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} />
+                  ? (
+                    <PublicCupBracketView
+                      groupedBrackets={{ main: [], repechage: currentBrackets.repechage }}
+                      repechageTitle={data.cupConfig?.repechageName || "Disputa paralela"}
+                    />
+                  )
                   : <p>Esta Copinha de 2 grupos não possui chave de consolação.</p>}
             </div>
           ) : null}
@@ -8511,54 +8571,6 @@ function PublicTournamentScreen({ tournament }) {
           )}
         </section>
 
-        {isCup ? (
-          <>
-            <section className="card">
-              <h2>Classificação dos grupos</h2>
-
-              <CupGroupRankingView
-                groupRankings={cupGroupRankings}
-                rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-              />
-            </section>
-
-            <section className="card">
-              <h2>Chaves finais</h2>
-
-              {!currentBrackets ? (
-                <p>As chaves finais ainda não foram geradas pelo organizador.</p>
-              ) : (
-                <>
-                  <PublicCupBracketView groupedBrackets={currentBrackets} />
-
-                  <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
-
-                  {isCopinhaData(data) && consolationCupPodium.length > 0 && (
-                    <div className="parallelRankingBox">
-                      <CupPodiumView
-                        podium={consolationCupPodium}
-                        title={data.cupConfig?.repechageName || "Consolação"}
-                        variant="parallel"
-                      />
-                    </div>
-                  )}
-
-                  {!isCopinhaData(data) && parallelRanking.length > 0 && (
-                    <div className="parallelRankingBox">
-                      <h3>Ranking da {data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
-
-                      <RankingTable
-                        title="Classificação"
-                        rows={parallelRanking}
-                        rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-                      />
-                    </div>
-                  )}
-                </>
-              )}
-            </section>
-          </>
-        ) : null}
       </main>
     </div>
   );
@@ -8599,37 +8611,58 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
   );
 }
 
-function PublicCupBracketView({ groupedBrackets }) {
+function PublicCupBracketView({
+  groupedBrackets,
+  mainTitle = "Chave principal",
+  repechageTitle = "Disputa paralela",
+}) {
+  const mainRounds = Array.isArray(groupedBrackets?.main) ? groupedBrackets.main : [];
+  const repechageRounds = Array.isArray(groupedBrackets?.repechage) ? groupedBrackets.repechage : [];
+
+  if (mainRounds.length === 0 && repechageRounds.length === 0) return null;
+
   return (
-    <div className="cupBrackets">
-      <PublicBracketColumn rounds={groupedBrackets.main} />
-      <PublicBracketColumn rounds={groupedBrackets.repechage} />
+    <div className="cupBrackets publicCupBrackets">
+      {mainRounds.length > 0 ? (
+        <PublicBracketColumn
+          rounds={mainRounds}
+          title={mainRounds[0]?.bracketTitle || mainTitle}
+          variant="main"
+        />
+      ) : null}
+      {repechageRounds.length > 0 ? (
+        <PublicBracketColumn
+          rounds={repechageRounds}
+          title={repechageRounds[0]?.bracketTitle || repechageTitle}
+          variant="repechage"
+        />
+      ) : null}
     </div>
   );
 }
 
-function PublicBracketColumn({ rounds }) {
+function PublicBracketColumn({ rounds = [], title, variant }) {
+  if (rounds.length === 0) return null;
+
   return (
-    <div className="bracketColumn">
+    <section className={`bracketColumn publicBracketColumn publicBracketColumn--${variant || "main"}`}>
+      {title ? <h3 className="publicBracketTitle">{title}</h3> : null}
+
       {rounds.map((round, roundIndex) => (
-        <div className="roundCard" key={roundIndex}>
-          <h3>
-            {round.title === "Disputa Paralela"
-              ? round.bracketTitle
-              : `${round.bracketTitle} · ${round.title}`}
-          </h3>
+        <div className="roundCard publicBracketRound" key={roundIndex}>
+          <h3>{round.title || title}</h3>
 
           {round.games.map((game) => (
-            <div className="gameCard" key={game.matchKey}>
+            <div className="gameCard publicBracketGame" key={game.matchKey}>
               <strong>Quadra {game.court}</strong>
 
-              <div className="gameTeams">
+              <div className="gameTeams publicBracketTeams">
                 <div>{game.team1?.join(" + ") || "Aguardando"}</div>
                 <span>x</span>
                 <div>{game.team2?.join(" + ") || "Aguardando"}</div>
               </div>
 
-              <div className="publicScore">
+              <div className="publicScore publicBracketScore">
                 {game.s1 === "" || game.s2 === "" ? (
                   <span>Aguardando placar</span>
                 ) : (
@@ -8640,7 +8673,7 @@ function PublicBracketColumn({ rounds }) {
           ))}
         </div>
       ))}
-    </div>
+    </section>
   );
 }
 
