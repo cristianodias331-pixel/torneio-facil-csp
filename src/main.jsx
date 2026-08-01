@@ -3416,7 +3416,7 @@ function Login({
 
       <header className="landingHeader">
         <div className="landingBrand">
-          <BeachLogo variant="blue" />
+          <BeachLogo />
           <div className="brandTaglineOnly">
             <span>{TORNEIO360_TAGLINE}</span>
           </div>
@@ -3763,11 +3763,12 @@ function Login({
           </div>
 
           <div className="accessCard">
-            <div className="accessToggle">
+            <div className="accessToggle" aria-label="Escolha entre entrar ou criar uma conta">
               <button
                 type="button"
                 className={mode === "login" ? "active" : ""}
                 onClick={() => changeMode("login")}
+                aria-pressed={mode === "login"}
               >
                 Login
               </button>
@@ -3776,6 +3777,7 @@ function Login({
                 type="button"
                 className={mode === "signup" ? "active" : ""}
                 onClick={() => changeMode("signup")}
+                aria-pressed={mode === "signup"}
               >
                 Criar conta
               </button>
