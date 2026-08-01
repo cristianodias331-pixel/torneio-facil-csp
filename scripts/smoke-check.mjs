@@ -4,8 +4,10 @@ import { fileURLToPath } from "node:url";
 
 const root = new URL("../", import.meta.url);
 const mainSource = readFileSync(new URL("src/main.jsx", root), "utf8");
+const installSource = readFileSync(new URL("src/InstallAppBanner.jsx", root), "utf8");
 const indexSource = readFileSync(new URL("index.html", root), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("package.json", root), "utf8"));
+const manifest = JSON.parse(readFileSync(new URL("public/manifest.webmanifest", root), "utf8"));
 
 const requiredApplicationMarkers = [
   "supabase.auth.signInWithPassword",
@@ -33,16 +35,29 @@ for (const marker of requiredApplicationMarkers) {
 }
 
 assert.ok(indexSource.includes('src/main.jsx'), "A entrada React não está ligada ao index.html.");
-assert.ok(indexSource.includes('instagram-profile-torneio360-v2.png'), "O favicon do Torneio360 não está configurado.");
-assert.ok(
-  existsSync(fileURLToPath(new URL("public/instagram-profile-torneio360-v2.png", root))),
-  "O arquivo do favicon não existe."
-);
+assert.ok(indexSource.includes('torneio360-favicon-96.png'), "O novo favicon do Torneio360 não está configurado.");
+assert.ok(indexSource.includes('manifest.webmanifest'), "O manifesto instalável não está ligado ao site.");
+assert.ok(indexSource.includes('torneio360-apple-touch-icon.png'), "O ícone para atalhos Apple não está configurado.");
+assert.equal(manifest.display, "standalone", "O atalho não está configurado para abrir como app.");
+assert.ok(installSource.includes('beforeinstallprompt'), "O convite de instalação não captura o evento do navegador.");
+assert.ok(installSource.includes('appinstalled'), "A confirmação de instalação não está sendo monitorada.");
+assert.ok(mainSource.includes('navigator.serviceWorker.register("/sw.js")'), "O service worker do app não está registrado.");
 assert.ok(!mainSource.includes("@torenio360"), "O usuário do Instagram continua escrito incorretamente.");
 assert.ok(!mainSource.includes("data:image/png;base64"), "Ainda existem imagens PNG Base64 no JavaScript.");
 
 for (const logoPath of ["public/torneio360-logo.png", "public/torneio360-logo-blue.png"]) {
   assert.ok(existsSync(fileURLToPath(new URL(logoPath, root))), `Asset obrigatório ausente: ${logoPath}`);
+}
+
+for (const iconPath of [
+  "public/torneio360-profile.png",
+  "public/torneio360-favicon-96.png",
+  "public/torneio360-apple-touch-icon.png",
+  "public/torneio360-app-icon-192.png",
+  "public/torneio360-app-icon-512.png",
+  "public/sw.js",
+]) {
+  assert.ok(existsSync(fileURLToPath(new URL(iconPath, root))), `Asset instalável ausente: ${iconPath}`);
 }
 
 for (const [name, version] of Object.entries(packageJson.dependencies ?? {})) {

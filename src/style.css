@@ -15988,3 +15988,217 @@ html[data-theme="dark"] {
     animation-iteration-count: 1 !important;
   }
 }
+
+/* Convite para instalar o Torneio360 como atalho/app. */
+.installAppBanner {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 10000;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  width: min(660px, calc(100vw - 48px));
+  padding: 16px 48px 16px 16px;
+  overflow: hidden;
+  color: #ffffff;
+  background:
+    radial-gradient(circle at 12% 0%, rgba(0, 132, 255, 0.34), transparent 42%),
+    linear-gradient(135deg, #02072e 0%, #061b70 62%, #03104c 100%);
+  border: 1px solid rgba(94, 184, 255, 0.5);
+  border-radius: 22px;
+  box-shadow: 0 22px 60px rgba(1, 8, 46, 0.38);
+  animation: installAppEnter 320ms ease-out both;
+}
+
+.installAppBanner::before {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  content: "";
+  background: linear-gradient(180deg, #23c5ff, #0f70ff 56%, #ffb000);
+}
+
+.installAppIcon {
+  width: 58px;
+  height: 58px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: 15px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+}
+
+.installAppContent {
+  min-width: 0;
+}
+
+.installAppContent > strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.installAppContent > p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.installAppAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 10px 15px;
+  color: #092052;
+  font-weight: 800;
+  white-space: nowrap;
+  cursor: pointer;
+  background: linear-gradient(180deg, #ffffff, #dbeeff);
+  border: 0;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.2);
+}
+
+.installAppAction:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.25);
+}
+
+.installAppAction svg {
+  width: 18px;
+  height: 18px;
+}
+
+.installAppDismiss {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+  place-items: center;
+}
+
+.installAppDismiss:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.installAppDismiss svg {
+  width: 17px;
+  height: 17px;
+}
+
+.installAppInstructions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+  padding-top: 10px;
+  color: #ffffff;
+  font-size: 12px;
+  line-height: 1.45;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.installAppInstructions > div {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.installAppTextButton {
+  padding: 5px 8px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+}
+
+.installAppConfirmed {
+  color: #07194f;
+  background: #ffffff;
+  border-color: #ffffff;
+}
+
+@keyframes installAppEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 680px) {
+  .installAppBanner {
+    right: 12px;
+    bottom: 12px;
+    left: 12px;
+    grid-template-columns: 48px minmax(0, 1fr);
+    gap: 10px;
+    width: auto;
+    padding: 13px 40px 13px 13px;
+    border-radius: 18px;
+  }
+
+  .installAppIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+  }
+
+  .installAppContent > strong {
+    font-size: 14px;
+  }
+
+  .installAppContent > p {
+    font-size: 12px;
+  }
+
+  .installAppAction {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-height: 40px;
+    margin-top: 2px;
+  }
+
+  .installAppInstructions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
+
+@media (display-mode: standalone) {
+  .installAppBanner {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .installAppBanner {
+    animation: none;
+  }
+
+  .installAppAction:hover {
+    transform: none;
+  }
+}

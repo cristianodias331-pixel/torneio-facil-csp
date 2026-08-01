@@ -33,6 +33,7 @@ import {
   UserRound,
   Users,
 } from "lucide-react";
+import InstallAppBanner from "./InstallAppBanner.jsx";
 import "./style.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
@@ -9777,4 +9778,17 @@ function PublicBracketColumn({ rounds = [], title, variant }) {
   );
 }
 
-createRoot(document.getElementById("root")).render(<App />);
+createRoot(document.getElementById("root")).render(
+  <>
+    <App />
+    <InstallAppBanner />
+  </>
+);
+
+if ("serviceWorker" in navigator && import.meta.env.PROD) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch((error) => {
+      console.warn("Não foi possível registrar o atalho instalável:", error);
+    });
+  });
+}

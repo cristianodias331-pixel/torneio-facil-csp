@@ -1,0 +1,27 @@
+{
+  "name": "Torneio360 - Gestão de Torneios",
+  "short_name": "Torneio360",
+  "description": "Organize torneios, acompanhe partidas e gerencie competições em um só lugar.",
+  "lang": "pt-BR",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#02083a",
+  "theme_color": "#061a73",
+  "categories": ["sports", "productivity"],
+  "icons": [
+    {
+      "src": "/torneio360-app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/torneio360-app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
