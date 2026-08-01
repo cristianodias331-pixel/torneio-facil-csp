@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { Download, X } from "lucide-react";
 
-const INSTALL_APP_STORAGE_KEY = "torneio360_app_installed";
-const INSTALL_BANNER_SESSION_KEY = "torneio360_install_banner_dismissed";
+const INSTALL_APP_STORAGE_KEY = "torneio360_app_installed_v2";
+const INSTALL_BANNER_SESSION_KEY = "torneio360_install_banner_dismissed_v2";
 
 function readStorageFlag(storage, key) {
   try {
@@ -25,7 +25,18 @@ function isStandaloneApp() {
 }
 
 export default function InstallAppBanner() {
+  const userAgent = window.navigator.userAgent || "";
+  const isIos =
+    /iPad|iPhone|iPod/i.test(userAgent) ||
+    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
+  const isAndroid = /Android/i.test(userAgent);
+  const isAndroidChrome =
+    isAndroid &&
+    /Chrome\/\d+/i.test(userAgent) &&
+    !/(EdgA|OPR|SamsungBrowser|\bwv\b)/i.test(userAgent);
+
   const [installPrompt, setInstallPrompt] = useState(null);
+  const [installCheckComplete, setInstallCheckComplete] = useState(!isAndroidChrome);
   const [showInstructions, setShowInstructions] = useState(false);
   const [visible, setVisible] = useState(
     () =>
@@ -34,14 +45,13 @@ export default function InstallAppBanner() {
       !readStorageFlag(window.sessionStorage, INSTALL_BANNER_SESSION_KEY)
   );
 
-  const userAgent = window.navigator.userAgent || "";
-  const isIos =
-    /iPad|iPhone|iPod/i.test(userAgent) ||
-    (window.navigator.platform === "MacIntel" && window.navigator.maxTouchPoints > 1);
-  const isAndroid = /Android/i.test(userAgent);
-
   useEffect(() => {
     const displayMode = window.matchMedia("(display-mode: standalone)");
+    let installCheckTimer;
+
+    function finishInstallCheck() {
+      installCheckTimer = window.setTimeout(() => setInstallCheckComplete(true), 2500);
+    }
 
     function markAsInstalled() {
       writeStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY);
@@ -52,7 +62,9 @@ export default function InstallAppBanner() {
 
     function handleBeforeInstallPrompt(event) {
       event.preventDefault();
+      window.clearTimeout(installCheckTimer);
       setInstallPrompt(event);
+      setInstallCheckComplete(true);
 
       if (
         !readStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY) &&
@@ -70,12 +82,22 @@ export default function InstallAppBanner() {
     window.addEventListener("appinstalled", markAsInstalled);
     displayMode.addEventListener("change", handleDisplayModeChange);
 
+    if (isAndroidChrome) {
+      if (document.readyState === "complete") {
+        finishInstallCheck();
+      } else {
+        window.addEventListener("load", finishInstallCheck, { once: true });
+      }
+    }
+
     return () => {
+      window.clearTimeout(installCheckTimer);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", markAsInstalled);
+      window.removeEventListener("load", finishInstallCheck);
       displayMode.removeEventListener("change", handleDisplayModeChange);
     };
-  }, []);
+  }, [isAndroidChrome]);
 
   function confirmManualInstallation() {
     writeStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY);
@@ -91,6 +113,13 @@ export default function InstallAppBanner() {
 
   async function requestInstallation() {
     if (!installPrompt) {
+      if (isAndroid && !isAndroidChrome) {
+        const destination = `${window.location.host}${window.location.pathname}${window.location.search}`;
+        const fallback = encodeURIComponent(window.location.href);
+        window.location.href = `intent://${destination}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${fallback};end`;
+        return;
+      }
+
       setShowInstructions(true);
       return;
     }
@@ -107,8 +136,19 @@ export default function InstallAppBanner() {
   const manualInstructions = isIos
     ? 'No Safari, toque em Compartilhar e selecione “Adicionar à Tela de Início”.'
     : isAndroid
-      ? 'Abra o menu ⋮ do navegador e escolha “Instalar app” ou “Adicionar à tela inicial”.'
+      ? 'No Chrome, toque no menu ⋮ e escolha “Instalar app” ou “Adicionar à tela inicial”. Depois confirme em “Instalar”.'
       : 'Use o ícone de instalação na barra de endereço ou abra o menu do navegador e escolha “Instalar Torneio360”.';
+
+  const isPreparingAndroidInstall = isAndroidChrome && !installPrompt && !installCheckComplete;
+  const actionLabel = installPrompt
+    ? "Instalar agora"
+    : isAndroid && !isAndroidChrome
+      ? "Abrir no Chrome"
+      : isPreparingAndroidInstall
+        ? "Preparando instalação..."
+        : isAndroid
+          ? "Ver como instalar"
+          : "Instalar atalho";
 
   return (
     <aside className="installAppBanner" aria-label="Instalar o Torneio360">
@@ -135,17 +175,25 @@ export default function InstallAppBanner() {
               <button type="button" className="installAppTextButton" onClick={() => setShowInstructions(false)}>
                 Voltar
               </button>
-              <button type="button" className="installAppTextButton installAppConfirmed" onClick={confirmManualInstallation}>
-                Já instalei
-              </button>
+              {isIos ? (
+                <button type="button" className="installAppTextButton installAppConfirmed" onClick={confirmManualInstallation}>
+                  Já adicionei
+                </button>
+              ) : null}
             </div>
           </div>
         ) : null}
       </div>
 
-      <button type="button" className="installAppAction" onClick={requestInstallation}>
+      <button
+        type="button"
+        className="installAppAction"
+        onClick={requestInstallation}
+        disabled={isPreparingAndroidInstall}
+        aria-live="polite"
+      >
         <Download aria-hidden="true" />
-        Instalar atalho
+        {actionLabel}
       </button>
     </aside>
   );
