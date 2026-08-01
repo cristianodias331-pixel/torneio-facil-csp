@@ -3181,6 +3181,16 @@ function Login({
     return () => clearTimeout(timer);
   }, [resendCooldown]);
 
+  useEffect(() => {
+    if (mode !== "resetPassword") return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById("acesso")?.scrollIntoView({ behavior: "auto", block: "start" });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [mode]);
+
   function showNotice(type, title, message) {
     setNotice({ type, title, message });
   }
