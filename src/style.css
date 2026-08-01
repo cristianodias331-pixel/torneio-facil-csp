@@ -16082,6 +16082,10 @@ html[data-theme="dark"] {
   height: 18px;
 }
 
+.installAppSpinner {
+  animation: installAppSpin 900ms linear infinite;
+}
+
 .installAppDismiss {
   position: absolute;
   top: 8px;
@@ -16155,6 +16159,12 @@ html[data-theme="dark"] {
   }
 }
 
+@keyframes installAppSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 680px) {
   .installAppBanner {
     right: 12px;
@@ -16207,5 +16217,9 @@ html[data-theme="dark"] {
 
   .installAppAction:hover {
     transform: none;
+  }
+
+  .installAppSpinner {
+    animation: none;
   }
 }
