@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#061a73" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Criar atalho do Torneio360</title>
+    <link rel="icon" href="/torneio360-app-icon-192.png" sizes="192x192" type="image/png" />
+    <link rel="apple-touch-icon" href="/torneio360-apple-touch-icon.png" />
+    <style>
+      * { box-sizing: border-box; }
+      html { color-scheme: dark; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        padding: 24px;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        background:
+          radial-gradient(circle at 50% 0%, rgba(0, 132, 255, 0.34), transparent 42%),
+          linear-gradient(145deg, #02072e 0%, #061b70 64%, #03104c 100%);
+      }
+      main {
+        width: min(460px, 100%);
+        padding: 28px;
+        border: 1px solid rgba(94, 184, 255, 0.52);
+        border-radius: 24px;
+        background: rgba(2, 8, 48, 0.78);
+        box-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
+        backdrop-filter: blur(14px);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .brand img {
+        width: 64px;
+        height: 64px;
+        border: 1px solid rgba(255, 255, 255, 0.34);
+        border-radius: 16px;
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+      }
+      .brand span {
+        color: #72d5ff;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 5px 0 0;
+        font-size: clamp(23px, 7vw, 32px);
+        line-height: 1.08;
+      }
+      .intro {
+        margin: 22px 0;
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      ol {
+        display: grid;
+        gap: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        counter-reset: steps;
+      }
+      li {
+        position: relative;
+        min-height: 48px;
+        padding: 13px 14px 13px 58px;
+        display: flex;
+        align-items: center;
+        color: rgba(255, 255, 255, 0.9);
+        line-height: 1.4;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 14px;
+        counter-increment: steps;
+      }
+      li::before {
+        position: absolute;
+        left: 14px;
+        width: 30px;
+        height: 30px;
+        display: grid;
+        color: #07194f;
+        font-weight: 900;
+        content: counter(steps);
+        background: #fff;
+        border-radius: 50%;
+        place-items: center;
+      }
+      .note {
+        margin: 18px 0 0;
+        padding: 12px 14px;
+        color: #d9f4ff;
+        font-size: 13px;
+        line-height: 1.45;
+        background: rgba(35, 197, 255, 0.12);
+        border-left: 3px solid #23c5ff;
+        border-radius: 10px;
+      }
+      a {
+        width: 100%;
+        min-height: 46px;
+        margin-top: 20px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #092052;
+        font-weight: 900;
+        text-decoration: none;
+        background: linear-gradient(180deg, #fff, #dbeeff);
+        border-radius: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="brand">
+        <img src="/torneio360-app-icon-192.png" alt="" />
+        <div>
+          <span>Atalho simples</span>
+          <h1>Torneio360 na tela inicial</h1>
+        </div>
+      </div>
+
+      <p class="intro">Não será baixado nenhum aplicativo. Você criará apenas um ícone que abre a plataforma diretamente no Chrome.</p>
+
+      <ol>
+        <li>Toque no menu <strong>&nbsp;⋮&nbsp;</strong> do Chrome.</li>
+        <li>Escolha <strong>&nbsp;Adicionar à tela inicial</strong>.</li>
+        <li>Confirme tocando em <strong>&nbsp;Adicionar</strong>.</li>
+      </ol>
+
+      <p class="note">Depois, use o novo ícone do Torneio360 na tela inicial do celular.</p>
+      <a href="/">Voltar ao Torneio360</a>
+    </main>
+
+    <script>
+      const shortcutUrl = new URL(window.location.href);
+
+      if (shortcutUrl.searchParams.get("abrir") === "1") {
+        try {
+          window.localStorage.setItem("torneio360_app_installed_v4", "1");
+        } catch {
+          // O modo privado pode bloquear o armazenamento sem impedir o atalho.
+        }
+
+        window.location.replace("/");
+      } else {
+        shortcutUrl.searchParams.set("abrir", "1");
+        window.history.replaceState(null, "", shortcutUrl);
+      }
+    </script>
+  </body>
+</html>
