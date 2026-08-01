@@ -13,9 +13,11 @@ import {
   GitBranch,
   Grid3X3,
   LayoutDashboard,
+  LifeBuoy,
   Link2,
   LockKeyhole,
   LogOut,
+  Mail,
   MapPin,
   MessageCircle,
   Moon,
@@ -35,6 +37,32 @@ import "./style.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
+const PLATFORM_SUPPORT = Object.freeze([
+  {
+    id: "whatsapp",
+    label: "WhatsApp",
+    value: "85 9.8873-9056",
+    href: "https://wa.me/5585988739056?text=Ol%C3%A1%21%20Preciso%20de%20ajuda%20com%20o%20Torneio360.",
+    Icon: MessageCircle,
+    external: true,
+  },
+  {
+    id: "instagram",
+    label: "Instagram",
+    value: "@torenio360",
+    href: "https://www.instagram.com/torenio360/",
+    Icon: AtSign,
+    external: true,
+  },
+  {
+    id: "email",
+    label: "E-mail",
+    value: "torneio360@gmail.com",
+    href: "mailto:torneio360@gmail.com",
+    Icon: Mail,
+    external: false,
+  },
+]);
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
@@ -2564,7 +2592,7 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="cancelBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Mover para lixeira</button>
         </div>
       </div>
@@ -2587,7 +2615,7 @@ function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="cancelBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar</button>
         </div>
       </div>
@@ -2610,7 +2638,7 @@ function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
         </p>
 
         <div className="confirmActions">
-          <button type="button" className="deleteBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="cancelBtn" onClick={onCancel}>Cancelar</button>
           <button type="button" className="deleteBtn" onClick={onConfirm}>Sim, apagar tudo</button>
         </div>
       </div>
@@ -4240,12 +4268,16 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     updateAppUrl({ activePanel: panel, selectedTournamentId: null });
   }
 
-  function openProfileSettings() {
+  function openProfileSection(nextSubtab = "editar") {
     setProfileMenuOpen(false);
     setSelected(null);
-    setProfileSubtab("editar");
+    setProfileSubtab(nextSubtab);
     setActivePanel("ajustes");
-    updateAppUrl({ activePanel: "ajustes", selectedTournamentId: null, profileSubtab: "editar" });
+    updateAppUrl({ activePanel: "ajustes", selectedTournamentId: null, profileSubtab: nextSubtab });
+  }
+
+  function openProfileSettings() {
+    openProfileSection("editar");
   }
 
   function toggleColorMode() {
@@ -5792,6 +5824,7 @@ setNewPublicInfo({
             className="themeToggleButton"
             onClick={toggleColorMode}
             aria-label={colorMode === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
+            aria-pressed={colorMode === "dark"}
             title={colorMode === "dark" ? "Modo claro" : "Modo noturno"}
           >
             {colorMode === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
@@ -5799,7 +5832,7 @@ setNewPublicInfo({
           </button>
 
           <div className="profileMenuWrap" ref={profileMenuRef}>
-            <div className="profileControl">
+            <div className={`profileControl ${activePanel === "ajustes" || activePanel === "lixeira" ? "accountAreaActive" : ""}`}>
               <button type="button" className="profileTrigger" onClick={openProfileSettings} title="Abrir configurações do perfil">
                 <span className="profileAvatar" aria-hidden="true">
                   {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="" /> : <span>{profileInitials}</span>}
@@ -5822,20 +5855,38 @@ setNewPublicInfo({
 
             {profileMenuOpen ? (
               <div className="profileDropdown" role="menu">
-                <button type="button" role="menuitem" onClick={openProfileSettings}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`profileDropdownItem ${activePanel === "ajustes" && profileSubtab !== "conta" ? "profileDropdownCurrent" : ""}`}
+                  onClick={openProfileSettings}
+                  aria-current={activePanel === "ajustes" && profileSubtab !== "conta" ? "page" : undefined}
+                >
                   <Settings aria-hidden="true" />
                   <span><strong>Meu perfil</strong><small>Dados e foto da arena</small></span>
                 </button>
-                <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); goToPanel("lixeira"); }}>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`profileDropdownItem ${activePanel === "ajustes" && profileSubtab === "conta" ? "profileDropdownCurrent" : ""}`}
+                  onClick={() => openProfileSection("conta")}
+                  aria-current={activePanel === "ajustes" && profileSubtab === "conta" ? "page" : undefined}
+                >
+                  <LifeBuoy aria-hidden="true" />
+                  <span><strong>Ajuda e suporte</strong><small>WhatsApp, Instagram e e-mail</small></span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className={`profileDropdownItem ${activePanel === "lixeira" ? "profileDropdownCurrent" : ""}`}
+                  onClick={() => { setProfileMenuOpen(false); goToPanel("lixeira"); }}
+                  aria-current={activePanel === "lixeira" ? "page" : undefined}
+                >
                   <Trash2 aria-hidden="true" />
                   <span><strong>Lixeira</strong><small>Itens excluídos recentemente</small></span>
                 </button>
-                <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); toggleColorMode(); }}>
-                  {colorMode === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
-                  <span><strong>{colorMode === "dark" ? "Modo claro" : "Modo noturno"}</strong><small>Alterar aparência</small></span>
-                </button>
                 <div className="profileDropdownDivider" />
-                <button type="button" role="menuitem" className="profileDropdownLogout" onClick={logout}>
+                <button type="button" role="menuitem" className="profileDropdownItem profileDropdownLogout" onClick={logout}>
                   <LogOut aria-hidden="true" />
                   <span><strong>Sair</strong><small>Encerrar esta sessão</small></span>
                 </button>
@@ -5888,7 +5939,7 @@ setNewPublicInfo({
                 <h2>Compartilhar campeonato</h2>
                 <p>Confira as informações do perfil que podem aparecer na publicação pública deste torneio.</p>
               </div>
-              <button type="button" className="deleteBtn" onClick={() => setShareTarget(null)}>Fechar</button>
+              <button type="button" className="secondaryBtn" onClick={() => setShareTarget(null)}>Fechar</button>
             </div>
 
             <div className="publicProfilePreview">
@@ -5908,7 +5959,7 @@ setNewPublicInfo({
             </div>
 
             <div className="editTournamentActions">
-              <button type="button" className="deleteBtn" onClick={() => setShareTarget(null)}>Cancelar</button>
+              <button type="button" className="cancelBtn" onClick={() => setShareTarget(null)}>Cancelar</button>
               <button type="button" onClick={confirmShareTarget} disabled={shareTargetSaving}>
                 <Share2 aria-hidden="true" />
                 {shareTargetSaving ? "Publicando..." : "Publicar e copiar link"}
@@ -5926,7 +5977,7 @@ setNewPublicInfo({
                 <h2>Editar torneio</h2>
                 <p>Atualize as informações principais deste torneio.</p>
               </div>
-              <button type="button" className="deleteBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Fechar</button>
+              <button type="button" className="secondaryBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Fechar</button>
             </div>
 
             <div className="editTournamentGrid">
@@ -5991,7 +6042,7 @@ setNewPublicInfo({
             </div>
 
             <div className="editTournamentActions">
-              <button type="button" className="deleteBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
+              <button type="button" className="cancelBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
               <button type="button" onClick={saveEditedTournament}>Salvar alterações</button>
             </div>
           </div>
@@ -6021,7 +6072,7 @@ setNewPublicInfo({
               <button type="button" className="secondaryBtn" onClick={() => nudgePhotoZoom(0.12)}>+</button>
             </div>
             <div className="photoEditorActions">
-              <button type="button" className="deleteBtn" onClick={() => setPhotoEditor(null)}>Cancelar</button>
+              <button type="button" className="cancelBtn" onClick={() => setPhotoEditor(null)}>Cancelar</button>
               <button type="button" onClick={applyEditedOrganizerPhoto}>Aplicar foto</button>
             </div>
           </div>
@@ -6812,6 +6863,10 @@ setNewPublicInfo({
       <div className="instagramProfileInfo">
         <div className="instagramProfileTopline">
           <h2>{organizerProfile.arenaName || profile.name || "Meu perfil"}</h2>
+          <button type="button" className="secondaryBtn profileEditShortcut" onClick={() => openProfileSection("editar")}>
+            <Settings aria-hidden="true" />
+            Editar perfil
+          </button>
         </div>
         <p>{organizerProfile.city || organizerProfile.state ? [organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") : "Complete seu perfil para receber visitas de outros usuários."}</p>
         <button
@@ -6827,9 +6882,37 @@ setNewPublicInfo({
       </div>
     </div>
 
-    <div className="profileSubtabs">
-      <button type="button" className={profileSubtab === "publicacoes" ? "active" : ""} onClick={() => setProfileSubtab("publicacoes")}>Publicações</button>
-      <button type="button" className={profileSubtab === "editar" ? "active" : ""} onClick={() => setProfileSubtab("editar")}>Editar perfil</button>
+    <div className="profileSubtabs" role="tablist" aria-label="Seções do perfil">
+      <button
+        type="button"
+        role="tab"
+        className={profileSubtab === "publicacoes" ? "active" : ""}
+        onClick={() => openProfileSection("publicacoes")}
+        aria-selected={profileSubtab === "publicacoes"}
+      >
+        <Grid3X3 aria-hidden="true" />
+        Publicações
+      </button>
+      <button
+        type="button"
+        role="tab"
+        className={profileSubtab === "editar" ? "active" : ""}
+        onClick={() => openProfileSection("editar")}
+        aria-selected={profileSubtab === "editar"}
+      >
+        <Settings aria-hidden="true" />
+        Dados da arena
+      </button>
+      <button
+        type="button"
+        role="tab"
+        className={profileSubtab === "conta" ? "active" : ""}
+        onClick={() => openProfileSection("conta")}
+        aria-selected={profileSubtab === "conta"}
+      >
+        <LifeBuoy aria-hidden="true" />
+        Conta e suporte
+      </button>
     </div>
 
     {profileSubtab === "publicacoes" ? (
@@ -6879,12 +6962,19 @@ setNewPublicInfo({
   <section className="card organizerProfileCard profileEditSubtab">
     <div className="profileEditSubtabHeader">
       <div>
-        <span>Informações do usuário</span>
-        <h2>Editar perfil</h2>
+        <span>Dados públicos</span>
+        <h2>Dados da arena</h2>
       </div>
-      <button type="button" className="secondaryBtn" onClick={() => setProfileSubtab("publicacoes")}>Voltar às publicações</button>
     </div>
-    <p className="profileSectionHint">Essas informações podem ser usadas como dados públicos da arena e do organizador.</p>
+    <p className="profileSectionHint">Organize as informações que identificam sua arena e facilitam o contato com atletas.</p>
+
+    <div className="profileFormSectionHeader">
+      <span><UserRound aria-hidden="true" /></span>
+      <div>
+        <strong>Identidade</strong>
+        <small>Foto e nomes exibidos no perfil da arena.</small>
+      </div>
+    </div>
 
     <div className="organizerPhotoArea">
       <label className="organizerPhotoDropzone" onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); handleOrganizerPhotoFile(e.dataTransfer.files?.[0]); }}>
@@ -6913,10 +7003,12 @@ setNewPublicInfo({
         <input value={organizerProfile.organizerName} onChange={(e) => updateOrganizerProfile("organizerName", e.target.value)} placeholder="Ex: Cristiano Sampaio" />
       </div>
 
-      <div className="formField">
-        <label>E-mail de acesso</label>
-        <input type="email" value={user.email || ""} readOnly aria-readonly="true" />
-        <small className="profileFieldHelp">Usado para entrar e recuperar a senha. Ele não é exibido publicamente nesta tela.</small>
+      <div className="profileFormSectionHeader fullField">
+        <span><MessageCircle aria-hidden="true" /></span>
+        <div>
+          <strong>Contato público</strong>
+          <small>Dados usados pelos atletas para falar com a organização.</small>
+        </div>
       </div>
 
       <div className="formField">
@@ -6937,6 +7029,14 @@ setNewPublicInfo({
       <div className="formField fullField">
         <label>Link do grupo de WhatsApp</label>
         <input value={organizerProfile.whatsappGroupLink} onChange={(e) => updateOrganizerProfile("whatsappGroupLink", e.target.value)} placeholder="https://chat.whatsapp.com/..." />
+      </div>
+
+      <div className="profileFormSectionHeader fullField">
+        <span><MapPin aria-hidden="true" /></span>
+        <div>
+          <strong>Localização</strong>
+          <small>Endereço e referência geográfica da arena.</small>
+        </div>
       </div>
 
       <div className="formField fullField">
@@ -6970,15 +7070,63 @@ setNewPublicInfo({
   </section>
   ) : null}
 
-  <section className="card subscriptionSummaryCard">
-    <h2>Assinatura</h2>
-    <div className="subscriptionSummaryGrid">
-      <p><strong>Plano:</strong> {profile.plan}</p>
-      <p><strong>Status:</strong> {formatStatusBR(profile.status)}</p>
-      <p><strong>Vencimento:</strong> {profile.expires_at ? formatDateBR(profile.expires_at) : "não definido"}</p>
-      <p><strong>E-mail da conta:</strong> {user.email}</p>
+  {profileSubtab === "conta" ? (
+    <div className="profileAccountGrid">
+      <section className="card profileAccountCard">
+        <div className="profileSectionHeading">
+          <span>Conta</span>
+          <h2>Acesso e assinatura</h2>
+          <p>Informações privadas da sua conta na plataforma.</p>
+        </div>
+
+        <dl className="profileAccountDetails">
+          <div>
+            <dt>E-mail de acesso</dt>
+            <dd>{user.email}</dd>
+          </div>
+          <div>
+            <dt>Plano</dt>
+            <dd>{profile.plan}</dd>
+          </div>
+          <div>
+            <dt>Status</dt>
+            <dd>{formatStatusBR(profile.status)}</dd>
+          </div>
+          <div>
+            <dt>Vencimento</dt>
+            <dd>{profile.expires_at ? formatDateBR(profile.expires_at) : "Não definido"}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section className="card profileSupportCard" id="suporte-torneio360">
+        <div className="profileSectionHeading">
+          <span>Atendimento</span>
+          <h2>Fale com o Torneio360</h2>
+          <p>Escolha o canal de sua preferência para receber suporte.</p>
+        </div>
+
+        <div className="supportContactGrid">
+          {PLATFORM_SUPPORT.map(({ id, label, value, href, Icon, external }) => (
+            <a
+              key={id}
+              className={`supportContactLink supportContactLink-${id}`}
+              href={href}
+              target={external ? "_blank" : undefined}
+              rel={external ? "noopener noreferrer" : undefined}
+              aria-label={`${label}: ${value}`}
+            >
+              <span className="supportContactIcon"><Icon aria-hidden="true" /></span>
+              <span>
+                <strong>{label}</strong>
+                <small>{value}</small>
+              </span>
+            </a>
+          ))}
+        </div>
+      </section>
     </div>
-  </section>
+  ) : null}
 </>
 )}
 
@@ -8667,7 +8815,7 @@ function ScheduleView({
 
                 <button
                   type="button"
-                  className="secondaryBtn"
+                  className="secondaryBtn stopBtn"
                   onClick={stopSpeech}
                 >
                   ⏹️ Parar
@@ -9103,7 +9251,7 @@ function BracketColumn({
 
               <button
                 type="button"
-                className="secondaryBtn"
+                className="secondaryBtn stopBtn"
                 onClick={stopSpeech}
               >
                 ⏹️ Parar

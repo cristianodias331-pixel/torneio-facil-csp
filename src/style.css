@@ -13515,6 +13515,7 @@ button.removePhotoBtn:hover {
   --brand-blue: #1749a8;
   --brand-cyan: #1090c0;
   --brand-highlight: #f04b18;
+  --brand-action: #c2410c;
 }
 
 html[data-theme="dark"] {
@@ -13529,10 +13530,15 @@ html[data-theme="dark"] {
   --ui-surface-muted: #eef3f8;
   --ui-text: #132033;
   --ui-text-strong: #09182e;
-  --ui-muted: #66758a;
+  --ui-muted: #59687b;
   --ui-border: #cbd6e4;
   --ui-border-soft: #dce4ee;
-  --ui-selected: #e4edf9;
+  --ui-selected: #eef1f5;
+  --ui-active-bg: #fff4ed;
+  --ui-active-accent: #c2410c;
+  --danger-bg: #fff3f2;
+  --danger-border: #f1b8b3;
+  --danger-text: #b42318;
   --ui-input: #f9fbfd;
   --ui-shadow: 0 18px 48px rgba(8, 26, 73, 0.10);
   --ui-shadow-soft: 0 8px 24px rgba(8, 26, 73, 0.07);
@@ -13540,20 +13546,25 @@ html[data-theme="dark"] {
 
 .proDashboard.theme-dark {
   color-scheme: dark;
-  --brand-blue: #5b8def;
-  --brand-cyan: #2cc4df;
-  --ui-bg: #07111f;
-  --ui-bg-soft: #091524;
-  --ui-surface: #0e1a2b;
-  --ui-surface-raised: #132238;
-  --ui-surface-muted: #101e31;
+  --brand-blue: #76a4ff;
+  --brand-cyan: #67d5e8;
+  --ui-bg: #0b1018;
+  --ui-bg-soft: #0f1620;
+  --ui-surface: #121a24;
+  --ui-surface-raised: #18222f;
+  --ui-surface-muted: #141e2a;
   --ui-text: #e7eef8;
   --ui-text-strong: #f5f8fc;
-  --ui-muted: #9aacbf;
-  --ui-border: #263852;
-  --ui-border-soft: #1d2d43;
-  --ui-selected: #182e50;
-  --ui-input: #0b1726;
+  --ui-muted: #aab6c5;
+  --ui-border: #2b3745;
+  --ui-border-soft: #222e3b;
+  --ui-selected: #1b2633;
+  --ui-active-bg: rgba(251, 146, 60, 0.12);
+  --ui-active-accent: #fb923c;
+  --danger-bg: rgba(239, 68, 68, 0.10);
+  --danger-border: rgba(248, 113, 113, 0.32);
+  --danger-text: #fda4af;
+  --ui-input: #0f1722;
   --ui-shadow: 0 22px 54px rgba(0, 0, 0, 0.34);
   --ui-shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.24);
 }
@@ -13563,7 +13574,7 @@ html[data-theme="dark"] {
   grid-template-columns: none !important;
   min-height: 100vh !important;
   background:
-    radial-gradient(circle at 88% 4%, rgba(16, 144, 192, 0.10), transparent 27%),
+    radial-gradient(circle at 88% 4%, rgba(240, 75, 24, 0.07), transparent 27%),
     var(--ui-bg) !important;
   color: var(--ui-text) !important;
 }
@@ -13597,7 +13608,8 @@ html[data-theme="dark"] {
   padding: 0 24px !important;
   overflow: visible !important;
   border: 0 !important;
-  background: linear-gradient(108deg, #071a39 0%, #0d3264 58%, #0b526f 100%) !important;
+  border-bottom: 2px solid rgba(240, 75, 24, 0.72) !important;
+  background: linear-gradient(108deg, #071a39 0%, #0b2344 100%) !important;
   box-shadow: 0 10px 32px rgba(4, 14, 32, 0.24) !important;
 }
 
@@ -13866,7 +13878,7 @@ html[data-theme="dark"] {
   overflow: hidden !important;
   border: 1px solid rgba(121, 166, 216, 0.20) !important;
   border-radius: 22px !important;
-  background: linear-gradient(165deg, #0b1e3a 0%, #0a2444 64%, #0b3852 100%) !important;
+  background: linear-gradient(165deg, #0b1628 0%, #111c2b 100%) !important;
   box-shadow: 0 22px 48px rgba(8, 26, 73, 0.22) !important;
   backdrop-filter: blur(18px) !important;
 }
@@ -13913,9 +13925,9 @@ html[data-theme="dark"] {
 }
 
 .proDashboard .playSidebar .playNavItem.active {
-  border-color: rgba(67, 195, 225, 0.28) !important;
-  background: linear-gradient(90deg, rgba(34, 117, 203, 0.34), rgba(16, 144, 192, 0.20)) !important;
-  box-shadow: inset 3px 0 0 #35bee0 !important;
+  border-color: rgba(240, 75, 24, 0.44) !important;
+  background: rgba(255, 255, 255, 0.11) !important;
+  box-shadow: inset 4px 0 0 var(--brand-highlight) !important;
   color: #ffffff !important;
 }
 
@@ -14141,7 +14153,7 @@ html[data-theme="dark"] {
 }
 
 /* Botões com uma hierarquia única */
-.proDashboard.playAppShell button:not(.playNavItem):not(.moveLineBtn):not(.themeToggleButton):not(.profileTrigger):not(.profileMenuToggle) {
+.proDashboard.playAppShell button:where(:not(.playNavItem):not(.moveLineBtn):not(.themeToggleButton):not(.profileTrigger):not(.profileMenuToggle):not(.profileVisibilitySwitch)) {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -14161,18 +14173,20 @@ html[data-theme="dark"] {
 }
 
 .proDashboard.playAppShell button.secondaryBtn,
-.proDashboard.playAppShell button.editBtn,
-.proDashboard.playAppShell button.cancelBtn {
+.proDashboard.playAppShell button.editBtn {
   border-color: var(--ui-border) !important;
   background: var(--ui-surface) !important;
   color: var(--ui-text) !important;
 }
 
 .proDashboard.playAppShell button.deleteBtn,
-.proDashboard.playAppShell button.removePhotoBtn {
-  border-color: rgba(220, 76, 76, 0.28) !important;
-  background: transparent !important;
-  color: #dc4c4c !important;
+.proDashboard.playAppShell button.cancelBtn,
+.proDashboard.playAppShell button.danger,
+.proDashboard.playAppShell button.removePhotoBtn,
+.proDashboard.playAppShell button.stopBtn {
+  border-color: var(--danger-border) !important;
+  background: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
 }
 
 .proDashboard.playAppShell button.shareTournamentBtn,
@@ -14795,4 +14809,522 @@ html[data-theme="dark"] {
   height: 17px !important;
   flex: 0 0 auto !important;
   stroke-width: 1.8 !important;
+}
+
+/* =========================================================
+   AJUSTES DE CONTRASTE, ESTADOS E PERFIL — JULHO 2026
+   ========================================================= */
+.proDashboard .profileControl.accountAreaActive {
+  border-color: rgba(240, 75, 24, 0.78) !important;
+  box-shadow: 0 0 0 2px rgba(240, 75, 24, 0.16) !important;
+}
+
+.proDashboard.playAppShell .profileDropdown button.profileDropdownCurrent {
+  background: var(--ui-active-bg) !important;
+  box-shadow: inset 3px 0 0 var(--ui-active-accent) !important;
+}
+
+.proDashboard .profileDropdown button.profileDropdownCurrent > svg {
+  color: var(--ui-active-accent) !important;
+}
+
+.proDashboard.playAppShell .profileDropdown button.profileDropdownLogout {
+  border: 1px solid var(--danger-border) !important;
+  background: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
+}
+
+.proDashboard .profileDropdown .profileDropdownLogout > svg,
+.proDashboard .profileDropdown .profileDropdownLogout strong {
+  color: var(--danger-text) !important;
+}
+
+.proDashboard .playSidebar .playNavItem {
+  position: relative !important;
+}
+
+.proDashboard .playSidebar .playNavItem::after {
+  position: absolute;
+  top: 50%;
+  right: 11px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-highlight);
+  content: "";
+  opacity: 0;
+  transform: translateY(-50%);
+}
+
+.proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"])::after {
+  opacity: 1;
+}
+
+.proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"]) .navIcon {
+  color: #ff9a70 !important;
+}
+
+.proDashboard.playAppShell :is(
+  .tournamentTopTabs,
+  .matchesSubTabs,
+  .profileSubtabs,
+  .playTabs:not(.homeQuickActionsThree)
+) > button:is(.active, [aria-selected="true"], [aria-current="page"]) {
+  border-color: var(--ui-active-accent) !important;
+  background: var(--ui-active-bg) !important;
+  box-shadow: inset 0 -3px 0 var(--ui-active-accent) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard.playAppShell :is(
+  .tournamentTopTabs,
+  .matchesSubTabs,
+  .profileSubtabs,
+  .playTabs:not(.homeQuickActionsThree)
+) > button:is(.active, [aria-selected="true"], [aria-current="page"]) svg {
+  color: var(--ui-active-accent) !important;
+}
+
+.proDashboard.playAppShell button:is(.deleteBtn, .cancelBtn, .danger, .removePhotoBtn, .stopBtn) {
+  border: 1px solid var(--danger-border) !important;
+  background: var(--danger-bg) !important;
+  box-shadow: none !important;
+  color: var(--danger-text) !important;
+}
+
+.proDashboard.playAppShell button:is(.deleteBtn, .cancelBtn, .danger, .removePhotoBtn, .stopBtn):hover {
+  border-color: var(--danger-text) !important;
+  background: var(--danger-bg) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger-text) 12%, transparent) !important;
+  color: var(--danger-text) !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+.proDashboard.playAppShell button:is(.deleteBtn, .cancelBtn, .danger, .removePhotoBtn, .stopBtn):disabled {
+  border-color: var(--danger-border) !important;
+  background: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
+  cursor: not-allowed !important;
+  opacity: 0.55 !important;
+}
+
+.proDashboard.playAppShell button.profileVisibilitySwitch {
+  display: inline-flex !important;
+  justify-content: flex-start !important;
+  width: max-content !important;
+  min-height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .pageEyebrow,
+.proDashboard .profileEditSubtabHeader > div > span,
+.proDashboard .profileSectionHeading > span {
+  color: var(--ui-active-accent) !important;
+}
+
+.proDashboard .tournamentTypeBadge {
+  border-color: color-mix(in srgb, var(--ui-active-accent) 38%, var(--ui-border)) !important;
+  background: var(--ui-active-bg) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .shareHighlightBox strong svg,
+.proDashboard .sharePublishSummary > svg {
+  color: var(--ui-active-accent) !important;
+}
+
+.proDashboard.playAppShell .homeQuickActionsThree button.primaryQuickAction {
+  background: var(--brand-action) !important;
+  color: #ffffff !important;
+}
+
+.proDashboard :is(button, a):focus-visible {
+  outline: 3px solid var(--ui-active-accent) !important;
+  outline-offset: 2px !important;
+}
+
+/* Perfil reorganizado */
+.proDashboard.playAppShell .instagramProfileCard {
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+.proDashboard.playAppShell .instagramProfileCard::before {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, var(--brand-highlight), #ff9a70, #ffffff);
+  content: "";
+}
+
+.proDashboard .instagramProfilePhoto {
+  border-color: rgba(240, 75, 24, 0.38) !important;
+  background: var(--ui-surface) !important;
+  box-shadow: 0 0 0 5px var(--ui-active-bg) !important;
+}
+
+.proDashboard.playAppShell button.profileEditShortcut {
+  border-color: color-mix(in srgb, var(--ui-active-accent) 36%, var(--ui-border)) !important;
+  background: var(--ui-surface) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard.playAppShell button.profileEditShortcut svg {
+  color: var(--ui-active-accent) !important;
+}
+
+.proDashboard .profileSubtabs {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 7px !important;
+  padding: 6px !important;
+  border: 1px solid var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  box-shadow: none !important;
+}
+
+.proDashboard.playAppShell .profileSubtabs > button,
+.proDashboard.playAppShell .profileSubtabs > button:not(.active) {
+  min-width: 0 !important;
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ui-muted) !important;
+  white-space: normal !important;
+}
+
+.proDashboard.playAppShell .profileSubtabs > button:is(.active, [aria-selected="true"]) {
+  border-color: var(--ui-active-accent) !important;
+  background: var(--ui-active-bg) !important;
+  box-shadow: inset 0 -3px 0 var(--ui-active-accent) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard.playAppShell .profileEditSubtab {
+  border-top: 4px solid var(--brand-highlight) !important;
+}
+
+.proDashboard .profileFormSectionHeader {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 14px;
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--ui-active-accent) 24%, var(--ui-border));
+  border-radius: 14px;
+  background: var(--ui-active-bg);
+}
+
+.proDashboard .profileFormSectionHeader > span {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: var(--ui-surface-raised);
+  color: var(--ui-active-accent);
+}
+
+.proDashboard .profileFormSectionHeader svg {
+  width: 19px;
+  height: 19px;
+  stroke-width: 1.8;
+}
+
+.proDashboard .profileFormSectionHeader > div {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.proDashboard .profileFormSectionHeader strong {
+  color: var(--ui-text-strong) !important;
+  font-size: 13px;
+}
+
+.proDashboard .profileFormSectionHeader small {
+  color: var(--ui-muted) !important;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.proDashboard .organizerProfileGrid .profileFormSectionHeader.fullField {
+  margin: 10px 0 0;
+}
+
+.proDashboard .profileAccountGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(360px, 1.1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.proDashboard.playAppShell .profileAccountGrid > .card {
+  height: 100%;
+}
+
+.proDashboard .profileSectionHeading {
+  display: grid;
+  gap: 5px;
+  margin-bottom: 18px;
+}
+
+.proDashboard .profileSectionHeading > span {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.proDashboard .profileSectionHeading h2 {
+  margin: 0 !important;
+  font-size: 21px !important;
+}
+
+.proDashboard .profileSectionHeading p {
+  margin: 0 !important;
+  line-height: 1.45 !important;
+}
+
+.proDashboard .profileAccountDetails {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+.proDashboard .profileAccountDetails > div {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.72fr) minmax(0, 1.28fr);
+  gap: 14px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ui-border-soft);
+}
+
+.proDashboard .profileAccountDetails > div:last-child {
+  border-bottom: 0;
+}
+
+.proDashboard .profileAccountDetails dt {
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.proDashboard .profileAccountDetails dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--ui-text-strong);
+  font-size: 12px;
+  font-weight: 780;
+  text-align: right;
+  text-transform: none;
+}
+
+.proDashboard.playAppShell .card.profileSupportCard {
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--brand-highlight) 10%, transparent), transparent 34%),
+    var(--ui-surface-raised) !important;
+}
+
+.proDashboard .supportContactGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.proDashboard .supportContactLink {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 64px;
+  padding: 10px 13px;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--ui-surface-muted);
+  color: var(--ui-text);
+  text-decoration: none;
+  transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+}
+
+.proDashboard .supportContactLink:hover,
+.proDashboard .supportContactLink:focus-visible {
+  border-color: var(--ui-active-accent);
+  background: var(--ui-active-bg);
+  transform: translateY(-1px);
+}
+
+.proDashboard .supportContactIcon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--ui-active-bg);
+  color: var(--ui-active-accent);
+}
+
+.proDashboard .supportContactIcon svg {
+  width: 20px;
+  height: 20px;
+  stroke-width: 1.8;
+}
+
+.proDashboard .supportContactLink > span:last-child {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.proDashboard .supportContactLink strong {
+  color: var(--ui-text-strong);
+  font-size: 12.5px;
+}
+
+.proDashboard .supportContactLink small {
+  overflow-wrap: anywhere;
+  color: var(--ui-muted) !important;
+  font-size: 11px;
+}
+
+@media (max-width: 900px) {
+  .proDashboard .playSidebar.proSidebar {
+    bottom: max(10px, env(safe-area-inset-bottom)) !important;
+  }
+
+  .proDashboard .playMain {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom)) !important;
+  }
+
+  .proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"]) {
+    box-shadow: inset 0 3px 0 var(--brand-highlight) !important;
+  }
+
+  .proDashboard .playSidebar .playNavItem::after {
+    top: auto;
+    right: 50%;
+    bottom: 4px;
+    width: 14px;
+    height: 2px;
+    border-radius: 999px;
+    transform: translateX(50%);
+  }
+
+  .proDashboard .playSidebar .playNavItem small {
+    font-size: 9.5px !important;
+    line-height: 1.1 !important;
+  }
+
+  .proDashboard .profileDropdown {
+    max-height: calc(100dvh - 92px) !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+  }
+
+  .proDashboard .profileAccountGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .proDashboard .instagramProfileHeader {
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    justify-items: stretch !important;
+    text-align: left !important;
+  }
+
+  .proDashboard .instagramProfilePhoto {
+    width: 72px !important;
+    height: 72px !important;
+  }
+
+  .proDashboard .instagramProfileTopline {
+    justify-content: flex-start !important;
+    gap: 8px !important;
+  }
+
+  .proDashboard .instagramProfileTopline h2 {
+    width: 100%;
+    font-size: 20px !important;
+  }
+
+  .proDashboard.playAppShell button.profileEditShortcut {
+    min-height: 36px !important;
+    padding: 7px 9px !important;
+    font-size: 11px !important;
+  }
+
+  .proDashboard.playAppShell button.profileVisibilitySwitch {
+    margin: 0 !important;
+  }
+
+  .proDashboard .profileSubtabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+    padding: 4px !important;
+    overflow: visible !important;
+  }
+
+  .proDashboard.playAppShell .profileSubtabs > button,
+  .proDashboard.playAppShell .profileSubtabs > button:not(.active) {
+    min-width: 0 !important;
+    min-height: 48px !important;
+    padding: 7px 4px !important;
+    gap: 4px !important;
+    font-size: 10.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  .proDashboard.playAppShell .profileSubtabs > button svg {
+    width: 15px !important;
+    height: 15px !important;
+  }
+
+  .proDashboard .profileFormSectionHeader {
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .proDashboard .profileFormSectionHeader > span {
+    width: 34px;
+    height: 34px;
+  }
+
+  .proDashboard .profileAccountDetails > div {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .proDashboard .profileAccountDetails dd {
+    text-align: left;
+  }
+
+  .proDashboard .supportContactLink {
+    min-height: 60px;
+  }
+}
+
+@media (max-width: 390px) {
+  .proDashboard.playAppShell .profileSubtabs > button,
+  .proDashboard.playAppShell .profileSubtabs > button:not(.active) {
+    font-size: 9.5px !important;
+  }
+
+  .proDashboard .instagramProfileHeader {
+    grid-template-columns: 64px minmax(0, 1fr) !important;
+  }
+
+  .proDashboard .instagramProfilePhoto {
+    width: 64px !important;
+    height: 64px !important;
+  }
 }
