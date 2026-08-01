@@ -45,6 +45,8 @@ assert.ok(installSource.includes('Instalar agora'), "O botão não oferece a ins
 assert.ok(installSource.includes('Abrir no Chrome'), "O Android não possui alternativa para navegadores internos.");
 assert.ok(!installSource.includes('Já instalei'), "O Android ainda pode ocultar o aviso sem concluir a instalação.");
 assert.ok(installSource.includes('torneio360_app_installed_v3'), "A mensagem corrigida não será reexibida para testes anteriores.");
+assert.ok(installSource.includes('Instalação em andamento...'), "A instalação lenta não possui retorno visual para o usuário.");
+assert.ok(installSource.includes('INSTALL_RECOVERY_DELAY_MS = 10 * 60 * 1000'), "A ajuda de instalação reaparece cedo demais.");
 assert.ok(
   !installSource.includes('if (outcome === "accepted") confirmManualInstallation()'),
   "O aceite do prompt ainda oculta a mensagem antes da confirmação real do navegador."

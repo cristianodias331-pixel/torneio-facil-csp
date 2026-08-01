@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { Download, X } from "lucide-react";
+import { Download, LoaderCircle, X } from "lucide-react";
 
 const INSTALL_APP_STORAGE_KEY = "torneio360_app_installed_v3";
 const INSTALL_BANNER_SESSION_KEY = "torneio360_install_banner_dismissed_v3";
+const INSTALL_RECOVERY_DELAY_MS = 10 * 60 * 1000;
 
 function readStorageFlag(storage, key) {
   try {
@@ -37,6 +38,7 @@ export default function InstallAppBanner() {
 
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installCheckComplete, setInstallCheckComplete] = useState(!isAndroidChrome);
+  const [installationPending, setInstallationPending] = useState(false);
   const [showInstructions, setShowInstructions] = useState(false);
   const installRecoveryTimerRef = useRef(null);
   const [visible, setVisible] = useState(
@@ -56,8 +58,10 @@ export default function InstallAppBanner() {
 
     function markAsInstalled() {
       window.clearTimeout(installRecoveryTimerRef.current);
+      installRecoveryTimerRef.current = null;
       writeStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY);
       setInstallPrompt(null);
+      setInstallationPending(false);
       setShowInstructions(false);
       setVisible(false);
     }
@@ -65,8 +69,11 @@ export default function InstallAppBanner() {
     function handleBeforeInstallPrompt(event) {
       event.preventDefault();
       window.clearTimeout(installCheckTimer);
+      window.clearTimeout(installRecoveryTimerRef.current);
+      installRecoveryTimerRef.current = null;
       setInstallPrompt(event);
       setInstallCheckComplete(true);
+      setInstallationPending(false);
 
       if (
         !readStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY) &&
@@ -103,13 +110,19 @@ export default function InstallAppBanner() {
   }, [isAndroidChrome]);
 
   function confirmManualInstallation() {
+    window.clearTimeout(installRecoveryTimerRef.current);
+    installRecoveryTimerRef.current = null;
     writeStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY);
+    setInstallationPending(false);
     setShowInstructions(false);
     setVisible(false);
   }
 
   function dismissForThisVisit() {
+    window.clearTimeout(installRecoveryTimerRef.current);
+    installRecoveryTimerRef.current = null;
     writeStorageFlag(window.sessionStorage, INSTALL_BANNER_SESSION_KEY);
+    setInstallationPending(false);
     setShowInstructions(false);
     setVisible(false);
   }
@@ -132,18 +145,24 @@ export default function InstallAppBanner() {
     setInstallPrompt(null);
 
     if (outcome === "accepted") {
-      setVisible(false);
+      if (readStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY) || isStandaloneApp()) return;
+
+      setInstallationPending(true);
+      setShowInstructions(false);
+      setVisible(true);
       window.clearTimeout(installRecoveryTimerRef.current);
       installRecoveryTimerRef.current = window.setTimeout(() => {
+        installRecoveryTimerRef.current = null;
         const installationConfirmed =
           readStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY) || isStandaloneApp();
 
         if (!installationConfirmed) {
+          setInstallationPending(false);
           setInstallCheckComplete(true);
           setShowInstructions(true);
           setVisible(true);
         }
-      }, 5000);
+      }, INSTALL_RECOVERY_DELAY_MS);
     }
   }
 
@@ -156,15 +175,17 @@ export default function InstallAppBanner() {
       : 'Use o ícone de instalação na barra de endereço ou abra o menu do navegador e escolha “Instalar Torneio360”.';
 
   const isPreparingAndroidInstall = isAndroidChrome && !installPrompt && !installCheckComplete;
-  const actionLabel = installPrompt
-    ? "Instalar agora"
-    : isAndroid && !isAndroidChrome
-      ? "Abrir no Chrome"
-      : isPreparingAndroidInstall
-        ? "Preparando instalação..."
-        : isAndroid
-          ? "Ver como instalar"
-          : "Instalar atalho";
+  const actionLabel = installationPending
+    ? "Instalação em andamento..."
+    : installPrompt
+      ? "Instalar agora"
+      : isAndroid && !isAndroidChrome
+        ? "Abrir no Chrome"
+        : isPreparingAndroidInstall
+          ? "Preparando instalação..."
+          : isAndroid
+            ? "Ver como instalar"
+            : "Instalar atalho";
 
   return (
     <aside className="installAppBanner" aria-label="Instalar o Torneio360">
@@ -181,8 +202,12 @@ export default function InstallAppBanner() {
       <img className="installAppIcon" src="/torneio360-app-icon-192.png" alt="" aria-hidden="true" />
 
       <div className="installAppContent">
-        <strong>Leve o Torneio360 com você</strong>
-        <p>Abra seus torneios mais rápido, direto da tela inicial. É prático, leve e gratuito.</p>
+        <strong>{installationPending ? "Instalação em andamento" : "Leve o Torneio360 com você"}</strong>
+        <p>
+          {installationPending
+            ? "O Chrome está concluindo a instalação. Isso pode levar alguns minutos; você pode continuar usando a plataforma."
+            : "Abra seus torneios mais rápido, direto da tela inicial. É prático, leve e gratuito."}
+        </p>
 
         {showInstructions ? (
           <div className="installAppInstructions" role="status">
@@ -205,10 +230,11 @@ export default function InstallAppBanner() {
         type="button"
         className="installAppAction"
         onClick={requestInstallation}
-        disabled={isPreparingAndroidInstall}
+        disabled={isPreparingAndroidInstall || installationPending}
+        aria-busy={installationPending}
         aria-live="polite"
       >
-        <Download aria-hidden="true" />
+        {installationPending ? <LoaderCircle className="installAppSpinner" aria-hidden="true" /> : <Download aria-hidden="true" />}
         {actionLabel}
       </button>
     </aside>
