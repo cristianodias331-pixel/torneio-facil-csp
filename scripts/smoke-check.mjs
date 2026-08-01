@@ -6,6 +6,7 @@ const root = new URL("../", import.meta.url);
 const mainSource = readFileSync(new URL("src/main.jsx", root), "utf8");
 const installSource = readFileSync(new URL("src/InstallAppBanner.jsx", root), "utf8");
 const indexSource = readFileSync(new URL("index.html", root), "utf8");
+const shortcutSource = readFileSync(new URL("public/atalho.html", root), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("package.json", root), "utf8"));
 const manifest = JSON.parse(readFileSync(new URL("public/manifest.webmanifest", root), "utf8"));
 
@@ -42,15 +43,18 @@ assert.equal(manifest.display, "standalone", "O atalho não está configurado pa
 assert.ok(installSource.includes('beforeinstallprompt'), "O convite de instalação não captura o evento do navegador.");
 assert.ok(installSource.includes('appinstalled'), "A confirmação de instalação não está sendo monitorada.");
 assert.ok(installSource.includes('Instalar agora'), "O botão não oferece a instalação nativa quando ela está disponível.");
-assert.ok(installSource.includes('Abrir no Chrome'), "O Android não possui alternativa para navegadores internos.");
+assert.ok(installSource.includes('Criar atalho simples'), "O Android não oferece o atalho simples sem WebAPK.");
+assert.ok(installSource.includes('window.location.assign("/atalho.html")'), "O Android não é direcionado à página do atalho simples.");
 assert.ok(!installSource.includes('Já instalei'), "O Android ainda pode ocultar o aviso sem concluir a instalação.");
-assert.ok(installSource.includes('torneio360_app_installed_v3'), "A mensagem corrigida não será reexibida para testes anteriores.");
+assert.ok(installSource.includes('torneio360_app_installed_v4'), "A mensagem do atalho simples não será reexibida para testes anteriores.");
 assert.ok(installSource.includes('Instalação em andamento...'), "A instalação lenta não possui retorno visual para o usuário.");
 assert.ok(installSource.includes('INSTALL_RECOVERY_DELAY_MS = 10 * 60 * 1000'), "A ajuda de instalação reaparece cedo demais.");
 assert.ok(
   !installSource.includes('if (outcome === "accepted") confirmManualInstallation()'),
   "O aceite do prompt ainda oculta a mensagem antes da confirmação real do navegador."
 );
+assert.ok(shortcutSource.includes('Adicionar à tela inicial'), "A página do atalho não possui a instrução principal do Android.");
+assert.ok(!shortcutSource.includes('rel="manifest"'), "A página do atalho simples ainda pode acionar a instalação de WebAPK.");
 assert.ok(
   mainSource.includes('document.getElementById("acesso")?.scrollIntoView({ behavior: "auto", block: "start" })'),
   "A recuperação de senha não leva o usuário diretamente ao formulário de nova senha."
