@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Download, X } from "lucide-react";
 
-const INSTALL_APP_STORAGE_KEY = "torneio360_app_installed_v2";
-const INSTALL_BANNER_SESSION_KEY = "torneio360_install_banner_dismissed_v2";
+const INSTALL_APP_STORAGE_KEY = "torneio360_app_installed_v3";
+const INSTALL_BANNER_SESSION_KEY = "torneio360_install_banner_dismissed_v3";
 
 function readStorageFlag(storage, key) {
   try {
@@ -38,6 +38,7 @@ export default function InstallAppBanner() {
   const [installPrompt, setInstallPrompt] = useState(null);
   const [installCheckComplete, setInstallCheckComplete] = useState(!isAndroidChrome);
   const [showInstructions, setShowInstructions] = useState(false);
+  const installRecoveryTimerRef = useRef(null);
   const [visible, setVisible] = useState(
     () =>
       !isStandaloneApp() &&
@@ -54,6 +55,7 @@ export default function InstallAppBanner() {
     }
 
     function markAsInstalled() {
+      window.clearTimeout(installRecoveryTimerRef.current);
       writeStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY);
       setInstallPrompt(null);
       setShowInstructions(false);
@@ -92,6 +94,7 @@ export default function InstallAppBanner() {
 
     return () => {
       window.clearTimeout(installCheckTimer);
+      window.clearTimeout(installRecoveryTimerRef.current);
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
       window.removeEventListener("appinstalled", markAsInstalled);
       window.removeEventListener("load", finishInstallCheck);
@@ -128,7 +131,20 @@ export default function InstallAppBanner() {
     const { outcome } = await installPrompt.userChoice;
     setInstallPrompt(null);
 
-    if (outcome === "accepted") confirmManualInstallation();
+    if (outcome === "accepted") {
+      setVisible(false);
+      window.clearTimeout(installRecoveryTimerRef.current);
+      installRecoveryTimerRef.current = window.setTimeout(() => {
+        const installationConfirmed =
+          readStorageFlag(window.localStorage, INSTALL_APP_STORAGE_KEY) || isStandaloneApp();
+
+        if (!installationConfirmed) {
+          setInstallCheckComplete(true);
+          setShowInstructions(true);
+          setVisible(true);
+        }
+      }, 5000);
+    }
   }
 
   if (!visible) return null;
