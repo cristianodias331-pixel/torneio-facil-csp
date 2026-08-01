@@ -1,6 +1,36 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createClient } from "@supabase/supabase-js";
+import {
+  AtSign,
+  Camera,
+  CalendarDays,
+  ChevronDown,
+  Clock3,
+  Copy,
+  Flame,
+  Gift,
+  GitBranch,
+  Grid3X3,
+  LayoutDashboard,
+  Link2,
+  LockKeyhole,
+  LogOut,
+  MapPin,
+  MessageCircle,
+  Moon,
+  PlusCircle,
+  Settings,
+  Shapes,
+  Share2,
+  Sun,
+  Tag,
+  Target,
+  Trash2,
+  Trophy,
+  UserRound,
+  Users,
+} from "lucide-react";
 import "./style.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
@@ -3953,7 +3983,7 @@ function FreeTrialNotice({ details }) {
       aria-live="polite"
       aria-label="Período gratuito"
     >
-      <div className="freeTrialNoticeIcon" aria-hidden="true">🎁</div>
+      <div className="freeTrialNoticeIcon" aria-hidden="true"><Gift /></div>
 
       <div className="freeTrialNoticeCopy">
         <span>Seu período gratuito está ativo</span>
@@ -4026,6 +4056,18 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const params = new URLSearchParams(window.location.search);
     return params.get("aba") || "inicio";
   });
+  const [colorMode, setColorMode] = useState(() => {
+    try {
+      const savedMode = localStorage.getItem(`torneio360:color-mode:${user.id}`);
+      if (savedMode === "light" || savedMode === "dark") return savedMode;
+    } catch {
+      // A preferência continua funcional durante a sessão mesmo sem armazenamento local.
+    }
+
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  });
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
   const [circuits, setCircuits] = useState([]);
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
@@ -4193,9 +4235,57 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   function goToPanel(panel) {
+    setSelected(null);
     setActivePanel(panel);
     updateAppUrl({ activePanel: panel, selectedTournamentId: null });
   }
+
+  function openProfileSettings() {
+    setProfileMenuOpen(false);
+    setSelected(null);
+    setProfileSubtab("editar");
+    setActivePanel("ajustes");
+    updateAppUrl({ activePanel: "ajustes", selectedTournamentId: null, profileSubtab: "editar" });
+  }
+
+  function toggleColorMode() {
+    setColorMode((currentMode) => currentMode === "dark" ? "light" : "dark");
+  }
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(`torneio360:color-mode:${user.id}`, colorMode);
+    } catch {
+      // O tema permanece aplicado enquanto esta sessão estiver aberta.
+    }
+
+    const previousTheme = document.documentElement.dataset.theme;
+    document.documentElement.dataset.theme = colorMode;
+
+    return () => {
+      if (previousTheme) document.documentElement.dataset.theme = previousTheme;
+      else delete document.documentElement.dataset.theme;
+    };
+  }, [colorMode, user.id]);
+
+  useEffect(() => {
+    if (!profileMenuOpen) return undefined;
+
+    const closeOnOutsideClick = (event) => {
+      if (!profileMenuRef.current?.contains(event.target)) setProfileMenuOpen(false);
+    };
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setProfileMenuOpen(false);
+    };
+
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [profileMenuOpen]);
 
   useEffect(() => {
     updateAppUrl({ activePanel });
@@ -4368,6 +4458,40 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
   const freeTrialDetails = getFreeTrialDetails(profile, user);
+  const profileDisplayName = organizerProfile.organizerName || profile.name || user.email?.split("@")[0] || "Organizador";
+  const profileInitials = profileDisplayName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join("") || "T3";
+  const panelMeta = {
+    inicio: {
+      title: "Visão geral",
+      description: "Acompanhe seus torneios, circuitos e atividades em um só lugar.",
+    },
+    criar: {
+      title: "Torneios",
+      description: "Crie um novo torneio ou continue gerenciando os já cadastrados.",
+    },
+    circuitos: {
+      title: "Circuitos",
+      description: "Organize temporadas e acompanhe a classificação entre torneios.",
+    },
+    modalidades: {
+      title: "Modalidades",
+      description: "Consulte os formatos disponíveis para o seu plano.",
+    },
+    lixeira: {
+      title: "Lixeira",
+      description: "Recupere torneios excluídos nos últimos 30 dias.",
+    },
+    ajustes: {
+      title: "Perfil e preferências",
+      description: "Atualize sua imagem, dados públicos e informações da arena.",
+    },
+  };
+  const currentPanelMeta = panelMeta[activePanel] || panelMeta.inicio;
   const eventGroupKey = newName.trim().toLowerCase().replace(/\s+/g, "-") || null;
 
   const groupedTournaments = tournaments.reduce((groups, item) => {
@@ -5227,8 +5351,15 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       setSelectedArenaTournaments((prev) => prev.map((item) => item.id === data.id ? data : item));
     }
 
+    const linkCopied = await copyToClipboard(getPublicUrl(publicId));
     setShareTarget(null);
-    showNotice("success", "Torneio publicado", "O campeonato foi publicado no perfil da arena com chamada para inscrição pelo WhatsApp.");
+    showNotice(
+      "success",
+      "Torneio publicado",
+      linkCopied
+        ? "O link público foi copiado. Agora é só enviar para atletas e convidados."
+        : "O torneio já está público no perfil da arena."
+    );
   }
 
   async function createTournament() {
@@ -5611,23 +5742,136 @@ setNewPublicInfo({
     });
   }
 
+  function renderAppSidebar() {
+    const navItems = [
+      { panel: "inicio", label: "Visão geral", Icon: LayoutDashboard },
+      { panel: "criar", label: "Torneios", Icon: Trophy },
+      { panel: "circuitos", label: "Circuitos", Icon: GitBranch },
+      { panel: "modalidades", label: "Modalidades", Icon: Shapes },
+    ];
+
+    return (
+      <aside className="playSidebar proSidebar" aria-label="Navegação principal">
+        <span className="sidebarSectionLabel">Menu</span>
+        <nav className="sidebarNav">
+          {navItems.map(({ panel, label, Icon }) => (
+            <button
+              key={panel}
+              className={`playNavItem ${activePanel === panel ? "active" : ""}`}
+              type="button"
+              onClick={() => goToPanel(panel)}
+              aria-current={activePanel === panel ? "page" : undefined}
+              title={label}
+            >
+              <span className="navIcon" aria-hidden="true"><Icon /></span>
+              <small>{label}</small>
+            </button>
+          ))}
+        </nav>
+        <div className="sidebarBrandAccent" aria-hidden="true">
+          <span />
+          <small>Torneio 360</small>
+        </div>
+      </aside>
+    );
+  }
+
+  function renderAppTopbar() {
+    return (
+      <header className="playTopbar proTopbar">
+        <div className="playTopBrand">
+          <BeachLogo />
+          <div className="brandTaglineOnly">
+            <span>{TORNEIO360_TAGLINE}</span>
+          </div>
+        </div>
+
+        <div className="playUserBox proTopActions">
+          <button
+            type="button"
+            className="themeToggleButton"
+            onClick={toggleColorMode}
+            aria-label={colorMode === "dark" ? "Ativar modo claro" : "Ativar modo noturno"}
+            title={colorMode === "dark" ? "Modo claro" : "Modo noturno"}
+          >
+            {colorMode === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+            <span>{colorMode === "dark" ? "Modo claro" : "Modo noturno"}</span>
+          </button>
+
+          <div className="profileMenuWrap" ref={profileMenuRef}>
+            <div className="profileControl">
+              <button type="button" className="profileTrigger" onClick={openProfileSettings} title="Abrir configurações do perfil">
+                <span className="profileAvatar" aria-hidden="true">
+                  {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="" /> : <span>{profileInitials}</span>}
+                </span>
+                <span className="profileTriggerCopy">
+                  <strong>{profileDisplayName}</strong>
+                  <small>Configurações do perfil</small>
+                </span>
+              </button>
+              <button
+                type="button"
+                className="profileMenuToggle"
+                onClick={() => setProfileMenuOpen((open) => !open)}
+                aria-label="Abrir menu da conta"
+                aria-expanded={profileMenuOpen}
+              >
+                <ChevronDown aria-hidden="true" />
+              </button>
+            </div>
+
+            {profileMenuOpen ? (
+              <div className="profileDropdown" role="menu">
+                <button type="button" role="menuitem" onClick={openProfileSettings}>
+                  <Settings aria-hidden="true" />
+                  <span><strong>Meu perfil</strong><small>Dados e foto da arena</small></span>
+                </button>
+                <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); goToPanel("lixeira"); }}>
+                  <Trash2 aria-hidden="true" />
+                  <span><strong>Lixeira</strong><small>Itens excluídos recentemente</small></span>
+                </button>
+                <button type="button" role="menuitem" onClick={() => { setProfileMenuOpen(false); toggleColorMode(); }}>
+                  {colorMode === "dark" ? <Sun aria-hidden="true" /> : <Moon aria-hidden="true" />}
+                  <span><strong>{colorMode === "dark" ? "Modo claro" : "Modo noturno"}</strong><small>Alterar aparência</small></span>
+                </button>
+                <div className="profileDropdownDivider" />
+                <button type="button" role="menuitem" className="profileDropdownLogout" onClick={logout}>
+                  <LogOut aria-hidden="true" />
+                  <span><strong>Sair</strong><small>Encerrar esta sessão</small></span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      </header>
+    );
+  }
+
   if (selected) {
     return (
-      <TournamentErrorBoundary tournamentId={selected.id} onBack={closeSelectedTournament}>
-        <TournamentScreen
-          key={selected.id}
-          tournament={selected}
-          userId={user.id}
-          onBack={closeSelectedTournament}
-          onSave={saveTournament}
-          onNavigationStateChange={rememberTournamentNavigation}
-        />
-      </TournamentErrorBoundary>
+      <div className={`playAppShell proDashboard theme-${colorMode}`}>
+        {renderAppSidebar()}
+        <div className="playMain">
+          {renderAppTopbar()}
+          <main className="playContent tournamentWorkspaceContent">
+            <TournamentErrorBoundary tournamentId={selected.id} onBack={closeSelectedTournament}>
+              <TournamentScreen
+                key={selected.id}
+                tournament={selected}
+                userId={user.id}
+                onBack={closeSelectedTournament}
+                onSave={saveTournament}
+                onNavigationStateChange={rememberTournamentNavigation}
+              />
+            </TournamentErrorBoundary>
+          </main>
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="playAppShell">
+    <div className={`playAppShell proDashboard theme-${colorMode}`}>
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
       <ConfirmModal
@@ -5655,25 +5899,20 @@ setNewPublicInfo({
               </div>
             </div>
 
-            <div className="publicInfoOptions shareInfoOptions">
-              <label><input type="checkbox" defaultChecked /> Nome da arena: {organizerProfile.arenaName || "não informado"}</label>
-              <label><input type="checkbox" defaultChecked /> Nome do organizador: {organizerProfile.organizerName || "não informado"}</label>
-              <label><input type="checkbox" defaultChecked /> WhatsApp: {organizerProfile.whatsapp || "não informado"}</label>
-              <label><input type="checkbox" defaultChecked /> Grupo do WhatsApp: {organizerProfile.whatsappGroupLink || "não informado"}</label>
-              <label><input type="checkbox" defaultChecked /> Instagram: {organizerProfile.instagramHandle || organizerProfile.instagramLink || "não informado"}</label>
-              <label><input type="checkbox" defaultChecked /> Endereço: {organizerProfile.address || "não informado"}</label>
-              <label><input type="checkbox" defaultChecked /> Link do mapa: {organizerProfile.mapsLink || "não informado"}</label>
-              <label><input type="checkbox" defaultChecked /> Cidade/Estado: {[organizerProfile.city, organizerProfile.state].filter(Boolean).join("/") || "não informado"}</label>
-            </div>
-
-            <div className="shareChoiceBox">
-              <label><input type="radio" name="shareMode" defaultChecked /> Publicar no meu perfil e compartilhar torneio</label>
-              <label><input type="radio" name="shareMode" /> Somente compartilhar torneio</label>
+            <div className="sharePublishSummary">
+              <Share2 aria-hidden="true" />
+              <div>
+                <strong>Publicar no perfil da arena</strong>
+                <p>O torneio ficará disponível em uma página pública. O link será copiado para você compartilhar.</p>
+              </div>
             </div>
 
             <div className="editTournamentActions">
               <button type="button" className="deleteBtn" onClick={() => setShareTarget(null)}>Cancelar</button>
-              <button type="button" onClick={confirmShareTarget} disabled={shareTargetSaving}>{shareTargetSaving ? "Publicando..." : "Confirmar compartilhamento"}</button>
+              <button type="button" onClick={confirmShareTarget} disabled={shareTargetSaving}>
+                <Share2 aria-hidden="true" />
+                {shareTargetSaving ? "Publicando..." : "Publicar e copiar link"}
+              </button>
             </div>
           </div>
         </div>
@@ -5789,34 +6028,17 @@ setNewPublicInfo({
         </div>
       ) : null}
 
-      <aside className="playSidebar noSideBrand">
-        <button className={`playNavItem ${activePanel === "inicio" ? "active" : ""}`} type="button" onClick={() => goToPanel("inicio")}><span>🏠</span><small>Início</small></button>
-        <button className={`playNavItem ${activePanel === "criar" ? "active" : ""}`} type="button" onClick={() => goToPanel("criar")}><span>➕</span><small>Criar</small></button>
-        <button className={`playNavItem ${activePanel === "circuitos" ? "active" : ""}`} type="button" onClick={() => goToPanel("circuitos")}><span>🏅</span><small>Circuitos</small></button>
-        <button className={`playNavItem ${activePanel === "ajustes" ? "active" : ""}`} type="button" onClick={() => goToPanel("ajustes")}><span>👤</span><small>Perfil</small></button>
-        <button className={`playNavItem ${activePanel === "lixeira" ? "active" : ""}`} type="button" onClick={() => goToPanel("lixeira")}><span>🗑️</span><small>Lixeira</small></button>
-        <button className={`playNavItem ${activePanel === "modalidades" ? "active" : ""}`} type="button" onClick={() => goToPanel("modalidades")}><span>🎾</span><small>Modalidades</small></button>
-      </aside>
+      {renderAppSidebar()}
 
       <div className="playMain">
-        <header className="playTopbar">
-          <div className="playTopBrand">
-            <BeachLogo />
-            <div className="brandTaglineOnly">
-              <span>{TORNEIO360_TAGLINE}</span>
-            </div>
-          </div>
-          <div className="playUserBox">
-            <span>E aí, {profile.name || user.email?.split("@")[0] || "organizador"}!</span>
-            <button type="button" onClick={logout}>Sair</button>
-          </div>
-        </header>
+        {renderAppTopbar()}
 
         <main className="playContent">
           <section className="playTitleBlock">
             <div>
-              <h1>{activePanel === "inicio" ? "Início" : activePanel === "criar" ? "Criar torneio" : activePanel === "circuitos" ? "Circuitos" : activePanel === "modalidades" ? "Modalidades" : activePanel === "lixeira" ? "Lixeira" : "Perfil"}</h1>
-              <p>{activePanel === "inicio" ? "Veja um resumo da sua plataforma e acompanhe seus principais indicadores." : activePanel === "criar" ? "Cadastre um novo torneio e acompanhe o histórico de torneios criados." : activePanel === "circuitos" ? "Monte circuitos flexíveis escolhendo quais torneios entram na contagem." : activePanel === "modalidades" ? "Veja os formatos liberados para o seu plano." : activePanel === "lixeira" ? "Recupere torneios apagados nos últimos 30 dias." : "Gerencie os dados públicos do organizador e da arena."}</p>
+              <span className="pageEyebrow">Painel de gestão</span>
+              <h1>{currentPanelMeta.title}</h1>
+              <p>{currentPanelMeta.description}</p>
             </div>
             <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
           </section>
@@ -5825,20 +6047,16 @@ setNewPublicInfo({
 
           {activePanel === "inicio" && (
             <>
-              <section className="playTabs homeQuickActions homeQuickActionsFour">
-                <button type="button" onClick={() => goToPanel("criar")}>➕ Criar torneio</button>
-                <button type="button" onClick={() => {
-                  goToPanel("criar");
-                  setTimeout(() => document.getElementById("historico-torneios")?.scrollIntoView({ behavior: "smooth", block: "start" }), 80);
-                }}>🏆 Ver histórico</button>
-                <button type="button" onClick={() => goToPanel("circuitos")}>🏅 Ver circuitos</button>
-                <button type="button" onClick={() => goToPanel("modalidades")}>🎾 Ver modalidades</button>
+              <section className="playTabs homeQuickActions homeQuickActionsThree" aria-label="Ações rápidas">
+                <button type="button" className="primaryQuickAction" onClick={() => goToPanel("criar")}><PlusCircle aria-hidden="true" /> Novo torneio</button>
+                <button type="button" onClick={() => goToPanel("circuitos")}><GitBranch aria-hidden="true" /> Circuitos</button>
+                <button type="button" onClick={() => goToPanel("modalidades")}><Shapes aria-hidden="true" /> Modalidades</button>
               </section>
 
               <section className="playStatsGrid">
                 <div><strong>{tournaments.length}</strong><span>Torneios criados</span></div>
-                <div><strong>{allowedTypes.length}</strong><span>Modalidades liberadas</span></div>
-                <div><strong>{profile.expires_at ? formatDateBR(profile.expires_at) : "—"}</strong><span>Vencimento</span></div>
+                <div><strong>{circuits.length}</strong><span>Circuitos cadastrados</span></div>
+                <div><strong>{allowedTypes.length}</strong><span>Modalidades disponíveis</span></div>
               </section>
             </>
           )}
@@ -5864,7 +6082,7 @@ setNewPublicInfo({
   </div>
 
   <div className="arenaPublicDetailsGrid">
-    {selectedArenaProfile.address ? <div><strong>Endereço</strong><span>📍 {selectedArenaProfile.address}</span></div> : null}
+    {selectedArenaProfile.address ? <div><strong>Endereço</strong><span><MapPin aria-hidden="true" /> {selectedArenaProfile.address}</span></div> : null}
     {selectedArenaProfile.phone ? <div><strong>WhatsApp</strong><span>{selectedArenaProfile.phone}</span></div> : null}
     {selectedArenaProfile.instagram_handle ? <div><strong>Instagram</strong><span>{selectedArenaProfile.instagram_handle}</span></div> : null}
   </div>
@@ -5902,10 +6120,10 @@ setNewPublicInfo({
               <small>{t.type}</small>
             </div>
             <div className="tournamentMeta">
-              {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
-              {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
-              {details.location ? <span>📍 {details.location}</span> : null}
-              {details.gender ? <span>🏷️ {details.gender}</span> : null}
+              {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
+              {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
+              {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
+              {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
             </div>
             {selectedArenaProfile.whatsapp_group_link ? (
               <button type="button" onClick={() => window.open(selectedArenaProfile.whatsapp_group_link, "_blank", "noopener,noreferrer")}>Inscreva-se</button>
@@ -5948,7 +6166,7 @@ setNewPublicInfo({
           {arena.photo_url ? <img src={arena.photo_url} alt={arena.arena_name || arena.name || "Arena"} /> : <span>{(arena.arena_name || arena.name || "Arena").slice(0, 2).toUpperCase()}</span>}
         </div>
         <strong>{arena.arena_name || arena.name || "Arena cadastrada"}</strong>
-        <small>📍 {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</small>
+        <small><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</small>
         <button type="button" onClick={() => openArenaProfile(arena)}>Acessar arena</button>
       </article>
     ))}
@@ -5992,7 +6210,7 @@ setNewPublicInfo({
   {newMultiCategoryEvent === "sim" && (
   <div className="formField fullField eventScheduleBox">
     <div className="eventScheduleHeader">
-      <strong>🏷️ Categorias, datas e horários</strong>
+      <strong><Tag aria-hidden="true" /> Categorias, datas e horários</strong>
       <span>Cadastre cada categoria do evento com sua data e horário de início.</span>
     </div>
 
@@ -6044,7 +6262,7 @@ setNewPublicInfo({
 
   <div className="formField fullField eventScheduleBox">
     <div className="eventScheduleHeader">
-      <strong>📅 Datas e horários do evento</strong>
+      <strong><CalendarDays aria-hidden="true" /> Datas e horários do evento</strong>
       <span>Organize o período do torneio, inscrições e início dos jogos.</span>
     </div>
 
@@ -6213,19 +6431,19 @@ setNewPublicInfo({
                     </div>
 
                     <div className="tournamentMeta">
-                      {details.multiCategoryEvent ? <span>🧩 {details.eventName}</span> : null}
-                      {details.gender ? <span>🏷️ {details.gender}</span> : null}
-                      {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
-                      {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
-                      {details.location ? <span>📍 {details.location}</span> : null}
-                      {details.winningScore ? <span>🎯 {details.winningScore} games</span> : null}
+                      {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
+                      {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
+                      {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
+                      {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
+                      {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
+                      {details.winningScore ? <span><Target aria-hidden="true" /> {details.winningScore} games</span> : null}
                     </div>
                   </div>
 
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /> Compartilhar</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
@@ -6278,19 +6496,19 @@ setNewPublicInfo({
                     </div>
 
                     <div className="tournamentMeta">
-                      {details.multiCategoryEvent ? <span>🧩 {details.eventName}</span> : null}
-                      {details.gender ? <span>🏷️ {details.gender}</span> : null}
-                      {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
-                      {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
-                      {details.location ? <span>📍 {details.location}</span> : null}
-                      {details.winningScore ? <span>🎯 {details.winningScore} games</span> : null}
+                      {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
+                      {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
+                      {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
+                      {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
+                      {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
+                      {details.winningScore ? <span><Target aria-hidden="true" /> {details.winningScore} games</span> : null}
                     </div>
                   </div>
 
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /> Compartilhar</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
@@ -6565,11 +6783,11 @@ setNewPublicInfo({
               </div>
 
               <div className="tournamentMeta">
-                {details.multiCategoryEvent ? <span>🧩 Várias categorias</span> : null}
-                {details.gender ? <span>🏷️ {details.gender}</span> : null}
-                {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
-                {details.location ? <span>📍 {details.location}</span> : null}
-                <span>🗑️ Exclui definitivamente em {daysLeft} dia(s)</span>
+                {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> Várias categorias</span> : null}
+                {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
+                {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
+                {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
+                <span><Trash2 aria-hidden="true" /> Exclui definitivamente em {daysLeft} dia(s)</span>
               </div>
             </div>
 
@@ -6589,7 +6807,7 @@ setNewPublicInfo({
   <section className="card instagramProfileCard">
     <div className="instagramProfileHeader">
       <div className="instagramProfilePhoto">
-        {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do perfil" /> : <span>📷</span>}
+        {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do perfil" /> : <span><UserRound aria-hidden="true" /></span>}
       </div>
       <div className="instagramProfileInfo">
         <div className="instagramProfileTopline">
@@ -6634,18 +6852,18 @@ setNewPublicInfo({
                 <span className="tournamentTypeBadge">{t.type}</span>
               </div>
               <div className="tournamentMeta">
-                {details.multiCategoryEvent ? <span>🧩 {details.eventName}</span> : null}
-                {details.gender ? <span>🏷️ {details.gender}</span> : null}
-                {details.eventDate ? <span>📅 {formatDateBR(details.eventDate)}</span> : null}
-                {details.eventStartTime ? <span>⏰ {details.eventStartTime}</span> : null}
-                {details.location ? <span>📍 {details.location}</span> : null}
-                {details.winningScore ? <span>🎯 {details.winningScore} games</span> : null}
+                {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
+                {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
+                {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
+                {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
+                {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
+                {details.winningScore ? <span><Target aria-hidden="true" /> {details.winningScore} games</span> : null}
               </div>
             </div>
             <div className="tournamentActions">
               <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
               <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-              <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}>Compartilhar</button>
+              <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /> Compartilhar</button>
               <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
             </div>
           </article>
@@ -6675,7 +6893,7 @@ setNewPublicInfo({
           {organizerProfile.photoUrl ? (
             <img src={organizerProfile.photoUrl} alt="Foto de perfil" />
           ) : (
-            <span>📷</span>
+            <span><Camera aria-hidden="true" /></span>
           )}
         </div>
         <strong>Foto de perfil</strong>
@@ -7340,12 +7558,38 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   async function copyPublicLink() {
     if (!shareInfo.public_id) return;
 
-    const ok = await copyToClipboard(getPublicShareMessage(shareInfo.public_id));
+    const ok = await copyToClipboard(getPublicUrl(shareInfo.public_id));
 
     showNotice(
       ok ? "success" : "error",
-      ok ? "Mensagem copiada" : "Erro ao copiar",
-      ok ? "A mensagem com o link público foi copiada." : "Não foi possível copiar a mensagem."
+      ok ? "Link copiado" : "Erro ao copiar",
+      ok ? "O link público foi copiado para a área de transferência." : "Não foi possível copiar o link."
+    );
+  }
+
+  async function sharePublicLink() {
+    if (!shareInfo.public_id) return;
+
+    const url = getPublicUrl(shareInfo.public_id);
+
+    if (typeof navigator.share === "function") {
+      try {
+        await navigator.share({
+          title: tournament.name || "Torneio 360",
+          text: "Acompanhe este torneio no Torneio 360.",
+          url,
+        });
+        return;
+      } catch (error) {
+        if (error?.name === "AbortError") return;
+      }
+    }
+
+    const ok = await copyToClipboard(url);
+    showNotice(
+      ok ? "success" : "error",
+      ok ? "Link pronto para compartilhar" : "Erro ao compartilhar",
+      ok ? "O navegador não abriu o compartilhamento, então copiamos o link para você." : "Não foi possível compartilhar o link."
     );
   }
 
@@ -7752,18 +7996,18 @@ return (
         <div>
           <h1>{tournament.name}</h1>
           <div className="tournamentHeaderMeta">
-            <span>🏆 {tournament.type}</span>
-            {data.multiCategoryEvent ? <span>🧩 Várias categorias</span> : null}
-            {data.gender ? <span>🏷️ {data.gender}</span> : null}
-            {data.eventPeriodLabel || data.eventDate ? <span>🗓️ {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
-            {data.eventDay ? <span>📅 {data.eventDay}</span> : null}
-            {data.registrationDeadline ? <span>📝 Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
-            {data.eventStartTime ? <span>⏰ Início {data.eventStartTime}</span> : null}
+            <span><Trophy aria-hidden="true" /> {tournament.type}</span>
+            {data.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> Várias categorias</span> : null}
+            {data.gender ? <span><Tag aria-hidden="true" /> {data.gender}</span> : null}
+            {data.eventPeriodLabel || data.eventDate ? <span><CalendarDays aria-hidden="true" /> {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
+            {data.eventDay ? <span><CalendarDays aria-hidden="true" /> {data.eventDay}</span> : null}
+            {data.registrationDeadline ? <span><CalendarDays aria-hidden="true" /> Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
+            {data.eventStartTime ? <span><Clock3 aria-hidden="true" /> Início {data.eventStartTime}</span> : null}
             {data.dailyStartTimes && Object.keys(data.dailyStartTimes).length > 0 ? (
-              <span>🕒 Horários por dia definidos</span>
+              <span><Clock3 aria-hidden="true" /> Horários por dia definidos</span>
             ) : null}
-            {data.location ? <span>📍 {data.location}</span> : null}
-            {data.winningScore ? <span>🎯 {data.winningScore} games</span> : null}
+            {data.location ? <span><MapPin aria-hidden="true" /> {data.location}</span> : null}
+            {data.winningScore ? <span><Target aria-hidden="true" /> {data.winningScore} games</span> : null}
           </div>
         </div>
 
@@ -7774,7 +8018,7 @@ return (
 
         <section className="shareHighlightBox">
           <div>
-            <strong>🔗 Compartilhar tabela pública</strong>
+            <strong><Share2 aria-hidden="true" /> Compartilhar tabela pública</strong>
             <p>Envie um link para atletas e convidados acompanharem o torneio sem acessar sua área de edição.</p>
           </div>
 
@@ -7783,28 +8027,19 @@ return (
             className="shareHighlightBtn"
             onClick={() => setShareOpen((prev) => !prev)}
           >
-            {shareOpen ? "Ocultar compartilhamento" : "Compartilhar tabela"}
+            <Share2 aria-hidden="true" />
+            {shareOpen ? "Fechar" : "Compartilhar"}
           </button>
         </section>
 
               {shareOpen && (
           <section className="card shareCard">
-            <h2>Como funciona o compartilhamento?</h2>
-
-            <p>
-              Ao ativar o link público, você gera uma página de visualização para atletas,
-              convidados e organização acompanharem o torneio em tempo real.
-            </p>
-
-            <ul className="shareExplanationList">
-              <li>Quem receber o link poderá ver participantes, jogos, placares, chaves e ranking.</li>
-              <li>O acesso é somente para visualização: ninguém consegue editar nomes, placares ou configurações.</li>
-              <li>Quando você alterar algo no torneio, a tabela pública acompanha as atualizações salvas.</li>
-              <li>Se não quiser mais compartilhar, basta desativar o link público.</li>
-            </ul>
+            <h2>Link público</h2>
+            <p>Atletas e convidados poderão acompanhar participantes, jogos e resultados em modo somente leitura.</p>
 
             {!shareInfo.is_public ? (
-              <button type="button" onClick={enablePublicShare} disabled={shareLoading}>
+              <button type="button" className="sharePrimaryAction" onClick={enablePublicShare} disabled={shareLoading}>
+                <Link2 aria-hidden="true" />
                 {shareLoading ? "Gerando..." : "Ativar link público"}
               </button>
             ) : (
@@ -7817,14 +8052,15 @@ return (
                     value={getPublicUrl(shareInfo.public_id)}
                     onFocus={(e) => e.target.select()}
                   />
-
-                  <button type="button" onClick={copyPublicLink}>
-                    Compartilhar link
-                  </button>
                 </div>
 
-
-                <div className="actions">
+                <div className="shareActionRow">
+                  <button type="button" className="sharePrimaryAction" onClick={sharePublicLink}>
+                    <Share2 aria-hidden="true" /> Compartilhar
+                  </button>
+                  <button type="button" className="secondaryBtn" onClick={copyPublicLink}>
+                    <Copy aria-hidden="true" /> Copiar link
+                  </button>
                   <button
                     type="button"
                     className="deleteBtn"
@@ -7840,12 +8076,12 @@ return (
         )}
 
         <nav className="tournamentTopTabs" aria-label="Organização do torneio">
-          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}>👥 Participantes</button>
+          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}><Users aria-hidden="true" /> Participantes</button>
           {isCupType(config) && (
-            <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}>🧩 Grupos</button>
+            <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}><Grid3X3 aria-hidden="true" /> Grupos</button>
           )}
-          <button type="button" className={activeTournamentTab === "partidas" ? "active" : ""} onClick={() => setActiveTournamentTab("partidas")}>🔥 Partidas</button>
-          <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}>🏆 Ranking</button>
+          <button type="button" className={activeTournamentTab === "partidas" ? "active" : ""} onClick={() => setActiveTournamentTab("partidas")}><Flame aria-hidden="true" /> Partidas</button>
+          <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}><Trophy aria-hidden="true" /> Ranking</button>
         </nav>
 
         <section className="card" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
@@ -9120,11 +9356,11 @@ function PublicTournamentScreen({ tournament }) {
         <section className="card publicTournamentInfoCard">
           <h2>Informações do torneio</h2>
           <div className="publicInfoGrid">
-            {data.registrationDeadline ? <span>📝 Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
-            {registrationClosed ? <span className="closedInfo">🔒 Inscrições encerradas</span> : null}
-            {data.eventStartTime ? <span>⏰ Início {data.eventStartTime}</span> : null}
-            {data.location ? <span>📍 {data.location}</span> : null}
-            {data.winningScore ? <span>🎯 {data.winningScore} games</span> : null}
+            {data.registrationDeadline ? <span><CalendarDays aria-hidden="true" /> Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
+            {registrationClosed ? <span className="closedInfo"><LockKeyhole aria-hidden="true" /> Inscrições encerradas</span> : null}
+            {data.eventStartTime ? <span><Clock3 aria-hidden="true" /> Início {data.eventStartTime}</span> : null}
+            {data.location ? <span><MapPin aria-hidden="true" /> {data.location}</span> : null}
+            {data.winningScore ? <span><Target aria-hidden="true" /> {data.winningScore} games</span> : null}
           </div>
         </section>
 
@@ -9146,22 +9382,22 @@ function PublicTournamentScreen({ tournament }) {
               </div>
             </div>
             <div className="publicOrganizerLinks">
-              {publicVisibility.showWhatsapp && publicOrganizer.whatsapp ? <a href={"https://wa.me/" + String(publicOrganizer.whatsapp).replace(/\D/g, "")} target="_blank" rel="noreferrer">💬 WhatsApp</a> : null}
-              {publicVisibility.showWhatsappGroupLink && publicOrganizer.whatsappGroupLink ? <a href={publicOrganizer.whatsappGroupLink} target="_blank" rel="noreferrer">👥 Grupo do WhatsApp</a> : null}
-              {publicVisibility.showInstagram && publicOrganizer.instagramLink ? <a href={publicOrganizer.instagramLink} target="_blank" rel="noreferrer">📸 {publicOrganizer.instagramHandle || "Instagram"}</a> : null}
-              {publicVisibility.showInstagram && !publicOrganizer.instagramLink && publicOrganizer.instagramHandle ? <span>📸 {publicOrganizer.instagramHandle}</span> : null}
-              {publicVisibility.showAddress && publicOrganizer.address ? <span>📍 {publicOrganizer.address}</span> : null}
-              {publicVisibility.showCityState && (publicOrganizer.city || publicOrganizer.state) ? <span>🏙️ {[publicOrganizer.city, publicOrganizer.state].filter(Boolean).join("/")}</span> : null}
-              {publicVisibility.showMapsLink && publicOrganizer.mapsLink ? <a href={publicOrganizer.mapsLink} target="_blank" rel="noreferrer">🗺️ Ver endereço no mapa</a> : null}
+              {publicVisibility.showWhatsapp && publicOrganizer.whatsapp ? <a href={"https://wa.me/" + String(publicOrganizer.whatsapp).replace(/\D/g, "")} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" /> WhatsApp</a> : null}
+              {publicVisibility.showWhatsappGroupLink && publicOrganizer.whatsappGroupLink ? <a href={publicOrganizer.whatsappGroupLink} target="_blank" rel="noreferrer"><Users aria-hidden="true" /> Grupo do WhatsApp</a> : null}
+              {publicVisibility.showInstagram && publicOrganizer.instagramLink ? <a href={publicOrganizer.instagramLink} target="_blank" rel="noreferrer"><AtSign aria-hidden="true" /> {publicOrganizer.instagramHandle || "Instagram"}</a> : null}
+              {publicVisibility.showInstagram && !publicOrganizer.instagramLink && publicOrganizer.instagramHandle ? <span><AtSign aria-hidden="true" /> {publicOrganizer.instagramHandle}</span> : null}
+              {publicVisibility.showAddress && publicOrganizer.address ? <span><MapPin aria-hidden="true" /> {publicOrganizer.address}</span> : null}
+              {publicVisibility.showCityState && (publicOrganizer.city || publicOrganizer.state) ? <span><MapPin aria-hidden="true" /> {[publicOrganizer.city, publicOrganizer.state].filter(Boolean).join("/")}</span> : null}
+              {publicVisibility.showMapsLink && publicOrganizer.mapsLink ? <a href={publicOrganizer.mapsLink} target="_blank" rel="noreferrer"><MapPin aria-hidden="true" /> Ver endereço no mapa</a> : null}
             </div>
           </section>
         ) : null}
 
         <nav className="tournamentTopTabs publicTournamentTabs" aria-label="Visualização pública do torneio">
-          <button type="button" className={activePublicTab === "participantes" ? "active" : ""} onClick={() => setActivePublicTab("participantes")}>👥 Participantes</button>
-          {isCup ? <button type="button" className={activePublicTab === "grupos" ? "active" : ""} onClick={() => setActivePublicTab("grupos")}>🧩 Grupos</button> : null}
-          <button type="button" className={activePublicTab === "partidas" ? "active" : ""} onClick={() => setActivePublicTab("partidas")}>🔥 Partidas</button>
-          <button type="button" className={activePublicTab === "ranking" ? "active" : ""} onClick={() => setActivePublicTab("ranking")}>🏆 Ranking</button>
+          <button type="button" className={activePublicTab === "participantes" ? "active" : ""} onClick={() => setActivePublicTab("participantes")}><Users aria-hidden="true" /> Participantes</button>
+          {isCup ? <button type="button" className={activePublicTab === "grupos" ? "active" : ""} onClick={() => setActivePublicTab("grupos")}><Grid3X3 aria-hidden="true" /> Grupos</button> : null}
+          <button type="button" className={activePublicTab === "partidas" ? "active" : ""} onClick={() => setActivePublicTab("partidas")}><Flame aria-hidden="true" /> Partidas</button>
+          <button type="button" className={activePublicTab === "ranking" ? "active" : ""} onClick={() => setActivePublicTab("ranking")}><Trophy aria-hidden="true" /> Ranking</button>
         </nav>
 
         <section className="card publicAthletesCard" style={{ display: activePublicTab === "participantes" ? undefined : "none" }}>
