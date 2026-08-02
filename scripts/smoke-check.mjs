@@ -34,6 +34,37 @@ for (const marker of requiredApplicationMarkers) {
   assert.ok(mainSource.includes(marker), `Fluxo essencial ausente: ${marker}`);
 }
 
+const expectedModalityLabels = [
+  "Super 6 (dupla fixa)",
+  "Super 8",
+  "Super 8 (dupla fixa)",
+  "Super 10 mista",
+  "Super 12 mista",
+  "Super 16 mista",
+  "Simples 8 (1 contra 1 por jogo)",
+];
+
+for (const label of expectedModalityLabels) {
+  assert.ok(mainSource.includes(label), `Nome de modalidade ausente: ${label}`);
+}
+
+const premiumModalities = mainSource.slice(
+  mainSource.indexOf("premium: ["),
+  mainSource.indexOf("const modalityConfig")
+);
+const premiumOrder = [
+  '"Super 12 Mista (Dupla Fixa)"',
+  '"Super 08"',
+  '"Super 16 Mista (Dupla Fixa)"',
+  '"Super 10 Mista (Dupla Aleatória)"',
+  '"Super 12 Mista (Dupla Aleatória)"',
+  '"Super 16 Mista (Dupla Aleatória)"',
+  '"Simples 8"',
+];
+const premiumPositions = premiumOrder.map((type) => premiumModalities.indexOf(type));
+assert.ok(premiumPositions.every((position) => position >= 0), "A lista Premium perdeu uma modalidade obrigatória.");
+assert.deepEqual([...premiumPositions].sort((a, b) => a - b), premiumPositions, "A ordem das modalidades está incorreta.");
+
 assert.ok(indexSource.includes('src/main.jsx'), "A entrada React não está ligada ao index.html.");
 assert.ok(indexSource.includes('torneio360-favicon-96.png'), "O novo favicon do Torneio360 não está configurado.");
 assert.ok(indexSource.includes('manifest.webmanifest'), "O manifesto instalável não está ligado ao site.");
