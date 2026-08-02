@@ -38,12 +38,19 @@ import "./style.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
+const PLATFORM_WHATSAPP_NUMBER = "5585988739056";
+const PLATFORM_WHATSAPP_DEFAULT_MESSAGE = "Olá! Preciso de ajuda com o Torneio360.";
+
+function getPlatformWhatsAppUrl(message = PLATFORM_WHATSAPP_DEFAULT_MESSAGE) {
+  return `https://wa.me/${PLATFORM_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+}
+
 const PLATFORM_SUPPORT = Object.freeze([
   {
     id: "whatsapp",
     label: "WhatsApp",
     value: "85 9.8873-9056",
-    href: "https://wa.me/5585988739056?text=Ol%C3%A1%21%20Preciso%20de%20ajuda%20com%20o%20Torneio360.",
+    href: getPlatformWhatsAppUrl(),
     Icon: MessageCircle,
     external: true,
   },
@@ -441,6 +448,12 @@ function getBrazilianWhatsAppUrl(value) {
     : `55${digits}`;
 
   return `https://wa.me/${numberWithCountryCode}`;
+}
+
+function getPlanRegularizationWhatsAppUrl(profile, user) {
+  const plan = profile?.plan ? ` Plano atual: ${profile.plan}.` : "";
+  const email = user?.email ? ` E-mail da conta: ${user.email}.` : "";
+  return getPlatformWhatsAppUrl(`Olá! Meu período de acesso ao Torneio360 terminou e quero regularizar o pagamento do meu plano.${plan}${email}`);
 }
 
 function isEmailNotConfirmedError(error) {
@@ -3042,7 +3055,15 @@ function App() {
     return <AccessPreparing onRetry={refreshProfile} />;
   }
 
-  if (expired || !isActive || !hasActivePeriod) return <Blocked profile={profile} />;
+  if (expired || !isActive || !hasActivePeriod) {
+    return (
+      <Blocked
+        profile={profile}
+        user={session.user}
+        autoRedirect={status !== "suspended"}
+      />
+    );
+  }
 
   return <Dashboard profile={profile} user={session.user} onProfileChange={setProfile} />;
 }
@@ -3054,6 +3075,33 @@ function BeachLogo({ variant = "light" } = {}) {
   return (
     <div className={`beachLogo torneio360Logo ${variant === "blue" ? "torneio360LogoBlue" : ""}`} aria-label="Torneio 360">
       <img src={logoSrc} alt="Torneio 360" />
+    </div>
+  );
+}
+
+function PlatformSupportLinks({ contacts = PLATFORM_SUPPORT, className = "", whatsappHref = "" }) {
+  return (
+    <div className={`supportContactGrid ${className}`.trim()}>
+      {contacts.map(({ id, label, value, href, Icon, external }) => {
+        const contactHref = id === "whatsapp" && whatsappHref ? whatsappHref : href;
+
+        return (
+          <a
+            key={id}
+            className={`supportContactLink supportContactLink-${id}`}
+            href={contactHref}
+            target={external ? "_blank" : undefined}
+            rel={external ? "noopener noreferrer" : undefined}
+            aria-label={`${label}: ${value}`}
+          >
+            <span className="supportContactIcon"><Icon aria-hidden="true" /></span>
+            <span>
+              <strong>{label}</strong>
+              <small>{value}</small>
+            </span>
+          </a>
+        );
+      })}
     </div>
   );
 }
@@ -3488,6 +3536,7 @@ function Login({
           <a href="#como-funciona">Como funciona</a>
           <a href="#planos">Planos</a>
           <a href="#modalidades">Modalidades</a>
+          <a href="#contato">Contato</a>
         </nav>
 
         <div className="landingHeaderActions">
@@ -3519,6 +3568,35 @@ function Login({
       </header>
 
       <main>
+        <section className="landingTrialBanner" aria-labelledby="landing-trial-title">
+          <div className="landingTrialSeal" aria-hidden="true">
+            <Gift />
+            <strong>7</strong>
+            <span>dias grátis</span>
+          </div>
+
+          <div className="landingTrialCopy">
+            <span>Oferta para novos usuários</span>
+            <h2 id="landing-trial-title">Experimente o plano Premium completo por 7 dias</h2>
+            <p>Crie sua conta e confirme o e-mail para liberar seu período gratuito.</p>
+            <div className="landingTrialBenefits" aria-label="Benefícios do teste grátis">
+              <span>Todos os formatos Premium</span>
+              <span>Rankings e tabelas automáticas</span>
+              <span>Começa após confirmar o e-mail</span>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              changeMode("signup");
+              document.getElementById("acesso")?.scrollIntoView({ behavior: "smooth" });
+            }}
+          >
+            Começar teste grátis
+          </button>
+        </section>
+
         <section className="landingHero">
           <div className="heroContent">
             <div className="heroBadge">
@@ -3801,6 +3879,22 @@ function Login({
           </div>
         </section>
 
+        <section id="contato" className="landingSection landingSupportSection">
+          <div className="landingSupportShell">
+            <div className="landingSupportIntro">
+              <span>Atendimento</span>
+              <h2>Fale diretamente com o Torneio360</h2>
+              <p>Conheça os planos, regularize seu acesso ou peça ajuda pelo canal que preferir.</p>
+              <div className="landingSupportHighlight">
+                <MessageCircle aria-hidden="true" />
+                <span><strong>Precisa falar agora?</strong> O WhatsApp é o caminho mais rápido.</span>
+              </div>
+            </div>
+
+            <PlatformSupportLinks className="landingSupportContacts" />
+          </div>
+        </section>
+
         <section id="acesso" className="landingAccessSection">
           <div className="accessText">
             <span>Acesso</span>
@@ -3844,6 +3938,16 @@ function Login({
                 Criar conta
               </button>
             </div>
+
+            {mode === "signup" ? (
+              <div className="accessTrialCallout" role="status">
+                <span className="accessTrialCalloutIcon"><Gift aria-hidden="true" /></span>
+                <span>
+                  <strong>Seu Premium começa com 7 dias grátis</strong>
+                  <small>Confirme o e-mail depois do cadastro para ativar o teste.</small>
+                </span>
+              </div>
+            ) : null}
 
             <form onSubmit={handleSubmit} noValidate>
               {mode === "signup" && (
@@ -4046,20 +4150,56 @@ function AccessPreparing({ onRetry }) {
   );
 }
 
-function Blocked({ profile }) {
+function Blocked({ profile, user, autoRedirect = false }) {
+  const regularizationUrl = getPlanRegularizationWhatsAppUrl(profile, user);
+
+  useEffect(() => {
+    if (!autoRedirect) return undefined;
+
+    const timer = window.setTimeout(() => {
+      window.location.assign(regularizationUrl);
+    }, 2200);
+
+    return () => window.clearTimeout(timer);
+  }, [autoRedirect, regularizationUrl]);
+
   return (
-    <div className="center">
-      <h1>Acesso encerrado</h1>
-      <p>Seu teste grátis terminou. Para continuar usando o Torneio 360, regularize seu acesso.</p>
+    <div className="blockedAccessPage">
+      <main className="blockedAccessCard" aria-labelledby="blocked-access-title">
+        <BeachLogo variant="blue" />
 
-      <div className="infoBox">
-        <p><strong>Plano:</strong> {profile.plan}</p>
-        <p><strong>Status:</strong> {formatStatusBR(profile.status)}</p>
-        <p><strong>Vencimento:</strong> {profile.expires_at ? formatDateBR(profile.expires_at) : "não definido"}</p>
-      </div>
+        <div className="blockedAccessIcon" aria-hidden="true"><MessageCircle /></div>
+        <span className="blockedAccessEyebrow">Acesso e assinatura</span>
+        <h1 id="blocked-access-title">Seu período gratuito terminou</h1>
+        <p>Para continuar organizando seus torneios, fale com o Torneio360 e regularize o pagamento do seu plano.</p>
 
-      <p>Entre em contato para liberar seu plano.</p>
-      <button type="button" onClick={logout}>Sair</button>
+        <dl className="blockedAccessSummary">
+          <div><dt>Plano</dt><dd>{profile.plan || "Não informado"}</dd></div>
+          <div><dt>Status</dt><dd>{formatStatusBR(profile.status)}</dd></div>
+          <div><dt>Vencimento</dt><dd>{profile.expires_at ? formatDateBR(profile.expires_at) : "Não definido"}</dd></div>
+        </dl>
+
+        {autoRedirect ? (
+          <div className="blockedRedirectNotice" role="status" aria-live="polite">
+            <span aria-hidden="true" />
+            Abrindo o atendimento no WhatsApp...
+          </div>
+        ) : null}
+
+        <a className="blockedWhatsappButton" href={regularizationUrl} target="_blank" rel="noopener noreferrer">
+          <MessageCircle aria-hidden="true" />
+          Regularizar pelo WhatsApp
+        </a>
+
+        <p className="blockedAccessFallback">Se o WhatsApp não abrir automaticamente, toque no botão acima.</p>
+
+        <PlatformSupportLinks
+          contacts={PLATFORM_SUPPORT.filter(({ id }) => id !== "whatsapp")}
+          className="blockedAlternativeContacts"
+        />
+
+        <button type="button" className="blockedSignOutButton" onClick={logout}>Sair da conta</button>
+      </main>
     </div>
   );
 }
@@ -7261,24 +7401,7 @@ setNewPublicInfo({
           <p>Escolha o canal de sua preferência para receber suporte.</p>
         </div>
 
-        <div className="supportContactGrid">
-          {PLATFORM_SUPPORT.map(({ id, label, value, href, Icon, external }) => (
-            <a
-              key={id}
-              className={`supportContactLink supportContactLink-${id}`}
-              href={href}
-              target={external ? "_blank" : undefined}
-              rel={external ? "noopener noreferrer" : undefined}
-              aria-label={`${label}: ${value}`}
-            >
-              <span className="supportContactIcon"><Icon aria-hidden="true" /></span>
-              <span>
-                <strong>{label}</strong>
-                <small>{value}</small>
-              </span>
-            </a>
-          ))}
-        </div>
+        <PlatformSupportLinks />
       </section>
     </div>
   ) : null}
