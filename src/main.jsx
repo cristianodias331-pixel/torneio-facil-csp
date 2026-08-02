@@ -504,6 +504,20 @@ function normalizeScoreInput(value, winningScore = 4) {
   return String(Math.floor(number));
 }
 
+const modalityDisplayNames = {
+  "Super 08": "Super 8",
+  "Super 10 Mista (Dupla Aleatória)": "Super 10 mista",
+  "Super 12 Mista (Dupla Aleatória)": "Super 12 mista",
+  "Super 16 Mista (Dupla Aleatória)": "Super 16 mista",
+  "Super 12 Mista (Dupla Fixa)": "Super 6 (dupla fixa)",
+  "Super 16 Mista (Dupla Fixa)": "Super 8 (dupla fixa)",
+  "Simples 8": "Simples 8 (1 contra 1 por jogo)",
+};
+
+function getModalityDisplayName(type) {
+  return modalityDisplayNames[type] || type;
+}
+
 const allowedByPlan = {
   basic: [
     "Super 08",
@@ -512,20 +526,20 @@ const allowedByPlan = {
     "Super 16 Mista (Dupla Aleatória)",
   ],
   pro: [
+    "Super 12 Mista (Dupla Fixa)",
     "Super 08",
+    "Super 16 Mista (Dupla Fixa)",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
-    "Super 12 Mista (Dupla Fixa)",
-    "Super 16 Mista (Dupla Fixa)",
   ],
   premium: [
+    "Super 12 Mista (Dupla Fixa)",
     "Super 08",
+    "Super 16 Mista (Dupla Fixa)",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
-    "Super 12 Mista (Dupla Fixa)",
-    "Super 16 Mista (Dupla Fixa)",
     "Simples 8",
     "Copa - 12 ou 24 duplas",
     "Copa - 18 duplas",
@@ -3565,7 +3579,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 08, Super 12, Super 16, Simples 8 ou Copas conforme a realidade do evento.
+                Selecione Super 6, Super 8, Super 10 mista, Super 12 mista, Super 16 mista, Simples 8 ou Copas conforme a realidade do evento.
               </p>
             </div>
 
@@ -3639,12 +3653,12 @@ function Login({
               title="Basic"
               tag="Entrada"
               price="R$ 19,90"
-              text="Para começar com torneios mistos e Super 08."
+              text="Para começar com torneios mistos e Super 8."
               items={[
-                "Super 08",
-                "Super 10 Mista Aleatória",
-                "Super 12 Mista Aleatória",
-                "Super 16 Mista Aleatória",
+                "Super 8",
+                "Super 10 mista",
+                "Super 12 mista",
+                "Super 16 mista",
                 "Gerencie apenas 1 campeonato por vez",
                 "Sorteio automático",
               ]}
@@ -3657,12 +3671,12 @@ function Login({
               price="R$ 39,90"
               text="Para organizadores que precisam de modalidades com duplas fixas."
               items={[
-                "Super 08",
-                "Super 10 Mista Aleatória",
-                "Super 12 Mista Aleatória",
-                "Super 16 Mista Aleatória",
-                "Super 12 Mista Dupla Fixa",
-                "Super 16 Mista Dupla Fixa",
+                "Super 6 (dupla fixa)",
+                "Super 8",
+                "Super 8 (dupla fixa)",
+                "Super 10 mista",
+                "Super 12 mista",
+                "Super 16 mista",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -3673,13 +3687,13 @@ function Login({
               price="R$ 59,90"
               text="Para quem quer liberar todos os formatos disponíveis."
               items={[
-                "Super 08",
-                "Super 10 Mista Aleatória",
-                "Super 12 Mista Aleatória",
-                "Super 16 Mista Aleatória",
-                "Super 12 Mista Dupla Fixa",
-                "Super 16 Mista Dupla Fixa",
-                "Simples 8",
+                "Super 6 (dupla fixa)",
+                "Super 8",
+                "Super 8 (dupla fixa)",
+                "Super 10 mista",
+                "Super 12 mista",
+                "Super 16 mista",
+                "Simples 8 (1 contra 1 por jogo)",
                 "Copa - 12 ou 24 duplas",
                 "Copa - 18 duplas",
                 "Copa - 21 duplas",
@@ -3699,37 +3713,37 @@ function Login({
 
           <div className="modalitiesGrid landingModalities">
             <Info
-              title="Super 08"
-              text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
-            />
-
-            <Info
-              title="Super 10 Mista Aleatória"
-              text="Formato com 5 homens e 5 mulheres. São 5 rodadas, 2 jogos por rodada, e em cada rodada descansam 1 homem e 1 mulher. Todos jogam 4 partidas e descansam 1 vez. O ranking é separado masculino e feminino."
-            />
-
-            <Info
-              title="Super 12 Mista Aleatória"
-              text="Formato misto com 12 participantes: 6 homens e 6 mulheres. Primeiro, os atletas são cadastrados e sorteados. Depois, o sistema combina os participantes para formar duplas mistas em diferentes rodadas, mantendo equilíbrio entre homens e mulheres. Cada jogador participa de jogos com combinações variadas, e o desempenho é calculado individualmente. É uma boa opção para eventos sociais e competitivos com rotação de parceiros."
-            />
-
-            <Info
-              title="Super 16 Mista Aleatória"
-              text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
-            />
-
-            <Info
-              title="Super 12 Mista Dupla Fixa"
+              title="Super 6 (dupla fixa)"
               text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
             />
 
             <Info
-              title="Super 16 Mista Dupla Fixa"
+              title="Super 8"
+              text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
+            />
+
+            <Info
+              title="Super 8 (dupla fixa)"
               text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
-              title="Simples 8"
+              title="Super 10 mista"
+              text="Formato com 5 homens e 5 mulheres. São 5 rodadas, 2 jogos por rodada, e em cada rodada descansam 1 homem e 1 mulher. Todos jogam 4 partidas e descansam 1 vez. O ranking é separado masculino e feminino."
+            />
+
+            <Info
+              title="Super 12 mista"
+              text="Formato misto com 12 participantes: 6 homens e 6 mulheres. Primeiro, os atletas são cadastrados e sorteados. Depois, o sistema combina os participantes para formar duplas mistas em diferentes rodadas, mantendo equilíbrio entre homens e mulheres. Cada jogador participa de jogos com combinações variadas, e o desempenho é calculado individualmente. É uma boa opção para eventos sociais e competitivos com rotação de parceiros."
+            />
+
+            <Info
+              title="Super 16 mista"
+              text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
+            />
+
+            <Info
+              title="Simples 8 (1 contra 1 por jogo)"
               text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo de games até definir os melhores colocados."
             />
 
@@ -6007,7 +6021,7 @@ setNewPublicInfo({
               <div className="formField">
                 <label>Modalidade</label>
                 <select value={editForm.type} onChange={(e) => updateEditForm("type", e.target.value)}>
-                  {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                  {allowedTypes.map((type) => <option key={type} value={type}>{getModalityDisplayName(type)}</option>)}
                 </select>
               </div>
 
@@ -6181,7 +6195,7 @@ setNewPublicInfo({
           <article className="arenaPublicTournamentCard" key={t.id}>
             <div>
               <strong>{t.name}</strong>
-              <small>{t.type}</small>
+              <small>{getModalityDisplayName(t.type)}</small>
             </div>
             <div className="tournamentMeta">
               {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
@@ -6421,7 +6435,7 @@ setNewPublicInfo({
     <select value={newType} onChange={(e) => setNewType(e.target.value)}>
       <option value="">Escolha a modalidade</option>
       {allowedTypes.map((type) => (
-        <option key={type} value={type}>{type}</option>
+        <option key={type} value={type}>{getModalityDisplayName(type)}</option>
       ))}
     </select>
   </div>
@@ -6491,7 +6505,7 @@ setNewPublicInfo({
                   <div className="tournamentInfo">
                     <div className="tournamentTitleRow">
                       <strong>{t.name}</strong>
-                      <span className="tournamentTypeBadge">{t.type}</span>
+                      <span className="tournamentTypeBadge">{getModalityDisplayName(t.type)}</span>
                     </div>
 
                     <div className="tournamentMeta">
@@ -6556,7 +6570,7 @@ setNewPublicInfo({
                   <div className="tournamentInfo">
                     <div className="tournamentTitleRow">
                       <strong>{t.name}</strong>
-                      <span className="tournamentTypeBadge">{t.type}</span>
+                      <span className="tournamentTypeBadge">{getModalityDisplayName(t.type)}</span>
                     </div>
 
                     <div className="tournamentMeta">
@@ -6640,7 +6654,7 @@ setNewPublicInfo({
                 <span className="circuitCheckVisual">{checked ? "✓" : ""}</span>
                 <span className="circuitTournamentText">
                   <strong>{details.eventName || t.name}</strong>
-                  <small>{[t.name, t.type, details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
+                  <small>{[t.name, getModalityDisplayName(t.type), details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
                 </span>
               </label>
             );
@@ -6747,51 +6761,51 @@ setNewPublicInfo({
 <section className="card">
   <h2>Modalidades liberadas</h2>
   <div className="modalitiesGrid internalModalities">
+    {allowedTypes.includes("Super 12 Mista (Dupla Fixa)") && (
+      <Info
+        title="Super 6 (dupla fixa)"
+        text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
+      />
+    )}
+
     {allowedTypes.includes("Super 08") && (
       <Info
-        title="Super 08"
+        title="Super 8"
         text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
+      />
+    )}
+
+    {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
+      <Info
+        title="Super 8 (dupla fixa)"
+        text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
       />
     )}
 
     {allowedTypes.includes("Super 10 Mista (Dupla Aleatória)") && (
       <Info
-        title="Super 10 Mista Aleatória"
+        title="Super 10 mista"
         text="Formato misto com 10 participantes: 5 homens e 5 mulheres. São 5 rodadas, com 2 jogos por rodada, e em cada rodada descansam 1 homem e 1 mulher. Ao final, todos jogam 4 partidas e descansam 1 vez. O sistema monta automaticamente as duplas mistas, organiza as quadras, registra os placares e calcula rankings separados masculino e feminino. É ideal para torneios de hoje, eventos rápidos e grupos menores, mantendo equilíbrio de jogos entre todos os atletas."
       />
     )}
 
     {allowedTypes.includes("Super 12 Mista (Dupla Aleatória)") && (
       <Info
-        title="Super 12 Mista Aleatória"
+        title="Super 12 mista"
         text="Formato misto com 12 participantes: 6 homens e 6 mulheres. Primeiro, os atletas são cadastrados e sorteados. Depois, o sistema combina os participantes para formar duplas mistas em diferentes rodadas, mantendo equilíbrio entre homens e mulheres. Cada jogador participa de jogos com combinações variadas, e o desempenho é calculado individualmente. É uma boa opção para eventos sociais e competitivos com rotação de parceiros."
       />
     )}
 
     {allowedTypes.includes("Super 16 Mista (Dupla Aleatória)") && (
       <Info
-        title="Super 16 Mista Aleatória"
+        title="Super 16 mista"
         text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
-      />
-    )}
-
-    {allowedTypes.includes("Super 12 Mista (Dupla Fixa)") && (
-      <Info
-        title="Super 12 Mista Dupla Fixa"
-        text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
-      />
-    )}
-
-    {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
-      <Info
-        title="Super 16 Mista Dupla Fixa"
-        text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
       />
     )}
 
     {allowedTypes.includes("Simples 8") && (
       <Info
-        title="Simples 8"
+        title="Simples 8 (1 contra 1 por jogo)"
         text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo de games até definir os melhores colocados."
       />
     )}
@@ -6843,7 +6857,7 @@ setNewPublicInfo({
             <div className="tournamentInfo">
               <div className="tournamentTitleRow">
                 <strong>{t.name}</strong>
-                <span className="tournamentTypeBadge">{t.type}</span>
+                <span className="tournamentTypeBadge">{getModalityDisplayName(t.type)}</span>
               </div>
 
               <div className="tournamentMeta">
@@ -6945,7 +6959,7 @@ setNewPublicInfo({
             <div className="tournamentInfo">
               <div className="tournamentTitleRow">
                 <strong>{t.name}</strong>
-                <span className="tournamentTypeBadge">{t.type}</span>
+                <span className="tournamentTypeBadge">{getModalityDisplayName(t.type)}</span>
               </div>
               <div className="tournamentMeta">
                 {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
@@ -8157,7 +8171,7 @@ return (
         <div>
           <h1>{tournament.name}</h1>
           <div className="tournamentHeaderMeta">
-            <span><Trophy aria-hidden="true" /> {tournament.type}</span>
+            <span><Trophy aria-hidden="true" /> {getModalityDisplayName(tournament.type)}</span>
             {data.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> Várias categorias</span> : null}
             {data.gender ? <span><Tag aria-hidden="true" /> {data.gender}</span> : null}
             {data.eventPeriodLabel || data.eventDate ? <span><CalendarDays aria-hidden="true" /> {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
@@ -9500,7 +9514,7 @@ function PublicTournamentScreen({ tournament }) {
           <span>Tabela pública</span>
           <h1>{tournament.name}</h1>
           <p>
-            {tournament.type}
+            {getModalityDisplayName(tournament.type)}
             {data.gender ? ` · ${data.gender}` : ""}
             {data.eventDay ? ` · ${data.eventDay}` : ""}
             {data.eventDate ? ` · ${formatDateBR(data.eventDate)}` : ""}
