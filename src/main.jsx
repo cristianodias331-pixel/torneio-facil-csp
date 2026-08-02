@@ -9330,7 +9330,7 @@ function RankingTable({ title, rows, rankingCriteria }) {
   const criteria = getRankingCriteria(rankingCriteria);
 
   return (
-    <div>
+    <div className="rankingTablePanel">
       <h3>{title}</h3>
 
       <p className="rankingScrollHint" aria-hidden="true">Deslize a tabela para ver todos os dados →</p>
