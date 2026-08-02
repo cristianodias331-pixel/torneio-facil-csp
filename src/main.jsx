@@ -2,34 +2,28 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createClient } from "@supabase/supabase-js";
 import {
-  Activity,
   AtSign,
   Camera,
   CalendarDays,
   ChevronDown,
   Clock3,
   Copy,
-  Edit2,
-  Filter,
   Flame,
   Gift,
+  GitBranch,
   Grid3X3,
-  HelpCircle,
   LayoutDashboard,
   LifeBuoy,
   Link2,
   LockKeyhole,
-  LockOpen,
   LogOut,
   Mail,
-  Map as MapIcon,
   MapPin,
   MessageCircle,
-  MoreVertical,
   Moon,
   PlusCircle,
-  Search,
   Settings,
+  Shapes,
   Share2,
   Sun,
   Tag,
@@ -38,16 +32,12 @@ import {
   Trophy,
   UserRound,
   Users,
-  X,
 } from "lucide-react";
 import InstallAppBanner from "./InstallAppBanner.jsx";
-import AthleteDashboard from "./AthleteDashboard.jsx";
 import "./style.css";
-import "./figma-complete.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
-const IS_ATHLETE_LINK_ROUTE = new URLSearchParams(window.location.search).has("vincular-atleta");
 const PLATFORM_SUPPORT = Object.freeze([
   {
     id: "whatsapp",
@@ -78,41 +68,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    // O fluxo de vínculo usa uma sessão isolada para não desconectar o
-    // organizador que abriu a nova aba.
-    detectSessionInUrl: !IS_ATHLETE_LINK_ROUTE,
+    detectSessionInUrl: true,
   },
 });
-const athleteLinkSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-    storageKey: "torneio360-athlete-link-auth",
-  },
-});
-const ATHLETE_LINK_RESULT_PREFIX = "torneio360:athlete-link-result:";
-const ATHLETE_PROFILE_DRAFT_PREFIX = "torneio360:athlete-profile:";
-const ACCOUNT_TYPE_ORGANIZER = "organizer";
-const ACCOUNT_TYPE_ORGANIZER_PENDING = "organizer_pending";
-const ACCOUNT_TYPE_ATHLETE = "athlete";
 const TORNEIO360_LOGO = "/torneio360-logo.png";
 const TORNEIO360_LOGO_BLUE = "/torneio360-logo-blue.png";
 const TORNEIO360_TAGLINE = "Gestão inteligente de torneios";
-
-function getUserAccountType(user) {
-  const trustedRole = user?.app_metadata?.role;
-  if (trustedRole === ACCOUNT_TYPE_ATHLETE) return ACCOUNT_TYPE_ATHLETE;
-  if (trustedRole === ACCOUNT_TYPE_ORGANIZER || trustedRole === ACCOUNT_TYPE_ORGANIZER_PENDING) {
-    return ACCOUNT_TYPE_ORGANIZER;
-  }
-
-  // Sem um papel emitido pelo servidor, a interface nunca promove a conta
-  // para organizador. O metadata editável pelo usuário só pode restringir o
-  // acesso durante a migração de contas antigas.
-  if (user?.user_metadata?.account_type === ACCOUNT_TYPE_ATHLETE) return ACCOUNT_TYPE_ATHLETE;
-  return null;
-}
 
 async function logout() {
   try {
@@ -376,20 +337,6 @@ function getCalendarDayDifference(startValue, endValue) {
   return endDay - startDay;
 }
 
-function getTournamentUiStatus(tournament, today = getBrazilTodayISO()) {
-  if (String(tournament?.status || "").toLowerCase() === "draft") return "Rascunho";
-
-  const details = tournament?.data || {};
-  const startDate = getBrazilDateISO(details.eventDate || details.eventStartDate);
-  const endDate = getBrazilDateISO(details.eventEndDate || details.eventDate || details.eventStartDate);
-  const registrationDeadline = getBrazilDateISO(details.registrationDeadline);
-
-  if (endDate && endDate < today) return "Encerrado";
-  if (startDate && startDate <= today && (!endDate || endDate >= today)) return "Em andamento";
-  if (registrationDeadline && registrationDeadline >= today) return "Inscrições abertas";
-  return "Programado";
-}
-
 function getFreeTrialDetails(profile, user) {
   if (String(profile?.status || "").toLowerCase() !== "active") return null;
 
@@ -489,31 +436,8 @@ function isEmailNotConfirmedError(error) {
   return /email[^\n]*not[^\n]*confirm|not[^\n]*confirm[^\n]*email|email_not_confirmed/i.test(`${error?.message || ""} ${error?.code || ""}`);
 }
 
-function isUserAlreadyRegisteredError(error) {
-  const code = String(error?.code || "").toLowerCase();
-  if (code === "user_already_exists" || code === "email_exists") return true;
-  return /user\s+already\s+registered|user[^\n]*already[^\n]*exists|email[^\n]*already[^\n]*exists/i.test(String(error?.message || ""));
-}
-
-function isRecoverableAthleteSignupError(error) {
-  const details = `${error?.message || ""} ${error?.code || ""}`;
-  return /database[^\n]*(user|profile)|saving new user|creating new user|unexpected_failure|hook[^\n]*(failed|timeout)/i.test(details);
-}
-
-async function recoverAthleteSignup(client, email, password) {
-  // Em alguns cenários o Auth conclui a criação da conta, mas um hook do
-  // banco responde com erro. Confirmamos o resultado real antes de dizer ao
-  // atleta que o cadastro falhou.
-  await new Promise((resolve) => setTimeout(resolve, 250));
-  return client.auth.signInWithPassword({ email: normalizeEmail(email), password });
-}
-
 function getAuthErrorMessage(error, fallback) {
   const message = `${error?.message || ""} ${error?.code || ""}`.toLowerCase();
-
-  if (isUserAlreadyRegisteredError(error)) {
-    return "Este e-mail já possui uma conta. Entre com sua senha ou use “Esqueci minha senha”.";
-  }
 
   if (/rate limit|too many requests|over_email_send_rate_limit/.test(message)) {
     return "Aguarde alguns minutos antes de pedir outro e-mail.";
@@ -582,26 +506,26 @@ function normalizeScoreInput(value, winningScore = 4) {
 
 const allowedByPlan = {
   basic: [
-    "Super 8",
+    "Super 08",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
   ],
   pro: [
-    "Super 8",
-    "Super 8 (Dupla Fixa)",
+    "Super 08",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Fixa)",
+    "Super 16 Mista (Dupla Fixa)",
   ],
   premium: [
-    "Super 8",
-    "Super 8 (Dupla Fixa)",
+    "Super 08",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Fixa)",
+    "Super 16 Mista (Dupla Fixa)",
     "Simples 8",
     "Copa - 12 ou 24 duplas",
     "Copa - 18 duplas",
@@ -610,77 +534,12 @@ const allowedByPlan = {
   ],
 };
 
-const DEFAULT_SPORT_ID = "beach-tennis";
-const SPORT_CATALOG = Object.freeze([
-  {
-    id: DEFAULT_SPORT_ID,
-    name: "Beach Tennis",
-    icon: "🎾",
-    enabled: true,
-    description: "Modalidade ativa para criação, organização e acompanhamento completo de torneios.",
-  },
-  {
-    id: "futevolei",
-    name: "Futevôlei",
-    icon: "⚽",
-    enabled: false,
-    description: "Disponível em uma próxima etapa da plataforma.",
-  },
-  {
-    id: "volei-de-praia",
-    name: "Vôlei de Praia",
-    icon: "🏐",
-    enabled: false,
-    description: "Disponível em uma próxima etapa da plataforma.",
-  },
-  {
-    id: "padel",
-    name: "Padel",
-    icon: "🏸",
-    enabled: false,
-    description: "Planejada para uma futura expansão da plataforma.",
-  },
-  {
-    id: "tenis",
-    name: "Tênis",
-    icon: "🎾",
-    enabled: false,
-    description: "Planejada para uma futura expansão da plataforma.",
-  },
-  {
-    id: "pickleball",
-    name: "Pickleball",
-    icon: "◉",
-    enabled: false,
-    description: "Planejada para uma futura expansão da plataforma.",
-  },
-]);
-
-function getSportDefinition(sportId) {
-  return SPORT_CATALOG.find((sport) => sport.id === sportId) || SPORT_CATALOG[0];
-}
-
-const LEGACY_MODALITY_NAMES = Object.freeze({
-  "Super 08": "Super 8",
-  "Super 16 Mista (Dupla Fixa)": "Super 8 (Dupla Fixa)",
-});
-
-function normalizeModalityName(type) {
-  return LEGACY_MODALITY_NAMES[type] || type;
-}
-
 const modalityConfig = {
-  "Super 8": {
+  "Super 08": {
     type: "super8",
     total: 8,
     label: "Participante",
     courts: 2,
-  },
-
-  "Super 8 (Dupla Fixa)": {
-    type: "fixed16",
-    teams: 8,
-    courts: 4,
   },
 
   "Super 10 Mista (Dupla Aleatória)": {
@@ -708,6 +567,12 @@ const modalityConfig = {
     type: "fixed12",
     teams: 6,
     courts: 3,
+  },
+
+  "Super 16 Mista (Dupla Fixa)": {
+    type: "fixed16",
+    teams: 8,
+    courts: 4,
   },
 
   "Simples 8": {
@@ -762,10 +627,6 @@ const modalityConfig = {
   },
 };
 
-function getModalityConfig(type) {
-  return modalityConfig[normalizeModalityName(type)];
-}
-
 function getWinningScore(data) {
   return Number(data?.winningScore || 4);
 }
@@ -797,18 +658,6 @@ function isGameFinished(game, winningScore = 4) {
 
 function isCupType(config) {
   return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha";
-}
-
-function getCupGroupCount(config, teamCount) {
-  const groupSize = Math.max(1, Number(config?.groupSize) || 3);
-  return Math.max(0, Math.floor((Number(teamCount) || 0) / groupSize));
-}
-
-function formatCupGroupOption(config, teamCount) {
-  const groupCount = getCupGroupCount(config, teamCount);
-  const groupLabel = groupCount === 1 ? "grupo" : "grupos";
-  const teamLabel = Number(teamCount) === 1 ? "dupla" : "duplas";
-  return `${groupCount} ${groupLabel} · ${teamCount} ${teamLabel}`;
 }
 
 const super8Template = [
@@ -992,11 +841,10 @@ function createCupGroups(teamCount) {
   return groups;
 }
 
-function generateCupGroupSchedule(players, cupConfig, configuredCourts = 4) {
+function generateCupGroupSchedule(players, cupConfig) {
   const teamCount = cupConfig.teamCount || 12;
   const groups = createCupGroups(teamCount);
   const teamNames = players.teams.map((t) => getTeamName(t));
-  const courtCount = Math.max(1, Math.floor(Number(configuredCourts) || 1));
 
   const roundTemplates = [
     [0, 1],
@@ -1015,7 +863,7 @@ function generateCupGroupSchedule(players, cupConfig, configuredCourts = 4) {
         phase: "groups",
         groupId: group.id,
         groupName: group.name,
-        court: ((groupIndex + roundIndex) % courtCount) + 1,
+        court: groupIndex + 1,
         team1: [teamNames[id1]],
         ids1: [id1],
         team2: [teamNames[id2]],
@@ -1026,7 +874,12 @@ function generateCupGroupSchedule(players, cupConfig, configuredCourts = 4) {
     });
   });
 
-  return rounds;
+  return rounds.map((round) =>
+    round.map((game, index) => ({
+      ...game,
+      court: index + 1,
+    }))
+  );
 }
 
 function getCupFormat(data) {
@@ -1663,18 +1516,6 @@ function resolveBracketGame(game, allGames, data) {
     : ["Aguardando"];
 
   return copy;
-}
-
-function shuffleParticipantsWithMeta(players, metadata) {
-  const paired = (Array.isArray(players) ? players : []).map((player, index) => ({
-    player,
-    meta: Array.isArray(metadata) ? metadata[index] : undefined,
-  }));
-  const shuffled = shuffleArray(paired);
-  return {
-    players: shuffled.map((item) => item.player),
-    metadata: shuffled.map((item) => item.meta || { payment: "pending", registration: "pending", profileLinked: false }),
-  };
 }
 
 function buildNextRound(previousGames, bracketType, roundName, keyPrefix) {
@@ -2960,13 +2801,6 @@ function App() {
     setSession((current) => (current ? { ...current, user: data.user } : current));
     activeUserIdRef.current = data.user.id;
 
-    const accountType = getUserAccountType(data.user);
-    if (accountType !== ACCOUNT_TYPE_ORGANIZER) {
-      setProfile(null);
-      setLoading(false);
-      return null;
-    }
-
     setLoading(true);
     const nextProfile = await loadProfile(data.user.id, { waitForAccess: true });
     setLoading(false);
@@ -3007,14 +2841,8 @@ function App() {
       const { data } = await supabase.auth.getSession();
       if (!active) return;
 
-      let currentSession = data.session;
-      if (currentSession?.user && !getUserAccountType(currentSession.user)) {
-        const { data: currentUserData } = await supabase.auth.getUser();
-        if (currentUserData?.user) currentSession = { ...currentSession, user: currentUserData.user };
-      }
-
-      setSession(currentSession);
-      activeUserIdRef.current = currentSession?.user?.id || null;
+      setSession(data.session);
+      activeUserIdRef.current = data.session?.user?.id || null;
 
       // A recuperação tem prioridade sobre qualquer Dashboard: o token desse
       // link só pode ser usado para trocar a senha.
@@ -3023,13 +2851,13 @@ function App() {
         return;
       }
 
-      if (currentSession?.user?.id && getUserAccountType(currentSession.user) === ACCOUNT_TYPE_ORGANIZER) {
-        await loadProfile(currentSession.user.id, { waitForAccess: true });
+      if (data.session?.user?.id) {
+        await loadProfile(data.session.user.id, { waitForAccess: true });
       }
 
       if (!active) return;
 
-      if (callbackFlow === "confirm" && currentSession?.user?.email_confirmed_at) {
+      if (callbackFlow === "confirm" && data.session?.user?.email_confirmed_at) {
         clearAuthCallbackUrl();
         setAuthFlow(null);
       }
@@ -3069,9 +2897,7 @@ function App() {
 
       if (isSameUser) {
         if (event === "USER_UPDATED") {
-          if (getUserAccountType(newSession?.user) === ACCOUNT_TYPE_ORGANIZER) {
-            await loadProfile(nextUserId, { waitForAccess: true });
-          }
+          await loadProfile(nextUserId, { waitForAccess: true });
 
           if (getAuthFlowFromLocation() === "confirm" && newSession?.user?.email_confirmed_at) {
             clearAuthCallbackUrl();
@@ -3082,11 +2908,7 @@ function App() {
       }
 
       setLoading(true);
-      if (getUserAccountType(newSession?.user) !== ACCOUNT_TYPE_ORGANIZER) {
-        setProfile(null);
-      } else {
-        await loadProfile(nextUserId, { waitForAccess: true });
-      }
+      await loadProfile(nextUserId, { waitForAccess: true });
 
       if (!active) return;
 
@@ -3145,16 +2967,6 @@ function App() {
     );
   }
 
-  const accountType = getUserAccountType(session.user);
-
-  if (accountType === ACCOUNT_TYPE_ATHLETE) {
-    return <AthleteDashboard user={session.user} supabase={supabase} onLogout={logout} logoSrc={TORNEIO360_LOGO} />;
-  }
-
-  if (accountType !== ACCOUNT_TYPE_ORGANIZER) {
-    return <ProfileUnavailable onRetry={refreshProfile} />;
-  }
-
   if (!profile) {
     return <ProfileUnavailable onRetry={refreshProfile} />;
   }
@@ -3191,144 +3003,6 @@ function BeachLogo({ variant = "light" } = {}) {
   return (
     <div className={`beachLogo torneio360Logo ${variant === "blue" ? "torneio360LogoBlue" : ""}`} aria-label="Torneio 360">
       <img src={logoSrc} alt="Torneio 360" />
-    </div>
-  );
-}
-
-function PublicPortalHeader({ active = "inicio", onNavigate, onLogin, onSignup }) {
-  const links = [
-    ["inicio", "Início"],
-    ["torneios", "Torneios"],
-    ["circuitos", "Circuitos"],
-    ["arenas", "Arenas"],
-    ["publicacoes", "Publicações"],
-  ];
-
-  return (
-    <header className="figmaPublicHeader">
-      <button type="button" className="figmaPublicBrand" onClick={() => onNavigate?.("inicio")} aria-label="Ir para o início">
-        <BeachLogo />
-      </button>
-      <nav aria-label="Navegação pública">
-        {links.map(([key, label]) => (
-          <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => onNavigate?.(key)}>{label}</button>
-        ))}
-      </nav>
-      <label className="figmaPublicSearch">
-        <Search aria-hidden="true" />
-        <input placeholder="Buscar torneios..." aria-label="Buscar torneios" />
-      </label>
-      <button type="button" className="figmaPublicTheme" aria-label="Alternar aparência"><Sun aria-hidden="true" /></button>
-      <button type="button" className="figmaPublicLogin" onClick={onLogin}>Entrar</button>
-      <button type="button" className="figmaPublicSignup" onClick={onSignup}>Criar perfil gratuito</button>
-    </header>
-  );
-}
-
-function PublicPortalFooter() {
-  return (
-    <footer className="figmaPublicFooter">
-      <BeachLogo />
-      <div>
-        <strong>Acompanhamento público gerado pela plataforma.</strong>
-        <span>Torneio360 © 2026. Todos os direitos reservados.</span>
-      </div>
-    </footer>
-  );
-}
-
-function FigmaPublicHome({ onNavigate, onLogin, onSignup }) {
-  const [publicTournaments, setPublicTournaments] = useState([]);
-  const [publicArenas, setPublicArenas] = useState([]);
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadPublicPortalData() {
-      const [tournamentResult, arenaResult] = await Promise.all([
-        supabase.rpc("list_public_tournaments", { p_limit: 3 }),
-        supabase.from("profiles").select("id, name, arena_name, city, state, photo_url, is_public").eq("is_public", true).order("arena_name", { ascending: true }).limit(4),
-      ]);
-
-      if (!active) return;
-      if (!tournamentResult.error) setPublicTournaments((tournamentResult.data || []).filter((item) => !item.data?.deletedAt));
-      if (!arenaResult.error) setPublicArenas(arenaResult.data || []);
-    }
-
-    void loadPublicPortalData();
-    return () => { active = false; };
-  }, []);
-
-  const visibleTournaments = publicTournaments.slice(0, 2);
-  const visibleArenas = publicArenas.slice(0, 4);
-
-  return (
-    <div className="figmaPublicPage">
-      <PublicPortalHeader active="inicio" onNavigate={onNavigate} onLogin={onLogin} onSignup={onSignup} />
-      <main>
-        <section className="figmaPublicHero">
-          <div className="figmaPublicHeroInner">
-            <span className="figmaPublicHeroBadge">A PLATAFORMA OFICIAL DE GESTÃO</span>
-            <h1>Sua jornada esportiva começa <em>aqui</em></h1>
-            <p>Acompanhe torneios, resultados, rankings, atletas e arenas em um só lugar.<br />Tenha o seu perfil esportivo oficial gratuito.</p>
-            <div className="figmaPublicHeroActions">
-              <button type="button" className="primary" onClick={() => document.getElementById("torneios-publicos")?.scrollIntoView({ behavior: "smooth" })}><Search aria-hidden="true" /> Encontrar torneios</button>
-              <button type="button" className="secondary" onClick={onSignup}>Criar perfil gratuito</button>
-            </div>
-            <button type="button" className="figmaOrganizerLink" onClick={onLogin}>Sou organizador de torneios <span aria-hidden="true">→</span></button>
-          </div>
-        </section>
-
-        <div className="figmaPublicSections">
-          <section id="torneios-publicos" className="figmaPublicSection">
-            <div className="figmaPublicSectionHeader">
-              <div><h2><span className="pulse" />Acontecendo agora</h2><p>Torneios ativos e com partidas em andamento.</p></div>
-              <button type="button" onClick={() => onNavigate?.("torneios")}>Ver todos <span>›</span></button>
-            </div>
-            {visibleTournaments.length ? (
-              <div className="figmaPublicTournamentGrid">
-                {visibleTournaments.map((tournament) => {
-                  const details = tournament.data || {};
-                  const uiStatus = getTournamentUiStatus(tournament);
-                  const uiStatusKey = uiStatus === "Em andamento" ? "in_progress" : uiStatus === "Inscrições abertas" ? "open" : uiStatus === "Encerrado" ? "closed" : "scheduled";
-                  return (
-                    <article className="figmaPublicTournamentCard" key={tournament.id}>
-                      <div className="figmaPublicTournamentCover">
-                        {details.coverImage ? <img src={details.coverImage} alt="" /> : null}
-                        <span className={`status ${uiStatusKey}`}>{uiStatus}</span>
-                      </div>
-                      <div className="figmaPublicTournamentBody">
-                        <small>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || normalizeModalityName(tournament.type)}</small>
-                        <h3>{details.eventName || tournament.name}</h3>
-                        <p><MapPin aria-hidden="true" /> {details.location || "Local a confirmar"}</p>
-                        <p><CalendarDays aria-hidden="true" /> {details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data a confirmar")}</p>
-                        <button type="button" onClick={() => tournament.public_id && window.location.assign(`/?public=${tournament.public_id}`)}>{uiStatusKey === "in_progress" ? "Acompanhar" : "Ver detalhes"}</button>
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            ) : <div className="figmaPublicEmpty">Nenhum torneio público disponível neste momento.</div>}
-          </section>
-
-          <section className="figmaPublicSection">
-            <div className="figmaPublicSectionHeader"><div><h2>Arenas perto de você</h2><p>Descubra os melhores locais e organizadores da sua região.</p></div></div>
-            {visibleArenas.length ? (
-              <div className="figmaPublicArenaGrid">
-                {visibleArenas.map((arena) => (
-                  <article className="figmaPublicArenaCard" key={arena.id}>
-                    <div className="figmaPublicArenaAvatar">{arena.photo_url ? <img src={arena.photo_url} alt="" /> : <span>{(arena.arena_name || arena.name || "A").slice(0, 2).toUpperCase()}</span>}</div>
-                    <h3>{arena.arena_name || arena.name || "Arena Torneio360"}</h3>
-                    <p><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join(", ") || "Local não informado"}</p>
-                    <div><span>Perfil oficial</span><strong>Ver arena</strong></div>
-                  </article>
-                ))}
-              </div>
-            ) : <div className="figmaPublicEmpty">As arenas públicas aparecerão aqui.</div>}
-          </section>
-        </div>
-      </main>
-      <PublicPortalFooter />
     </div>
   );
 }
@@ -3489,8 +3163,7 @@ function Login({
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [mode, setMode] = useState(() => window.location.pathname.toLowerCase() === "/cadastro" ? "signup" : initialMode);
-  const [accountType, setAccountType] = useState(ACCOUNT_TYPE_ATHLETE);
+  const [mode, setMode] = useState(initialMode);
   const [notice, setNotice] = useState(() => {
     if (!initialNotice) return null;
     return typeof initialNotice === "string"
@@ -3500,22 +3173,6 @@ function Login({
   const [submitting, setSubmitting] = useState(false);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
-  const [guestScreen, setGuestScreen] = useState(() => {
-    const path = window.location.pathname.toLowerCase();
-    return path === "/login" || path === "/cadastro" || initialMode !== "login" ? "auth" : "home";
-  });
-
-  useEffect(() => {
-    function handleGuestPopState() {
-      const path = window.location.pathname.toLowerCase();
-      setGuestScreen(path === "/login" || path === "/cadastro" ? "auth" : "home");
-      if (path === "/cadastro") setMode("signup");
-      if (path === "/login") setMode("login");
-    }
-
-    window.addEventListener("popstate", handleGuestPopState);
-    return () => window.removeEventListener("popstate", handleGuestPopState);
-  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
@@ -3556,26 +3213,6 @@ function Login({
 
     setNotice(null);
     setMode(nextMode);
-  }
-
-  function openGuestAuth(nextMode = "login") {
-    changeMode(nextMode);
-    setGuestScreen("auth");
-    window.history.pushState({}, "", nextMode === "signup" ? "/cadastro" : "/login");
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }
-
-  function openGuestHome(section = "inicio") {
-    setGuestScreen("home");
-    window.history.pushState({}, "", "/");
-    if (section !== "inicio") {
-      window.setTimeout(() => {
-        const target = section === "arenas" ? document.querySelector(".figmaPublicArenaGrid") : document.getElementById("torneios-publicos");
-        target?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 40);
-    } else {
-      window.scrollTo({ top: 0, behavior: "auto" });
-    }
   }
 
   async function handleResendVerification() {
@@ -3743,8 +3380,7 @@ function Login({
       }
 
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      let recoveredAthleteAccount = false;
-      let { data, error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
         options: {
@@ -3754,67 +3390,13 @@ function Login({
             first_name: firstName.trim(),
             last_name: lastName.trim(),
             birth_date: birthDate,
-            account_type: accountType,
           },
         },
       });
 
-      const existingAthleteAccount = isUserAlreadyRegisteredError(error);
-      if (error && accountType === ACCOUNT_TYPE_ATHLETE && (existingAthleteAccount || isRecoverableAthleteSignupError(error))) {
-        const recoveredAuth = await recoverAthleteSignup(supabase, normalizedEmail, password);
-
-        if (!recoveredAuth.error && getUserAccountType(recoveredAuth.data?.user) === ACCOUNT_TYPE_ATHLETE) {
-          data = recoveredAuth.data;
-          error = null;
-          recoveredAthleteAccount = true;
-        } else if (!recoveredAuth.error) {
-          const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
-          if (signOutError) console.error(signOutError);
-          showNotice(
-            "warning",
-            "Este e-mail já possui outra conta",
-            "Entre com uma conta de atleta ou use outro e-mail para criar o perfil gratuito."
-          );
-          return;
-        } else if (isEmailNotConfirmedError(recoveredAuth.error)) {
-          setPendingVerificationEmail(normalizedEmail);
-          resetForm();
-          setMode("login");
-          showNotice(
-            "warning",
-            "Conta aguardando confirmação",
-            "Este e-mail já possui uma conta pendente. Confirme-a pelo e-mail ou use o reenvio abaixo."
-          );
-          return;
-        } else if (existingAthleteAccount) {
-          setPassword("");
-          setConfirmPassword("");
-          setMode("login");
-          window.history.replaceState({}, "", "/login");
-          showNotice(
-            "warning",
-            "Este e-mail já está cadastrado",
-            "A conta de atleta já existe. Entre com a senha correta ou use “Esqueci minha senha” para definir uma nova."
-          );
-          return;
-        }
-      }
-
       if (error) {
         console.error(error);
         showNotice("error", "Cadastro não concluído", getAuthErrorMessage(error, "Verifique os dados e tente novamente."));
-        return;
-      }
-
-      if (recoveredAthleteAccount) {
-        setPendingVerificationEmail("");
-        resetForm();
-        setMode("login");
-        showNotice(
-          "success",
-          "Conta de atleta acessada",
-          "A conta já está ativa e o login foi concluído normalmente."
-        );
         return;
       }
 
@@ -3828,12 +3410,8 @@ function Login({
         "success",
         confirmationRequired || existingAccountResponse ? "Confira seu e-mail" : "Conta criada",
         confirmationRequired || existingAccountResponse
-          ? accountType === ACCOUNT_TYPE_ATHLETE
-            ? "Enviamos um link de confirmação. Abra-o para ativar gratuitamente seu perfil de atleta."
-            : "Enviamos um link de confirmação. Abra-o para ativar sua conta de organizador e iniciar o período de avaliação."
-          : accountType === ACCOUNT_TYPE_ATHLETE
-            ? "Seu perfil gratuito de atleta foi criado."
-            : "Sua conta de organizador foi criada e o período de avaliação já está ativo."
+          ? "Se este endereço puder receber confirmações, enviamos um link. Abra-o para ativar sua conta e iniciar os 7 dias grátis."
+          : "Sua conta foi criada e os 7 dias grátis do plano Premium já estão ativos."
       );
     } catch (error) {
       console.error(error);
@@ -3842,90 +3420,6 @@ function Login({
       setSubmitting(false);
     }
   }
-
-  if (guestScreen === "home" && mode !== "resetPassword" && mode !== "forgotPassword") {
-    return <FigmaPublicHome onNavigate={openGuestHome} onLogin={() => openGuestAuth("login")} onSignup={() => openGuestAuth("signup")} />;
-  }
-
-  return (
-    <div className="figmaPublicPage figmaAuthPage">
-      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
-      <PublicPortalHeader onNavigate={openGuestHome} onLogin={() => openGuestAuth("login")} onSignup={() => openGuestAuth("signup")} />
-      <main className="figmaAuthMain">
-        <section className="figmaAuthCard" aria-labelledby="figma-auth-title">
-          <div className="figmaAuthIcon" aria-hidden="true"><Trophy /></div>
-          <h1 id="figma-auth-title">
-            {mode === "login" ? "Entrar no Torneio360" : mode === "signup" ? "Escolha o seu perfil" : mode === "forgotPassword" ? "Recuperar senha" : "Criar nova senha"}
-          </h1>
-          <p>{mode === "login" ? "Acesse sua conta de organizador ou atleta." : mode === "signup" ? "Cada tipo de conta possui permissões próprias e seguras." : mode === "forgotPassword" ? "Informe seu e-mail para receber o link de recuperação." : "Escolha uma nova senha segura para a sua conta."}</p>
-
-          {mode === "signup" ? (
-            <div className="accountTypeChooser" role="tablist" aria-label="Tipo de perfil">
-              <button type="button" role="tab" aria-selected={accountType === ACCOUNT_TYPE_ORGANIZER} className={accountType === ACCOUNT_TYPE_ORGANIZER ? "active organizer" : "organizer"} onClick={() => setAccountType(ACCOUNT_TYPE_ORGANIZER)}>
-                <span className="accountTypeIcon" aria-hidden="true">{"\uD83C\uDFC6"}</span>
-                <strong>Organizador</strong>
-                <small>Versão paga · Gestão completa</small>
-              </button>
-              <button type="button" role="tab" aria-selected={accountType === ACCOUNT_TYPE_ATHLETE} className={accountType === ACCOUNT_TYPE_ATHLETE ? "active athlete" : "athlete"} onClick={() => setAccountType(ACCOUNT_TYPE_ATHLETE)}>
-                <span className="accountTypeIcon" aria-hidden="true">{"\uD83C\uDFBE"}</span>
-                <strong>Atleta</strong>
-                <small>Gratuito · Perfil e inscrições</small>
-              </button>
-              <div className="accountTypeDescription">
-                {accountType === ACCOUNT_TYPE_ORGANIZER
-                  ? "Crie e edite torneios, organize grupos, partidas, rankings e valide conquistas dos atletas."
-                  : "Monte seu perfil, escolha a privacidade, acompanhe resultados e inscreva-se em torneios publicados."}
-              </div>
-            </div>
-          ) : null}
-
-          <form onSubmit={handleSubmit} noValidate>
-            {mode === "signup" ? (
-              <div className="figmaAuthTwoCols">
-                <label><span>NOME</span><input autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Seu nome" /></label>
-                <label><span>SOBRENOME</span><input autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Seu sobrenome" /></label>
-                <label className="full"><span>DATA DE NASCIMENTO</span><input type="date" autoComplete="bday" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} /></label>
-              </div>
-            ) : null}
-
-            {mode !== "resetPassword" ? (
-              <label><span>E-MAIL</span><input type="email" autoComplete="email" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seu@email.com" /></label>
-            ) : null}
-
-            {mode === "resetPassword" ? (
-              <>
-                <label><span>NOVA SENHA</span><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" /></label>
-                <label><span>REPITA A NOVA SENHA</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repita a nova senha" /></label>
-              </>
-            ) : mode !== "forgotPassword" ? (
-              <>
-                <label className="figmaPasswordLabel">
-                  <span>SENHA {mode === "login" ? <button type="button" onClick={() => changeMode("forgotPassword")}>Esqueci a senha</button> : null}</span>
-                  <input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" />
-                </label>
-                {mode === "signup" ? <label><span>REPITA A SENHA</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repita a senha" /></label> : null}
-              </>
-            ) : null}
-
-            <button type="submit" className="figmaAuthSubmit" disabled={submitting || (mode === "resetPassword" && !recoverySession?.access_token)}>
-              {submitting ? "Aguarde..." : mode === "login" ? "↪  Entrar na conta" : mode === "signup" ? accountType === ACCOUNT_TYPE_ATHLETE ? "Criar perfil gratuito de atleta" : "Criar perfil de organizador" : mode === "forgotPassword" ? "Enviar link" : "Salvar nova senha"}
-            </button>
-            {(mode === "forgotPassword" || mode === "resetPassword") ? <button type="button" className="figmaAuthBack" onClick={() => changeMode("login")}>Voltar para o login</button> : null}
-          </form>
-
-          {mode === "login" ? (
-            <div className="figmaAuthAlternate">
-              <span>Ainda não tem um perfil?</span>
-              <button type="button" onClick={() => openGuestAuth("signup")}>Criar perfil gratuito de atleta</button>
-            </div>
-          ) : mode === "signup" ? (
-            <div className="figmaAuthAlternate"><span>Já possui uma conta?</span><button type="button" onClick={() => openGuestAuth("login")}>Entrar</button></div>
-          ) : null}
-        </section>
-      </main>
-      <PublicPortalFooter />
-    </div>
-  );
 
   return (
     <div className="landingPage">
@@ -4071,7 +3565,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 8, Super 12, Super 16, Simples 8 ou Copas conforme a realidade do evento.
+                Selecione Super 08, Super 12, Super 16, Simples 8 ou Copas conforme a realidade do evento.
               </p>
             </div>
 
@@ -4145,9 +3639,9 @@ function Login({
               title="Basic"
               tag="Entrada"
               price="R$ 19,90"
-              text="Para começar com torneios mistos e Super 8."
+              text="Para começar com torneios mistos e Super 08."
               items={[
-                "Super 8",
+                "Super 08",
                 "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
@@ -4163,12 +3657,12 @@ function Login({
               price="R$ 39,90"
               text="Para organizadores que precisam de modalidades com duplas fixas."
               items={[
-                "Super 8",
-                "Super 8 (Dupla Fixa)",
+                "Super 08",
                 "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
                 "Super 12 Mista Dupla Fixa",
+                "Super 16 Mista Dupla Fixa",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -4179,12 +3673,12 @@ function Login({
               price="R$ 59,90"
               text="Para quem quer liberar todos os formatos disponíveis."
               items={[
-                "Super 8",
-                "Super 8 (Dupla Fixa)",
+                "Super 08",
                 "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
                 "Super 12 Mista Dupla Fixa",
+                "Super 16 Mista Dupla Fixa",
                 "Simples 8",
                 "Copa - 12 ou 24 duplas",
                 "Copa - 18 duplas",
@@ -4205,13 +3699,8 @@ function Login({
 
           <div className="modalitiesGrid landingModalities">
             <Info
-              title="Super 8"
+              title="Super 08"
               text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
-            />
-
-            <Info
-              title="Super 8 (Dupla Fixa)"
-              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
@@ -4232,6 +3721,11 @@ function Login({
             <Info
               title="Super 12 Mista Dupla Fixa"
               text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
+            />
+
+            <Info
+              title="Super 16 Mista Dupla Fixa"
+              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
@@ -4560,7 +4054,6 @@ function Dashboard({ profile, user, onProfileChange }) {
   const [selectedArenaLoading, setSelectedArenaLoading] = useState(false);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
-  const [newSport, setNewSport] = useState(DEFAULT_SPORT_ID);
   const [newType, setNewType] = useState("");
 const [newGender, setNewGender] = useState("");
 const [newMultiCategoryEvent, setNewMultiCategoryEvent] = useState("nao");
@@ -4573,7 +4066,6 @@ const [newDailyStartTimes, setNewDailyStartTimes] = useState({});
 const [newDay, setNewDay] = useState("");
 const [newLocation, setNewLocation] = useState("");
 const [newWinningScore, setNewWinningScore] = useState(4);
-const [newCupTeamCount, setNewCupTeamCount] = useState(12);
 const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCriteria);
 const [newPublicInfo, setNewPublicInfo] = useState({
   showArenaName: true,
@@ -4605,29 +4097,20 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const params = new URLSearchParams(window.location.search);
     return params.get("aba") || "inicio";
   });
-  const [modalitySearch, setModalitySearch] = useState("");
-  const [modalityFilter, setModalityFilter] = useState("all");
-  const [tournamentWorkspace, setTournamentWorkspace] = useState("list");
-  const [tournamentSearch, setTournamentSearch] = useState("");
-  const [tournamentFormatFilter, setTournamentFormatFilter] = useState("all");
-  const [tournamentStatusFilter, setTournamentStatusFilter] = useState("all");
-  const [tournamentFiltersOpen, setTournamentFiltersOpen] = useState(false);
   const [colorMode, setColorMode] = useState(() => {
     try {
       const savedMode = localStorage.getItem(`torneio360:color-mode:${user.id}`);
-      return savedMode === "light" ? "light" : "dark";
+      if (savedMode === "light" || savedMode === "dark") return savedMode;
     } catch {
-      return "dark";
+      // A preferência continua funcional durante a sessão mesmo sem armazenamento local.
     }
+
+    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const [circuits, setCircuits] = useState([]);
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
-  const [circuitEditorOpen, setCircuitEditorOpen] = useState(false);
-  const [circuitSearch, setCircuitSearch] = useState("");
-  const [circuitStatusFilter, setCircuitStatusFilter] = useState("all");
-  const [profilePublicationSearch, setProfilePublicationSearch] = useState("");
   const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
   const [expandedCircuitId, setExpandedCircuitId] = useState(null);
   const [restoredTournamentId, setRestoredTournamentId] = useState(null);
@@ -4794,19 +4277,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   function goToPanel(panel) {
     setSelected(null);
-    if (panel === "criar") setTournamentWorkspace("list");
     setActivePanel(panel);
     updateAppUrl({ activePanel: panel, selectedTournamentId: null });
   }
 
-  function openTournamentCreator() {
-    setSelected(null);
-    setTournamentWorkspace("create");
-    setActivePanel("criar");
-    updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
-  }
-
-  function openProfileSection(nextSubtab = "publicacoes") {
+  function openProfileSection(nextSubtab = "editar") {
     setProfileMenuOpen(false);
     setSelected(null);
     setProfileSubtab(nextSubtab);
@@ -4815,29 +4290,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   function openProfileSettings() {
-    openProfileSection("publicacoes");
-  }
-
-  function openOwnPublicProfile() {
-    setProfileMenuOpen(false);
-    setSelected(null);
-    setActivePanel("inicio");
-    updateAppUrl({ activePanel: "inicio", selectedTournamentId: null });
-    void openArenaProfile({
-      id: user.id,
-      name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
-      arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
-      city: organizerProfile.city || profile.city || "",
-      state: organizerProfile.state || profile.state || "",
-      photo_url: organizerProfile.photoUrl || profile.photo_url || "",
-      phone: organizerProfile.whatsapp || profile.phone || "",
-      address: organizerProfile.address || profile.address || "",
-      maps_link: organizerProfile.mapsLink || profile.maps_link || "",
-      instagram_handle: organizerProfile.instagramHandle || profile.instagram_handle || "",
-      instagram_link: organizerProfile.instagramLink || profile.instagram_link || "",
-      whatsapp_group_link: organizerProfile.whatsappGroupLink || profile.whatsapp_group_link || "",
-      is_public: organizerProfile.isPublic !== false,
-    });
+    openProfileSection("editar");
   }
 
   function toggleColorMode() {
@@ -5015,7 +4468,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
-  const [profileEditSnapshot, setProfileEditSnapshot] = useState(null);
 
   const photoPointersRef = useRef(new Map());
   const photoPreviewRef = useRef(null);
@@ -5037,8 +4489,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       arenaName: profile.arena_name || "",
       organizerName: profile.name || "",
       email: user.email || "",
-      publicEmail: user.email || "",
-      description: "",
       whatsapp: profile.phone || "",
       address: profile.address || "",
       mapsLink: profile.maps_link || "",
@@ -5052,7 +4502,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   });
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
-  const selectedNewTournamentConfig = getModalityConfig(newType);
   const freeTrialDetails = getFreeTrialDetails(profile, user);
   const profileDisplayName = organizerProfile.organizerName || profile.name || user.email?.split("@")[0] || "Organizador";
   const profileInitials = profileDisplayName
@@ -5068,15 +4517,15 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     },
     criar: {
       title: "Torneios",
-      description: "Gerencie todos os torneios e eventos criados.",
+      description: "Crie um novo torneio ou continue gerenciando os já cadastrados.",
     },
     circuitos: {
       title: "Circuitos",
-      description: "Organize torneios em um circuito e acompanhe a classificação acumulada.",
+      description: "Organize temporadas e acompanhe a classificação entre torneios.",
     },
     modalidades: {
       title: "Modalidades",
-      description: "Consulte as modalidades disponíveis para criação e organização dos seus torneios.",
+      description: "Consulte os formatos disponíveis para o seu plano.",
     },
     lixeira: {
       title: "Lixeira",
@@ -5089,24 +4538,20 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   };
   const currentPanelMeta = panelMeta[activePanel] || panelMeta.inicio;
   const eventGroupKey = newName.trim().toLowerCase().replace(/\s+/g, "-") || null;
-  const filteredSportCatalog = SPORT_CATALOG.filter((sport) => {
-    const matchesSearch = sport.name.toLocaleLowerCase("pt-BR").includes(modalitySearch.trim().toLocaleLowerCase("pt-BR"));
-    const matchesFilter = modalityFilter === "all"
-      || (modalityFilter === "active" && sport.enabled)
-      || (modalityFilter === "soon" && !sport.enabled);
-    return matchesSearch && matchesFilter;
-  });
 
-  const filteredTournaments = tournaments.filter((tournament) => {
-    const term = tournamentSearch.trim().toLocaleLowerCase("pt-BR");
-    const details = tournament.data || {};
-    const matchesSearch = !term || [tournament.name, details.eventName, details.gender, details.location]
-      .filter(Boolean)
-      .some((value) => String(value).toLocaleLowerCase("pt-BR").includes(term));
-    const matchesFormat = tournamentFormatFilter === "all" || normalizeModalityName(tournament.type) === tournamentFormatFilter;
-    const matchesStatus = tournamentStatusFilter === "all" || getTournamentUiStatus(tournament) === tournamentStatusFilter;
-    return matchesSearch && matchesFormat && matchesStatus;
-  });
+  const groupedTournaments = tournaments.reduce((groups, item) => {
+    const groupKey = item.data?.eventGroupKey || item.id;
+    const groupName = item.data?.eventName || item.name;
+    const existing = groups.find((group) => group.key === groupKey);
+
+    if (existing) existing.items.push(item);
+    else groups.push({ key: groupKey, name: groupName, items: [item] });
+
+    return groups;
+  }, []);
+
+  const multiTournamentGroups = groupedTournaments.filter((group) => group.items.length > 1);
+  const isolatedTournaments = groupedTournaments.flatMap((group) => group.items.length === 1 ? group.items : []);
 
   const filteredArenaProfiles = publicArenaProfiles.filter((arena) => {
     const term = arenaProfileSearch.trim().toLowerCase();
@@ -5248,16 +4693,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setCircuitForm({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   }
 
-  function openCircuitCreator() {
-    resetCircuitForm();
-    setCircuitEditorOpen(true);
-  }
-
-  function closeCircuitEditor() {
-    resetCircuitForm();
-    setCircuitEditorOpen(false);
-  }
-
   function toggleCircuitTournament(tournamentId) {
     setCircuitForm((prev) => {
       const selected = prev.tournamentIds.includes(tournamentId);
@@ -5316,7 +4751,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     saveCircuits(nextCircuits);
     await saveCircuitHistoryToSupabase(finalPayload.id, finalPayload.rankingHistory);
     resetCircuitForm();
-    setCircuitEditorOpen(false);
     showNotice("success", circuitForm.id ? "Circuito atualizado" : "Circuito criado", "As alterações foram salvas no Supabase.");
   }
 
@@ -5329,7 +4763,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       status: circuit.status || "draft",
       tournamentIds: Array.isArray(circuit.tournamentIds) ? circuit.tournamentIds : [],
     });
-    setCircuitEditorOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -5368,7 +4801,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         tournament.type,
         tournament.data?.rankingCriteria || defaultRankingCriteria
       );
-      const config = getModalityConfig(tournament.type);
+      const config = modalityConfig[tournament.type];
       const separated = config?.type === "mixed10" || config?.type === "mixed12" || config?.type === "mixed16";
       const nameOccurrences = new Map();
 
@@ -5503,22 +4936,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setOrganizerProfile((prev) => ({ ...prev, [field]: value }));
   }
 
-  function openOrganizerProfileEditor() {
-    setProfileEditSnapshot(structuredClone(organizerProfile));
-    setProfileEditing(true);
-  }
-
-  function closeOrganizerProfileEditor({ restore = true } = {}) {
-    if (restore && profileEditSnapshot) setOrganizerProfile(profileEditSnapshot);
-    setProfileEditing(false);
-    setProfileEditSnapshot(null);
-  }
-
-  async function saveOrganizerProfileEditor() {
-    const saved = await saveOrganizerProfile();
-    if (saved) closeOrganizerProfileEditor({ restore: false });
-  }
-
   function openDatePicker(e) {
     e.currentTarget.showPicker?.();
   }
@@ -5541,7 +4958,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   async function saveOrganizerProfile() {
-    if (!user?.id || profileSaving) return false;
+    if (!user?.id || profileSaving) return;
     setProfileSaveSuccess(false);
     if (profileSaveSuccessTimerRef.current) clearTimeout(profileSaveSuccessTimerRef.current);
     setProfileSaving(true);
@@ -5567,7 +4984,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     if (error) {
       console.error("Erro ao salvar perfil no Supabase:", error);
       showNotice("error", "Perfil não salvo", `O Supabase recusou a alteração. Detalhe: ${error.message || "erro desconhecido"}`);
-      return false;
+      return;
     }
 
     if (data) {
@@ -5596,7 +5013,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       setProfileSaveSuccess(false);
       profileSaveSuccessTimerRef.current = null;
     }, 2600);
-    return true;
   }
 
   async function toggleOrganizerProfileVisibility() {
@@ -5874,10 +5290,12 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setSelectedArenaTournaments([]);
     setSelectedArenaLoading(true);
 
-    const result = await supabase.rpc("list_public_tournaments_by_organizer", {
-      p_organizer_id: arena.id,
-      p_limit: 200,
-    });
+    const result = await supabase
+      .from("tournaments")
+      .select("*")
+      .eq("user_id", arena.id)
+      .eq("is_public", true)
+      .order("created_at", { ascending: false });
 
     setSelectedArenaLoading(false);
 
@@ -5995,14 +5413,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
-    const selectedSport = getSportDefinition(newSport);
-    if (!selectedSport.enabled) {
-      showNotice("warning", "Modalidade em breve", `${selectedSport.name} ainda não está disponível. Nesta etapa, crie torneios de Beach Tennis.`);
-      return;
-    }
-
     if (!newType) {
-  showNotice("warning", "Formato obrigatório", "Escolha o formato do torneio de Beach Tennis.");
+  showNotice("warning", "Modalidade obrigatória", "Escolha a modalidade do torneio.");
   return;
 }
 
@@ -6026,7 +5438,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
-    const config = getModalityConfig(newType);
+    const config = modalityConfig[newType];
     const isMultiCategory = newMultiCategoryEvent === "sim";
     const validCategorySchedules = newCategorySchedules.filter((item) => item.category.trim());
 
@@ -6038,7 +5450,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setSaving(true);
 
     const baseData = {
-      sport: DEFAULT_SPORT_ID,
       eventName: newName.trim(),
       eventGroupKey,
       multiCategoryEvent: isMultiCategory,
@@ -6058,7 +5469,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
           name: item.category.trim(),
           type: newType,
           data: {
-            ...createInitialData(newType, config, newCupTeamCount),
+            ...createInitialData(newType, config),
             ...baseData,
             gender: item.category.trim(),
             eventDate: item.date || newDate,
@@ -6072,7 +5483,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
           name: newName.trim(),
           type: newType,
           data: {
-            ...createInitialData(newType, config, newCupTeamCount),
+            ...createInitialData(newType, config),
             ...baseData,
             gender: newGender,
             eventDate: newDate,
@@ -6093,7 +5504,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     setNewName("");
-    setNewSport(DEFAULT_SPORT_ID);
     setNewType("");
 setNewGender("");
 setNewMultiCategoryEvent("nao");
@@ -6106,7 +5516,6 @@ setNewDailyStartTimes({});
 setNewDay("");
 setNewLocation("");
 setNewWinningScore(4);
-setNewCupTeamCount(12);
 setNewRankingCriteria(defaultRankingCriteria);
 setNewPublicInfo({
   showArenaName: true,
@@ -6119,7 +5528,6 @@ setNewPublicInfo({
   showCityState: true,
 });
     await loadTournaments();
-    setTournamentWorkspace("list");
     showNotice("success", isMultiCategory ? "Torneios criados" : "Torneio criado", isMultiCategory ? "As categorias foram criadas como torneios separados dentro do mesmo evento." : "O torneio foi criado com sucesso.");
   }
 
@@ -6225,8 +5633,7 @@ setNewPublicInfo({
     setEditTarget(tournament);
     setEditForm({
       name: tournament.name || "",
-      sport: details.sport || DEFAULT_SPORT_ID,
-      type: normalizeModalityName(tournament.type) || "",
+      type: tournament.type || "",
       eventName: details.eventName || "",
       gender: details.gender || "",
       eventDate: details.eventDate || "",
@@ -6259,7 +5666,6 @@ setNewPublicInfo({
     const isGroupedCategory = Boolean(editTarget.data?.multiCategoryEvent);
     const updatedData = {
       ...(editTarget.data || {}),
-      sport: DEFAULT_SPORT_ID,
       eventName: editForm.eventName.trim(),
       gender: editForm.gender,
       eventDate: editForm.eventDate,
@@ -6385,15 +5791,12 @@ setNewPublicInfo({
     const navItems = [
       { panel: "inicio", label: "Visão geral", Icon: LayoutDashboard },
       { panel: "criar", label: "Torneios", Icon: Trophy },
-      { panel: "circuitos", label: "Circuitos", Icon: MapIcon },
-      { panel: "modalidades", label: "Modalidades", Icon: Activity },
+      { panel: "circuitos", label: "Circuitos", Icon: GitBranch },
+      { panel: "modalidades", label: "Modalidades", Icon: Shapes },
     ];
 
     return (
       <aside className="playSidebar proSidebar" aria-label="Navegação principal">
-        <button type="button" className="sidebarLogoButton" onClick={() => goToPanel("inicio")} aria-label="Ir para a visão geral">
-          <BeachLogo />
-        </button>
         <span className="sidebarSectionLabel">Menu</span>
         <nav className="sidebarNav">
           {navItems.map(({ panel, label, Icon }) => (
@@ -6410,7 +5813,10 @@ setNewPublicInfo({
             </button>
           ))}
         </nav>
-        <div className="sidebarBrandAccent" aria-hidden="true">TORNEIO360 • 2026</div>
+        <div className="sidebarBrandAccent" aria-hidden="true">
+          <span />
+          <small>Torneio 360</small>
+        </div>
       </aside>
     );
   }
@@ -6440,13 +5846,13 @@ setNewPublicInfo({
 
           <div className="profileMenuWrap" ref={profileMenuRef}>
             <div className={`profileControl ${activePanel === "ajustes" || activePanel === "lixeira" ? "accountAreaActive" : ""}`}>
-              <button type="button" className="profileTrigger" onClick={() => setProfileMenuOpen((open) => !open)} title="Abrir menu do perfil">
+              <button type="button" className="profileTrigger" onClick={openProfileSettings} title="Abrir configurações do perfil">
                 <span className="profileAvatar" aria-hidden="true">
                   {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="" /> : <span>{profileInitials}</span>}
                 </span>
                 <span className="profileTriggerCopy">
                   <strong>{profileDisplayName}</strong>
-                  <small>Organizador</small>
+                  <small>Configurações do perfil</small>
                 </span>
               </button>
               <button
@@ -6469,17 +5875,8 @@ setNewPublicInfo({
                   onClick={openProfileSettings}
                   aria-current={activePanel === "ajustes" && profileSubtab !== "conta" ? "page" : undefined}
                 >
-                  <UserRound aria-hidden="true" />
-                  <span><strong>Meu perfil</strong></span>
-                </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  className="profileDropdownItem"
-                  onClick={openOwnPublicProfile}
-                >
-                  <LayoutDashboard aria-hidden="true" />
-                  <span><strong>Área pública</strong></span>
+                  <Settings aria-hidden="true" />
+                  <span><strong>Meu perfil</strong><small>Dados e foto da arena</small></span>
                 </button>
                 <button
                   type="button"
@@ -6488,8 +5885,8 @@ setNewPublicInfo({
                   onClick={() => openProfileSection("conta")}
                   aria-current={activePanel === "ajustes" && profileSubtab === "conta" ? "page" : undefined}
                 >
-                  <HelpCircle aria-hidden="true" />
-                  <span><strong>Ajuda e suporte</strong></span>
+                  <LifeBuoy aria-hidden="true" />
+                  <span><strong>Ajuda e suporte</strong><small>WhatsApp, Instagram e e-mail</small></span>
                 </button>
                 <button
                   type="button"
@@ -6499,12 +5896,12 @@ setNewPublicInfo({
                   aria-current={activePanel === "lixeira" ? "page" : undefined}
                 >
                   <Trash2 aria-hidden="true" />
-                  <span><strong>Lixeira</strong></span>
+                  <span><strong>Lixeira</strong><small>Itens excluídos recentemente</small></span>
                 </button>
                 <div className="profileDropdownDivider" />
                 <button type="button" role="menuitem" className="profileDropdownItem profileDropdownLogout" onClick={logout}>
                   <LogOut aria-hidden="true" />
-                  <span><strong>Sair</strong></span>
+                  <span><strong>Sair</strong><small>Encerrar esta sessão</small></span>
                 </button>
               </div>
             ) : null}
@@ -6516,7 +5913,7 @@ setNewPublicInfo({
 
   if (selected) {
     return (
-      <div className={`playAppShell proDashboard theme-${colorMode} panel-${activePanel} tournament-selected`}>
+      <div className={`playAppShell proDashboard theme-${colorMode}`}>
         {renderAppSidebar()}
         <div className="playMain">
           {renderAppTopbar()}
@@ -6526,13 +5923,7 @@ setNewPublicInfo({
                 key={selected.id}
                 tournament={selected}
                 userId={user.id}
-                organizerProfile={organizerProfile}
                 onBack={closeSelectedTournament}
-                onEdit={() => {
-                  const tournamentToEdit = selected;
-                  closeSelectedTournament();
-                  openEditTournament(tournamentToEdit);
-                }}
                 onSave={saveTournament}
                 onNavigationStateChange={rememberTournamentNavigation}
               />
@@ -6544,7 +5935,7 @@ setNewPublicInfo({
   }
 
   return (
-    <div className={`playAppShell proDashboard theme-${colorMode} panel-${activePanel}`}>
+    <div className={`playAppShell proDashboard theme-${colorMode}`}>
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
       <ConfirmModal
@@ -6614,18 +6005,7 @@ setNewPublicInfo({
               </div>
 
               <div className="formField">
-                <label>Modalidade esportiva</label>
-                <select value={editForm.sport || DEFAULT_SPORT_ID} onChange={(e) => updateEditForm("sport", e.target.value)}>
-                  {SPORT_CATALOG.map((sport) => (
-                    <option key={sport.id} value={sport.id} disabled={!sport.enabled}>
-                      {sport.name}{sport.enabled ? "" : " — Em breve"}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="formField">
-                <label>Formato do Beach Tennis</label>
+                <label>Modalidade</label>
                 <select value={editForm.type} onChange={(e) => updateEditForm("type", e.target.value)}>
                   {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
@@ -6682,62 +6062,6 @@ setNewPublicInfo({
         </div>
       ) : null}
 
-      {profileEditing ? (
-        <div className="figmaProfileEditOverlay" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
-          <section className="figmaProfileEditModal">
-            <header>
-              <h2 id="profile-edit-title"><Edit2 aria-hidden="true" /> Editar Perfil</h2>
-              <button type="button" onClick={() => closeOrganizerProfileEditor()} aria-label="Fechar"><X aria-hidden="true" /></button>
-            </header>
-            <div className="figmaProfileEditBody">
-              <label className="figmaProfilePhotoPicker" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); handleOrganizerPhotoFile(event.dataTransfer.files?.[0]); }}>
-                <input type="file" accept="image/*" onChange={(event) => handleOrganizerPhotoFile(event.target.files?.[0])} />
-                <span>{organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto atual" /> : <Camera aria-hidden="true" />}<PlusCircle className="figmaProfilePhotoAdd" aria-hidden="true" /></span>
-                <small>Clique para trocar a imagem (JPG ou PNG)</small>
-              </label>
-
-              <section>
-                <h3>INFORMAÇÕES PÚBLICAS</h3>
-                <label><span>Nome da Arena ou Organizador</span><input value={organizerProfile.arenaName} onChange={(event) => updateOrganizerProfile("arenaName", event.target.value)} /></label>
-                <label><span>Descrição curta</span><textarea rows={3} value={organizerProfile.description || ""} onChange={(event) => updateOrganizerProfile("description", event.target.value)} placeholder="Conte um pouco sobre a sua arena." /></label>
-              </section>
-
-              <section>
-                <h3>CONTATO E LOCALIZAÇÃO</h3>
-                <div className="figmaProfileEditGrid">
-                  <label><span>Cidade, UF</span><input value={[organizerProfile.city, organizerProfile.state].filter(Boolean).join(", ")} onChange={(event) => {
-                    const [cityValue, stateValue = ""] = event.target.value.split(",");
-                    updateOrganizerProfile("city", cityValue.trim());
-                    updateOrganizerProfile("state", stateValue.trim());
-                  }} /></label>
-                  <label><span>WhatsApp</span><input value={organizerProfile.whatsapp} onChange={(event) => updateOrganizerProfile("whatsapp", event.target.value)} /></label>
-                  <label><span>Instagram (sem @)</span><input value={String(organizerProfile.instagramHandle || "").replace(/^@/, "")} onChange={(event) => updateOrganizerProfile("instagramHandle", event.target.value.replace(/^@/, ""))} /></label>
-                  <label><span>E-mail público</span><input type="email" value={organizerProfile.publicEmail || organizerProfile.email || ""} onChange={(event) => updateOrganizerProfile("publicEmail", event.target.value)} /></label>
-                </div>
-              </section>
-
-              <section>
-                <h3>PRIVACIDADE DO PERFIL</h3>
-                <div className="figmaPrivacyOptions">
-                  <label className={organizerProfile.isPublic !== false ? "selected" : ""}>
-                    <input type="radio" name="profile-privacy" checked={organizerProfile.isPublic !== false} onChange={() => updateOrganizerProfile("isPublic", true)} />
-                    <span><strong>Perfil Público</strong><small>Outros usuários poderão encontrar a arena nas buscas, acessar torneios abertos e as informações de contato fornecidas acima.</small></span>
-                  </label>
-                  <label className={organizerProfile.isPublic === false ? "selected" : ""}>
-                    <input type="radio" name="profile-privacy" checked={organizerProfile.isPublic === false} onChange={() => updateOrganizerProfile("isPublic", false)} />
-                    <span><strong>Perfil Privado</strong><small>O perfil não aparecerá nas buscas públicas do Torneio360. Apenas pessoas com links diretos conseguirão acessá-lo.</small></span>
-                  </label>
-                </div>
-              </section>
-            </div>
-            <footer>
-              <button type="button" className="cancel" onClick={() => closeOrganizerProfileEditor()}>Cancelar</button>
-              <button type="button" className="save" onClick={saveOrganizerProfileEditor} disabled={profileSaving}>{profileSaving ? "Salvando..." : "Salvar alterações"}</button>
-            </footer>
-          </section>
-        </div>
-      ) : null}
-
       {photoEditor ? (
         <div className="photoEditorOverlay" role="dialog" aria-modal="true">
           <div className="photoEditorModal">
@@ -6775,51 +6099,30 @@ setNewPublicInfo({
 
         <main className="playContent">
           <section className="playTitleBlock">
-            <div className="playTitleCopy">
+            <div>
               <span className="pageEyebrow">Painel de gestão</span>
-              <div className="playTitleHeadingRow">
-                <h1>{currentPanelMeta.title}</h1>
-                <div className="playPlanPill">Plano {String(profile.plan || "PRO").replace(/^plano\s+/i, "")} · {formatStatusBR(profile.status)}</div>
-              </div>
+              <h1>{currentPanelMeta.title}</h1>
               <p>{currentPanelMeta.description}</p>
             </div>
-            {activePanel === "inicio" ? (
-              <div className="dashboardTitleActions">
-                <button type="button" className="secondaryBtn" onClick={() => goToPanel("circuitos")}><MapIcon aria-hidden="true" /> Circuitos</button>
-                <button type="button" className="secondaryBtn" onClick={() => goToPanel("modalidades")}><Activity aria-hidden="true" /> Modalidades</button>
-                <button type="button" className="dashboardPrimaryAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
-              </div>
-            ) : activePanel === "criar" && tournamentWorkspace === "list" ? (
-              <div className="dashboardTitleActions">
-                <button type="button" className="dashboardPrimaryAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
-              </div>
-            ) : activePanel === "circuitos" && !circuitEditorOpen ? (
-              <div className="dashboardTitleActions">
-                <button type="button" className="dashboardPrimaryAction" onClick={openCircuitCreator}><PlusCircle aria-hidden="true" /> Criar circuito</button>
-              </div>
-            ) : null}
+            <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
           </section>
 
           {freeTrialDetails ? <FreeTrialNotice details={freeTrialDetails} /> : null}
 
           {activePanel === "inicio" && (
-            <section className="playStatsGrid">
-              <div>
-                <span className="dashboardStatLabel">Torneios criados <Trophy aria-hidden="true" /></span>
-                <strong>{tournaments.length}</strong>
-                <small>Gestão centralizada</small>
-              </div>
-              <div>
-                <span className="dashboardStatLabel">Circuitos cadastrados <MapIcon aria-hidden="true" /></span>
-                <strong>{circuits.length}</strong>
-                <small>Temporada 2026</small>
-              </div>
-              <div>
-                <span className="dashboardStatLabel">Modalidades disponíveis <Activity aria-hidden="true" /></span>
-                <strong>{SPORT_CATALOG.length}</strong>
-                <small>Beach Tennis ativo no seu clube</small>
-              </div>
-            </section>
+            <>
+              <section className="playTabs homeQuickActions homeQuickActionsThree" aria-label="Ações rápidas">
+                <button type="button" className="primaryQuickAction" onClick={() => goToPanel("criar")}><PlusCircle aria-hidden="true" /> Novo torneio</button>
+                <button type="button" onClick={() => goToPanel("circuitos")}><GitBranch aria-hidden="true" /> Circuitos</button>
+                <button type="button" onClick={() => goToPanel("modalidades")}><Shapes aria-hidden="true" /> Modalidades</button>
+              </section>
+
+              <section className="playStatsGrid">
+                <div><strong>{tournaments.length}</strong><span>Torneios criados</span></div>
+                <div><strong>{circuits.length}</strong><span>Circuitos cadastrados</span></div>
+                <div><strong>{allowedTypes.length}</strong><span>Modalidades disponíveis</span></div>
+              </section>
+            </>
           )}
 
 {activePanel === "inicio" && selectedArenaProfile ? (
@@ -6878,7 +6181,7 @@ setNewPublicInfo({
           <article className="arenaPublicTournamentCard" key={t.id}>
             <div>
               <strong>{t.name}</strong>
-              <small>{normalizeModalityName(t.type)}</small>
+              <small>{t.type}</small>
             </div>
             <div className="tournamentMeta">
               {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
@@ -6906,9 +6209,9 @@ setNewPublicInfo({
       <input
         value={arenaProfileSearch}
         onChange={(e) => setArenaProfileSearch(e.target.value)}
-        placeholder="Buscar arenas ou organizadores parceiros..."
+        placeholder="Busque perfis públicos da plataforma..."
       />
-      <span><Search aria-hidden="true" /></span>
+      <span>🔍</span>
     </div>
 
     <button
@@ -6916,11 +6219,10 @@ setNewPublicInfo({
       className="mapsMiniBtn"
       onClick={() => window.open("https://www.google.com/maps/search/arena+beach+tennis+perto+de+mim", "_blank", "noopener,noreferrer")}
     >
-      <MapPin aria-hidden="true" /> Google Maps
+      Google Maps
     </button>
   </div>
 
-  <h2 className="arenaFeedTitle">Arenas em destaque</h2>
   <div className="arenaFeedGrid">
     {filteredArenaProfiles.map((arena) => (
       <article className="arenaFeedCard" key={arena.id}>
@@ -6929,27 +6231,15 @@ setNewPublicInfo({
         </div>
         <strong>{arena.arena_name || arena.name || "Arena cadastrada"}</strong>
         <small><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</small>
-        {arena.courts || arena.surface ? <div className="arenaFeedChips">{arena.courts ? <span>{arena.courts} quadras</span> : null}{arena.surface ? <span>{arena.surface}</span> : null}</div> : null}
         <button type="button" onClick={() => openArenaProfile(arena)}>Acessar arena</button>
       </article>
     ))}
-    {filteredArenaProfiles.length === 0 ? <div className="arenaFeedEmpty"><Search aria-hidden="true" /><strong>Nenhuma arena encontrada</strong><span>Tente outro nome ou localização.</span></div> : null}
   </div>
 </section>
 )}
 
     {activePanel === "criar" && (
     <>
-    {tournamentWorkspace === "create" ? (
-    <>
-    <div className="tournamentWorkspaceHeading">
-      <button type="button" className="secondaryBtn" onClick={() => setTournamentWorkspace("list")}>← Voltar para torneios</button>
-      <div>
-        <span>Criação de torneio</span>
-        <h2>Novo torneio de Beach Tennis</h2>
-        <p>Preencha os dados do evento. As regras e formatos existentes continuam preservados.</p>
-      </div>
-    </div>
     <section className="card playCreateCard">
   <h2>Criar novo torneio</h2>
 
@@ -6960,18 +6250,6 @@ setNewPublicInfo({
       onChange={(e) => setNewName(e.target.value)}
       placeholder="Ex: Campeão Open"
     />
-  </div>
-
-  <div className="formField">
-    <label>Modalidade esportiva</label>
-    <select value={newSport} onChange={(e) => setNewSport(e.target.value)}>
-      {SPORT_CATALOG.map((sport) => (
-        <option key={sport.id} value={sport.id} disabled={!sport.enabled}>
-          {sport.name}{sport.enabled ? "" : " — Em breve"}
-        </option>
-      ))}
-    </select>
-    <small className="fieldSupportText">Beach Tennis é a modalidade ativa nesta etapa.</small>
   </div>
 
   <div className="formField">
@@ -7139,34 +6417,14 @@ setNewPublicInfo({
   </div>
 
   <div className="formField fullField">
-    <label>Formato do Beach Tennis</label>
-    <select
-      value={newType}
-      onChange={(e) => {
-        const nextType = e.target.value;
-        const nextConfig = getModalityConfig(nextType);
-        setNewType(nextType);
-        if (isCupType(nextConfig)) setNewCupTeamCount(nextConfig.defaultTeams);
-      }}
-    >
-      <option value="">Escolha o formato</option>
+    <label>Modalidade</label>
+    <select value={newType} onChange={(e) => setNewType(e.target.value)}>
+      <option value="">Escolha a modalidade</option>
       {allowedTypes.map((type) => (
         <option key={type} value={type}>{type}</option>
       ))}
     </select>
   </div>
-
-  {isCupType(selectedNewTournamentConfig) && selectedNewTournamentConfig.allowedTeamCounts?.length > 1 ? (
-    <div className="formField">
-      <label>Quantidade de grupos e duplas</label>
-      <select value={newCupTeamCount} onChange={(e) => setNewCupTeamCount(Number(e.target.value))}>
-        {selectedNewTournamentConfig.allowedTeamCounts.map((teamCount) => (
-          <option key={teamCount} value={teamCount}>{formatCupGroupOption(selectedNewTournamentConfig, teamCount)}</option>
-        ))}
-      </select>
-      <small>Quantidade de duplas: {newCupTeamCount}. Cada grupo terá {selectedNewTournamentConfig.groupSize || 3} duplas.</small>
-    </div>
-  ) : null}
 
   <div className="formField">
     <label>Set para vencer</label>
@@ -7185,185 +6443,159 @@ setNewPublicInfo({
     </select>
   </div>
 
- <div className="tournamentCreateActions">
-  <button type="button" className="secondaryBtn" onClick={() => setTournamentWorkspace("list")}>Cancelar</button>
-  <button type="button" onClick={createTournament} disabled={saving}>
-    {saving ? "Salvando..." : "Criar torneio"}
-  </button>
- </div>
+ <button type="button" onClick={createTournament} disabled={saving}>
+  {saving ? "Salvando..." : "Criar torneio"}
+</button>
       </section>
-    </>
-    ) : (
 
-<section id="historico-torneios" className="card tournamentManagementCard">
-  <div className="tournamentFilterBar">
-    <label className="tournamentSearchField">
-      <Search aria-hidden="true" />
-      <input value={tournamentSearch} onChange={(event) => setTournamentSearch(event.target.value)} placeholder="Buscar torneio..." />
-    </label>
-    <button type="button" className={`secondaryBtn tournamentFilterToggle ${tournamentFiltersOpen ? "active" : ""}`} onClick={() => setTournamentFiltersOpen((current) => !current)}><Filter aria-hidden="true" /> Filtrar</button>
-    {tournamentFiltersOpen && (
-      <div className="tournamentAdvancedFilters">
-        <select value={tournamentFormatFilter} onChange={(event) => setTournamentFormatFilter(event.target.value)} aria-label="Filtrar por formato">
-          <option value="all">Todos os formatos</option>
-          {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-        </select>
-        <select value={tournamentStatusFilter} onChange={(event) => setTournamentStatusFilter(event.target.value)} aria-label="Filtrar por status">
-          <option value="all">Todos os status</option>
-          <option value="Inscrições abertas">Inscrições abertas</option>
-          <option value="Programado">Programado</option>
-          <option value="Em andamento">Em andamento</option>
-          <option value="Encerrado">Encerrado</option>
-          <option value="Rascunho">Rascunho</option>
-        </select>
-        <button type="button" className="secondaryBtn" onClick={() => { setTournamentSearch(""); setTournamentFormatFilter("all"); setTournamentStatusFilter("all"); }}>Limpar filtros</button>
-      </div>
-    )}
-  </div>
+<section id="historico-torneios" className="card">
+  <h2>Histórico de torneios criados</h2>
 
   {tournaments.length === 0 ? (
-    <div className="tournamentEmptyState"><Trophy aria-hidden="true" /><h3>Nenhum torneio criado</h3><p>Crie seu primeiro torneio de Beach Tennis para começar.</p><button type="button" onClick={openTournamentCreator}>Criar torneio</button></div>
-  ) : filteredTournaments.length === 0 ? (
-    <div className="tournamentEmptyState"><Search aria-hidden="true" /><h3>Nenhum resultado encontrado</h3><p>Ajuste a busca ou limpe os filtros.</p><button type="button" className="secondaryBtn" onClick={() => { setTournamentSearch(""); setTournamentFormatFilter("all"); setTournamentStatusFilter("all"); }}>Limpar filtros</button></div>
+    <p>Nenhum torneio criado ainda.</p>
+  ) : (false) ? (
+    <p></p>
   ) : (
-    <div className="tournamentList isolatedTournamentGrid">
-      <div className="tournamentTableHeader" aria-hidden="true">
-        <span>Nome do torneio</span>
-        <span>Data / Local</span>
-        <span>Formato</span>
-        <span>Status</span>
-        <span>Ação</span>
-      </div>
-      {filteredTournaments.map((t) => {
-        const details = t.data || {};
-        const formatLabel = details.gender || (String(t.type || "").toLowerCase().includes("individual") ? "Individual" : "Duplas");
+    <div className="eventGroupList">
+      {isolatedTournaments.length > 0 && (
+        <div className="tournamentList isolatedTournamentGrid">
+          {isolatedTournaments.map((t) => {
+            const details = t.data || {};
 
-        return (
-          <div
-            className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
-            key={t.id}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={() => {
-              moveTournamentByDrag(draggedTournamentId, t.id);
-              setDraggedTournamentId(null);
-            }}
-          >
-            <button
-              type="button"
-              className="moveLineBtn"
-              title="Segure e arraste para mover"
-              draggable
-              onDragStart={(event) => {
-                setDraggedTournamentId(t.id);
-                event.dataTransfer.effectAllowed = "move";
-              }}
-              onDragEnd={() => setDraggedTournamentId(null)}
-            >
-              <span>—</span><span>—</span><span>—</span>
-            </button>
+            return (
+                <div
+                  className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
+                  key={t.id}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    moveTournamentByDrag(draggedTournamentId, t.id);
+                    setDraggedTournamentId(null);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="moveLineBtn"
+                    title="Segure e arraste para mover"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedTournamentId(t.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => setDraggedTournamentId(null)}
+                  >
+                    <span>—</span>
+                    <span>—</span>
+                    <span>—</span>
+                  </button>
 
-            <div className="tournamentNameCell"><strong>{t.name}</strong></div>
-            <div className="tournamentDateCell">
-              <span>{details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data não informada")}</span>
-              <small>{details.location || "Local não informado"}</small>
-            </div>
-            <div className="tournamentFormatCell"><span>{formatLabel}</span></div>
-            <div className="tournamentStatusCell">
-              <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
-            </div>
-            <div className="tournamentActions">
-              <button type="button" className="tableIconAction shareTournamentBtn" title="Compartilhar" aria-label={`Compartilhar ${t.name}`} onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /></button>
-              <button type="button" className="tournamentOpenAction" onClick={() => openTournament(t)}>Abrir</button>
-            </div>
+                  <div className="tournamentInfo">
+                    <div className="tournamentTitleRow">
+                      <strong>{t.name}</strong>
+                      <span className="tournamentTypeBadge">{t.type}</span>
+                    </div>
+
+                    <div className="tournamentMeta">
+                      {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
+                      {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
+                      {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
+                      {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
+                      {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
+                      {details.winningScore ? <span><Target aria-hidden="true" /> {details.winningScore} games</span> : null}
+                    </div>
+                  </div>
+
+                  <div className="tournamentActions">
+                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
+                    <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /> Compartilhar</button>
+                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+                  </div>
+                </div>
+            );
+          })}
+        </div>
+      )}
+
+      {multiTournamentGroups.map((group) => (
+        <div className="eventGroupCard" key={group.key}>
+          <div className="eventGroupHeader">
+            <strong>{group.name}</strong>
+            <span>{group.items.length} categorias</span>
           </div>
-        );
-      })}
+
+          <div className="tournamentList eventTournamentGrid">
+            {group.items.map((t) => {
+              const details = t.data || {};
+
+              return (
+                <div
+                  className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
+                  key={t.id}
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={() => {
+                    moveTournamentByDrag(draggedTournamentId, t.id);
+                    setDraggedTournamentId(null);
+                  }}
+                >
+                  <button
+                    type="button"
+                    className="moveLineBtn"
+                    title="Segure e arraste para mover"
+                    draggable
+                    onDragStart={(e) => {
+                      setDraggedTournamentId(t.id);
+                      e.dataTransfer.effectAllowed = "move";
+                    }}
+                    onDragEnd={() => setDraggedTournamentId(null)}
+                  >
+                    <span>—</span>
+                    <span>—</span>
+                    <span>—</span>
+                  </button>
+
+                  <div className="tournamentInfo">
+                    <div className="tournamentTitleRow">
+                      <strong>{t.name}</strong>
+                      <span className="tournamentTypeBadge">{t.type}</span>
+                    </div>
+
+                    <div className="tournamentMeta">
+                      {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
+                      {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
+                      {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
+                      {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
+                      {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
+                      {details.winningScore ? <span><Target aria-hidden="true" /> {details.winningScore} games</span> : null}
+                    </div>
+                  </div>
+
+                  <div className="tournamentActions">
+                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
+                    <button type="button" onClick={() => openTournament(t)}>Abrir</button>
+                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /> Compartilhar</button>
+                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </div>
   )}
 </section>
-    )}
     </>
     )}
 
 
-{activePanel === "circuitos" && !circuitEditorOpen && (() => {
-  const normalizedSearch = circuitSearch.trim().toLocaleLowerCase("pt-BR");
-  const visibleCircuits = circuits.filter((circuit) => {
-    const matchesSearch = !normalizedSearch || circuit.name.toLocaleLowerCase("pt-BR").includes(normalizedSearch);
-    const matchesStatus = circuitStatusFilter === "all" || circuit.status === circuitStatusFilter;
-    return matchesSearch && matchesStatus;
-  });
-  const activeCircuitCount = circuits.filter((circuit) => circuit.status === "active").length;
-  const linkedTournamentCount = circuits.reduce((total, circuit) => total + (circuit.tournamentIds?.length || 0), 0);
-  const classifiedNames = new Set(circuits.flatMap((circuit) => getCircuitRanking(circuit).flatMap((group) => group.rows.map((row) => row.name))));
-
-  return (
-    <section className="figmaCircuitOverview">
-      <div className="figmaCircuitStats">
-        <div><span>Circuitos cadastrados</span><strong>{circuits.length}</strong><small>Histórico total</small></div>
-        <div><span>Circuitos ativos</span><strong>{activeCircuitCount}</strong><small>Temporada atual</small></div>
-        <div><span>Torneios vinculados</span><strong>{linkedTournamentCount}</strong><small>Somando os circuitos</small></div>
-        <div><span>Participantes classificados</span><strong>{classifiedNames.size}</strong><small>Ranking geral</small></div>
-      </div>
-
-      <section className="figmaCircuitTableCard">
-        <div className="figmaCircuitToolbar">
-          <label><Search aria-hidden="true" /><input value={circuitSearch} onChange={(event) => setCircuitSearch(event.target.value)} placeholder="Buscar por nome do circuito..." /></label>
-          <select value={circuitStatusFilter} onChange={(event) => setCircuitStatusFilter(event.target.value)} aria-label="Status do circuito">
-            <option value="all">Todos os status</option>
-            <option value="active">Ativo</option>
-            <option value="closed">Encerrado</option>
-            <option value="draft">Rascunho</option>
-            <option value="archived">Arquivado</option>
-          </select>
-        </div>
-
-        <div className="figmaCircuitTableHeader" aria-hidden="true">
-          <span>Nome / Período</span><span>Modalidade / Categorias</span><span>Torneios vinc.</span><span>Progresso</span><span>Status</span><span>Ação</span>
-        </div>
-
-        <div className="figmaCircuitRows">
-          {visibleCircuits.length ? visibleCircuits.map((circuit) => {
-            const selectedTournaments = getCircuitSelectedTournaments(circuit);
-            const finishedCount = selectedTournaments.filter((tournament) => getTournamentUiStatus(tournament) === "Encerrado").length;
-            const progress = selectedTournaments.length ? Math.round((finishedCount / selectedTournaments.length) * 100) : 0;
-            const rankingGroups = getCircuitRanking(circuit);
-            const rankedCount = new Set(rankingGroups.flatMap((group) => group.rows.map((row) => row.name))).size;
-            const categoryText = selectedTournaments.map((tournament) => tournament.data?.gender).filter(Boolean).slice(0, 2).join(", ") || "Beach Tennis";
-            const statusLabel = circuit.status === "active" ? "Ativo" : circuit.status === "closed" ? "Encerrado" : circuit.status === "archived" ? "Arquivado" : "Rascunho";
-            return (
-              <React.Fragment key={circuit.id}>
-                <article className="figmaCircuitRow">
-                  <div><strong>{circuit.name}</strong><small>{circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} a {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim"}</small></div>
-                  <div><span>{categoryText}</span><small>{rankingCriteriaOptions.find((option) => option.value === circuitRankingCriteria)?.label || "Ranking configurável"}</small></div>
-                  <div className="center"><strong>{selectedTournaments.length}</strong><small>{rankedCount} ranqueados</small></div>
-                  <div className="progress"><span>{progress}%</span><i><b style={{ width: `${progress}%` }} /></i></div>
-                  <div><span className={`figmaCircuitStatus ${circuit.status}`}>{statusLabel}</span></div>
-                  <div className="actions"><button type="button" onClick={() => setExpandedCircuitId(expandedCircuitId === circuit.id ? null : circuit.id)}>Abrir</button><button type="button" className="icon" onClick={() => editCircuit(circuit)} aria-label={`Editar ${circuit.name}`}><Edit2 /></button></div>
-                </article>
-                {expandedCircuitId === circuit.id ? (
-                  <div className="figmaCircuitRankingDrawer">
-                    <div><h3>Ranking do circuito</h3><button type="button" onClick={() => editCircuit(circuit)}><Edit2 /> Editar circuito</button></div>
-                    {rankingGroups.length ? rankingGroups.map((group) => <RankingTable key={group.key} title={group.title} rows={group.rows} rankingCriteria={circuitRankingCriteria} />) : <p>O ranking aparecerá quando os torneios vinculados tiverem placares.</p>}
-                  </div>
-                ) : null}
-              </React.Fragment>
-            );
-          }) : <div className="figmaCircuitEmpty">Nenhum circuito encontrado.</div>}
-        </div>
-      </section>
-    </section>
-  );
-})()}
-
-{activePanel === "circuitos" && circuitEditorOpen && (
+{activePanel === "circuitos" && (
   <section className="card circuitsCard">
     <div className="circuitsHeader">
       <div>
         <h2>{circuitForm.id ? "Editar circuito" : "Novo circuito"}</h2>
         <p>Crie períodos flexíveis e escolha manualmente quais torneios entram. Isso não altera os torneios já criados.</p>
       </div>
-      <button type="button" className="secondaryBtn" onClick={closeCircuitEditor}>Voltar para circuitos</button>
+      {circuitForm.id ? <button type="button" className="secondaryBtn" onClick={resetCircuitForm}>Novo circuito</button> : null}
     </div>
 
     <div className="circuitsFormGrid">
@@ -7408,7 +6640,7 @@ setNewPublicInfo({
                 <span className="circuitCheckVisual">{checked ? "✓" : ""}</span>
                 <span className="circuitTournamentText">
                   <strong>{details.eventName || t.name}</strong>
-                  <small>{[t.name, normalizeModalityName(t.type), details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
+                  <small>{[t.name, t.type, details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
                 </span>
               </label>
             );
@@ -7419,7 +6651,7 @@ setNewPublicInfo({
 
     <div className="circuitFormActions">
       <button type="button" onClick={saveCircuit}>{circuitForm.id ? "Salvar alterações" : "Criar circuito"}</button>
-      <button type="button" className="cancelBtn" onClick={closeCircuitEditor}>Cancelar</button>
+      {circuitForm.id ? <button type="button" className="cancelBtn" onClick={resetCircuitForm}>Cancelar edição</button> : null}
     </div>
 
     <div className="circuitsList">
@@ -7512,73 +6744,79 @@ setNewPublicInfo({
 )}
 
 {activePanel === "modalidades" && (
-<section className="card sportCatalogSection">
-  <div className="sportCatalogHeader">
-    <div>
-      <h2>Modalidades esportivas</h2>
-      <p>O Beach Tennis concentra todos os fluxos disponíveis nesta etapa. As demais modalidades já aparecem no catálogo para deixar clara a evolução da plataforma.</p>
-    </div>
-  </div>
+<section className="card">
+  <h2>Modalidades liberadas</h2>
+  <div className="modalitiesGrid internalModalities">
+    {allowedTypes.includes("Super 08") && (
+      <Info
+        title="Super 08"
+        text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
+      />
+    )}
 
-  <div className="sportCatalogStats" aria-label="Resumo das modalidades">
-    <div><span>Total disponíveis</span><strong>{SPORT_CATALOG.length}</strong><small>modalidades no catálogo</small></div>
-    <div><span>Modalidades ativas</span><strong>1</strong><small>Beach Tennis</small></div>
-    <div><span>Torneios cadastrados</span><strong>{tournaments.length}</strong><small>todos em Beach Tennis</small></div>
-  </div>
+    {allowedTypes.includes("Super 10 Mista (Dupla Aleatória)") && (
+      <Info
+        title="Super 10 Mista Aleatória"
+        text="Formato misto com 10 participantes: 5 homens e 5 mulheres. São 5 rodadas, com 2 jogos por rodada, e em cada rodada descansam 1 homem e 1 mulher. Ao final, todos jogam 4 partidas e descansam 1 vez. O sistema monta automaticamente as duplas mistas, organiza as quadras, registra os placares e calcula rankings separados masculino e feminino. É ideal para torneios de hoje, eventos rápidos e grupos menores, mantendo equilíbrio de jogos entre todos os atletas."
+      />
+    )}
 
-  <div className="sportCatalogToolbar">
-    <label className="sportSearchField">
-      <Search aria-hidden="true" />
-      <input value={modalitySearch} onChange={(event) => setModalitySearch(event.target.value)} placeholder="Buscar por modalidade..." />
-    </label>
-    <select value={modalityFilter} onChange={(event) => setModalityFilter(event.target.value)} aria-label="Filtrar modalidades">
-      <option value="all">Todas as modalidades</option>
-      <option value="active">Disponível agora</option>
-      <option value="soon">Em breve</option>
-    </select>
-    <button type="button" className="secondaryBtn" onClick={() => { setModalitySearch(""); setModalityFilter("all"); }}>Limpar</button>
-  </div>
+    {allowedTypes.includes("Super 12 Mista (Dupla Aleatória)") && (
+      <Info
+        title="Super 12 Mista Aleatória"
+        text="Formato misto com 12 participantes: 6 homens e 6 mulheres. Primeiro, os atletas são cadastrados e sorteados. Depois, o sistema combina os participantes para formar duplas mistas em diferentes rodadas, mantendo equilíbrio entre homens e mulheres. Cada jogador participa de jogos com combinações variadas, e o desempenho é calculado individualmente. É uma boa opção para eventos sociais e competitivos com rotação de parceiros."
+      />
+    )}
 
-  {filteredSportCatalog.length ? (
-  <div className="sportCatalogGrid">
-    {filteredSportCatalog.map((sport) => {
-      const tournamentCount = sport.enabled
-        ? tournaments.filter((tournament) => (tournament.data?.sport || DEFAULT_SPORT_ID) === sport.id).length
-        : 0;
+    {allowedTypes.includes("Super 16 Mista (Dupla Aleatória)") && (
+      <Info
+        title="Super 16 Mista Aleatória"
+        text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
+      />
+    )}
 
-      return (
-        <article className={`sportCatalogCard ${sport.enabled ? "active" : "comingSoon"}`} key={sport.id}>
-          <div className="sportCatalogCardTop">
-            <span className="sportCatalogIcon" aria-hidden="true">{sport.icon}</span>
-            <span className={`sportStatusBadge ${sport.enabled ? "active" : "comingSoon"}`}>
-              {sport.enabled ? "Ativa" : "Em breve"}
-            </span>
-          </div>
-          <h3>{sport.name}</h3>
-          <p>{sport.description}</p>
-          {sport.enabled ? (
-            <>
-              <small>{tournamentCount} torneio(s) cadastrado(s) · {allowedTypes.length} formato(s) liberado(s) no seu plano</small>
-              <button type="button" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Criar torneio</button>
-            </>
-          ) : (
-            <>
-              <small>A criação será habilitada quando esta modalidade estiver pronta.</small>
-              <button type="button" disabled aria-disabled="true">Indisponível</button>
-            </>
-          )}
-        </article>
-      );
-    })}
+    {allowedTypes.includes("Super 12 Mista (Dupla Fixa)") && (
+      <Info
+        title="Super 12 Mista Dupla Fixa"
+        text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
+      />
+    )}
+
+    {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
+      <Info
+        title="Super 16 Mista Dupla Fixa"
+        text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
+      />
+    )}
+
+    {allowedTypes.includes("Simples 8") && (
+      <Info
+        title="Simples 8"
+        text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo de games até definir os melhores colocados."
+      />
+    )}
+
+    {allowedTypes.includes("Copa - 12 ou 24 duplas") && (
+      <Info
+        title="Copa - 12 ou 24 duplas"
+        text="Formato de Copa para 12 ou 24 duplas, pensado para eventos mais completos. As duplas são organizadas em fase de grupos, jogam partidas classificatórias e depois avançam para as chaves finais conforme o desempenho. O sistema permite trabalhar com chave principal e repescagem, além de nomes editáveis para adaptar à regra do seu evento. É indicado para torneios com estrutura de campeonato, fases eliminatórias e premiação por colocação."
+      />
+    )}
+
+    {allowedTypes.includes("Copa - 18 duplas") && (
+      <Info
+        title="Copa - 18 duplas"
+        text="Formato de Copa com 18 duplas, dividido em 6 grupos de 3 duplas. Cada grupo joga sua fase classificatória, e o sistema calcula a classificação com base nos critérios definidos. Os melhores avançam para a chave principal; os 2 melhores gerais podem receber BYE, entrando em fase mais avançada. Também há disputa paralela para duplas específicas, como terceiros colocados, permitindo manter mais atletas em atividade. É um formato ideal para torneios grandes, com organização mais profissional e várias fases."
+      />
+    )}
+
+    {allowedTypes.includes("Copinha - grupos de 3") && (
+      <Info
+        title="Copinha - grupos de 3"
+        text="Formato configurável de 6 a 36 duplas. Cada grupo tem três duplas; 1º e 2º avançam para a Chave Principal e, a partir de 3 grupos, os 3º colocados disputam a Consolação."
+      />
+    )}
   </div>
-  ) : (
-    <div className="sportCatalogEmpty">
-      <Search aria-hidden="true" />
-      <h3>Nenhuma modalidade encontrada</h3>
-      <p>Limpe os filtros ou faça uma nova busca.</p>
-      <button type="button" className="secondaryBtn" onClick={() => { setModalitySearch(""); setModalityFilter("all"); }}>Limpar busca</button>
-    </div>
-  )}
 </section>
 )}
 
@@ -7605,7 +6843,7 @@ setNewPublicInfo({
             <div className="tournamentInfo">
               <div className="tournamentTitleRow">
                 <strong>{t.name}</strong>
-                <span className="tournamentTypeBadge">{normalizeModalityName(t.type)}</span>
+                <span className="tournamentTypeBadge">{t.type}</span>
               </div>
 
               <div className="tournamentMeta">
@@ -7629,97 +6867,6 @@ setNewPublicInfo({
 )}
 
 {activePanel === "ajustes" && (
-<div className="figmaProfilePage">
-  <section className="figmaProfileHeroCard">
-    <div className="figmaProfileHeroAvatar">
-      {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do perfil" /> : <UserRound aria-hidden="true" />}
-    </div>
-    <div className="figmaProfileHeroCopy">
-      <div><h1>{organizerProfile.arenaName || profile.name || "Meu perfil"}</h1><span>PLANO {String(profile.plan || "PRO").replace(/^plano\s+/i, "")} {formatStatusBR(profile.status)}</span></div>
-      <p>{organizerProfile.description || "Perfil oficial na plataforma Torneio360. Adicione mais detalhes sobre a arena para facilitar o contato com os atletas."}</p>
-      <small>{organizerProfile.isPublic !== false ? <><LockOpen aria-hidden="true" /> Perfil Público</> : <><LockKeyhole aria-hidden="true" /> Perfil Privado</>}</small>
-    </div>
-    <button type="button" onClick={openOrganizerProfileEditor}><Edit2 aria-hidden="true" /> Editar perfil</button>
-  </section>
-
-  <nav className="figmaProfileTabs" role="tablist" aria-label="Seções do perfil">
-    <button type="button" role="tab" className={profileSubtab === "publicacoes" ? "active" : ""} onClick={() => openProfileSection("publicacoes")}>Publicações</button>
-    <button type="button" role="tab" className={profileSubtab === "editar" ? "active" : ""} onClick={() => openProfileSection("editar")}>Dados da arena</button>
-    <button type="button" role="tab" className={profileSubtab === "conta" ? "active" : ""} onClick={() => openProfileSection("conta")}>Conta e suporte</button>
-  </nav>
-
-  {profileSubtab === "publicacoes" ? (
-    <section className="figmaProfilePublications">
-      <div className="figmaProfileSectionHeader">
-        <div><h2>Campeonatos Criados</h2><p>Total de {tournaments.length} publicações na plataforma.</p></div>
-        <label><Search aria-hidden="true" /><input value={profilePublicationSearch} onChange={(event) => setProfilePublicationSearch(event.target.value)} placeholder="Buscar publicação..." /></label>
-      </div>
-      <div className="figmaProfilePostGrid">
-        {tournaments.filter((tournament) => !profilePublicationSearch.trim() || tournament.name.toLocaleLowerCase("pt-BR").includes(profilePublicationSearch.trim().toLocaleLowerCase("pt-BR"))).map((tournament) => {
-          const details = tournament.data || {};
-          return (
-            <article className="figmaProfilePost" key={tournament.id}>
-              <div className="figmaProfilePostTop"><span>{getTournamentUiStatus(tournament) === "Encerrado" ? "TORNEIO CONCLUÍDO" : getTournamentUiStatus(tournament).toUpperCase()}</span><button type="button" aria-label="Mais opções"><MoreVertical /></button></div>
-              <h3>{details.eventName || tournament.name}</h3>
-              <p>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || normalizeModalityName(tournament.type)}</p>
-              <p><CalendarDays aria-hidden="true" /> {details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data não informada")}</p>
-              <p><MapPin aria-hidden="true" /> {details.location || "Local não informado"}</p>
-              <div className="figmaProfilePostActions">
-                <button type="button" onClick={() => openTournament(tournament)}>Abrir gestão</button>
-                <button type="button" onClick={() => tournament.public_id ? window.open(getPublicUrl(tournament.public_id), "_blank", "noopener,noreferrer") : setShareTarget(tournament)}>Ver página</button>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-    </section>
-  ) : null}
-
-  {profileSubtab === "editar" ? (
-    <div className="figmaProfileDataGrid">
-      <section>
-        <h3><MapPin aria-hidden="true" /> Identidade e Localização</h3>
-        <dl>
-          <div className="full"><dt>Nome oficial</dt><dd>{organizerProfile.arenaName || "Não informado"}</dd></div>
-          <div className="full description"><dt>Descrição pública</dt><dd>{organizerProfile.description || "Adicione uma descrição no botão Editar perfil."}</dd></div>
-          <div><dt>Cidade / Estado</dt><dd>{[organizerProfile.city, organizerProfile.state].filter(Boolean).join(", ") || "Não informado"}</dd></div>
-          <div><dt>Endereço completo</dt><dd>{organizerProfile.address || "Não informado"}</dd></div>
-        </dl>
-      </section>
-      <section>
-        <h3><MessageCircle aria-hidden="true" /> Contato e Redes Sociais</h3>
-        <div className="figmaContactCards">
-          <div className="whatsapp"><span><MessageCircle aria-hidden="true" /></span><p><small>WHATSAPP OFICIAL</small><strong>{organizerProfile.whatsapp || "Não informado"}</strong></p></div>
-          <div className="instagram"><span><AtSign aria-hidden="true" /></span><p><small>INSTAGRAM</small><strong>{organizerProfile.instagramHandle ? `@${String(organizerProfile.instagramHandle).replace(/^@/, "")}` : "Não informado"}</strong></p></div>
-          <div className="email"><span><Mail aria-hidden="true" /></span><p><small>E-MAIL DE CONTATO</small><strong>{organizerProfile.publicEmail || user.email}</strong></p></div>
-        </div>
-      </section>
-    </div>
-  ) : null}
-
-  {profileSubtab === "conta" ? (
-    <div className="figmaProfileAccountGrid">
-      <section>
-        <h3><UserRound aria-hidden="true" /> Acesso e Assinatura</h3>
-        <dl>
-          <div><dt>E-mail de acesso</dt><dd>{user.email}</dd></div>
-          <div><dt>Status da assinatura</dt><dd><span className="active">{formatStatusBR(profile.status)}</span></dd></div>
-          <div><dt>Plano atual</dt><dd className="blue">Plano {String(profile.plan || "PRO").replace(/^plano\s+/i, "")}</dd></div>
-          <div><dt>Próximo vencimento</dt><dd>{profile.expires_at ? formatDateBR(profile.expires_at) : "Não definido"}</dd></div>
-        </dl>
-      </section>
-      <section>
-        <h3><HelpCircle aria-hidden="true" /> Fale com o Torneio360</h3>
-        <p>Precisa de ajuda com a plataforma? Entre em contato com nosso time de suporte através dos canais oficiais abaixo.</p>
-        <a href={PLATFORM_SUPPORT.find((item) => item.id === "whatsapp")?.href} target="_blank" rel="noreferrer"><i><MessageCircle aria-hidden="true" /></i><span><strong>WhatsApp Torneio360</strong><small>Suporte ágil via mensagem</small></span><b>→</b></a>
-        <a href="mailto:torneio360@gmail.com"><i><Mail aria-hidden="true" /></i><span><strong>E-mail de Suporte</strong><small>torneio360@gmail.com</small></span><b>→</b></a>
-      </section>
-    </div>
-  ) : null}
-</div>
-)}
-
-{activePanel === "ajustes" && false && (
 <>
   <section className="card instagramProfileCard">
     <div className="instagramProfileHeader">
@@ -7798,7 +6945,7 @@ setNewPublicInfo({
             <div className="tournamentInfo">
               <div className="tournamentTitleRow">
                 <strong>{t.name}</strong>
-                <span className="tournamentTypeBadge">{normalizeModalityName(t.type)}</span>
+                <span className="tournamentTypeBadge">{t.type}</span>
               </div>
               <div className="tournamentMeta">
                 {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
@@ -8004,7 +7151,7 @@ setNewPublicInfo({
   );
 }
 
-function createInitialData(type, config, requestedTeamCount = null) {
+function createInitialData(type, config) {
   const base = {
   rankingCriteria: defaultRankingCriteria,
   winningScore: 4,
@@ -8013,7 +7160,6 @@ function createInitialData(type, config, requestedTeamCount = null) {
   eventDay: "",
   location: "",
   schedule: [],
-  participantMeta: { normal: [], men: [], women: [], teams: [] },
 };
 
   if (!config) {
@@ -8039,37 +7185,25 @@ function createInitialData(type, config, requestedTeamCount = null) {
           b: `Atleta 2 da dupla ${i + 1}`,
         })),
       },
-      participantMeta: {
-        ...base.participantMeta,
-        teams: normalizeParticipantMetaList([], config.teams, { athleteCount: 2 }),
-      },
     };
   }
 
   if (isCupType(config)) {
-    const teamCount = config.allowedTeamCounts?.includes(Number(requestedTeamCount))
-      ? Number(requestedTeamCount)
-      : config.defaultTeams;
-
     return {
       ...base,
       cupConfig: {
         format: config.cupMode || "standard",
-        teamCount,
+        teamCount: config.defaultTeams,
         mainBracketName: config.defaultMainBracketName,
         repechageName: config.defaultRepechageName,
         tieBreakOverrides: {},
         groupTieBreakOverrides: {},
       },
       players: {
-        teams: Array.from({ length: teamCount }, (_, i) => ({
+        teams: Array.from({ length: config.defaultTeams }, (_, i) => ({
           a: `Atleta 1 da dupla ${i + 1}`,
           b: `Atleta 2 da dupla ${i + 1}`,
         })),
-      },
-      participantMeta: {
-        ...base.participantMeta,
-        teams: normalizeParticipantMetaList([], teamCount, { athleteCount: 2 }),
       },
       brackets: [],
     };
@@ -8160,7 +7294,7 @@ function normalizeBrackets(brackets) {
 }
 
 function normalizeTournamentData(type, rawData) {
-  const config = getModalityConfig(type);
+  const config = modalityConfig[type];
 
   if (!config) {
     return isTournamentDataObject(rawData) ? rawData : createInitialData(type, config);
@@ -8169,7 +7303,6 @@ function normalizeTournamentData(type, rawData) {
   const defaults = createInitialData(type, config);
   const source = isTournamentDataObject(rawData) ? rawData : {};
   const sourcePlayers = isTournamentDataObject(source.players) ? source.players : {};
-  const sourceParticipantMeta = isTournamentDataObject(source.participantMeta) ? source.participantMeta : {};
   const validWinningScore = [4, 6].includes(Number(source.winningScore));
   const validRankingCriteria = rankingCriteriaOptions.some((item) => item.value === source.rankingCriteria);
   const normalized = {
@@ -8212,10 +7345,6 @@ function normalizeTournamentData(type, rawData) {
       players: {
         teams: normalizeTeams(sourcePlayers.teams, teamCount),
       },
-      participantMeta: {
-        ...defaults.participantMeta,
-        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, teamCount, { athleteCount: 2 }),
-      },
       brackets: normalizeBrackets(source.brackets),
       groupsShuffled: Boolean(source.groupsShuffled),
     };
@@ -8228,11 +7357,6 @@ function normalizeTournamentData(type, rawData) {
         men: normalizeNameList(sourcePlayers.men, config.men, "Homem"),
         women: normalizeNameList(sourcePlayers.women, config.women, "Mulher"),
       },
-      participantMeta: {
-        ...defaults.participantMeta,
-        men: normalizeParticipantMetaList(sourceParticipantMeta.men, config.men),
-        women: normalizeParticipantMetaList(sourceParticipantMeta.women, config.women),
-      },
     };
   }
 
@@ -8242,42 +7366,20 @@ function normalizeTournamentData(type, rawData) {
       players: {
         teams: normalizeTeams(sourcePlayers.teams, config.teams),
       },
-      participantMeta: {
-        ...defaults.participantMeta,
-        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, config.teams, { athleteCount: 2 }),
-      },
     };
   }
 
   return {
     ...normalized,
     players: normalizeNameList(source.players, config.total, config.label),
-    participantMeta: {
-      ...defaults.participantMeta,
-      normal: normalizeParticipantMetaList(sourceParticipantMeta.normal, config.total),
-    },
   };
 }
 
 function needsTournamentDataRepair(type, rawData) {
-  const config = getModalityConfig(type);
+  const config = modalityConfig[type];
   if (!config || !isTournamentDataObject(rawData) || !Array.isArray(rawData.schedule)) return true;
 
   const players = isTournamentDataObject(rawData.players) ? rawData.players : {};
-  const participantMeta = isTournamentDataObject(rawData.participantMeta) ? rawData.participantMeta : {};
-  const hasStableAthleteId = (value) => isTournamentDataObject(value)
-    && Boolean(String(value.memberId || value.member_id || "").trim());
-  const hasStableSinglesMeta = (values, count) => Array.isArray(values)
-    && values.length === count
-    && values.every((value) => hasStableAthleteId(value));
-  const hasStableTeamsMeta = (values, count) => Array.isArray(values)
-    && values.length === count
-    && values.every((value) => (
-      isTournamentDataObject(value)
-      && Array.isArray(value.athletes)
-      && value.athletes.length >= 2
-      && value.athletes.slice(0, 2).every((athlete) => hasStableAthleteId(athlete))
-    ));
 
   if (isCupType(config)) {
     const cupConfig = isTournamentDataObject(rawData.cupConfig) ? rawData.cupConfig : {};
@@ -8286,28 +7388,21 @@ function needsTournamentDataRepair(type, rawData) {
     return !Array.isArray(players.teams)
       || !config.allowedTeamCounts.includes(teamCount)
       || players.teams.length !== teamCount
-      || !Array.isArray(rawData.brackets)
-      || !hasStableTeamsMeta(participantMeta.teams, teamCount);
+      || !Array.isArray(rawData.brackets);
   }
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return !Array.isArray(players.men)
       || !Array.isArray(players.women)
       || players.men.length !== config.men
-      || players.women.length !== config.women
-      || !hasStableSinglesMeta(participantMeta.men, config.men)
-      || !hasStableSinglesMeta(participantMeta.women, config.women);
+      || players.women.length !== config.women;
   }
 
   if (config.type === "fixed12" || config.type === "fixed16") {
-    return !Array.isArray(players.teams)
-      || players.teams.length !== config.teams
-      || !hasStableTeamsMeta(participantMeta.teams, config.teams);
+    return !Array.isArray(players.teams) || players.teams.length !== config.teams;
   }
 
-  return !Array.isArray(rawData.players)
-    || rawData.players.length !== config.total
-    || !hasStableSinglesMeta(participantMeta.normal, config.total);
+  return !Array.isArray(rawData.players) || rawData.players.length !== config.total;
 }
 
 function getShuffleNames(data, config) {
@@ -8365,8 +7460,8 @@ class TournamentErrorBoundary extends React.Component {
   }
 }
 
-function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit, onSave, onNavigationStateChange }) {
-  const config = getModalityConfig(tournament.type);
+function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStateChange }) {
+  const config = modalityConfig[tournament.type];
 
   if (!config) {
     return (
@@ -8397,16 +7492,6 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
   const [clearTableOpen, setClearTableOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
-  const [participantSearch, setParticipantSearch] = useState("");
-  const [participantFilter, setParticipantFilter] = useState("all");
-  const [onlineRegistrations, setOnlineRegistrations] = useState([]);
-  const [onlineRegistrationsLoading, setOnlineRegistrationsLoading] = useState(true);
-  const [onlineRegistrationsAvailable, setOnlineRegistrationsAvailable] = useState(true);
-  const [onlineRegistrationsError, setOnlineRegistrationsError] = useState("");
-  const [reviewingRegistrationId, setReviewingRegistrationId] = useState(null);
-  const [rankingView, setRankingView] = useState("general");
-  const [rankingSearch, setRankingSearch] = useState("");
-  const [groupsConfigOpen, setGroupsConfigOpen] = useState(() => isCupType(config));
 
   const [shareInfo, setShareInfo] = useState({
     public_id: tournament.public_id || null,
@@ -8420,8 +7505,7 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
   });
   const [activeMatchesTab, setActiveMatchesTabState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    const requestedTab = params.get("partidas");
-    return ["grupos", "chaves", "paralela"].includes(requestedTab) ? requestedTab : "grupos";
+    return params.get("partidas") || "grupos";
   });
 
   async function updateTournamentUrl(next = {}) {
@@ -8466,102 +7550,19 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
   }
 
   function setActiveMatchesTab(tab) {
-    const normalizedTab = ["grupos", "chaves", "paralela"].includes(tab) ? tab : "grupos";
-    setActiveMatchesTabState(normalizedTab);
-    updateTournamentUrl({ activeMatchesTab: normalizedTab });
-  }
-
-  function isMissingOnlineRegistrationResource(error, resourceName = "tournament_registrations") {
-    const code = String(error?.code || "");
-    const message = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
-    return ["42P01", "PGRST202", "PGRST204", "PGRST205"].includes(code)
-      || (message.includes(resourceName.toLowerCase()) && /does not exist|not found|schema cache|could not find/.test(message));
-  }
-
-  function normalizeOnlineRegistrationStatus(value) {
-    const status = String(value || "pending").toLowerCase();
-    return ["confirmed", "rejected"].includes(status) ? status : "pending";
-  }
-
-  async function loadOnlineRegistrations({ showLoading = true } = {}) {
-    if (!tournament?.id) return;
-    if (showLoading) setOnlineRegistrationsLoading(true);
-    setOnlineRegistrationsError("");
-
-    const registrationResult = await supabase
-      .from("tournament_registrations")
-      .select("*")
-      .eq("tournament_id", tournament.id)
-      .order("created_at", { ascending: false });
-
-    if (registrationResult.error) {
-      setOnlineRegistrationsLoading(false);
-      setOnlineRegistrations([]);
-
-      if (isMissingOnlineRegistrationResource(registrationResult.error)) {
-        setOnlineRegistrationsAvailable(false);
-        return;
-      }
-
-      console.error("Erro ao carregar inscrições online:", registrationResult.error);
-      setOnlineRegistrationsAvailable(true);
-      setOnlineRegistrationsError("Não foi possível atualizar as inscrições online agora.");
-      return;
-    }
-
-    const rows = Array.isArray(registrationResult.data) ? registrationResult.data : [];
-    const athleteIds = Array.from(new Set(rows.map((row) => row.athlete_user_id).filter(Boolean)));
-    let profilesByUserId = {};
-
-    if (athleteIds.length) {
-      const profileResult = await supabase
-        .from("athlete_profiles")
-        .select("user_id, display_name, photo_url, bio, is_public, show_achievements")
-        .in("user_id", athleteIds);
-
-      if (!profileResult.error) {
-        profilesByUserId = Object.fromEntries((profileResult.data || []).map((profileRow) => [profileRow.user_id, profileRow]));
-      } else if (!isMissingOnlineRegistrationResource(profileResult.error, "athlete_profiles")) {
-        console.error("Erro ao carregar perfis das inscrições online:", profileResult.error);
-      }
-    }
-
-    setOnlineRegistrations(rows.map((row) => ({
-      ...row,
-      status: normalizeOnlineRegistrationStatus(row.status),
-      athleteProfile: profilesByUserId[row.athlete_user_id] || null,
-    })));
-    setOnlineRegistrationsAvailable(true);
-    setOnlineRegistrationsLoading(false);
+    setActiveMatchesTabState(tab);
+    updateTournamentUrl({ activeMatchesTab: tab });
   }
 
   useEffect(() => {
     updateTournamentUrl();
   }, []);
 
-  useEffect(() => {
-    void loadOnlineRegistrations();
-  }, [tournament.id]);
-
   const saveTimerRef = useRef(null);
-  const saveQueueRef = useRef(Promise.resolve());
   const latestDataRef = useRef(data);
   const firstRenderRef = useRef(true);
   const shuffleAnimationTimerRef = useRef(null);
   const shuffleCountdownTimerRef = useRef(null);
-  const appliedAthleteLinkRequestsRef = useRef(new Set());
-
-  function enqueueTournamentSave(nextData) {
-    const updatedTournament = { ...tournament, data: nextData };
-    const queuedSave = saveQueueRef.current
-      .catch(() => undefined)
-      .then(() => onSave(updatedTournament));
-
-    // Toda gravação desta tela respeita a ordem em que foi solicitada. Assim,
-    // uma edição nova nunca é sobrescrita pelo retorno tardio de um save antigo.
-    saveQueueRef.current = queuedSave.then(() => undefined, () => undefined);
-    return queuedSave;
-  }
 
   function clearShuffleTimers() {
     if (shuffleAnimationTimerRef.current) clearInterval(shuffleAnimationTimerRef.current);
@@ -8575,36 +7576,12 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
     [data, tournament.type]
   );
 
-  const participantRecords = useMemo(
-    () => getTournamentParticipantRecords(tournament.type, data),
-    [data, tournament.type]
-  );
-  const participantSummary = useMemo(() => ({
-    total: participantRecords.length,
-    confirmed: participantRecords.filter((record) => record.meta.registration === "confirmed").length,
-    pending: participantRecords.filter((record) => record.meta.registration !== "confirmed").length,
-  }), [participantRecords]);
-  const plannedCupGroupCount = isCupType(config)
-    ? getCupGroupCount(config, data.cupConfig?.teamCount || config.defaultTeams)
-    : 0;
-
   const cupGroupRankings = useMemo(
-    () => isCupType(config) && data.groupsShuffled
+    () => isCupType(config) && (data.groupsShuffled || data.schedule?.length > 0)
       ? calculateCupGroupRankings(data, data.rankingCriteria)
       : [],
     [data, config.type]
   );
-
-  const scheduleGames = useMemo(() => (data.schedule || []).flat(), [data.schedule]);
-  const completedScheduleGames = useMemo(() => {
-    const winningScore = getWinningScore(data);
-    return scheduleGames.filter((game) => getScoreWinnerSide(game, winningScore) !== null);
-  }, [scheduleGames, data.winningScore]);
-  const allocatedGroupParticipants = useMemo(
-    () => cupGroupRankings.reduce((total, group) => total + (group.rows?.length || 0), 0),
-    [cupGroupRankings]
-  );
-  const groupStageComplete = scheduleGames.length > 0 && completedScheduleGames.length === scheduleGames.length;
 
   const copinhaGroupCampaignTies = useMemo(
     () => isCopinhaData(data) && data.schedule?.length > 0
@@ -8630,7 +7607,7 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
     saveTimerRef.current = setTimeout(async () => {
-      const ok = await enqueueTournamentSave(latestDataRef.current);
+      const ok = await onSave({ ...tournament, data: latestDataRef.current });
       setSavingStatus(ok ? "Salvo automaticamente" : "Erro ao salvar");
     }, 500);
 
@@ -8646,7 +7623,7 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
 
     async function persistRecoveredData() {
       setSavingStatus("Recuperando dados...");
-      const ok = await enqueueTournamentSave(data);
+      const ok = await onSave({ ...tournament, data });
 
       if (!cancelled) {
         setSavingStatus(ok ? "Dados recuperados" : "Erro ao recuperar dados");
@@ -8777,34 +7754,6 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
     );
   }
 
-  function confirmRankingFinal() {
-    const scheduledGames = (data.schedule || []).flat();
-    const hasPendingScores = scheduledGames.some((game) => !isGameFinished(game, getWinningScore(data)));
-
-    if (!scheduledGames.length || hasPendingScores) {
-      showNotice("warning", "Resultados pendentes", "Preencha todos os placares antes de confirmar o ranking final.");
-      return;
-    }
-
-    if (isCupType(config) && mainCupPodium.length === 0) {
-      showNotice("warning", "Chave final pendente", "Finalize a chave principal antes de confirmar o ranking oficial.");
-      return;
-    }
-
-    setData((currentData) => ({ ...currentData, rankingConfirmedAt: new Date().toISOString() }));
-    showNotice("success", "Ranking final confirmado", "A classificação foi marcada como resultado oficial do organizador.");
-  }
-
-  function shareTournamentRanking() {
-    if (shareInfo.is_public && shareInfo.public_id) {
-      sharePublicLink();
-      return;
-    }
-
-    setShareOpen(true);
-    showNotice("warning", "Ative o link público", "Gere a tabela pública para compartilhar o ranking com atletas e convidados.");
-  }
-
   function updateRankingCriteria(value) {
     setData((prev) => ({ ...prev, rankingCriteria: value }));
   }
@@ -8828,10 +7777,6 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
             b: `Atleta 2 da dupla ${i + 1}`,
           };
         });
-        copy.participantMeta = {
-          ...(copy.participantMeta || {}),
-          teams: normalizeParticipantMetaList(copy.participantMeta?.teams, teamCount, { athleteCount: 2 }),
-        };
 
         copy.schedule = [];
         copy.brackets = [];
@@ -8931,484 +7876,28 @@ function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit
     setData(refreshGameParticipantNames(copy));
   }
 
-  function updateParticipantMeta(path, field, value) {
-    setData((currentData) => {
-      const copy = structuredClone(currentData);
-      const kind = path.kind === "team" ? "teams" : path.kind;
-      copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
-      copy.participantMeta[kind] = Array.isArray(copy.participantMeta[kind]) ? copy.participantMeta[kind] : [];
-      const currentMeta = {
-        payment: "pending",
-        registration: "pending",
-        profileLinked: false,
-        ...(copy.participantMeta[kind][path.index] || {}),
-        [field]: value,
-      };
-      copy.participantMeta[kind][path.index] = kind === "teams"
-        ? normalizeParticipantMetaList([currentMeta], 1, { athleteCount: 2 })[0]
-        : currentMeta;
-      return copy;
-    });
-  }
-
-  function updateAllParticipantRegistrations(registration) {
-    const nextRegistration = registration === "confirmed" ? "confirmed" : "pending";
-
-    setData((currentData) => {
-      const copy = structuredClone(currentData);
-      copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
-
-      const kinds = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16"
-        ? ["men", "women"]
-        : config.type === "fixed12" || config.type === "fixed16" || isCupType(config)
-          ? ["teams"]
-          : ["normal"];
-
-      kinds.forEach((kind) => {
-        const count = kind === "teams"
-          ? (copy.players?.teams || []).length
-          : kind === "men"
-            ? (copy.players?.men || []).length
-            : kind === "women"
-              ? (copy.players?.women || []).length
-              : (copy.players || []).length;
-        const normalized = normalizeParticipantMetaList(
-          copy.participantMeta[kind],
-          count,
-          kind === "teams" ? { athleteCount: 2 } : undefined
-        );
-        copy.participantMeta[kind] = normalized.map((item, index) => {
-          const hasRealParticipant = kind === "teams"
-            ? !isAvailableOnlineRegistrationSlotName(copy.players?.teams?.[index]?.a)
-              || !isAvailableOnlineRegistrationSlotName(copy.players?.teams?.[index]?.b)
-            : kind === "men"
-              ? !isAvailableOnlineRegistrationSlotName(copy.players?.men?.[index])
-              : kind === "women"
-                ? !isAvailableOnlineRegistrationSlotName(copy.players?.women?.[index])
-                : !isAvailableOnlineRegistrationSlotName(copy.players?.[index]);
-          return hasRealParticipant ? { ...item, registration: nextRegistration } : item;
-        });
-      });
-
-      return copy;
-    });
-
-    showNotice(
-      "success",
-      nextRegistration === "confirmed" ? "Todos confirmados" : "Todos marcados como pendentes",
-      "O status de todas as inscrições foi atualizado em uma única ação."
-    );
-  }
-
-  function isAvailableOnlineRegistrationSlotName(value) {
-    const name = String(value || "").trim();
-    if (!name) return true;
-    return /^(participante|jogador|homem|mulher)\s+\d+$/i.test(name)
-      || /^atleta\s+[12]\s+da\s+dupla\s+\d+$/i.test(name);
-  }
-
-  function getOnlineRegistrationAthleteMeta(registration) {
-    const athleteProfile = registration.athleteProfile || {};
-    const athleteProfileId = registration.athlete_user_id || "";
-    const displayName = athleteProfile.display_name || registration.athlete_name || "Atleta";
-
-    return normalizeAthleteProfileMeta({
-      athleteProfileId,
-      profileSlug: athleteProfileId,
-      displayName,
-      photoUrl: athleteProfile.photo_url || "",
-      bio: athleteProfile.bio || "",
-      publicConsent: athleteProfile.is_public === true,
-      profileLinked: Boolean(athleteProfileId),
-      linkedAt: registration.updated_at || registration.created_at || new Date().toISOString(),
-      showAchievements: athleteProfile.show_achievements !== false,
-    });
-  }
-
-  function syncOnlineRegistrationToParticipantList(currentData, registration) {
-    const copy = structuredClone(currentData);
-    const externalRegistrationId = String(registration.id || "");
-    const athleteName = String(registration.athleteProfile?.display_name || registration.athlete_name || "Atleta").trim();
-    const partnerName = String(registration.partner_name || "").trim();
-    const athleteMeta = getOnlineRegistrationAthleteMeta(registration);
-    const hasRegistrationId = (item) => String(item?.externalRegistrationId || item?.external_registration_id || "") === externalRegistrationId;
-
-    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
-
-    if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-      const teams = Array.isArray(copy.players?.teams) ? copy.players.teams : [];
-      copy.participantMeta.teams = normalizeParticipantMetaList(copy.participantMeta.teams, teams.length, { athleteCount: 2 });
-      const existingIndex = copy.participantMeta.teams.findIndex(hasRegistrationId);
-
-      if (existingIndex >= 0) {
-        copy.participantMeta.teams[existingIndex] = {
-          ...copy.participantMeta.teams[existingIndex],
-          registration: "confirmed",
-        };
-        return { nextData: copy, synced: true, alreadySynced: true };
-      }
-
-      const slotIndex = teams.findIndex((team) => (
-        isAvailableOnlineRegistrationSlotName(team?.a) && isAvailableOnlineRegistrationSlotName(team?.b)
-      ));
-      if (slotIndex < 0) return { nextData: currentData, synced: false, full: true };
-
-      copy.players.teams[slotIndex] = {
-        ...copy.players.teams[slotIndex],
-        a: athleteName,
-        b: partnerName || "Parceiro a definir",
-      };
-      const teamMeta = normalizeParticipantMetaList([copy.participantMeta.teams[slotIndex]], 1, { athleteCount: 2 })[0];
-      teamMeta.externalRegistrationId = registration.id;
-      teamMeta.registration = "confirmed";
-      teamMeta.athletes[0] = normalizeAthleteProfileMeta({ ...teamMeta.athletes[0], ...athleteMeta });
-      teamMeta.profileLinked = teamMeta.athletes.some((athlete) => athlete.profileLinked);
-      copy.participantMeta.teams[slotIndex] = teamMeta;
-
-      return { nextData: refreshGameParticipantNames(copy), synced: true, alreadySynced: false };
-    }
-
-    const isMixed = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16";
-    const requestedCategory = String(registration.category || "").toLocaleLowerCase("pt-BR");
-    const candidateKinds = isMixed
-      ? (/femin|mulher/.test(requestedCategory)
-        ? ["women"]
-        : /mascul|homem/.test(requestedCategory)
-          ? ["men"]
-          : ["men", "women"])
-      : ["normal"];
-
-    for (const kind of candidateKinds) {
-      const players = kind === "normal" ? copy.players : copy.players?.[kind];
-      if (!Array.isArray(players)) continue;
-      copy.participantMeta[kind] = normalizeParticipantMetaList(copy.participantMeta[kind], players.length);
-      const existingIndex = copy.participantMeta[kind].findIndex(hasRegistrationId);
-
-      if (existingIndex >= 0) {
-        copy.participantMeta[kind][existingIndex] = {
-          ...copy.participantMeta[kind][existingIndex],
-          registration: "confirmed",
-        };
-        return { nextData: copy, synced: true, alreadySynced: true };
-      }
-
-      const slotIndex = players.findIndex(isAvailableOnlineRegistrationSlotName);
-      if (slotIndex < 0) continue;
-
-      players[slotIndex] = athleteName;
-      copy.participantMeta[kind][slotIndex] = {
-        ...copy.participantMeta[kind][slotIndex],
-        ...athleteMeta,
-        externalRegistrationId: registration.id,
-        registration: "confirmed",
-      };
-      return { nextData: refreshGameParticipantNames(copy), synced: true, alreadySynced: false };
-    }
-
-    return { nextData: currentData, synced: false, full: true };
-  }
-
-  function markSyncedOnlineRegistrationPending(currentData, registrationId) {
-    const copy = structuredClone(currentData);
-    const externalRegistrationId = String(registrationId || "");
-    let changed = false;
-    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
-
-    ["normal", "men", "women", "teams"].forEach((kind) => {
-      const values = Array.isArray(copy.participantMeta[kind]) ? copy.participantMeta[kind] : [];
-      copy.participantMeta[kind] = values.map((item) => {
-        if (String(item?.externalRegistrationId || item?.external_registration_id || "") !== externalRegistrationId) return item;
-        changed = true;
-        return { ...item, registration: "pending" };
-      });
-    });
-
-    return changed ? copy : currentData;
-  }
-
-  async function reviewOnlineRegistration(registration, nextStatus) {
-    if (!registration?.id || reviewingRegistrationId) return;
-    const status = normalizeOnlineRegistrationStatus(nextStatus);
-    setReviewingRegistrationId(registration.id);
-
-    const { data: reviewedData, error } = await supabase.rpc("review_tournament_registration", {
-      p_registration_id: registration.id,
-      p_status: status,
-    });
-
-    setReviewingRegistrationId(null);
-
-    if (error) {
-      console.error("Erro ao revisar inscrição online:", error);
-      showNotice("error", "Inscrição não atualizada", "Não foi possível alterar o status desta inscrição online.");
-      return;
-    }
-
-    const reviewedRow = Array.isArray(reviewedData) ? reviewedData[0] : reviewedData;
-    const updatedRegistration = {
-      ...registration,
-      ...(isTournamentDataObject(reviewedRow) ? reviewedRow : {}),
-      status,
-      athleteProfile: registration.athleteProfile || null,
-    };
-    setOnlineRegistrations((current) => current.map((item) => (
-      item.id === registration.id ? updatedRegistration : item
-    )));
-
-    if (status === "confirmed") {
-      const syncResult = syncOnlineRegistrationToParticipantList(latestDataRef.current, updatedRegistration);
-
-      if (!syncResult.synced) {
-        showNotice(
-          "warning",
-          "Inscrição confirmada, mas lista lotada",
-          "O status online foi confirmado, porém nenhum inscrito existente foi substituído. Libere um slot e confirme novamente para sincronizar."
-        );
-        return;
-      }
-
-      setData(syncResult.nextData);
-      showNotice(
-        "success",
-        syncResult.alreadySynced ? "Inscrição já sincronizada" : "Inscrição confirmada",
-        syncResult.alreadySynced
-          ? "O participante já estava vinculado à lista deste torneio."
-          : "O atleta foi confirmado e adicionado ao primeiro slot disponível, sem substituir outros inscritos."
-      );
-      return;
-    }
-
-    setData((currentData) => markSyncedOnlineRegistrationPending(currentData, registration.id));
-
-    showNotice(
-      "success",
-      status === "rejected" ? "Inscrição rejeitada" : "Inscrição pendente",
-      "O status da inscrição online foi atualizado."
-    );
-  }
-
-  function applyAthleteLinkResult(result) {
-    if (!result || String(result.tournamentId) !== String(tournament.id)) return false;
-    const path = result.path || {};
-    let index = Number(path.index);
-    const athleteIndex = Number(result.athleteIndex || 0);
-    if (!Number.isInteger(index) || index < 0 || !["normal", "men", "women", "team"].includes(path.kind)) return false;
-    if (path.kind === "team" && ![0, 1].includes(athleteIndex)) return false;
-
-    const requestedMemberId = String(path.memberId || path.member_id || "");
-    if (requestedMemberId) {
-      const currentMeta = latestDataRef.current?.participantMeta || {};
-      let currentIndex = -1;
-      if (path.kind === "team") {
-        const teams = normalizeParticipantMetaList(
-          currentMeta.teams,
-          latestDataRef.current?.players?.teams?.length || 0,
-          { athleteCount: 2 }
-        );
-        currentIndex = teams.findIndex((item) => String(item.athletes?.[athleteIndex]?.memberId || "") === requestedMemberId);
-      } else {
-        const values = Array.isArray(currentMeta[path.kind]) ? currentMeta[path.kind] : [];
-        currentIndex = values.findIndex((item) => String(normalizeAthleteProfileMeta(item).memberId || "") === requestedMemberId);
-      }
-      if (currentIndex < 0) return false;
-      index = currentIndex;
-    }
-
-    const copy = structuredClone(latestDataRef.current);
-    const kind = path.kind === "team" ? "teams" : path.kind;
-    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
-    copy.participantMeta[kind] = Array.isArray(copy.participantMeta[kind]) ? copy.participantMeta[kind] : [];
-
-    if (kind === "teams") {
-      const teamMeta = normalizeParticipantMetaList([copy.participantMeta.teams[index]], 1, { athleteCount: 2 })[0];
-      teamMeta.athletes[athleteIndex] = normalizeAthleteProfileMeta({
-        ...teamMeta.athletes[athleteIndex],
-        athleteProfileId: result.athleteProfileId,
-        profileSlug: result.profileSlug || result.athleteProfileId,
-        displayName: result.displayName || "",
-        photoUrl: result.photoUrl || "",
-        bio: "",
-        publicConsent: result.publicConsent === true,
-        profileLinked: true,
-        linkedAt: result.linkedAt || new Date().toISOString(),
-        linkRequestId: result.requestId || "",
-      });
-      teamMeta.profileLinked = teamMeta.athletes.some((athlete) => athlete.profileLinked);
-      copy.participantMeta.teams[index] = teamMeta;
-
-      if (result.displayName && copy.players?.teams?.[index]) {
-        copy.players.teams[index][athleteIndex === 0 ? "a" : "b"] = result.displayName;
-      }
-    } else {
-      const currentMeta = copy.participantMeta[kind][index] || {};
-      copy.participantMeta[kind][index] = {
-        ...currentMeta,
-        ...normalizeAthleteProfileMeta({
-          ...currentMeta,
-          athleteProfileId: result.athleteProfileId,
-          profileSlug: result.profileSlug || result.athleteProfileId,
-          displayName: result.displayName || "",
-          photoUrl: result.photoUrl || "",
-          bio: "",
-          publicConsent: result.publicConsent === true,
-          profileLinked: true,
-          linkedAt: result.linkedAt || new Date().toISOString(),
-          linkRequestId: result.requestId || "",
-        }),
-      };
-
-      if (result.displayName) {
-        if (kind === "normal" && Array.isArray(copy.players)) copy.players[index] = result.displayName;
-        if (kind === "men" && copy.players?.men) copy.players.men[index] = result.displayName;
-        if (kind === "women" && copy.players?.women) copy.players.women[index] = result.displayName;
-      }
-    }
-
-    const nextData = refreshGameParticipantNames(copy);
-    latestDataRef.current = nextData;
-    setData(nextData);
-
-    showNotice("success", "Perfil vinculado", `${result.displayName || "O atleta"} confirmou o perfil e a preferência de exibição.`);
-    return nextData;
-  }
-
-  async function startAthleteProfileLink(path, athleteIndex, athleteName, athleteMeta = {}) {
-    const linkWindow = window.open("about:blank", "_blank");
-    if (!linkWindow) {
-      showNotice("warning", "Nova aba bloqueada", "Permita pop-ups para abrir o login seguro do atleta.");
-      return;
-    }
-
-    linkWindow.opener = null;
-    const normalizedAthleteMeta = normalizeAthleteProfileMeta(athleteMeta);
-    const { data: requestData, error } = await supabase.rpc("create_athlete_link_request", {
-      p_tournament_id: tournament.id,
-      p_path: { ...path, memberId: normalizedAthleteMeta.memberId },
-      p_athlete_index: Number(athleteIndex || 0),
-      p_athlete_name: String(athleteName || "Atleta"),
-    });
-    const requestId = Array.isArray(requestData)
-      ? (requestData[0]?.requestId || requestData[0]?.id || requestData[0]?.request_id || requestData[0])
-      : (requestData?.requestId || requestData?.id || requestData?.request_id || requestData);
-
-    if (error || !requestId) {
-      linkWindow.close();
-      console.error("Erro ao criar convite de atleta", error);
-      showNotice("error", "Vínculo indisponível", "Não foi possível criar o convite seguro. Atualize o banco e tente novamente.");
-      return;
-    }
-
-    const linkUrl = new URL(window.location.origin + "/");
-    linkUrl.searchParams.set("vincular-atleta", String(requestId));
-    linkWindow.location.replace(linkUrl.toString());
-  }
-
-  useEffect(() => {
-    let active = true;
-    appliedAthleteLinkRequestsRef.current = new Set();
-
-    async function collectPendingResults() {
-      const { data: resultRows, error } = await supabase.rpc("get_my_athlete_link_results");
-      if (!active) return;
-      if (error) {
-        if (!isMissingOnlineRegistrationResource(error, "athlete_link_requests")) {
-          console.error("Não foi possível consultar os vínculos de atleta", error);
-        }
-        return;
-      }
-
-      for (const row of Array.isArray(resultRows) ? resultRows : []) {
-        const requestId = String(row.requestId || row.request_id || row.id || "");
-        if (!requestId || appliedAthleteLinkRequestsRef.current.has(requestId)) continue;
-        const result = {
-          requestId,
-          tournamentId: row.tournamentId || row.tournament_id,
-          path: row.path || row.participant_path || {},
-          athleteIndex: row.athleteIndex ?? row.athlete_index ?? 0,
-          athleteProfileId: row.athleteProfileId || row.athlete_profile_id || row.claimed_by || "",
-          profileSlug: row.profileSlug || row.athleteProfileId || row.athlete_profile_id || row.claimed_by || "",
-          displayName: row.displayName || row.display_name || row.athlete_name || "Atleta",
-          photoUrl: row.photoUrl || row.photo_url || "",
-          publicConsent: row.publicConsent === true || row.public_consent === true,
-          linkedAt: row.linkedAt || row.claimed_at || new Date().toISOString(),
-        };
-
-        const nextData = applyAthleteLinkResult(result);
-        if (!nextData) continue;
-        appliedAthleteLinkRequestsRef.current.add(requestId);
-
-        // A entrega é at-least-once: o servidor só deixa de reenviar o vínculo
-        // depois que o linkRequestId já estiver persistido no JSON do torneio.
-        const saved = await enqueueTournamentSave(nextData);
-        if (!saved) {
-          appliedAthleteLinkRequestsRef.current.delete(requestId);
-          showNotice("error", "Vínculo ainda não salvo", "O perfil foi confirmado, mas será tentado novamente quando a conexão voltar.");
-          continue;
-        }
-
-        const { error: acknowledgeError } = await supabase.rpc("acknowledge_athlete_link_request", {
-          p_request_id: requestId,
-        });
-        if (acknowledgeError) {
-          appliedAthleteLinkRequestsRef.current.delete(requestId);
-          console.error("Não foi possível concluir o consumo do vínculo", acknowledgeError);
-        }
-      }
-    }
-
-    function receiveLinkSignal(event) {
-      if (event.key?.startsWith(ATHLETE_LINK_RESULT_PREFIX)) void collectPendingResults();
-    }
-
-    const interval = window.setInterval(() => void collectPendingResults(), 5000);
-    window.addEventListener("storage", receiveLinkSignal);
-    window.addEventListener("focus", collectPendingResults);
-    void collectPendingResults();
-
-    return () => {
-      active = false;
-      window.clearInterval(interval);
-      window.removeEventListener("storage", receiveLinkSignal);
-      window.removeEventListener("focus", collectPendingResults);
-    };
-  }, [tournament.id]);
-
   function finishShuffle() {
     const copy = structuredClone(data);
-    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
 
     if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
-      const shuffledMen = shuffleParticipantsWithMeta(copy.players.men, copy.participantMeta.men);
-      const shuffledWomen = shuffleParticipantsWithMeta(copy.players.women, copy.participantMeta.women);
-      copy.players.men = shuffledMen.players;
-      copy.players.women = shuffledWomen.players;
-      copy.participantMeta.men = shuffledMen.metadata;
-      copy.participantMeta.women = shuffledWomen.metadata;
+      copy.players.men = shuffleArray(copy.players.men);
+      copy.players.women = shuffleArray(copy.players.women);
     } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-      const shuffledTeams = shuffleParticipantsWithMeta(copy.players.teams, copy.participantMeta.teams);
-      copy.players.teams = shuffledTeams.players;
-      copy.participantMeta.teams = shuffledTeams.metadata;
+      copy.players.teams = shuffleArray(copy.players.teams);
     } else {
-      const shuffledPlayers = shuffleParticipantsWithMeta(copy.players, copy.participantMeta.normal);
-      copy.players = shuffledPlayers.players;
-      copy.participantMeta.normal = shuffledPlayers.metadata;
+      copy.players = shuffleArray(copy.players);
     }
+
+    copy.schedule = [];
 
     if (isCupType(config)) {
       copy.brackets = [];
       copy.groupsShuffled = true;
       resetCopinhaTieBreaks(copy);
-      copy.schedule = generateCupGroupSchedule(copy.players, copy.cupConfig || {}, config.courts);
-    } else {
-      copy.schedule = [];
     }
 
     setData(copy);
     setShuffleOverlay(null);
-
-    if (isCupType(config)) {
-      showNotice("success", "Grupos sorteados", "Os grupos e as partidas da fase de grupos foram gerados em uma única ação.");
-    }
   }
 
 function shuffleNames() {
@@ -9445,7 +7934,7 @@ function shuffleNames() {
 
 function generate() {
   if (isCupType(config)) {
-    const schedule = generateCupGroupSchedule(data.players, data.cupConfig || {}, config.courts);
+    const schedule = generateCupGroupSchedule(data.players, data.cupConfig || {});
 
     setData((prev) => ({
       ...prev,
@@ -9531,17 +8020,6 @@ function updateScore(roundIndex, gameIndex, field, value) {
   setData(copy);
 }
 
-function updateGameDetails(roundIndex, gameIndex, field, value) {
-  setData((currentData) => {
-    const copy = structuredClone(currentData);
-    if (!copy.schedule?.[roundIndex]?.[gameIndex]) return currentData;
-    copy.schedule[roundIndex][gameIndex][field] = field === "court"
-      ? Math.max(1, Number(value) || 1)
-      : value;
-    return copy;
-  });
-}
-
 function updateBracketScore(matchKey, field, value) {
   setData((prev) => {
     const copy = structuredClone(prev);
@@ -9614,12 +8092,6 @@ function clearTable() {
 }
 
 const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
-const bracketGames = currentBrackets
-  ? [...(currentBrackets.main || []), ...(currentBrackets.repechage || [])]
-  : [];
-const completedBracketGames = bracketGames.filter((game) => getScoreWinnerSide(game, getWinningScore(data)) !== null);
-const totalTournamentMatches = scheduleGames.length + bracketGames.length;
-const completedTournamentMatches = completedScheduleGames.length + completedBracketGames.length;
 
   function SavingStatusBadge() {
     return (
@@ -9627,100 +8099,6 @@ const completedTournamentMatches = completedScheduleGames.length + completedBrac
         💾 {savingStatus}
       </span>
     );
-  }
-
-  function isOnlineRegistrationSynced(registrationId) {
-    const expectedId = String(registrationId || "");
-    if (!expectedId) return false;
-
-    const participantMeta = data.participantMeta || {};
-    return ["normal", "men", "women", "teams"].some((kind) => (
-      Array.isArray(participantMeta[kind])
-      && participantMeta[kind].some((item) => (
-        String(item?.externalRegistrationId || item?.external_registration_id || "") === expectedId
-      ))
-    ));
-  }
-
-  function renderOnlineRegistrationsBox() {
-    if (!onlineRegistrationsAvailable) return null;
-
-    const statusLabels = {
-      pending: "Pendente",
-      confirmed: "Confirmada",
-      rejected: "Rejeitada",
-    };
-    const pendingCount = onlineRegistrations.filter((registration) => registration.status === "pending").length;
-
-    return (
-      <section className="onlineRegistrationsBox" aria-labelledby="online-registrations-title">
-        <header className="onlineRegistrationsHeader">
-          <div className="onlineRegistrationsHeading">
-            <span className="onlineRegistrationsIcon" aria-hidden="true"><Users /></span>
-            <div>
-              <h3 id="online-registrations-title">Inscrições online</h3>
-              <p>Revise as solicitações enviadas pelos atletas pela página pública.</p>
-            </div>
-          </div>
-          <div className="onlineRegistrationsSummary">
-            <strong>{onlineRegistrations.length}</strong>
-            <span>{pendingCount} {pendingCount === 1 ? "pendente" : "pendentes"}</span>
-          </div>
-        </header>
-
-        {onlineRegistrationsLoading ? (
-          <div className="onlineRegistrationsState"><div className="loadingSpinner" aria-hidden="true" /><span>Carregando inscrições...</span></div>
-        ) : onlineRegistrationsError ? (
-          <div className="onlineRegistrationsState error"><span>{onlineRegistrationsError}</span><button type="button" onClick={() => loadOnlineRegistrations()}>Tentar novamente</button></div>
-        ) : onlineRegistrations.length === 0 ? (
-          <div className="onlineRegistrationsState empty"><Users aria-hidden="true" /><div><strong>Nenhuma inscrição online</strong><span>As novas solicitações aparecerão aqui.</span></div></div>
-        ) : (
-          <div className="onlineRegistrationsList">
-            {onlineRegistrations.map((registration) => {
-              const profile = registration.athleteProfile || {};
-              const athleteName = profile.display_name || registration.athlete_name || "Atleta";
-              const status = normalizeOnlineRegistrationStatus(registration.status);
-              const isReviewing = reviewingRegistrationId === registration.id;
-              const isSynced = isOnlineRegistrationSynced(registration.id);
-
-              return (
-                <article className={`onlineRegistrationRow status-${status}`} key={registration.id}>
-                  <div className="onlineRegistrationAthlete">
-                    <span className="onlineRegistrationAvatar">
-                      {profile.photo_url ? <img src={profile.photo_url} alt="" /> : getAthleteInitials(athleteName)}
-                    </span>
-                    <div>
-                      <strong>{athleteName}</strong>
-                      <small>{registration.athlete_user_id ? "Perfil de atleta vinculado" : "Cadastro online"}</small>
-                    </div>
-                  </div>
-                  <dl className="onlineRegistrationDetails">
-                    <div><dt>Parceiro</dt><dd>{registration.partner_name || "Não informado"}</dd></div>
-                    <div><dt>Categoria</dt><dd>{registration.category || data.gender || "Geral"}</dd></div>
-                  </dl>
-                  <span className={`onlineRegistrationStatus status-${status}`}>{statusLabels[status]}</span>
-                  <div className="onlineRegistrationActions" aria-label={`Revisar inscrição de ${athleteName}`}>
-                    <button type="button" className="confirm" disabled={Boolean(reviewingRegistrationId) || (status === "confirmed" && isSynced)} onClick={() => reviewOnlineRegistration(registration, "confirmed")}>{isReviewing ? "Salvando..." : "Confirmar"}</button>
-                    <button type="button" className="pending" disabled={Boolean(reviewingRegistrationId) || status === "pending"} onClick={() => reviewOnlineRegistration(registration, "pending")}>Pendente</button>
-                    <button type="button" className="reject" disabled={Boolean(reviewingRegistrationId) || status === "rejected"} onClick={() => reviewOnlineRegistration(registration, "rejected")}>Rejeitar</button>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
-    );
-  }
-
-  function startParticipantRegistration() {
-    const participantInputs = Array.from(document.querySelectorAll(".tournamentReferencePage .participantSlotCard input"));
-    const availableInput = participantInputs.find((input) => /^(participante|homem|mulher|atleta)/i.test(input.value.trim())) || participantInputs[0];
-
-    if (!availableInput) return;
-    availableInput.scrollIntoView({ behavior: "smooth", block: "center" });
-    availableInput.focus();
-    availableInput.select();
   }
 
 return (
@@ -9774,37 +8152,46 @@ return (
       </div>
     )}
 
-    <div className="appPage tournamentReferencePage">
-      <button type="button" className="tournamentBackLink" onClick={handleBack}>‹ Voltar para torneios</button>
-
-      <header className="tournamentReferenceHeader">
-        <div className="tournamentReferenceCopy">
+    <div className="appPage">
+      <header>
+        <div>
           <h1>{tournament.name}</h1>
-          <div className="tournamentHeaderMeta tournamentHeaderMetaPrimary">
+          <div className="tournamentHeaderMeta">
+            <span><Trophy aria-hidden="true" /> {tournament.type}</span>
+            {data.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> Várias categorias</span> : null}
+            {data.gender ? <span><Tag aria-hidden="true" /> {data.gender}</span> : null}
             {data.eventPeriodLabel || data.eventDate ? <span><CalendarDays aria-hidden="true" /> {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
-            {data.eventDay ? <span>{data.eventDay}</span> : null}
+            {data.eventDay ? <span><CalendarDays aria-hidden="true" /> {data.eventDay}</span> : null}
+            {data.registrationDeadline ? <span><CalendarDays aria-hidden="true" /> Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
+            {data.eventStartTime ? <span><Clock3 aria-hidden="true" /> Início {data.eventStartTime}</span> : null}
+            {data.dailyStartTimes && Object.keys(data.dailyStartTimes).length > 0 ? (
+              <span><Clock3 aria-hidden="true" /> Horários por dia definidos</span>
+            ) : null}
             {data.location ? <span><MapPin aria-hidden="true" /> {data.location}</span> : null}
-          </div>
-          <div className="tournamentHeaderMeta tournamentHeaderMetaSecondary">
-            {data.gender ? <span>{data.gender}</span> : null}
-            <span>{getSportDefinition(data.sport || DEFAULT_SPORT_ID).name}</span>
-            {data.registrationDeadline ? <span>Inscrições encerram {formatDateBR(data.registrationDeadline)}</span> : null}
-            <span>Set único de {data.winningScore || 4} games</span>
+            {data.winningScore ? <span><Target aria-hidden="true" /> {data.winningScore} games</span> : null}
           </div>
         </div>
 
         <div className="actions tournamentHeaderActions">
-          <button type="button" className="tournamentShareAction" onClick={() => setShareOpen((prev) => !prev)}>
-            <Share2 aria-hidden="true" /> Compartilhar tabela pública
-          </button>
-          <button type="button" className="tournamentEditAction" onClick={onEdit}>
-            <Edit2 aria-hidden="true" /> Editar torneio
-          </button>
-          <button type="button" className="tournamentMoreAction" aria-label="Mais opções do torneio">
-            <MoreVertical aria-hidden="true" />
-          </button>
+          <button type="button" onClick={handleBack}>Voltar</button>
         </div>
       </header>
+
+        <section className="shareHighlightBox">
+          <div>
+            <strong><Share2 aria-hidden="true" /> Compartilhar tabela pública</strong>
+            <p>Envie um link para atletas e convidados acompanharem o torneio sem acessar sua área de edição.</p>
+          </div>
+
+          <button
+            type="button"
+            className="shareHighlightBtn"
+            onClick={() => setShareOpen((prev) => !prev)}
+          >
+            <Share2 aria-hidden="true" />
+            {shareOpen ? "Fechar" : "Compartilhar"}
+          </button>
+        </section>
 
               {shareOpen && (
           <section className="card shareCard">
@@ -9850,138 +8237,99 @@ return (
         )}
 
         <nav className="tournamentTopTabs" aria-label="Organização do torneio">
-          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83D\uDC65"}</span> Inscritos</button>
+          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}><Users aria-hidden="true" /> Participantes</button>
           {isCupType(config) && (
-            <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83C\uDFB2"}</span> Grupos</button>
+            <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}><Grid3X3 aria-hidden="true" /> Grupos</button>
           )}
-          <button type="button" className={activeTournamentTab === "partidas" ? "active" : ""} onClick={() => setActiveTournamentTab("partidas")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83C\uDFBE"}</span> Partidas</button>
-          <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83C\uDFC6"}</span> Ranking</button>
+          <button type="button" className={activeTournamentTab === "partidas" ? "active" : ""} onClick={() => setActiveTournamentTab("partidas")}><Flame aria-hidden="true" /> Partidas</button>
+          <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}><Trophy aria-hidden="true" /> Ranking</button>
         </nav>
 
-        <section className="card figmaTournamentSection figmaParticipantsSection" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
-          <div className="cardTitleRow figmaTournamentSectionHeading">
-            <div>
-              <h2>Inscritos</h2>
-              <p>Acompanhe as inscrições, confirme os participantes e gerencie a lista.</p>
-            </div>
-            <div className="participantHeaderActions">
-              <SavingStatusBadge />
-              <button type="button" className="participantAddAction" onClick={startParticipantRegistration}>
-                <PlusCircle aria-hidden="true" /> Adicionar inscrição
-              </button>
-            </div>
+        <section className="card" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
+          <div className="cardTitleRow">
+            <h2>Participantes</h2>
+            <SavingStatusBadge />
           </div>
 
-          <div className="figmaInnerTabs" role="tablist" aria-label="Gestão de inscritos">
-            <button type="button" className="active" aria-selected="true">Inscritos</button>
-          </div>
 
-          {renderOnlineRegistrationsBox()}
+          {isCupType(config) && (
+            <CupConfigPanel
+              data={data}
+              config={config}
+              updateCupConfig={updateCupConfig}
+            />
+          )}
 
-          <div className="participantManagementStats figmaParticipantStats">
-            <div className="total"><span>Total de inscritos</span><strong>{participantSummary.total} <small>{isCupType(config) ? "duplas" : "atletas"}</small></strong></div>
-            <div className="confirmed"><span>Confirmados</span><strong>{participantSummary.confirmed} <small>Confirmados</small></strong></div>
-            <div className="pending"><span>Pendentes</span><strong>{participantSummary.pending} <small>Aguardando</small></strong></div>
-          </div>
-          <div className="participantManagementToolbar">
-            <label><Search aria-hidden="true" /><input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar atleta ou dupla..." /></label>
-            <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar inscritos por status">
-              <option value="all">Todos os status</option>
-              <option value="confirmed">Confirmados</option>
-              <option value="pending">Pendentes</option>
-            </select>
-            <button type="button" className="secondaryBtn" onClick={() => { setParticipantSearch(""); setParticipantFilter("all"); }}><Filter aria-hidden="true" /> Limpar</button>
-            <div className="participantBulkStatusActions" aria-label="Alterar o status de todas as inscrições">
-              <button type="button" className="confirmAll" onClick={() => updateAllParticipantRegistrations("confirmed")}>Confirmar todos</button>
-              <button type="button" className="pendingAll" onClick={() => updateAllParticipantRegistrations("pending")}>Todos pendentes</button>
-            </div>
-          </div>
-          <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} onLinkAthlete={startAthleteProfileLink} searchQuery={participantSearch} statusFilter={participantFilter} />
+          <PlayerInputs
+            type={tournament.type}
+            data={data}
+            updatePlayer={updatePlayer}
+          />
+
           {!isCupType(config) && (
-            <div className="actions figmaTournamentBottomActions">
-              <button type="button" className="secondaryBtn" onClick={shuffleNames}>Sortear nomes</button>
+            <div className="actions">
+              <button type="button" onClick={shuffleNames}>Sortear nomes</button>
               <button type="button" onClick={generate}>Criar rodadas e jogos</button>
             </div>
           )}
         </section>
 
         {isCupType(config) && (
-          <section className="card figmaTournamentSection figmaGroupsSection" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
-            <div className="cardTitleRow figmaTournamentSectionHeading">
-              <div>
-                <h2>Fase de Grupos</h2>
-                <p>Organize os participantes, realize o sorteio e acompanhe a classificação da fase de grupos.</p>
-              </div>
-              <div className="figmaGroupActions">
-                <SavingStatusBadge />
-                <button type="button" className="figmaIconButton" onClick={() => setGroupsConfigOpen((current) => !current)} aria-label="Configurar grupos"><Filter aria-hidden="true" /></button>
-                <button type="button" onClick={shuffleNames}>Sortear grupos</button>
-              </div>
+          <section className="card" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
+            <div className="cardTitleRow">
+              <h2>Grupos</h2>
+              <SavingStatusBadge />
             </div>
-
-            {groupsConfigOpen && (
-              <CupConfigPanel data={data} config={config} updateCupConfig={updateCupConfig} />
-            )}
-
-            <div className="figmaGroupStats">
-              <div><span>Total de grupos</span><strong>{data.groupsShuffled ? cupGroupRankings.length : plannedCupGroupCount}</strong></div>
-              <div><span>Participantes alocados</span><strong>{allocatedGroupParticipants || participantSummary.total} <small>duplas</small></strong></div>
-              <div><span>Partidas desta fase</span><strong>{scheduleGames.length}</strong></div>
-              <div className={groupStageComplete ? "complete" : ""}><span>Situação atual</span><strong>{groupStageComplete ? "FASE CONCLUÍDA" : scheduleGames.length ? "EM ANDAMENTO" : "AGUARDANDO"}</strong></div>
+            <p>Use o sorteio para embaralhar as duplas e depois gere a fase de grupos.</p>
+            <div className="actions">
+              <button type="button" onClick={shuffleNames}>Sortear grupos</button>
+              <button type="button" onClick={generate}>Gerar fase de grupos</button>
             </div>
-
-            {groupStageComplete && (
-              <div className="figmaGroupCompleteBanner">
-                <div><strong>Fase de grupos e chaves finalizadas</strong><span>Todos os resultados desta fase foram registrados no ranking.</span></div>
-                <button type="button" onClick={() => setActiveTournamentTab("ranking")}><Trophy aria-hidden="true" /> Ver classificação</button>
-              </div>
-            )}
-
-            {cupGroupRankings.length > 0 ? (
-              <div className="groupsPreviewBox figmaGroupCards">
-                <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} className="figmaCupGroupGrid" />
+            {cupGroupRankings.length > 0 && (
+              <div className="groupsPreviewBox">
+                <h3>Classificação dos grupos</h3>
+                <CupGroupRankingView
+                  groupRankings={cupGroupRankings}
+                  rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                />
                 {isCopinhaData(data) && (
-                  <CopinhaTieBreakPanel groupRankings={cupGroupRankings} onResolveTie={resolveCopinhaTie} groupCampaignTies={copinhaGroupCampaignTies} onResolveGroupTie={resolveCopinhaGroupTie} />
+                  <CopinhaTieBreakPanel
+                    groupRankings={cupGroupRankings}
+                    onResolveTie={resolveCopinhaTie}
+                    groupCampaignTies={copinhaGroupCampaignTies}
+                    onResolveGroupTie={resolveCopinhaGroupTie}
+                  />
                 )}
               </div>
-            ) : (
-              <div className="figmaTournamentEmpty"><Grid3X3 aria-hidden="true" /><strong>Os grupos ainda não foram sorteados</strong><span>Configure a quantidade de grupos e use o sorteio acima.</span></div>
             )}
           </section>
         )}
 
-        <section className="card figmaTournamentSection figmaMatchesSection" style={{ display: activeTournamentTab === "partidas" ? undefined : "none" }}>
+        <section className="card" style={{ display: activeTournamentTab === "partidas" ? undefined : "none" }}>
+          <div className="cardTitleRow">
+            <h2>{isCupType(config) ? "Partidas" : "Rodadas"}</h2>
+            <SavingStatusBadge />
+          </div>
           {isCupType(config) && (
-            <div className="figmaMatchesWorkbenchNav">
-              <div className="matchesSubTabs">
-                <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
-                <button type="button" className={activeMatchesTab === "chaves" ? "active" : ""} onClick={() => setActiveMatchesTab("chaves")}>Chave principal</button>
-                <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>Repescagem</button>
-              </div>
-              <div className="figmaMatchToolbarActions">
-                <SavingStatusBadge />
-                <button type="button" className="secondaryBtn"><Target aria-hidden="true" /> Central de chamadas</button>
-              </div>
+            <div className="matchesSubTabs">
+              <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
+              <button type="button" className={activeMatchesTab === "chaves" ? "active" : ""} onClick={() => setActiveMatchesTab("chaves")}>Chaves finais</button>
+              <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>{data.cupConfig?.repechageName || "Disputa paralela"}</button>
             </div>
           )}
-          {!isCupType(config) && <div className="cardTitleRow figmaTournamentSectionHeading"><div><h2>Partidas</h2><p>Rodadas organizadas com até dois jogos por linha.</p></div><SavingStatusBadge /></div>}
-          <div className="figmaGroupScheduleMode" style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
+          <div style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
 
           {!data.schedule || data.schedule.length === 0 ? (
-            <p>{isCupType(config) ? "Sorteie os grupos para gerar automaticamente as partidas." : "Clique em “Criar rodadas e jogos” para montar os jogos."}</p>
+            <p>Clique em “Criar rodadas e jogos” para montar os jogos.</p>
           ) : (
             <>
              <ScheduleView
- schedule={data.schedule}
+  schedule={data.schedule}
   updateScore={updateScore}
-  updateGameDetails={updateGameDetails}
   showGroupName={isCupType(config)}
   voiceRepeat={voiceRepeat}
   setVoiceRepeat={setVoiceRepeat}
   winningScore={getWinningScore(data)}
-  tournamentType={tournament.type}
-  players={data.players}
-  participantMeta={data.participantMeta}
 />
 
               <div className="actions">
@@ -10023,10 +8371,10 @@ return (
               </div>
             </section>
 
-            <section className="card figmaTournamentSection figmaBracketSection" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "chaves" ? undefined : "none" }}>
-              <div className="cardTitleRow figmaBracketHeading">
-                <div><h2><Trophy aria-hidden="true" /> Chave principal</h2><p>Classificados da fase de grupos e progressão até a final.</p></div>
-                <div className="figmaBracketActions"><SavingStatusBadge /><button type="button" className="secondaryBtn">Todas as fases</button><button type="button" className="secondaryBtn">Tela cheia</button><button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar chave</button></div>
+            <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "chaves" ? undefined : "none" }}>
+              <div className="cardTitleRow">
+                <h2>Chaves finais</h2>
+                <SavingStatusBadge />
               </div>
 
               {!currentBrackets ? (
@@ -10047,7 +8395,6 @@ return (
   <CupBracketView
     groupedBrackets={{ main: currentBrackets.main, repechage: [] }}
     data={data}
-    tournamentType={tournament.type}
     updateBracketScore={updateBracketScore}
     voiceRepeat={voiceRepeat}
     setVoiceRepeat={setVoiceRepeat}
@@ -10058,62 +8405,55 @@ return (
               )}
             </section>
 
-            <section className="card figmaTournamentSection figmaRankingSection" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
-              <div className="cardTitleRow figmaTournamentSectionHeading figmaRankingHeading">
-                <div><h2>Classificação Oficial</h2><p>Acompanhe a classificação, confira os critérios e confirme o resultado final.</p></div>
-                <div className="rankingManagementActions">
-                  <SavingStatusBadge />
-                  <button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button>
-                  <button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button>
+            <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
+              <div className="cardTitleRow">
+                <h2>Ranking</h2>
+                <SavingStatusBadge />
+              </div>
+
+              <div className="cupRankingSplit">
+                <div className="cupRankingPanel">
+                  <h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>
+                  {mainCupPodium.length > 0 ? (
+                    <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
+                  ) : (
+                    <p>Finalize a chave principal para ver o ranking da chave principal.</p>
+                  )}
+                </div>
+
+                <div className="cupRankingPanel">
+                  <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
+                  {isCopinhaData(data) ? (
+                    data.cupConfig?.teamCount === 6 ? (
+                      <p>Com 2 grupos, não há consolação neste formato.</p>
+                    ) : consolationCupPodium.length > 0 ? (
+                      <CupPodiumView
+                        podium={consolationCupPodium}
+                        title={data.cupConfig?.repechageName || "Consolação"}
+                        variant="parallel"
+                      />
+                    ) : (
+                      <p>Finalize a consolação para ver o pódio.</p>
+                    )
+                  ) : parallelRanking.length > 0 ? (
+                    <CupPodiumView
+                      podium={parallelRanking.slice(0, 3).map((item, index) => ({
+                        position: index === 0 ? "🏆 Campeão" : index === 1 ? "🥈 Vice" : "🥉 3º lugar",
+                        name: item.name,
+                      }))}
+                      title={data.cupConfig?.repechageName || "Disputa Paralela"}
+                      variant="parallel"
+                    />
+                  ) : (
+                    <p>Gere ou finalize a disputa paralela para ver o ranking separado.</p>
+                  )}
                 </div>
               </div>
-
-              <div className="figmaInnerTabs figmaRankingTabs" role="tablist" aria-label="Visualizações do ranking">
-                <button type="button" className={rankingView === "general" ? "active" : ""} onClick={() => setRankingView("general")}>Classificação geral</button>
-                <button type="button" className={rankingView === "groups" ? "active" : ""} onClick={() => setRankingView("groups")}>Classificação por grupos</button>
-                <button type="button" className={rankingView === "final" ? "active" : ""} onClick={() => setRankingView("final")}>Ranking final</button>
-                <button type="button" className={rankingView === "podium" ? "active" : ""} onClick={() => setRankingView("podium")}>Pódio</button>
-              </div>
-
-              <div className="figmaRankingStats">
-                <div><span>Participantes</span><strong>{participantSummary.total} <small>duplas</small></strong></div>
-                <div><span>Partidas realizadas</span><strong>{completedTournamentMatches}</strong></div>
-                <div><span>Resultados pendentes</span><strong>{Math.max(0, totalTournamentMatches - completedTournamentMatches)}</strong></div>
-                <div className={data.rankingConfirmedAt ? "complete" : "updating"}><span>Situação do ranking</span><strong>{data.rankingConfirmedAt ? "CONFIRMADO" : "EM ATUALIZAÇÃO"}</strong></div>
-              </div>
-
-              <div className="figmaRankingCriteriaBand">
-                <div><span>CRITÉRIO DE DESEMPATE ATIVO</span><div>{getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.map((key, index) => <React.Fragment key={key}><strong>{index + 1}. {getRankingColumnLabel(key)}</strong>{index < getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.length - 1 ? <b>›</b> : null}</React.Fragment>)}</div></div>
-                <button type="button" onClick={() => setGroupsConfigOpen(true)}>Entender regras de empate</button>
-              </div>
-
-              {rankingView === "general" && (
-                <>
-                  <FigmaRankingLeaders ranking={ranking} />
-                  <div className="figmaRankingTableToolbar"><label><Search aria-hidden="true" /><input value={rankingSearch} onChange={(event) => setRankingSearch(event.target.value)} placeholder="Buscar participante..." /></label><span>Ranking Geral <ChevronDown aria-hidden="true" /></span></div>
-                  <RankingView
-                    ranking={ranking.map((row, index) => ({ ...row, figmaRankPosition: index + 1 })).filter((row) => !rankingSearch.trim() || row.name.toLocaleLowerCase("pt-BR").includes(rankingSearch.trim().toLocaleLowerCase("pt-BR")))}
-                    type={tournament.type}
-                    rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-                    figma
-                    rankingFinalized={Boolean(data.rankingConfirmedAt)}
-                  />
-                </>
-              )}
-
-              {rankingView === "groups" && <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} className="figmaCupGroupGrid" />}
-
-              {(rankingView === "final" || rankingView === "podium") && (
-                <div className="cupRankingSplit figmaFinalPodiums">
-                  <div className="cupRankingPanel"><h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>{mainCupPodium.length > 0 ? <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} /> : <p>Finalize a chave principal para ver o pódio.</p>}</div>
-                  <div className="cupRankingPanel"><h3>{data.cupConfig?.repechageName || "Repescagem"}</h3>{consolationCupPodium.length > 0 ? <CupPodiumView podium={consolationCupPodium} title={data.cupConfig?.repechageName || "Consolação"} variant="parallel" /> : parallelRanking.length > 0 ? <CupPodiumView podium={parallelRanking.slice(0, 3).map((item, index) => ({ position: index === 0 ? "🏆 Campeão" : index === 1 ? "🥈 Vice" : "🥉 3º lugar", name: item.name }))} title={data.cupConfig?.repechageName || "Repescagem"} variant="parallel" /> : <p>Finalize a repescagem para ver o pódio.</p>}</div>
-                </div>
-              )}
             </section>
 
-            <section className="card figmaTournamentSection figmaBracketSection" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
-              <div className="cardTitleRow figmaBracketHeading">
-                <h2>{data.cupConfig?.repechageName || "Repescagem"}</h2>
+            <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
+              <div className="cardTitleRow">
+                <h2>{data.cupConfig?.repechageName || "Disputa Paralela"}</h2>
                 <SavingStatusBadge />
               </div>
               {!currentBrackets ? (
@@ -10127,29 +8467,23 @@ return (
                   </div>
                 </>
               ) : currentBrackets.repechage?.length > 0 ? (
-                <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} tournamentType={tournament.type} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
+                <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
               ) : (
                 <p>Com 2 grupos, a Copinha segue o modelo da planilha e não possui chave de consolação.</p>
               )}
             </section>
           </>
         ) : (
-          <section className="card figmaTournamentSection figmaRankingSection" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
-            <div className="cardTitleRow figmaTournamentSectionHeading figmaRankingHeading">
-              <div><h2>Classificação Oficial</h2><p>Acompanhe a classificação, confira os critérios e confirme o resultado final.</p></div>
-              <div className="rankingManagementActions"><SavingStatusBadge /><button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button><button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button></div>
+          <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
+            <div className="cardTitleRow">
+              <h2>Ranking</h2>
+              <SavingStatusBadge />
             </div>
-            <div className="figmaInnerTabs figmaRankingTabs"><button type="button" className="active">Classificação geral</button><button type="button" disabled>Classificação por grupos</button><button type="button" disabled>Ranking final</button><button type="button" disabled>Pódio</button></div>
-            <div className="figmaRankingStats"><div><span>Participantes</span><strong>{participantSummary.total}</strong></div><div><span>Partidas realizadas</span><strong>{completedTournamentMatches}</strong></div><div><span>Resultados pendentes</span><strong>{Math.max(0, totalTournamentMatches - completedTournamentMatches)}</strong></div><div className={data.rankingConfirmedAt ? "complete" : "updating"}><span>Situação do ranking</span><strong>{data.rankingConfirmedAt ? "CONFIRMADO" : "EM ATUALIZAÇÃO"}</strong></div></div>
-            <div className="figmaRankingCriteriaBand"><div><span>CRITÉRIO DE DESEMPATE ATIVO</span><div>{getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.map((key, index) => <React.Fragment key={key}><strong>{index + 1}. {getRankingColumnLabel(key)}</strong>{index < getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.length - 1 ? <b>›</b> : null}</React.Fragment>)}</div></div></div>
-            <FigmaRankingLeaders ranking={ranking} />
-            <div className="figmaRankingTableToolbar"><label><Search aria-hidden="true" /><input value={rankingSearch} onChange={(event) => setRankingSearch(event.target.value)} placeholder="Buscar participante..." /></label><span>Ranking Geral <ChevronDown aria-hidden="true" /></span></div>
+
             <RankingView
-              ranking={ranking.map((row, index) => ({ ...row, figmaRankPosition: index + 1 })).filter((row) => !rankingSearch.trim() || row.name.toLocaleLowerCase("pt-BR").includes(rankingSearch.trim().toLocaleLowerCase("pt-BR")))}
+              ranking={ranking}
               type={tournament.type}
               rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-              figma
-              rankingFinalized={Boolean(data.rankingConfirmedAt)}
             />
           </section>
         )}
@@ -10169,17 +8503,16 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
     <div className="cupConfigBox">
       <div className="twoCols">
         <div>
-          <label>Quantidade de grupos e duplas</label>
+          <label>Quantidade de duplas</label>
           <select
             value={cupConfig.teamCount || config.defaultTeams}
             onChange={(e) => updateCupConfig("teamCount", Number(e.target.value))}
             disabled={isFixedCupSize}
           >
             {config.allowedTeamCounts.map((count) => (
-              <option key={count} value={count}>{formatCupGroupOption(config, count)}</option>
+              <option key={count} value={count}>{count} duplas</option>
             ))}
           </select>
-          <small>Quantidade de duplas: {cupConfig.teamCount || config.defaultTeams}. Cada grupo terá {config.groupSize || 3} duplas.</small>
         </div>
 
         <div>
@@ -10238,128 +8571,79 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   );
 }
 
-function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, onLinkAthlete = () => {}, searchQuery = "", statusFilter = "all" }) {
-  const config = getModalityConfig(type);
-  const searchTerm = searchQuery.trim().toLocaleLowerCase("pt-BR");
-
-  function getMeta(kind, index) {
-    const metaKind = kind === "team" ? "teams" : kind;
-    const meta = {
-      payment: "pending",
-      registration: "pending",
-      profileLinked: false,
-      ...(data.participantMeta?.[metaKind]?.[index] || {}),
-    };
-
-    return kind === "team"
-      ? normalizeParticipantMetaList([meta], 1, { athleteCount: 2 })[0]
-      : meta;
-  }
-
-  function matchesParticipant(name, meta) {
-    const matchesSearch = !searchTerm || String(name || "").toLocaleLowerCase("pt-BR").includes(searchTerm);
-    const matchesStatus = statusFilter === "all"
-      || (statusFilter === "confirmed" && meta.registration === "confirmed")
-      || (statusFilter === "pending" && meta.registration !== "confirmed");
-    return matchesSearch && matchesStatus;
-  }
-
-  let entries = [];
+function PlayerInputs({ type, data, updatePlayer }) {
+  const config = modalityConfig[type];
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
-    entries = [
-      ...data.players.men.map((name, index) => ({ key: `men-${index}`, path: { kind: "men", index }, names: [name], meta: getMeta("men", index) })),
-      ...data.players.women.map((name, index) => ({ key: `women-${index}`, path: { kind: "women", index }, names: [name], meta: getMeta("women", index) })),
-    ];
-  } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-    entries = data.players.teams.map((team, index) => ({ key: `team-${index}`, path: { kind: "team", index }, names: [team.a, team.b], meta: getMeta("team", index) }));
-  } else {
-    entries = data.players.map((name, index) => ({ key: `normal-${index}`, path: { kind: "normal", index }, names: [name], meta: getMeta("normal", index) }));
+    return (
+      <div className="twoCols">
+        <div>
+          <h3>Homens</h3>
+
+          {data.players.men.map((name, i) => (
+            <div className="numberedInput" key={i}>
+              <span>{i + 1}</span>
+              <input
+                value={name}
+                onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+
+        <div>
+          <h3>Mulheres</h3>
+
+          {data.players.women.map((name, i) => (
+            <div className="numberedInput" key={i}>
+              <span>{config.men + i + 1}</span>
+              <input
+                value={name}
+                onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   }
 
-  entries = entries.filter((entry) => matchesParticipant(entry.names.join(" "), entry.meta));
+  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+    return (
+      <div className="twoCols">
+        {data.players.teams.map((team, i) => (
+          <div key={i} className="miniCard">
+            <h3>Dupla {i + 1}</h3>
 
-  if (entries.length === 0) {
-    return <div className="participantEmptyState"><Search aria-hidden="true" /><strong>Nenhum participante encontrado</strong><span>Ajuste a busca ou o filtro selecionado.</span></div>;
+            <div className="numberedInput">
+              <span>{i + 1}</span>
+              <input
+                value={team.a}
+                onChange={(e) => updatePlayer({ kind: "team", index: i, field: "a" }, e.target.value)}
+              />
+            </div>
+
+            <input
+              value={team.b}
+              onChange={(e) => updatePlayer({ kind: "team", index: i, field: "b" }, e.target.value)}
+            />
+          </div>
+        ))}
+      </div>
+    );
   }
-
-  const registrationLabel = { pending: "Pendente", confirmed: "Confirmado" };
 
   return (
-    <div className="figmaParticipantTable participantManagementList">
-      <div className="figmaParticipantTableHead" aria-hidden="true">
-        <span>PARTICIPANTE / DUPLA</span>
-        <span>STATUS</span>
-      </div>
-      {entries.map((entry, rowIndex) => {
-        const registration = entry.meta.registration === "confirmed" ? "confirmed" : "pending";
-
-        return (
-        <div className="figmaParticipantRow participantSlotCard" key={entry.key}>
-          <div className="figmaParticipantIdentity">
-            <div className="figmaParticipantNames">
-              {entry.names.map((name, nameIndex) => {
-                const athleteMeta = entry.path.kind === "team"
-                  ? normalizeAthleteProfileMeta(entry.meta.athletes?.[nameIndex])
-                  : normalizeAthleteProfileMeta(entry.meta);
-                const canOpenProfile = Boolean(athleteMeta.profileLinked && athleteMeta.athleteProfileId && athleteMeta.publicConsent);
-                const visiblePhoto = canOpenProfile ? athleteMeta.photoUrl : "";
-                const publicProfileUrl = canOpenProfile
-                  ? `${window.location.origin}${window.location.pathname}?atleta=${encodeURIComponent(athleteMeta.profileSlug || athleteMeta.athleteProfileId)}`
-                  : "";
-
-                return (
-                  <div className="figmaParticipantAthlete" key={`${entry.key}-${nameIndex}`}>
-                    {canOpenProfile ? (
-                      <button
-                        type="button"
-                        className="figmaParticipantAvatar figmaParticipantAvatarLink"
-                        onClick={() => window.open(publicProfileUrl, "_blank", "noopener,noreferrer")}
-                        title={`Abrir perfil de ${athleteMeta.displayName || name}`}
-                      >
-                        {visiblePhoto ? <img src={visiblePhoto} alt="" /> : getAthleteInitials(athleteMeta.displayName || name)}
-                      </button>
-                    ) : (
-                      <span className="figmaParticipantAvatar">
-                        {getAthleteInitials(name) || rowIndex + 1}
-                      </span>
-                    )}
-                    <div className="figmaParticipantAthleteFields">
-                      <label className="figmaParticipantNameRow">
-                        <span>{entry.names.length > 1 ? `Atleta ${nameIndex + 1}` : "Atleta"}</span>
-                        <input
-                          value={name}
-                          aria-label={entry.names.length > 1 ? `Atleta ${nameIndex + 1} da dupla ${rowIndex + 1}` : `Participante ${rowIndex + 1}`}
-                          onChange={(event) => updatePlayer(entry.path.kind === "team" ? { ...entry.path, field: nameIndex === 0 ? "a" : "b" } : entry.path, event.target.value)}
-                        />
-                      </label>
-                      <div className="figmaParticipantProfileActions">
-                        <button
-                          type="button"
-                          className={athleteMeta.profileLinked ? "linked" : ""}
-                          onClick={() => onLinkAthlete(entry.path, nameIndex, name, athleteMeta)}
-                        >
-                          <Link2 aria-hidden="true" /> {athleteMeta.profileLinked ? "Alterar vínculo" : "Vincular perfil"}
-                        </button>
-                        {canOpenProfile ? <a href={publicProfileUrl} target="_blank" rel="noreferrer">Ver perfil</a> : null}
-                        {athleteMeta.profileLinked && !athleteMeta.publicConsent ? <small>Vinculado em modo privado</small> : null}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-          <label className={`figmaInlineStatus registration-${registration}`}>
-            <span className="srOnly">Status da inscrição</span>
-            <select value={registration} onChange={(event) => updateParticipantMeta(entry.path, "registration", event.target.value)} aria-label={`Status de ${entry.names.join(" e ")}`}>
-              <option value="pending">{registrationLabel.pending}</option>
-              <option value="confirmed">{registrationLabel.confirmed}</option>
-            </select>
-          </label>
+    <div className="twoCols">
+      {data.players.map((name, i) => (
+        <div className="numberedInput" key={i}>
+          <span>{i + 1}</span>
+          <input
+            value={name}
+            onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)}
+          />
         </div>
-        );
-      })}
+      ))}
     </div>
   );
 }
@@ -10415,7 +8699,7 @@ function buildFromMixedTemplate(template, players) {
 }
 
 function generateSchedule(type, players) {
-  const config = getModalityConfig(type);
+  const config = modalityConfig[type];
 
   if (config.type === "super8") {
     return optimizeCourts(buildFromPairTemplate(super8Template, players));
@@ -10504,103 +8788,15 @@ function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
   );
 }
 
-function getAthleteInitials(name) {
-  return String(name || "")
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join("")
-    .toUpperCase() || "?";
-}
-
-function getScheduleAthleteNames(team) {
-  const names = Array.isArray(team) ? team : [];
-  return names
-    .flatMap((name) => String(name || "").split(/\s+\+\s+/))
-    .map((name) => name.trim())
-    .filter(Boolean);
-}
-
-function buildScheduleProfileLookup(tournamentType, players, participantMeta) {
-  const lookup = new Map();
-  const config = getModalityConfig(tournamentType);
-  const metadata = participantMeta || {};
-  const register = (name, meta = {}) => {
-    if (name) lookup.set(String(name).trim(), meta || {});
-  };
-
-  if (!config || !players) return lookup;
-
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
-    (players.men || []).forEach((name, index) => register(name, metadata.men?.[index]));
-    (players.women || []).forEach((name, index) => register(name, metadata.women?.[index]));
-  } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-    (players.teams || []).forEach((team, index) => {
-      const teamMeta = metadata.teams?.[index] || {};
-      const athleteProfiles = Array.isArray(teamMeta.athletes) ? teamMeta.athletes : [];
-      register(team?.a, athleteProfiles[0] || teamMeta);
-      register(team?.b, athleteProfiles[1] || teamMeta);
-    });
-  } else {
-    (players || []).forEach((name, index) => register(name, metadata.normal?.[index]));
-  }
-
-  return lookup;
-}
-
-function MatchAthlete({ name, profile = {}, outcome = "", athleteNumber = null }) {
-  const photoUrl = profile.photoUrl || profile.photo_url || profile.avatarUrl || profile.avatar_url || "";
-
-  return (
-    <div className={`matchAthlete ${outcome ? `matchAthlete-${outcome}` : ""}`}>
-      <span className="matchOutcomeDot" aria-hidden="true" />
-      <span className="matchAthleteAvatar" aria-hidden="true">
-        {photoUrl ? <img src={photoUrl} alt="" /> : getAthleteInitials(name)}
-      </span>
-      <span className="matchAthleteIdentity">
-        <small>{athleteNumber ? `Atleta ${athleteNumber}` : "Atleta"}</small>
-        <strong>{name}</strong>
-      </span>
-    </div>
-  );
-}
-
-function MatchTeamRoster({ names = [], profileLookup = new Map(), outcome = "" }) {
-  const isDoublesTeam = names.length > 1;
-
-  return (
-    <div className="gameTeamRoster" aria-label={isDoublesTeam ? "Atletas da dupla" : "Atleta individual"}>
-      <span className="matchTeamLabel">{isDoublesTeam ? "Dupla" : "Individual"}</span>
-      {names.map((name, athleteIndex) => (
-        <MatchAthlete
-          key={`${name}-${athleteIndex}`}
-          name={name}
-          profile={profileLookup.get(name)}
-          outcome={outcome}
-          athleteNumber={names.length > 1 ? athleteIndex + 1 : null}
-        />
-      ))}
-    </div>
-  );
-}
-
 function ScheduleView({
   schedule,
   updateScore = () => {},
-  updateGameDetails = () => {},
   showGroupName = false,
   voiceRepeat = 1,
   setVoiceRepeat = () => {},
   winningScore = 4,
   readOnly = false,
-  tournamentType = "",
-  players = null,
-  participantMeta = null,
 }) {
-  const profileLookup = buildScheduleProfileLookup(tournamentType, players, participantMeta);
-
   return (
     <div className={`schedule ${readOnly ? "readOnlySchedule publicSchedule" : ""}`}>
       {!readOnly ? (
@@ -10611,12 +8807,9 @@ function ScheduleView({
       ) : null}
 
       {schedule.map((round, roundIndex) => (
-        <section className={`roundCard ${readOnly ? "readOnlyRoundCard publicReadOnlyRound" : ""}`} key={roundIndex}>
+        <div className={`roundCard ${readOnly ? "readOnlyRoundCard publicReadOnlyRound" : ""}`} key={roundIndex}>
           <div className="roundHeader">
-            <div className={`roundTitleBlock ${showGroupName ? "cupRoundTitle" : "standardRoundTitle"}`}>
-              {showGroupName ? <span>FASE DE GRUPOS</span> : null}
-              <h3>Rodada {roundIndex + 1}</h3>
-            </div>
+            <h3>Rodada {roundIndex + 1}</h3>
 
             {!readOnly ? (
               <div className="voiceActions">
@@ -10644,101 +8837,99 @@ function ScheduleView({
             ) : null}
           </div>
 
-          <div className="roundGamesGrid">
           {round.map((game, gameIndex) => {
             const winnerSide = getScoreWinnerSide(game, winningScore);
             const isFinished = winnerSide !== null;
             const hasPublicScore = readOnly && game.s1 !== "" && game.s1 != null && game.s2 !== "" && game.s2 != null;
-            const team1Names = getScheduleAthleteNames(game.team1);
-            const team2Names = getScheduleAthleteNames(game.team2);
 
             return (
             <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"} ${readOnly ? "publicReadOnlyGame" : ""}`} key={gameIndex}>
               <div className={`gameTopLine ${readOnly ? "publicGameTopLine" : ""}`}>
-                <div className="gameContextLabels">
-                  {showGroupName && game.groupName ? <span className="gameGroupLabel">{game.groupName}</span> : null}
-                  {readOnly ? (
-                    <span className="gameCourtLabel">Quadra {game.court}</span>
-                  ) : (
-                    <label className="gameCourtEditor">
-                      <span>Quadra</span>
-                      <input type="number" min="1" value={game.court || 1} onChange={(event) => updateGameDetails(roundIndex, gameIndex, "court", event.target.value)} aria-label={`Quadra do jogo ${gameIndex + 1} da rodada ${roundIndex + 1}`} />
-                    </label>
-                  )}
-                </div>
-                <div className="gameTopStatus">
-                  {readOnly && game.scheduledTime ? <span className="gameScheduledTime"><Clock3 aria-hidden="true" /> {game.scheduledTime}</span> : null}
-                  <span className={`matchStatusBadge ${isFinished ? "finished" : "inProgress"}`}>
-                    {isFinished ? "Finalizado" : "Em andamento"}
-                  </span>
-                </div>
+                <strong>
+                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
+                  Quadra {game.court}
+                </strong>
               </div>
 
-              <div className={`gameTeams gameMatchup ${readOnly ? "publicGameTeams" : "editableGameMatchup"}`}>
-                <div className={`gameTeamPanel ${winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}`}>
-                  <MatchTeamRoster names={team1Names} profileLookup={profileLookup} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />
-                  {readOnly ? (
-                    <output className="teamScoreValue" aria-label={hasPublicScore ? `Placar de ${team1Names.join(" e ")}: ${game.s1}` : "Placar ainda não informado"}>
-                      {hasPublicScore ? game.s1 : "—"}
-                    </output>
-                  ) : (
-                    <label className="inlineTeamScore teamScoreSlot">
-                      <span className="srOnly">Placar de {team1Names.join(" e ")}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max={getMaxScore(winningScore)}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={game.s1}
-                        onChange={(event) => updateScore(roundIndex, gameIndex, "s1", event.target.value)}
-                      />
-                    </label>
-                  )}
-                </div>
-
-                <span className="matchVersus" aria-hidden="true">VS</span>
-
-                <div className={`gameTeamPanel gameTeamPanelRight ${winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}`}>
-                  <MatchTeamRoster names={team2Names} profileLookup={profileLookup} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />
-                  {readOnly ? (
-                    <output className="teamScoreValue" aria-label={hasPublicScore ? `Placar de ${team2Names.join(" e ")}: ${game.s2}` : "Placar ainda não informado"}>
-                      {hasPublicScore ? game.s2 : "—"}
-                    </output>
-                  ) : (
-                    <label className="inlineTeamScore teamScoreSlot">
-                      <span className="srOnly">Placar de {team2Names.join(" e ")}</span>
-                      <input
-                        type="number"
-                        min="0"
-                        max={getMaxScore(winningScore)}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={game.s2}
-                        onChange={(event) => updateScore(roundIndex, gameIndex, "s2", event.target.value)}
-                      />
-                    </label>
-                  )}
-                </div>
+              <div className={`gameTeams ${readOnly ? "publicGameTeams" : ""}`}>
+                <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
+                <span>x</span>
+                <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
               </div>
 
-              {!readOnly && !isFinished ? (
+              <div
+                className={`scoreRow ${readOnly ? "publicReadOnlyScoreRow" : ""}`}
+                aria-label={readOnly ? (hasPublicScore ? `Placar: ${game.s1} a ${game.s2}` : "Placar ainda não informado") : undefined}
+              >
+                {readOnly ? (
+                  hasPublicScore ? (
+                    <>
+                      <output className="publicScoreValue">{game.s1}</output>
+                      <span aria-hidden="true">—</span>
+                      <output className="publicScoreValue">{game.s2}</output>
+                    </>
+                  ) : (
+                    <span className="publicScorePending">Aguardando placar</span>
+                  )
+                ) : (
+                  <>
+           <input
+  type="number"
+  min="0"
+ max={getMaxScore(winningScore)}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s1}
+  onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
+  readOnly={readOnly}
+  disabled={readOnly}
+/>
+
+                <span>—</span>
+
+               <input
+  type="number"
+  min="0"
+  max={getMaxScore(winningScore)}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s2}
+  onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
+  readOnly={readOnly}
+  disabled={readOnly}
+/>
+                  </>
+                )}
+              </div>
+
+              {!readOnly ? (
                 <div className="voiceActions gameVoiceActions">
-                  <button type="button" className="voiceBtn" onClick={() => speakGame(game, { roundLabel: `Rodada ${roundIndex + 1}`, includeGroup: showGroupName, repeat: voiceRepeat })}>🔊 Chamar jogo</button>
+                  <button
+                    type="button"
+                    className="voiceBtn"
+                    onClick={() =>
+                      speakGame(game, {
+                        roundLabel: `Rodada ${roundIndex + 1}`,
+                        includeGroup: showGroupName,
+                        repeat: voiceRepeat,
+                      })
+                    }
+                  >
+                    🔊 Chamar jogo
+                  </button>
                 </div>
               ) : null}
             </div>
             );
           })}
-          </div>
-        </section>
+        </div>
       ))}
     </div>
   );
 }
 
 function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCriteria) {
-  const config = getModalityConfig(type);
+  const config = modalityConfig[type];
   const winningScore = getWinningScore(data);
 
   if (!data.players) return [];
@@ -10813,35 +9004,8 @@ function podium(i) {
   return i + 1;
 }
 
-function FigmaRankingLeaders({ ranking }) {
-  const podiumEntries = [
-    { row: ranking[1], position: 2, className: "second" },
-    { row: ranking[0], position: 1, className: "champion" },
-    { row: ranking[2], position: 3, className: "third" },
-  ].filter((entry) => entry.row);
-
-  return (
-    <div className="figmaRankingLeaders">
-      <h3>Líderes atuais</h3>
-      {podiumEntries.length ? (
-        <div>
-          {podiumEntries.map(({ row, position, className }) => (
-            <article className={className} key={row.id ?? row.name}>
-              <span>{position === 1 ? <Trophy aria-hidden="true" /> : `${position}º`}</span>
-              <strong>{row.name}</strong>
-              <small>{row.pts ?? 0} pts • {row.w ?? 0} vitórias</small>
-            </article>
-          ))}
-        </div>
-      ) : (
-        <p className="figmaRankingEmpty">Os líderes aparecerão após os primeiros resultados.</p>
-      )}
-    </div>
-  );
-}
-
-function RankingView({ ranking, type, rankingCriteria, figma = false, rankingFinalized = false }) {
-  const config = getModalityConfig(type);
+function RankingView({ ranking, type, rankingCriteria }) {
+  const config = modalityConfig[type];
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     const menLimit = config.men;
@@ -10849,20 +9013,16 @@ function RankingView({ ranking, type, rankingCriteria, figma = false, rankingFin
     const women = ranking.filter((p) => p.id >= menLimit);
 
     return (
-      <div className={`twoCols ${figma ? "figmaRankingSplitTables" : ""}`.trim()}>
+      <div className="twoCols">
         <RankingTable
           title="Ranking Masculino"
           rows={men}
           rankingCriteria={rankingCriteria}
-          figma={figma}
-          rankingFinalized={rankingFinalized}
         />
         <RankingTable
           title="Ranking Feminino"
           rows={women}
           rankingCriteria={rankingCriteria}
-          figma={figma}
-          rankingFinalized={rankingFinalized}
         />
       </div>
     );
@@ -10873,79 +9033,12 @@ function RankingView({ ranking, type, rankingCriteria, figma = false, rankingFin
       title="Ranking Geral"
       rows={ranking}
       rankingCriteria={rankingCriteria}
-      figma={figma}
-      rankingFinalized={rankingFinalized}
     />
   );
 }
 
-function RankingTable({ title, rows, rankingCriteria, figma = false, rankingFinalized = false }) {
+function RankingTable({ title, rows, rankingCriteria }) {
   const criteria = getRankingCriteria(rankingCriteria);
-  const [expandedRowId, setExpandedRowId] = useState(null);
-
-  if (figma) {
-    return (
-      <div className="figmaRankingTableShell">
-        {title !== "Ranking Geral" ? <h3>{title}</h3> : null}
-        <div className="figmaRankingTableScroll" tabIndex="0" aria-label={`Tabela ${title}; deslize horizontalmente para ver todas as colunas`}>
-          <table className="figmaRankingTable">
-            <thead>
-              <tr>
-                <th>POS</th>
-                <th>DUPLA</th>
-                <th>JOGOS</th>
-                <th>VITÓRIAS</th>
-                <th>PONTOS</th>
-                <th>SALDO G.</th>
-                <th>AÇÃO</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row, index) => {
-                const rowId = row.id ?? row.name;
-                const displayPosition = row.figmaRankPosition ?? index + 1;
-                const initials = String(row.name || "")
-                  .split(/\s+/)
-                  .filter(Boolean)
-                  .slice(0, 2)
-                  .map((part) => part[0])
-                  .join("")
-                  .toUpperCase();
-                const isExpanded = expandedRowId === rowId;
-
-                return (
-                  <React.Fragment key={rowId}>
-                    <tr className={index === 0 ? "leader" : ""}>
-                      <td><span className={`figmaRankingPosition position-${Math.min(displayPosition, 4)}`}>{displayPosition}</span></td>
-                      <td>
-                        <div className="figmaRankingTeam">
-                          <span className="figmaRankingAvatar" aria-hidden="true">{initials || <UserRound />}</span>
-                          <span><strong>{row.name}</strong><small>{row.groupName || title}</small></span>
-                        </div>
-                      </td>
-                      <td>{row.played ?? 0}</td>
-                      <td><strong>{row.w ?? 0}</strong></td>
-                      <td className="points">{row.pts ?? 0}</td>
-                      <td>{Number(row.bal) > 0 ? `+${row.bal}` : row.bal ?? 0}</td>
-                      <td><button type="button" className="figmaRankingDetailsButton" onClick={() => setExpandedRowId(isExpanded ? null : rowId)} aria-expanded={isExpanded}>Ver detalhes</button></td>
-                    </tr>
-                    {isExpanded ? (
-                      <tr className="figmaRankingDetailsRow">
-                        <td colSpan="7">
-                          <div><strong>{row.name}</strong><span>{row.played ?? 0} jogos</span><span>{row.w ?? 0} vitórias</span><span>{row.pts ?? 0} pontos</span><span>Saldo {Number(row.bal) > 0 ? `+${row.bal}` : row.bal ?? 0}</span><small>Desempate: {criteria.label}</small></div>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-        {!rows.length ? <p className="figmaRankingEmpty">Nenhum participante corresponde à busca.</p> : null}
-      </div>
-    );
-  }
 
   return (
     <div>
@@ -11040,27 +9133,6 @@ function CupGroupRankingView({ groupRankings, rankingCriteria, className = "" })
     ? "wins_balance_points"
     : rankingCriteria;
 
-  if (className.includes("figmaCupGroupGrid")) {
-    return (
-      <div className="figmaCupGroupCards">
-        {groupRankings.map((group, groupIndex) => {
-          const completedRows = group.rows.filter((row) => row.played > 0).length;
-          const status = completedRows === group.rows.length && group.rows.length > 0 ? "CONCLUÍDO" : completedRows > 0 ? "EM ANDAMENTO" : "PROGRAMADO";
-          return (
-            <article className="figmaCupGroupCard" key={group.id}>
-              <header><span>{String(group.name || String.fromCharCode(65 + groupIndex)).replace(/^Grupo\s*/i, "")}</span><div><strong>{group.name}</strong><small>{group.rows.length} duplas</small></div><button type="button" aria-label={`Opções do ${group.name}`}><MoreVertical aria-hidden="true" /></button></header>
-              <div className="figmaCupGroupTable">
-                <div className="head"><span>#</span><span>DUPLA</span><span>PTS</span><span>V</span><span>SG</span></div>
-                {group.rows.map((row, index) => <div className={index < 2 ? "qualified" : ""} key={row.id}><span>{index + 1}</span><strong>{row.name}</strong><b>{row.pts}</b><span>{row.w}</span><span>{row.bal > 0 ? `+${row.bal}` : row.bal}</span></div>)}
-              </div>
-              <footer><span className={`status ${status === "CONCLUÍDO" ? "complete" : status === "EM ANDAMENTO" ? "active" : ""}`}>{status}</span><button type="button">Ver partidas ›</button></footer>
-            </article>
-          );
-        })}
-      </div>
-    );
-  }
-
   return (
     <div className={`twoCols ${className}`.trim()}>
       {groupRankings.map((group) => (
@@ -11128,35 +9200,19 @@ function getSafeCupPresentation(data, config) {
 function CupBracketView({
   groupedBrackets,
   data,
-  tournamentType = "",
   updateBracketScore,
   voiceRepeat = 1,
   setVoiceRepeat,
   winningScore = 4,
 }) {
-  const profileLookup = buildScheduleProfileLookup(tournamentType, data.players, data.participantMeta);
-
   return (
-    <div className="figmaBracketBoard">
-      <div className="figmaBracketUtilityBar">
-        <div>
-          <strong>Central de chamadas</strong>
-          <span>Configure quantas vezes cada chamada deve ser repetida.</span>
-        </div>
+    <div>
+      <VoiceRepeatSelector
+        voiceRepeat={voiceRepeat}
+        setVoiceRepeat={setVoiceRepeat}
+      />
 
-        <label className="figmaBracketRepeatSelect">
-          <span>Repetir chamada</span>
-          <select
-            value={voiceRepeat}
-            onChange={(event) => setVoiceRepeat(Number(event.target.value))}
-          >
-            <option value={1}>1 vez</option>
-            <option value={2}>2 vezes</option>
-          </select>
-        </label>
-      </div>
-
-      <div className="cupBrackets figmaBracketCanvas">
+      <div className="cupBrackets">
         {groupedBrackets.main?.length > 0 && (
           <BracketColumn
             title={data.cupConfig?.mainBracketName || "Principal"}
@@ -11164,7 +9220,6 @@ function CupBracketView({
             updateBracketScore={updateBracketScore}
             voiceRepeat={voiceRepeat}
             winningScore={winningScore}
-            profileLookup={profileLookup}
           />
         )}
 
@@ -11175,7 +9230,6 @@ function CupBracketView({
             updateBracketScore={updateBracketScore}
             voiceRepeat={voiceRepeat}
             winningScore={winningScore}
-            profileLookup={profileLookup}
           />
         )}
       </div>
@@ -11189,152 +9243,104 @@ function BracketColumn({
   updateBracketScore,
   voiceRepeat = 1,
   winningScore = 4,
-  profileLookup = new Map(),
 }) {
-  const isRepechage = rounds?.[0]?.games?.[0]?.phase === "repechage";
-
   return (
-    <div
-      className={`bracketColumn figmaBracketColumn ${isRepechage ? "repechageBracket" : "mainBracket"}`}
-      aria-label={title}
-    >
-      <div
-        className="figmaBracketRounds"
-        style={{ "--figma-bracket-round-count": Math.max(rounds.length, 1) }}
-      >
-        {rounds.map((round, roundIndex) => (
-          <section className="figmaBracketRound" key={`${round.title}-${roundIndex}`}>
-            <header className="figmaBracketRoundHeader">
-              <div>
-                <span>FASE {roundIndex + 1}</span>
-                <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
-              </div>
+    <div className={`bracketColumn ${rounds?.[0]?.games?.[0]?.phase === "repechage" ? "repechageBracket" : "mainBracket"}`}>
+      <h3>{title}</h3>
 
-              <div className="figmaBracketRoundActions">
-                <button
-                  type="button"
-                  onClick={() => speakBracketRound(round, voiceRepeat)}
-                  aria-label={`Chamar ${round.title}`}
-                >
-                  Chamar fase
-                </button>
+      {rounds.map((round, roundIndex) => (
+        <div className="roundCard" key={roundIndex}>
+          <div className="roundHeader">
+            <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
 
-                <button
-                  type="button"
-                  className="figmaBracketStopButton"
-                  onClick={stopSpeech}
-                  aria-label="Parar chamada"
-                >
-                  Parar
-                </button>
-              </div>
-            </header>
+            <div className="voiceActions">
+              <button
+                type="button"
+                className="voiceBtn"
+                onClick={() => speakBracketRound(round, voiceRepeat)}
+              >
+                🔊 Chamar fase
+              </button>
 
-            <div className="figmaBracketGames">
-              {round.games.map((game, gameIndex) => {
-                const blocked =
-                  !game.ids1?.length ||
-                  !game.ids2?.length ||
-                  game.team1?.[0] === "Aguardando" ||
-                  game.team2?.[0] === "Aguardando";
-
-                const winnerSide = getScoreWinnerSide(game, winningScore);
-                const isFinished = winnerSide !== null;
-                const statusLabel = isFinished
-                  ? "FINALIZADO"
-                  : blocked
-                    ? "AGUARDANDO"
-                    : "EM ANDAMENTO";
-                const teamOne = game.team1?.join(" + ") || "Aguardando vencedor";
-                const teamTwo = game.team2?.join(" + ") || "Aguardando vencedor";
-                const teamOneNames = getScheduleAthleteNames(game.team1);
-                const teamTwoNames = getScheduleAthleteNames(game.team2);
-
-                return (
-                  <article
-                    className={`figmaBracketGame ${isFinished ? "is-finished" : "is-waiting"} ${blocked ? "is-blocked" : ""}`}
-                    key={game.matchKey}
-                  >
-                    <header className="figmaBracketGameMeta">
-                      <span>Jogo {gameIndex + 1} &bull; Quadra {game.court}</span>
-                      <strong className={`figmaBracketStatus ${isFinished ? "is-finished" : blocked ? "is-blocked" : "is-live"}`}>
-                        {statusLabel}
-                      </strong>
-                    </header>
-
-                    <div className="figmaBracketMatchup">
-                      <div className={`figmaBracketTeam ${winnerSide === "team1" ? "is-winner" : winnerSide === "team2" ? "is-loser" : ""}`}>
-                        <MatchTeamRoster names={teamOneNames} profileLookup={profileLookup} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />
-                        <label className="figmaBracketTeamScore">
-                          <span className="srOnly">Placar de {teamOne}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max={getMaxScore(winningScore)}
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={game.s1}
-                            placeholder="-"
-                            aria-label={`Placar de ${teamOne}`}
-                            onChange={(event) => updateBracketScore(game.matchKey, "s1", event.target.value)}
-                            disabled={blocked}
-                          />
-                        </label>
-                      </div>
-
-                      <span className="figmaBracketVersus" aria-hidden="true">VS</span>
-
-                      <div className={`figmaBracketTeam ${winnerSide === "team2" ? "is-winner" : winnerSide === "team1" ? "is-loser" : ""}`}>
-                        <MatchTeamRoster names={teamTwoNames} profileLookup={profileLookup} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />
-                        <label className="figmaBracketTeamScore">
-                          <span className="srOnly">Placar de {teamTwo}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max={getMaxScore(winningScore)}
-                            inputMode="numeric"
-                            pattern="[0-9]*"
-                            value={game.s2}
-                            placeholder="-"
-                            aria-label={`Placar de ${teamTwo}`}
-                            onChange={(event) => updateBracketScore(game.matchKey, "s2", event.target.value)}
-                            disabled={blocked}
-                          />
-                        </label>
-                      </div>
-                    </div>
-
-                    <footer className="figmaBracketGameActions">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          speakGame(game, {
-                            roundLabel: `${round.title} da chave ${title}`,
-                            includeGroup: false,
-                            repeat: voiceRepeat,
-                          })
-                        }
-                        disabled={blocked}
-                      >
-                        Chamar
-                      </button>
-
-                      <button
-                        type="button"
-                        className={isFinished ? "figmaBracketEditScore" : "figmaBracketRegisterScore"}
-                        onClick={(event) => event.currentTarget.closest(".figmaBracketGame")?.querySelector("input:not(:disabled)")?.focus()}
-                        disabled={blocked}
-                      >
-                        {isFinished ? "Editar placar" : "Registrar placar"}
-                      </button>
-                    </footer>
-                  </article>
-                );
-              })}
+              <button
+                type="button"
+                className="secondaryBtn stopBtn"
+                onClick={stopSpeech}
+              >
+                ⏹️ Parar
+              </button>
             </div>
-          </section>
-        ))}
-      </div>
+          </div>
+
+          {round.games.map((game) => {
+            const blocked =
+              !game.ids1?.length ||
+              !game.ids2?.length ||
+              game.team1?.[0] === "Aguardando" ||
+              game.team2?.[0] === "Aguardando";
+
+            const winnerSide = getScoreWinnerSide(game, winningScore);
+            const isFinished = winnerSide !== null;
+
+            return (
+              <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
+                <div className="gameTopLine">
+                  <strong>Quadra {game.court}</strong>
+                </div>
+
+                <div className="gameTeams">
+                  <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1?.join(" + ") || "Aguardando"}</div>
+                  <span>x</span>
+                  <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
+                </div>
+
+                <div className="scoreRow">
+                  <input
+  type="number"
+  min="0"
+  max={getMaxScore(winningScore)}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s1}
+  onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
+  disabled={blocked}
+/>
+
+                  <span>—</span>
+
+            <input
+  type="number"
+  min="0"
+  max={getMaxScore(winningScore)}
+  inputMode="numeric"
+  pattern="[0-9]*"
+  value={game.s2}
+  onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
+  disabled={blocked}
+/>
+                </div>
+
+                <div className="voiceActions gameVoiceActions">
+                  <button
+                    type="button"
+                    className="voiceBtn"
+                    onClick={() =>
+                      speakGame(game, {
+                        roundLabel: `${round.title} da chave ${title}`,
+                        includeGroup: false,
+                        repeat: voiceRepeat,
+                      })
+                    }
+                    disabled={blocked}
+                  >
+                    🔊 Chamar jogo
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ))}
     </div>
   );
 }
@@ -11342,43 +9348,23 @@ function BracketColumn({
 function PublicTournamentPage({ publicId }) {
   const [loading, setLoading] = useState(true);
   const [tournament, setTournament] = useState(null);
-  const [publicAthleteIds, setPublicAthleteIds] = useState(null);
   const [error, setError] = useState(null);
 
   async function loadPublicTournament({ silent = false } = {}) {
     if (!silent) setLoading(true);
 
     const { data, error } = await supabase
-      .rpc("get_public_tournament", { p_public_id: publicId })
-      .maybeSingle();
+      .from("tournaments")
+      .select("*")
+      .eq("public_id", publicId)
+      .eq("is_public", true)
+      .single();
 
-    if (error || !data) {
+    if (error) {
       console.error(error);
       setError("Link público não encontrado ou desativado.");
       setTournament(null);
     } else {
-      const publicConfig = getModalityConfig(data.type);
-      const normalizedPublicData = publicConfig ? normalizeTournamentData(data.type, data.data) : null;
-      const linkedIds = publicConfig
-        ? [...new Set(getRegisteredAthletesForPublic(normalizedPublicData, publicConfig)
-          .flatMap((group) => group.names)
-          .flatMap((entry) => entry.members)
-          .map((member) => member.profile.athleteProfileId)
-          .filter(Boolean))]
-        : [];
-      let verifiedPublicIds = [];
-
-      if (linkedIds.length) {
-        const athleteProfileResult = await supabase
-          .from("athlete_profiles")
-          .select("user_id")
-          .in("user_id", linkedIds)
-          .eq("is_public", true);
-        const tableUnavailable = ["42P01", "PGRST205"].includes(String(athleteProfileResult.error?.code || ""));
-        verifiedPublicIds = tableUnavailable ? null : (athleteProfileResult.data || []).map((profile) => String(profile.user_id));
-      }
-
-      setPublicAthleteIds(verifiedPublicIds);
       setTournament(data);
       setError(null);
     }
@@ -11417,33 +9403,21 @@ function PublicTournamentPage({ publicId }) {
     );
   }
 
-  return <PublicTournamentScreen tournament={tournament} publicAthleteIds={publicAthleteIds} />;
+  return <PublicTournamentScreen tournament={tournament} />;
 }
 
-function getRegisteredAthletesForPublic(data, config, publicAthleteIds = null) {
+function getRegisteredAthletesForPublic(data, config) {
   if (!data?.players) return [];
-  const participantMeta = data.participantMeta || {};
-  const member = (name, value) => {
-    const profile = normalizeAthleteProfileMeta(value);
-    const profileIsCurrentlyPublic = Array.isArray(publicAthleteIds)
-      ? publicAthleteIds.includes(String(profile.athleteProfileId || ""))
-      : profile.publicConsent;
-    return {
-      name,
-      profile,
-      canOpenProfile: Boolean(profile.profileLinked && profile.athleteProfileId && profile.publicConsent && profileIsCurrentlyPublic),
-    };
-  };
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return [
       {
         title: "Masculino",
-        names: (data.players.men || []).filter(Boolean).map((name, index) => ({ label: name, members: [member(name, participantMeta.men?.[index])] })),
+        names: (data.players.men || []).filter(Boolean),
       },
       {
         title: "Feminino",
-        names: (data.players.women || []).filter(Boolean).map((name, index) => ({ label: name, members: [member(name, participantMeta.women?.[index])] })),
+        names: (data.players.women || []).filter(Boolean),
       },
     ];
   }
@@ -11453,13 +9427,7 @@ function getRegisteredAthletesForPublic(data, config, publicAthleteIds = null) {
       {
         title: "Duplas cadastradas",
         names: (data.players.teams || [])
-          .map((team, index) => {
-            const teamMeta = normalizeParticipantMetaList([participantMeta.teams?.[index]], 1, { athleteCount: 2 })[0];
-            return {
-              label: `Dupla ${index + 1}`,
-              members: [member(team.a || "Atleta 1", teamMeta.athletes[0]), member(team.b || "Atleta 2", teamMeta.athletes[1])],
-            };
-          })
+          .map((team, index) => `${index + 1}. ${team.a || "Atleta 1"} + ${team.b || "Atleta 2"}`)
           .filter(Boolean),
       },
     ];
@@ -11468,38 +9436,12 @@ function getRegisteredAthletesForPublic(data, config, publicAthleteIds = null) {
   return [
     {
       title: "Atletas cadastrados",
-      names: (data.players || []).filter(Boolean).map((name, index) => ({ label: name, members: [member(name, participantMeta.normal?.[index])] })),
+      names: (data.players || []).filter(Boolean),
     },
   ];
 }
 
-function PublicTournamentAthleteEntry({ entry }) {
-  return (
-    <article className="publicTournamentAthleteEntry">
-      {entry.members.length > 1 ? <strong>{entry.label}</strong> : null}
-      <div>
-        {entry.members.map((member, index) => {
-          const profileUrl = member.canOpenProfile
-            ? `/?atleta=${encodeURIComponent(member.profile.profileSlug || member.profile.athleteProfileId)}`
-            : "";
-          const content = (
-            <>
-              <span>{member.canOpenProfile && member.profile.photoUrl ? <img src={member.profile.photoUrl} alt="" /> : getAthleteInitials(member.name)}</span>
-              <strong>{member.profile.displayName || member.name}</strong>
-              {member.canOpenProfile ? <small>Ver perfil</small> : null}
-            </>
-          );
-
-          return member.canOpenProfile
-            ? <a href={profileUrl} target="_blank" rel="noreferrer" key={`${member.name}-${index}`}>{content}</a>
-            : <div className="publicTournamentAthletePlain" key={`${member.name}-${index}`}>{content}</div>;
-        })}
-      </div>
-    </article>
-  );
-}
-
-function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
+function PublicTournamentScreen({ tournament }) {
   const publicTabStorageKey = `publicTournamentTab:${tournament.public_id || tournament.id}`;
   const publicMatchesTabStorageKey = `publicTournamentMatchesTab:${tournament.public_id || tournament.id}`;
   const [activePublicTab, setActivePublicTabState] = useState(() => readPublicViewStorage(publicTabStorageKey, "participantes"));
@@ -11514,7 +9456,7 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
     savePublicViewStorage(publicMatchesTabStorageKey, tab);
     setActivePublicMatchesTabState(tab);
   }
-  const config = getModalityConfig(tournament.type);
+  const config = modalityConfig[tournament.type];
   const data = normalizeTournamentData(tournament.type, tournament.data);
 
   if (!config) {
@@ -11536,14 +9478,13 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
 
   const isCup = isCupType(config);
 
-  const cupGroupRankings = isCup && data.groupsShuffled
+  const cupGroupRankings = isCup
     ? calculateCupGroupRankings(data, data.rankingCriteria)
     : [];
 
   const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
 
-  const publicAthletes = getRegisteredAthletesForPublic(data, config, publicAthleteIds);
-  const publicProfileLookup = buildScheduleProfileLookup(tournament.type, data.players, data.participantMeta);
+  const publicAthletes = getRegisteredAthletesForPublic(data, config);
 
   return (
     <div className="publicPage">
@@ -11559,7 +9500,7 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
           <span>Tabela pública</span>
           <h1>{tournament.name}</h1>
           <p>
-            {normalizeModalityName(tournament.type)}
+            {tournament.type}
             {data.gender ? ` · ${data.gender}` : ""}
             {data.eventDay ? ` · ${data.eventDay}` : ""}
             {data.eventDate ? ` · ${formatDateBR(data.eventDate)}` : ""}
@@ -11633,8 +9574,8 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
                   <p>Nenhum atleta cadastrado ainda.</p>
                 ) : (
                   <div className="publicAthleteList">
-                    {group.names.map((entry, index) => (
-                      <PublicTournamentAthleteEntry entry={entry} key={`${group.title}-${index}`} />
+                    {group.names.map((name, index) => (
+                      <span key={`${group.title}-${index}`}>{name}</span>
                     ))}
                   </div>
                 )}
@@ -11681,7 +9622,7 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
             {!data.schedule || data.schedule.length === 0 ? (
               <p>A tabela ainda não foi gerada pelo organizador.</p>
             ) : (
-              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} readOnly tournamentType={tournament.type} players={data.players} participantMeta={data.participantMeta} />
+              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} readOnly />
             )}
           </div>
 
@@ -11691,7 +9632,6 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
                 <PublicCupBracketView
                   groupedBrackets={{ main: currentBrackets.main, repechage: [] }}
                   mainTitle={data.cupConfig?.mainBracketName || "Chave principal"}
-                  profileLookup={publicProfileLookup}
                 />
               )}
             </div>
@@ -11706,7 +9646,6 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
                     <PublicCupBracketView
                       groupedBrackets={{ main: [], repechage: currentBrackets.repechage }}
                       repechageTitle={data.cupConfig?.repechageName || "Disputa paralela"}
-                      profileLookup={publicProfileLookup}
                     />
                   )
                   : <p>Esta Copinha de 2 grupos não possui chave de consolação.</p>}
@@ -11787,7 +9726,6 @@ function PublicCupBracketView({
   groupedBrackets,
   mainTitle = "Chave principal",
   repechageTitle = "Disputa paralela",
-  profileLookup = new Map(),
 }) {
   const mainRounds = Array.isArray(groupedBrackets?.main) ? groupedBrackets.main : [];
   const repechageRounds = Array.isArray(groupedBrackets?.repechage) ? groupedBrackets.repechage : [];
@@ -11801,7 +9739,6 @@ function PublicCupBracketView({
           rounds={mainRounds}
           title={mainRounds[0]?.bracketTitle || mainTitle}
           variant="main"
-          profileLookup={profileLookup}
         />
       ) : null}
       {repechageRounds.length > 0 ? (
@@ -11809,14 +9746,13 @@ function PublicCupBracketView({
           rounds={repechageRounds}
           title={repechageRounds[0]?.bracketTitle || repechageTitle}
           variant="repechage"
-          profileLookup={profileLookup}
         />
       ) : null}
     </div>
   );
 }
 
-function PublicBracketColumn({ rounds = [], title, variant, profileLookup = new Map() }) {
+function PublicBracketColumn({ rounds = [], title, variant }) {
   if (rounds.length === 0) return null;
 
   return (
@@ -11827,642 +9763,34 @@ function PublicBracketColumn({ rounds = [], title, variant, profileLookup = new 
         <div className="roundCard publicBracketRound" key={roundIndex}>
           <h3>{round.title || title}</h3>
 
-          {round.games.map((game) => {
-            const hasPublicScore = game.s1 !== "" && game.s1 != null && game.s2 !== "" && game.s2 != null;
+          {round.games.map((game) => (
+            <div className="gameCard publicBracketGame" key={game.matchKey}>
+              <strong>Quadra {game.court}</strong>
 
-            return (
-              <div className="gameCard publicBracketGame" key={game.matchKey}>
-                <strong>Quadra {game.court}</strong>
-
-                <div className="gameTeams publicBracketTeams">
-                  <div className="gameTeamPanel">
-                    <MatchTeamRoster names={getScheduleAthleteNames(game.team1)} profileLookup={profileLookup} />
-                    <output className="teamScoreValue">{hasPublicScore ? game.s1 : "—"}</output>
-                  </div>
-                  <span className="matchVersus" aria-hidden="true">VS</span>
-                  <div className="gameTeamPanel gameTeamPanelRight">
-                    <MatchTeamRoster names={getScheduleAthleteNames(game.team2)} profileLookup={profileLookup} />
-                    <output className="teamScoreValue">{hasPublicScore ? game.s2 : "—"}</output>
-                  </div>
-                </div>
+              <div className="gameTeams publicBracketTeams">
+                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                <span>x</span>
+                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
               </div>
-            );
-          })}
+
+              <div className="publicScore publicBracketScore">
+                {game.s1 === "" || game.s2 === "" ? (
+                  <span>Aguardando placar</span>
+                ) : (
+                  <strong>{game.s1} — {game.s2}</strong>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       ))}
     </section>
   );
 }
 
-function resizeAthletePhoto(file) {
-  return new Promise((resolve, reject) => {
-    if (!file?.type?.startsWith("image/")) {
-      reject(new Error("Escolha uma imagem JPG ou PNG."));
-      return;
-    }
-    if (file.size > 3 * 1024 * 1024) {
-      reject(new Error("A foto deve ter no máximo 3 MB."));
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
-    reader.onload = () => {
-      const image = new Image();
-      image.onerror = () => reject(new Error("Não foi possível abrir a imagem."));
-      image.onload = () => {
-        const canvas = document.createElement("canvas");
-        const size = 320;
-        canvas.width = size;
-        canvas.height = size;
-        const context = canvas.getContext("2d");
-        if (!context) {
-          reject(new Error("Não foi possível preparar a foto."));
-          return;
-        }
-        const sourceSize = Math.min(image.width, image.height);
-        const sourceX = (image.width - sourceSize) / 2;
-        const sourceY = (image.height - sourceSize) / 2;
-        context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
-        resolve(canvas.toDataURL("image/jpeg", 0.84));
-      };
-      image.src = String(reader.result || "");
-    };
-    reader.readAsDataURL(file);
-  });
-}
-
-function AthleteLinkPage({ requestId }) {
-  const [request, setRequest] = useState(null);
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [mode, setMode] = useState("login");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [bio, setBio] = useState("");
-  const [photoUrl, setPhotoUrl] = useState("");
-  const [publicConsent, setPublicConsent] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [notice, setNotice] = useState(null);
-  const [completed, setCompleted] = useState(false);
-  const hydratedUserRef = useRef("");
-
-  useEffect(() => {
-    let active = true;
-
-    async function prepareIsolatedSession() {
-      try {
-        const url = new URL(window.location.href);
-        const code = url.searchParams.get("code");
-        const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
-        const accessToken = hash.get("access_token");
-        const refreshToken = hash.get("refresh_token");
-
-        if (code) {
-          await athleteLinkSupabase.auth.exchangeCodeForSession(code);
-          url.searchParams.delete("code");
-          window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-        } else if (accessToken && refreshToken) {
-          await athleteLinkSupabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
-          url.hash = "";
-          window.history.replaceState(null, "", `${url.pathname}${url.search}`);
-        }
-      } catch (error) {
-        console.error("Erro no retorno do login do atleta", error);
-      }
-
-      const { data } = await athleteLinkSupabase.auth.getSession();
-      if (!active) return;
-      const { data: requestData, error: requestError } = await athleteLinkSupabase
-        .rpc("get_athlete_link_request", { p_request_id: requestId });
-      if (!active) return;
-
-      if (requestError || !requestData) {
-        console.error("Convite de atleta não encontrado", requestError);
-        setRequest(null);
-      } else {
-        const nextRequest = {
-          requestId: requestData.requestId || requestData.request_id || requestData.id || requestId,
-          tournamentId: requestData.tournamentId || requestData.tournament_id || "",
-          tournamentName: requestData.tournamentName || requestData.tournament_name || "Torneio",
-          tournamentType: requestData.tournamentType || requestData.tournament_type || "",
-          path: requestData.path || requestData.participant_path || {},
-          athleteIndex: requestData.athleteIndex ?? requestData.athlete_index ?? 0,
-          athleteName: requestData.athleteName || requestData.athlete_name || "Atleta",
-          expiresAt: requestData.expiresAt || requestData.expires_at || "",
-        };
-        setRequest(nextRequest);
-        setDisplayName((current) => current || nextRequest.athleteName);
-      }
-      setSession(data.session || null);
-      setLoading(false);
-    }
-
-    void prepareIsolatedSession();
-    const { data: listener } = athleteLinkSupabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (active) setSession(nextSession);
-    });
-
-    return () => {
-      active = false;
-      listener.subscription.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    const user = session?.user;
-    if (!user?.id || hydratedUserRef.current === user.id) return;
-    hydratedUserRef.current = user.id;
-
-    async function hydrateProfile() {
-      const metadata = user.user_metadata || {};
-      let savedProfile = null;
-      try {
-        savedProfile = JSON.parse(localStorage.getItem(`${ATHLETE_PROFILE_DRAFT_PREFIX}${user.id}`) || "null");
-      } catch {
-        savedProfile = null;
-      }
-      const [legacyProfileResult, athleteProfileResult] = await Promise.all([
-        athleteLinkSupabase.from("profiles").select("id, name, photo_url").eq("id", user.id).maybeSingle(),
-        athleteLinkSupabase.from("athlete_profiles").select("display_name, photo_url, bio, is_public").eq("user_id", user.id).maybeSingle(),
-      ]);
-      const profileData = legacyProfileResult.data;
-      const athleteProfileData = athleteProfileResult.data;
-
-      if (athleteProfileResult.error) {
-        console.error("Erro ao carregar perfil de atleta", athleteProfileResult.error);
-        setPublicConsent(false);
-        setNotice({ type: "warning", message: "Não foi possível carregar suas preferências de privacidade. Tente novamente." });
-        return;
-      }
-
-      if (athleteProfileData) {
-        setDisplayName(athleteProfileData.display_name || request?.athleteName || "Atleta");
-        setPhotoUrl(athleteProfileData.photo_url ?? "");
-        setBio(athleteProfileData.bio ?? "");
-        setPublicConsent(athleteProfileData.is_public === true);
-        return;
-      }
-
-      setDisplayName((current) => savedProfile?.displayName || metadata.name || metadata.full_name || profileData?.name || current || request?.athleteName || "Atleta");
-      setPhotoUrl((current) => savedProfile?.photoUrl || profileData?.photo_url || current || "");
-      setBio((current) => savedProfile?.bio || metadata.athlete_bio || current || "");
-      setPublicConsent(savedProfile?.publicConsent === true || metadata.athlete_profile_public === true);
-    }
-
-    void hydrateProfile();
-  }, [session?.user?.id]);
-
-  async function submitAuth(event) {
-    event.preventDefault();
-    if (submitting) return;
-    if (!email.trim() || !password) {
-      setNotice({ type: "warning", message: "Informe e-mail e senha para continuar." });
-      return;
-    }
-    if (mode === "signup" && password.length < 8) {
-      setNotice({ type: "warning", message: "A senha deve ter pelo menos 8 caracteres." });
-      return;
-    }
-    if (mode === "signup" && !displayName.trim()) {
-      setNotice({ type: "warning", message: "Informe o nome que aparecerá no perfil." });
-      return;
-    }
-
-    setSubmitting(true);
-    setNotice(null);
-    let authResult = mode === "login"
-      ? await athleteLinkSupabase.auth.signInWithPassword({ email: normalizeEmail(email), password })
-      : await athleteLinkSupabase.auth.signUp({
-        email: normalizeEmail(email),
-        password,
-        options: {
-          emailRedirectTo: window.location.href.split("#")[0],
-          data: { name: displayName.trim(), account_type: "athlete" },
-        },
-      });
-
-    const existingAthleteAccount = mode === "signup" && isUserAlreadyRegisteredError(authResult.error);
-    if (mode === "signup" && authResult.error && (existingAthleteAccount || isRecoverableAthleteSignupError(authResult.error))) {
-      const recoveredAuth = await recoverAthleteSignup(athleteLinkSupabase, email, password);
-
-      if (!recoveredAuth.error && getUserAccountType(recoveredAuth.data?.user) === ACCOUNT_TYPE_ATHLETE) {
-        authResult = recoveredAuth;
-      } else if (!recoveredAuth.error) {
-        const { error: signOutError } = await athleteLinkSupabase.auth.signOut({ scope: "local" });
-        if (signOutError) console.error(signOutError);
-        setSubmitting(false);
-        setNotice({ type: "error", message: "Este e-mail pertence a outra conta. Entre com uma conta de atleta ou use outro e-mail." });
-        return;
-      } else if (isEmailNotConfirmedError(recoveredAuth.error)) {
-        setSubmitting(false);
-        setNotice({ type: "warning", message: "Este e-mail já possui uma conta aguardando confirmação. Confirme-a e depois entre normalmente nesta aba." });
-        setMode("login");
-        return;
-      } else if (existingAthleteAccount) {
-        setSubmitting(false);
-        setPassword("");
-        setMode("login");
-        setNotice({ type: "warning", message: "Este e-mail já possui um perfil de atleta. Entre com a senha correta; se não lembrar, recupere-a na página principal de acesso." });
-        return;
-      }
-    }
-    setSubmitting(false);
-
-    if (authResult.error) {
-      setNotice({ type: "error", message: getAuthErrorMessage(authResult.error, "Não foi possível entrar. Confira os dados e tente novamente.") });
-      return;
-    }
-
-    if (mode === "signup" && !authResult.data?.session) {
-      setNotice({ type: "success", message: "Enviamos a confirmação por e-mail. Depois de confirmar, volte a esta aba e entre na conta." });
-      setMode("login");
-    }
-  }
-
-  async function handleAthletePhoto(event) {
-    const file = event.target.files?.[0];
-    if (!file) return;
-    try {
-      setPhotoUrl(await resizeAthletePhoto(file));
-      setNotice(null);
-    } catch (error) {
-      setNotice({ type: "warning", message: error.message });
-    } finally {
-      event.target.value = "";
-    }
-  }
-
-  async function confirmLink() {
-    if (!request || !session?.user?.id || submitting) return;
-    if (!displayName.trim()) {
-      setNotice({ type: "warning", message: "Informe o nome do atleta." });
-      return;
-    }
-
-    setSubmitting(true);
-    setNotice(null);
-    const linkedAt = new Date().toISOString();
-    const userId = session.user.id;
-    const result = {
-      requestId,
-      tournamentId: request.tournamentId,
-      path: request.path,
-      athleteIndex: request.athleteIndex,
-      athleteProfileId: userId,
-      profileSlug: userId,
-      displayName: displayName.trim(),
-      photoUrl,
-      bio: bio.trim().slice(0, 240),
-      publicConsent,
-      linkedAt,
-    };
-
-    const { error: userError } = await athleteLinkSupabase.auth.updateUser({
-      data: {
-        name: result.displayName,
-        account_type: ACCOUNT_TYPE_ATHLETE,
-        athlete_bio: result.bio,
-        athlete_profile_public: result.publicConsent,
-      },
-    });
-
-    if (userError) {
-      setSubmitting(false);
-      setNotice({ type: "error", message: "Não foi possível confirmar os dados do perfil." });
-      return;
-    }
-
-    const { error: profileError } = await athleteLinkSupabase.from("athlete_profiles").upsert({
-      user_id: userId,
-      display_name: result.displayName,
-      photo_url: result.photoUrl,
-      bio: result.bio,
-      is_public: result.publicConsent,
-      show_achievements: true,
-      updated_at: linkedAt,
-    }, { onConflict: "user_id" });
-
-    if (profileError) {
-      console.error("Erro ao salvar perfil do atleta", profileError);
-      setSubmitting(false);
-      setNotice({ type: "error", message: "Não foi possível salvar o perfil do atleta. Tente novamente." });
-      return;
-    }
-
-    const { error: claimError } = await athleteLinkSupabase.rpc("claim_athlete_link_request", {
-      p_request_id: requestId,
-      p_public_consent: result.publicConsent,
-    });
-
-    if (claimError) {
-      console.error("Erro ao confirmar convite do atleta", claimError);
-      setSubmitting(false);
-      setNotice({ type: "error", message: "Este convite expirou ou já foi utilizado. Peça um novo vínculo ao organizador." });
-      return;
-    }
-
-    try {
-      localStorage.setItem(`${ATHLETE_PROFILE_DRAFT_PREFIX}${userId}`, JSON.stringify({
-        displayName: result.displayName,
-        photoUrl: result.photoUrl,
-        bio: result.bio,
-        publicConsent: result.publicConsent,
-        updatedAt: linkedAt,
-      }));
-    } catch {
-      // O banco continua sendo a fonte oficial do vínculo e da privacidade.
-    }
-
-    try {
-      localStorage.setItem(`${ATHLETE_LINK_RESULT_PREFIX}${requestId}`, JSON.stringify({ requestId, linkedAt }));
-    } catch {
-      // O organizador também consulta o resultado diretamente no servidor.
-    }
-
-    setSubmitting(false);
-    setCompleted(true);
-  }
-
-  async function changeAthleteAccount() {
-    await athleteLinkSupabase.auth.signOut({ scope: "local" });
-    hydratedUserRef.current = "";
-    setSession(null);
-  }
-
-  if (loading) {
-    return <div className="athleteLinkPage"><section className="athleteLinkCard"><div className="loadingSpinner" /><p>Preparando o login seguro do atleta...</p></section></div>;
-  }
-
-  if (!request) {
-    return (
-      <div className="athleteLinkPage"><section className="athleteLinkCard athleteLinkMissing"><BeachLogo /><h1>Vínculo não encontrado</h1><p>Este convite expirou ou já foi concluído. Peça ao organizador para abrir novamente o botão Vincular perfil.</p></section></div>
-    );
-  }
-
-  if (completed) {
-    return (
-      <div className="athleteLinkPage">
-        <section className="athleteLinkCard athleteLinkComplete">
-          <div className="athleteLinkSuccessIcon"><Trophy aria-hidden="true" /></div>
-          <h1>Perfil vinculado</h1>
-          <p>A confirmação foi enviada para o torneio <strong>{request.tournamentName}</strong>. Você já pode fechar esta aba.</p>
-          <button type="button" onClick={() => window.close()}>Fechar aba</button>
-        </section>
-      </div>
-    );
-  }
-
-  if (session && getUserAccountType(session.user) !== ACCOUNT_TYPE_ATHLETE) {
-    return (
-      <div className="athleteLinkPage">
-        <header className="athleteLinkHeader"><BeachLogo /></header>
-        <main className="athleteLinkMain">
-          <section className="athleteLinkCard athleteLinkMissing">
-            <UserRound aria-hidden="true" />
-            <h1>Use uma conta de atleta</h1>
-            <p>Este vínculo só pode ser confirmado por um perfil gratuito de atleta. A conta de organizador permanece separada e não será alterada.</p>
-            <button type="button" onClick={changeAthleteAccount}>Entrar com outra conta</button>
-          </section>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div className="athleteLinkPage">
-      <header className="athleteLinkHeader"><BeachLogo /></header>
-      <main className="athleteLinkMain">
-        <section className="athleteLinkContext">
-          <span>VÍNCULO DE ATLETA</span>
-          <h1>{request.tournamentName}</h1>
-          <p>O organizador cadastrou esta vaga como <strong>{request.athleteName}</strong>. Entre na sua própria conta para confirmar que esse participante é você.</p>
-        </section>
-
-        {!session ? (
-          <section className="athleteLinkCard">
-            <div className="athleteLinkMode" role="tablist">
-              <button type="button" className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>Já tenho conta</button>
-              <button type="button" className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Criar perfil de atleta</button>
-            </div>
-            <form onSubmit={submitAuth}>
-              {mode === "signup" ? <label>Nome no perfil<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Seu nome completo" /></label> : null}
-              <label>E-mail<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seu@email.com" /></label>
-              <label>Senha<input type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" /></label>
-              {notice ? <div className={`athleteLinkNotice ${notice.type}`}>{notice.message}</div> : null}
-              <button type="submit" disabled={submitting}>{submitting ? "Aguarde..." : mode === "login" ? "Entrar e continuar" : "Criar perfil"}</button>
-            </form>
-            <small className="athleteLinkSecurity"><LockKeyhole aria-hidden="true" /> Este login usa uma sessão separada e não desconecta o organizador.</small>
-          </section>
-        ) : (
-          <section className="athleteLinkCard athleteProfileConfirmCard">
-            <div className="athleteProfileConfirmHeader">
-              <label className="athletePhotoPicker">
-                <span>{photoUrl ? <img src={photoUrl} alt="Foto do atleta" /> : getAthleteInitials(displayName || request.athleteName)}</span>
-                <input type="file" accept="image/png,image/jpeg" onChange={handleAthletePhoto} />
-                <small><Camera aria-hidden="true" /> Escolher foto</small>
-              </label>
-              <div><span>PERFIL DO ATLETA</span><h2>{displayName || request.athleteName}</h2><button type="button" onClick={changeAthleteAccount}>Usar outra conta</button></div>
-            </div>
-            <label>Nome público<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={90} /></label>
-            <label>Bio opcional<textarea value={bio} onChange={(event) => setBio(event.target.value)} maxLength={240} placeholder="Uma frase curta que resuma você como atleta." /><small>{bio.length}/240</small></label>
-            <label className="athleteConsentOption">
-              <input type="checkbox" checked={publicConsent} onChange={(event) => setPublicConsent(event.target.checked)} />
-              <span><strong>Exibir meu perfil nos torneios</strong><small>Minha foto e meu nome poderão ser clicados para abrir o perfil público. Posso manter o vínculo privado se preferir.</small></span>
-            </label>
-            {notice ? <div className={`athleteLinkNotice ${notice.type}`}>{notice.message}</div> : null}
-            <button type="button" className="athleteConfirmButton" onClick={confirmLink} disabled={submitting}>{submitting ? "Confirmando..." : "Confirmar que este perfil é meu"}</button>
-          </section>
-        )}
-      </main>
-    </div>
-  );
-}
-
-function normalizeAthleteLookupKey(value) {
-  return String(value || "").trim().toLocaleLowerCase("pt-BR").replace(/\s+/g, " ");
-}
-
-function findAthleteLinksInTournament(tournament, athleteKey) {
-  const config = getModalityConfig(tournament.type);
-  if (!config) return [];
-  const data = normalizeTournamentData(tournament.type, tournament.data);
-  const meta = data.participantMeta || {};
-  const matchesKey = (athlete) => {
-    const normalized = normalizeAthleteProfileMeta(athlete);
-    return normalized.publicConsent && [normalized.athleteProfileId, normalized.profileSlug].some((value) => String(value || "") === String(athleteKey));
-  };
-
-  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-    return (data.players?.teams || []).flatMap((team, teamIndex) => {
-      const teamMeta = normalizeParticipantMetaList([meta.teams?.[teamIndex]], 1, { athleteCount: 2 })[0];
-      return teamMeta.athletes.flatMap((athlete, athleteIndex) => matchesKey(athlete) ? [{
-        athlete: normalizeAthleteProfileMeta(athlete),
-        kind: "team",
-        index: teamIndex,
-        athleteIndex,
-        teamName: getTeamName(team),
-        data,
-        config,
-      }] : []);
-    });
-  }
-
-  const collections = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16"
-    ? [
-      { kind: "men", names: data.players?.men || [], values: meta.men || [] },
-      { kind: "women", names: data.players?.women || [], values: meta.women || [] },
-    ]
-    : [{ kind: "normal", names: data.players || [], values: meta.normal || [] }];
-
-  return collections.flatMap((collection) => collection.names.flatMap((name, index) => {
-    const athlete = normalizeAthleteProfileMeta(collection.values[index]);
-    return matchesKey(athlete) ? [{ athlete, kind: collection.kind, index, athleteIndex: 0, teamName: name, data, config }] : [];
-  }));
-}
-
-function getValidatedAthleteAchievement(tournament, link) {
-  const { data, config, kind, index, teamName } = link;
-  if (!data.rankingConfirmedAt) return null;
-  let placement = 0;
-
-  if (isCupType(config)) {
-    const podium = getSafeCupPresentation(data, config).mainCupPodium;
-    const target = normalizeAthleteLookupKey(teamName);
-    placement = podium.findIndex((item) => normalizeAthleteLookupKey(item.name) === target) + 1;
-  } else {
-    const ranking = calculateRanking(data, tournament.type, data.rankingCriteria);
-    const participantId = kind === "women" ? Number(config.men || 0) + index : index;
-    placement = ranking.findIndex((item) => Number(item.id) === participantId) + 1;
-  }
-
-  if (placement < 1 || placement > 3) return null;
-  const organizer = data.publicInfo?.organizer || {};
-  return {
-    id: `${tournament.id}-${placement}`,
-    placement,
-    tournamentName: data.eventName || tournament.name,
-    modality: normalizeModalityName(tournament.type),
-    date: data.eventDate || tournament.updated_at || "",
-    arenaName: organizer.arenaName || organizer.organizerName || "Organizador do torneio",
-    publicId: tournament.public_id,
-  };
-}
-
-function PublicAthletePage({ athleteKey }) {
-  const [state, setState] = useState({ loading: true, profile: null, achievements: [], showAchievements: true, error: "" });
-
-  useEffect(() => {
-    let active = true;
-
-    async function loadAthlete() {
-      const tournamentsPromise = supabase.rpc("list_public_tournaments", { p_limit: 500 });
-      const canQueryProfileById = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(athleteKey || ""));
-      const profilePromise = canQueryProfileById
-        ? supabase.from("profiles").select("id, name, photo_url, is_public").eq("id", athleteKey).eq("is_public", true).maybeSingle()
-        : Promise.resolve({ data: null, error: null });
-      const athleteProfilePromise = canQueryProfileById
-        ? supabase.from("athlete_profiles").select("user_id, display_name, photo_url, bio, is_public, show_achievements").eq("user_id", athleteKey).eq("is_public", true).maybeSingle()
-        : Promise.resolve({ data: null, error: null });
-      const [tournamentResult, profileResult, athleteProfileResult] = await Promise.all([tournamentsPromise, profilePromise, athleteProfilePromise]);
-      if (!active) return;
-
-      if (tournamentResult.error) {
-        setState({ loading: false, profile: null, achievements: [], showAchievements: true, error: "Não foi possível carregar este perfil agora." });
-        return;
-      }
-
-      const linked = [];
-      (tournamentResult.data || []).forEach((tournament) => {
-        findAthleteLinksInTournament(tournament, athleteKey).forEach((link) => linked.push({ tournament, link }));
-      });
-      const snapshot = linked.map((item) => item.link.athlete).find((athlete) => athlete.publicConsent) || null;
-      const publicProfile = profileResult.data;
-      const athleteProfile = athleteProfileResult.data;
-      const athleteProfileTableUnavailable = ["42P01", "PGRST205"].includes(String(athleteProfileResult.error?.code || ""));
-      const legacyProfile = athleteProfileTableUnavailable ? (snapshot || publicProfile) : null;
-      const profile = athleteProfile
-        ? {
-          displayName: athleteProfile.display_name || "Atleta",
-          photoUrl: athleteProfile.photo_url ?? "",
-          bio: athleteProfile.bio ?? "",
-        }
-        : legacyProfile
-          ? {
-            displayName: snapshot?.displayName || publicProfile?.name || "Atleta",
-            photoUrl: snapshot?.photoUrl || publicProfile?.photo_url || "",
-            bio: snapshot?.bio || "",
-          }
-          : null;
-      const showAchievements = athleteProfile?.show_achievements !== false;
-      const achievements = (showAchievements ? linked : [])
-        .map(({ tournament, link }) => getValidatedAthleteAchievement(tournament, link))
-        .filter(Boolean)
-        .filter((achievement, index, values) => values.findIndex((item) => item.id === achievement.id) === index)
-        .sort((a, b) => String(b.date).localeCompare(String(a.date)));
-
-      setState({ loading: false, profile, achievements, showAchievements, error: profile ? "" : "Este atleta ainda não autorizou um perfil público." });
-    }
-
-    void loadAthlete();
-    return () => { active = false; };
-  }, [athleteKey]);
-
-  if (state.loading) return <div className="publicAthletePage"><div className="publicAthleteState"><div className="loadingSpinner" /><p>Carregando perfil do atleta...</p></div></div>;
-  if (!state.profile) return <div className="publicAthletePage"><div className="publicAthleteState"><BeachLogo /><h1>Perfil indisponível</h1><p>{state.error}</p><a href="/">Voltar ao Torneio360</a></div></div>;
-
-  const podiumCount = state.achievements.length;
-  const placementCounts = [1, 2, 3].map((placement) => state.achievements.filter((item) => item.placement === placement).length);
-
-  return (
-    <div className="publicAthletePage">
-      <header className="publicAthleteHeader"><a href="/"><BeachLogo /></a><a href="/">Início</a></header>
-      <main className="publicAthleteContent">
-        <section className="publicAthleteHero">
-          <div className="publicAthletePhoto">{state.profile.photoUrl ? <img src={state.profile.photoUrl} alt={`Foto de ${state.profile.displayName}`} /> : getAthleteInitials(state.profile.displayName)}</div>
-          <div><span>PERFIL DE ATLETA</span><h1>{state.profile.displayName}</h1>{state.profile.bio ? <p>{state.profile.bio}</p> : <p>Atleta vinculado aos torneios do Torneio360.</p>}</div>
-        </section>
-        {state.showAchievements ? <section className="publicAthleteStats" aria-label="Resumo de conquistas">
-          <div className="total"><Trophy aria-hidden="true" /><span>Pódios validados</span><strong>{podiumCount}</strong></div>
-          <div><span>1º lugar</span><strong>{placementCounts[0]}</strong></div>
-          <div><span>2º lugar</span><strong>{placementCounts[1]}</strong></div>
-          <div><span>3º lugar</span><strong>{placementCounts[2]}</strong></div>
-        </section> : null}
-        <section className="publicAthleteAchievements">
-          <div className="publicAthleteSectionTitle"><div><span>CONQUISTAS</span><h2>Resultados oficiais</h2></div><small>Somente resultados confirmados por organizadores</small></div>
-          {!state.showAchievements ? (
-            <div className="publicAthleteEmpty"><LockKeyhole aria-hidden="true" /><strong>Conquistas privadas</strong><p>Este atleta escolheu não exibir publicamente o histórico de resultados.</p></div>
-          ) : state.achievements.length ? (
-            <div className="publicAthleteAchievementList">
-              {state.achievements.map((achievement) => (
-                <article key={achievement.id} className={`placement-${achievement.placement}`}>
-                  <div className="achievementPlace">{achievement.placement}<sup>º</sup></div>
-                  <div className="achievementCopy"><strong>{achievement.tournamentName}</strong><span>{achievement.modality}</span>{achievement.date ? <small><CalendarDays aria-hidden="true" /> {formatDateBR(String(achievement.date).slice(0, 10))}</small> : null}</div>
-                  <div className="achievementSignature"><span><Trophy aria-hidden="true" /> Resultado validado</span><strong>{achievement.arenaName}</strong>{achievement.publicId ? <a href={`/?public=${encodeURIComponent(achievement.publicId)}`}>Ver torneio</a> : null}</div>
-                </article>
-              ))}
-            </div>
-          ) : <div className="publicAthleteEmpty"><Trophy aria-hidden="true" /><strong>Nenhum pódio validado ainda</strong><p>As conquistas aparecerão aqui quando um organizador confirmar o ranking de um torneio público.</p></div>}
-        </section>
-      </main>
-    </div>
-  );
-}
-
-function RootApp() {
-  const params = new URLSearchParams(window.location.search);
-  const athleteLinkId = params.get("vincular-atleta");
-  const athleteKey = params.get("atleta");
-
-  if (athleteLinkId) return <AthleteLinkPage requestId={athleteLinkId} />;
-  if (athleteKey) return <PublicAthletePage athleteKey={athleteKey} />;
-  return <App />;
-}
-
 createRoot(document.getElementById("root")).render(
   <>
-    <RootApp />
+    <App />
     <InstallAppBanner />
   </>
 );
@@ -12473,77 +9801,4 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
       console.warn("Não foi possível registrar o atalho instalável:", error);
     });
   });
-}
-
-function createParticipantReference() {
-  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
-  return `participante-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
-}
-
-function normalizeAthleteProfileMeta(value, legacy = {}) {
-  const item = isTournamentDataObject(value) ? value : {};
-  const fallback = isTournamentDataObject(legacy) ? legacy : {};
-  const athleteProfileId = item.athleteProfileId || item.athlete_profile_id || fallback.athleteProfileId || fallback.athlete_profile_id || "";
-  const photoUrl = item.photoUrl || item.photo_url || item.avatarUrl || item.avatar_url || fallback.photoUrl || fallback.photo_url || "";
-
-  return {
-    ...item,
-    memberId: item.memberId || item.member_id || createParticipantReference(),
-    athleteProfileId,
-    profileSlug: item.profileSlug || item.profile_slug || athleteProfileId || "",
-    displayName: item.displayName || item.display_name || "",
-    photoUrl,
-    bio: typeof item.bio === "string" ? item.bio : "",
-    publicConsent: item.publicConsent === true || item.public_consent === true,
-    profileLinked: Boolean(item.profileLinked || item.profile_linked || athleteProfileId),
-    linkedAt: item.linkedAt || item.linked_at || "",
-  };
-}
-
-function normalizeParticipantMetaList(values, count, options = {}) {
-  const source = Array.isArray(values) ? values : [];
-  return Array.from({ length: count }, (_, index) => {
-    const item = isTournamentDataObject(source[index]) ? source[index] : {};
-    const normalized = {
-      ...item,
-      entryId: item.entryId || item.entry_id || createParticipantReference(),
-      payment: ["pending", "paid", "exempt"].includes(item.payment) ? item.payment : "pending",
-      registration: item.registration === "confirmed" ? "confirmed" : "pending",
-      profileLinked: Boolean(item.profileLinked),
-    };
-
-    if (Number(options.athleteCount) === 2) {
-      const sourceAthletes = Array.isArray(item.athletes) ? item.athletes : [];
-      normalized.athletes = [
-        normalizeAthleteProfileMeta(sourceAthletes[0], sourceAthletes.length ? {} : item),
-        normalizeAthleteProfileMeta(sourceAthletes[1]),
-      ];
-      normalized.profileLinked = normalized.athletes.some((athlete) => athlete.profileLinked);
-    }
-
-    return normalized;
-  });
-}
-
-function getTournamentParticipantRecords(type, data) {
-  const config = getModalityConfig(type);
-  const meta = data?.participantMeta || {};
-  if (!config || !data?.players) return [];
-
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
-    return [
-      ...data.players.men.map((name, index) => ({ key: `men-${index}`, name, meta: meta.men?.[index] || {} })),
-      ...data.players.women.map((name, index) => ({ key: `women-${index}`, name, meta: meta.women?.[index] || {} })),
-    ];
-  }
-
-  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-    return data.players.teams.map((team, index) => ({
-      key: `team-${index}`,
-      name: [team.a, team.b].filter(Boolean).join(" & "),
-      meta: meta.teams?.[index] || {},
-    }));
-  }
-
-  return data.players.map((name, index) => ({ key: `normal-${index}`, name, meta: meta.normal?.[index] || {} }));
 }
