@@ -489,6 +489,12 @@ function isEmailNotConfirmedError(error) {
   return /email[^\n]*not[^\n]*confirm|not[^\n]*confirm[^\n]*email|email_not_confirmed/i.test(`${error?.message || ""} ${error?.code || ""}`);
 }
 
+function isUserAlreadyRegisteredError(error) {
+  const code = String(error?.code || "").toLowerCase();
+  if (code === "user_already_exists" || code === "email_exists") return true;
+  return /user\s+already\s+registered|user[^\n]*already[^\n]*exists|email[^\n]*already[^\n]*exists/i.test(String(error?.message || ""));
+}
+
 function isRecoverableAthleteSignupError(error) {
   const details = `${error?.message || ""} ${error?.code || ""}`;
   return /database[^\n]*(user|profile)|saving new user|creating new user|unexpected_failure|hook[^\n]*(failed|timeout)/i.test(details);
@@ -504,6 +510,10 @@ async function recoverAthleteSignup(client, email, password) {
 
 function getAuthErrorMessage(error, fallback) {
   const message = `${error?.message || ""} ${error?.code || ""}`.toLowerCase();
+
+  if (isUserAlreadyRegisteredError(error)) {
+    return "Este e-mail já possui uma conta. Entre com sua senha ou use “Esqueci minha senha”.";
+  }
 
   if (/rate limit|too many requests|over_email_send_rate_limit/.test(message)) {
     return "Aguarde alguns minutos antes de pedir outro e-mail.";
@@ -3749,7 +3759,8 @@ function Login({
         },
       });
 
-      if (error && accountType === ACCOUNT_TYPE_ATHLETE && isRecoverableAthleteSignupError(error)) {
+      const existingAthleteAccount = isUserAlreadyRegisteredError(error);
+      if (error && accountType === ACCOUNT_TYPE_ATHLETE && (existingAthleteAccount || isRecoverableAthleteSignupError(error))) {
         const recoveredAuth = await recoverAthleteSignup(supabase, normalizedEmail, password);
 
         if (!recoveredAuth.error && getUserAccountType(recoveredAuth.data?.user) === ACCOUNT_TYPE_ATHLETE) {
@@ -3773,6 +3784,17 @@ function Login({
             "warning",
             "Conta aguardando confirmação",
             "Este e-mail já possui uma conta pendente. Confirme-a pelo e-mail ou use o reenvio abaixo."
+          );
+          return;
+        } else if (existingAthleteAccount) {
+          setPassword("");
+          setConfirmPassword("");
+          setMode("login");
+          window.history.replaceState({}, "", "/login");
+          showNotice(
+            "warning",
+            "Este e-mail já está cadastrado",
+            "A conta de atleta já existe. Entre com a senha correta ou use “Esqueci minha senha” para definir uma nova."
           );
           return;
         }
@@ -12021,7 +12043,8 @@ function AthleteLinkPage({ requestId }) {
         },
       });
 
-    if (mode === "signup" && authResult.error && isRecoverableAthleteSignupError(authResult.error)) {
+    const existingAthleteAccount = mode === "signup" && isUserAlreadyRegisteredError(authResult.error);
+    if (mode === "signup" && authResult.error && (existingAthleteAccount || isRecoverableAthleteSignupError(authResult.error))) {
       const recoveredAuth = await recoverAthleteSignup(athleteLinkSupabase, email, password);
 
       if (!recoveredAuth.error && getUserAccountType(recoveredAuth.data?.user) === ACCOUNT_TYPE_ATHLETE) {
@@ -12036,6 +12059,12 @@ function AthleteLinkPage({ requestId }) {
         setSubmitting(false);
         setNotice({ type: "warning", message: "Este e-mail já possui uma conta aguardando confirmação. Confirme-a e depois entre normalmente nesta aba." });
         setMode("login");
+        return;
+      } else if (existingAthleteAccount) {
+        setSubmitting(false);
+        setPassword("");
+        setMode("login");
+        setNotice({ type: "warning", message: "Este e-mail já possui um perfil de atleta. Entre com a senha correta; se não lembrar, recupere-a na página principal de acesso." });
         return;
       }
     }
