@@ -489,6 +489,19 @@ function isEmailNotConfirmedError(error) {
   return /email[^\n]*not[^\n]*confirm|not[^\n]*confirm[^\n]*email|email_not_confirmed/i.test(`${error?.message || ""} ${error?.code || ""}`);
 }
 
+function isRecoverableAthleteSignupError(error) {
+  const details = `${error?.message || ""} ${error?.code || ""}`;
+  return /database[^\n]*(user|profile)|saving new user|creating new user|unexpected_failure|hook[^\n]*(failed|timeout)/i.test(details);
+}
+
+async function recoverAthleteSignup(client, email, password) {
+  // Em alguns cenários o Auth conclui a criação da conta, mas um hook do
+  // banco responde com erro. Confirmamos o resultado real antes de dizer ao
+  // atleta que o cadastro falhou.
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  return client.auth.signInWithPassword({ email: normalizeEmail(email), password });
+}
+
 function getAuthErrorMessage(error, fallback) {
   const message = `${error?.message || ""} ${error?.code || ""}`.toLowerCase();
 
@@ -3720,7 +3733,8 @@ function Login({
       }
 
       const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      const { data, error } = await supabase.auth.signUp({
+      let recoveredAthleteAccount = false;
+      let { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
         options: {
@@ -3735,9 +3749,50 @@ function Login({
         },
       });
 
+      if (error && accountType === ACCOUNT_TYPE_ATHLETE && isRecoverableAthleteSignupError(error)) {
+        const recoveredAuth = await recoverAthleteSignup(supabase, normalizedEmail, password);
+
+        if (!recoveredAuth.error && getUserAccountType(recoveredAuth.data?.user) === ACCOUNT_TYPE_ATHLETE) {
+          data = recoveredAuth.data;
+          error = null;
+          recoveredAthleteAccount = true;
+        } else if (!recoveredAuth.error) {
+          const { error: signOutError } = await supabase.auth.signOut({ scope: "local" });
+          if (signOutError) console.error(signOutError);
+          showNotice(
+            "warning",
+            "Este e-mail já possui outra conta",
+            "Entre com uma conta de atleta ou use outro e-mail para criar o perfil gratuito."
+          );
+          return;
+        } else if (isEmailNotConfirmedError(recoveredAuth.error)) {
+          setPendingVerificationEmail(normalizedEmail);
+          resetForm();
+          setMode("login");
+          showNotice(
+            "warning",
+            "Conta aguardando confirmação",
+            "Este e-mail já possui uma conta pendente. Confirme-a pelo e-mail ou use o reenvio abaixo."
+          );
+          return;
+        }
+      }
+
       if (error) {
         console.error(error);
         showNotice("error", "Cadastro não concluído", getAuthErrorMessage(error, "Verifique os dados e tente novamente."));
+        return;
+      }
+
+      if (recoveredAthleteAccount) {
+        setPendingVerificationEmail("");
+        resetForm();
+        setMode("login");
+        showNotice(
+          "success",
+          "Conta de atleta acessada",
+          "A conta já está ativa e o login foi concluído normalmente."
+        );
         return;
       }
 
@@ -10483,7 +10538,7 @@ function MatchAthlete({ name, profile = {}, outcome = "", athleteNumber = null }
         {photoUrl ? <img src={photoUrl} alt="" /> : getAthleteInitials(name)}
       </span>
       <span className="matchAthleteIdentity">
-        <small>{athleteNumber ? `Atleta ${athleteNumber}` : "Dupla"}</small>
+        <small>{athleteNumber ? `Atleta ${athleteNumber}` : "Atleta"}</small>
         <strong>{name}</strong>
       </span>
     </div>
@@ -10491,8 +10546,11 @@ function MatchAthlete({ name, profile = {}, outcome = "", athleteNumber = null }
 }
 
 function MatchTeamRoster({ names = [], profileLookup = new Map(), outcome = "" }) {
+  const isDoublesTeam = names.length > 1;
+
   return (
-    <div className="gameTeamRoster">
+    <div className="gameTeamRoster" aria-label={isDoublesTeam ? "Atletas da dupla" : "Atleta individual"}>
+      <span className="matchTeamLabel">{isDoublesTeam ? "Dupla" : "Individual"}</span>
       {names.map((name, athleteIndex) => (
         <MatchAthlete
           key={`${name}-${athleteIndex}`}
@@ -10597,52 +10655,48 @@ function ScheduleView({
               <div className={`gameTeams gameMatchup ${readOnly ? "publicGameTeams" : "editableGameMatchup"}`}>
                 <div className={`gameTeamPanel ${winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}`}>
                   <MatchTeamRoster names={team1Names} profileLookup={profileLookup} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />
-                </div>
-
-                <div className={`matchScoreCenter ${hasPublicScore || !readOnly ? "hasScore" : "isPending"}`}>
                   {readOnly ? (
-                    hasPublicScore ? (
-                      <>
-                        <output className="publicScoreValue">{game.s1}</output>
-                        <span className="matchScoreSeparator" aria-hidden="true">&times;</span>
-                        <output className="publicScoreValue">{game.s2}</output>
-                      </>
-                    ) : (
-                      <span className="publicScorePending">Aguardando placar</span>
-                    )
+                    <output className="teamScoreValue" aria-label={hasPublicScore ? `Placar de ${team1Names.join(" e ")}: ${game.s1}` : "Placar ainda não informado"}>
+                      {hasPublicScore ? game.s1 : "—"}
+                    </output>
                   ) : (
-                    <>
-                      <label className="inlineTeamScore">
-                        <span className="srOnly">Placar de {team1Names.join(" e ")}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max={getMaxScore(winningScore)}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={game.s1}
-                          onChange={(event) => updateScore(roundIndex, gameIndex, "s1", event.target.value)}
-                        />
-                      </label>
-                      <span className="matchScoreSeparator" aria-hidden="true">&times;</span>
-                      <label className="inlineTeamScore">
-                        <span className="srOnly">Placar de {team2Names.join(" e ")}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max={getMaxScore(winningScore)}
-                          inputMode="numeric"
-                          pattern="[0-9]*"
-                          value={game.s2}
-                          onChange={(event) => updateScore(roundIndex, gameIndex, "s2", event.target.value)}
-                        />
-                      </label>
-                    </>
+                    <label className="inlineTeamScore teamScoreSlot">
+                      <span className="srOnly">Placar de {team1Names.join(" e ")}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={getMaxScore(winningScore)}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={game.s1}
+                        onChange={(event) => updateScore(roundIndex, gameIndex, "s1", event.target.value)}
+                      />
+                    </label>
                   )}
                 </div>
 
+                <span className="matchVersus" aria-hidden="true">VS</span>
+
                 <div className={`gameTeamPanel gameTeamPanelRight ${winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}`}>
                   <MatchTeamRoster names={team2Names} profileLookup={profileLookup} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />
+                  {readOnly ? (
+                    <output className="teamScoreValue" aria-label={hasPublicScore ? `Placar de ${team2Names.join(" e ")}: ${game.s2}` : "Placar ainda não informado"}>
+                      {hasPublicScore ? game.s2 : "—"}
+                    </output>
+                  ) : (
+                    <label className="inlineTeamScore teamScoreSlot">
+                      <span className="srOnly">Placar de {team2Names.join(" e ")}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={getMaxScore(winningScore)}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={game.s2}
+                        onChange={(event) => updateScore(roundIndex, gameIndex, "s2", event.target.value)}
+                      />
+                    </label>
+                  )}
                 </div>
               </div>
 
@@ -11189,10 +11243,7 @@ function BracketColumn({
                     <div className="figmaBracketMatchup">
                       <div className={`figmaBracketTeam ${winnerSide === "team1" ? "is-winner" : winnerSide === "team2" ? "is-loser" : ""}`}>
                         <MatchTeamRoster names={teamOneNames} profileLookup={profileLookup} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />
-                      </div>
-
-                      <div className="figmaBracketScoreCenter">
-                        <label>
+                        <label className="figmaBracketTeamScore">
                           <span className="srOnly">Placar de {teamOne}</span>
                           <input
                             type="number"
@@ -11207,8 +11258,13 @@ function BracketColumn({
                             disabled={blocked}
                           />
                         </label>
-                        <span aria-hidden="true">&times;</span>
-                        <label>
+                      </div>
+
+                      <span className="figmaBracketVersus" aria-hidden="true">VS</span>
+
+                      <div className={`figmaBracketTeam ${winnerSide === "team2" ? "is-winner" : winnerSide === "team1" ? "is-loser" : ""}`}>
+                        <MatchTeamRoster names={teamTwoNames} profileLookup={profileLookup} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />
+                        <label className="figmaBracketTeamScore">
                           <span className="srOnly">Placar de {teamTwo}</span>
                           <input
                             type="number"
@@ -11223,10 +11279,6 @@ function BracketColumn({
                             disabled={blocked}
                           />
                         </label>
-                      </div>
-
-                      <div className={`figmaBracketTeam ${winnerSide === "team2" ? "is-winner" : winnerSide === "team1" ? "is-loser" : ""}`}>
-                        <MatchTeamRoster names={teamTwoNames} profileLookup={profileLookup} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />
                       </div>
                     </div>
 
@@ -11753,29 +11805,27 @@ function PublicBracketColumn({ rounds = [], title, variant, profileLookup = new 
         <div className="roundCard publicBracketRound" key={roundIndex}>
           <h3>{round.title || title}</h3>
 
-          {round.games.map((game) => (
-            <div className="gameCard publicBracketGame" key={game.matchKey}>
-              <strong>Quadra {game.court}</strong>
+          {round.games.map((game) => {
+            const hasPublicScore = game.s1 !== "" && game.s1 != null && game.s2 !== "" && game.s2 != null;
 
-              <div className="gameTeams publicBracketTeams">
-                <div className="gameTeamPanel">
-                  <MatchTeamRoster names={getScheduleAthleteNames(game.team1)} profileLookup={profileLookup} />
-                </div>
-                <span>x</span>
-                <div className="gameTeamPanel gameTeamPanelRight">
-                  <MatchTeamRoster names={getScheduleAthleteNames(game.team2)} profileLookup={profileLookup} />
+            return (
+              <div className="gameCard publicBracketGame" key={game.matchKey}>
+                <strong>Quadra {game.court}</strong>
+
+                <div className="gameTeams publicBracketTeams">
+                  <div className="gameTeamPanel">
+                    <MatchTeamRoster names={getScheduleAthleteNames(game.team1)} profileLookup={profileLookup} />
+                    <output className="teamScoreValue">{hasPublicScore ? game.s1 : "—"}</output>
+                  </div>
+                  <span className="matchVersus" aria-hidden="true">VS</span>
+                  <div className="gameTeamPanel gameTeamPanelRight">
+                    <MatchTeamRoster names={getScheduleAthleteNames(game.team2)} profileLookup={profileLookup} />
+                    <output className="teamScoreValue">{hasPublicScore ? game.s2 : "—"}</output>
+                  </div>
                 </div>
               </div>
-
-              <div className="publicScore publicBracketScore">
-                {game.s1 === "" || game.s2 === "" ? (
-                  <span>Aguardando placar</span>
-                ) : (
-                  <strong>{game.s1} — {game.s2}</strong>
-                )}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ))}
     </section>
@@ -11960,7 +12010,7 @@ function AthleteLinkPage({ requestId }) {
 
     setSubmitting(true);
     setNotice(null);
-    const authResult = mode === "login"
+    let authResult = mode === "login"
       ? await athleteLinkSupabase.auth.signInWithPassword({ email: normalizeEmail(email), password })
       : await athleteLinkSupabase.auth.signUp({
         email: normalizeEmail(email),
@@ -11970,6 +12020,25 @@ function AthleteLinkPage({ requestId }) {
           data: { name: displayName.trim(), account_type: "athlete" },
         },
       });
+
+    if (mode === "signup" && authResult.error && isRecoverableAthleteSignupError(authResult.error)) {
+      const recoveredAuth = await recoverAthleteSignup(athleteLinkSupabase, email, password);
+
+      if (!recoveredAuth.error && getUserAccountType(recoveredAuth.data?.user) === ACCOUNT_TYPE_ATHLETE) {
+        authResult = recoveredAuth;
+      } else if (!recoveredAuth.error) {
+        const { error: signOutError } = await athleteLinkSupabase.auth.signOut({ scope: "local" });
+        if (signOutError) console.error(signOutError);
+        setSubmitting(false);
+        setNotice({ type: "error", message: "Este e-mail pertence a outra conta. Entre com uma conta de atleta ou use outro e-mail." });
+        return;
+      } else if (isEmailNotConfirmedError(recoveredAuth.error)) {
+        setSubmitting(false);
+        setNotice({ type: "warning", message: "Este e-mail já possui uma conta aguardando confirmação. Confirme-a e depois entre normalmente nesta aba." });
+        setMode("login");
+        return;
+      }
+    }
     setSubmitting(false);
 
     if (authResult.error) {
