@@ -17392,3 +17392,212 @@ html[data-theme="dark"] {
     animation: none;
   }
 }
+
+/* =========================================================
+   CIRCUITOS, RANKINGS E JOGOS — EXPERIÊNCIA RESPONSIVA
+   ========================================================= */
+
+/* O componente já possui um monograma; remove a cópia criada pelo CSS legado. */
+.proDashboard.playAppShell button.circuitItemSummary::before {
+  content: none !important;
+  display: none !important;
+}
+
+/* O mesmo contrato de largura e alinhamento vale para rankings de circuitos e torneios. */
+.proDashboard.playAppShell .rankingTableScroll {
+  width: 100% !important;
+  max-width: 100% !important;
+  padding-bottom: 8px;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 14px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ui-active-accent) var(--ui-surface-muted);
+}
+
+.proDashboard.playAppShell .rankingTableScroll::-webkit-scrollbar {
+  height: 8px;
+}
+
+.proDashboard.playAppShell .rankingTableScroll::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background: var(--ui-surface-muted);
+}
+
+.proDashboard.playAppShell .rankingTableScroll::-webkit-scrollbar-thumb {
+  border: 2px solid var(--ui-surface-muted);
+  border-radius: 999px;
+  background: var(--ui-active-accent);
+}
+
+.proDashboard.playAppShell .rankingTableScroll > .rankingTable {
+  width: 100% !important;
+  min-width: 640px !important;
+  max-width: none !important;
+  table-layout: auto !important;
+}
+
+.proDashboard.playAppShell .rankingTable th,
+.proDashboard.playAppShell .rankingTable td {
+  padding: 11px 12px !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+}
+
+.proDashboard.playAppShell .rankingTable .rankingRankCell {
+  width: 52px !important;
+  min-width: 52px !important;
+  text-align: center !important;
+}
+
+.proDashboard.playAppShell .rankingTable .rankingNameCell {
+  width: auto !important;
+  min-width: 190px !important;
+  padding-left: 14px !important;
+  text-align: left !important;
+  white-space: nowrap !important;
+}
+
+.proDashboard.playAppShell .rankingTable .rankingStatCell {
+  min-width: 96px !important;
+  line-height: 1.15 !important;
+  text-align: center !important;
+}
+
+/* Nomes neutros enquanto o placar está vazio ou incompleto. */
+.proDashboard .tournamentWorkspaceContent .schedule .gameTeams > div,
+.proDashboard .tournamentWorkspaceContent .bracketColumn .gameTeams > div {
+  position: relative !important;
+  min-height: 54px !important;
+  padding: 10px 14px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 14px !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text-strong) !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+  font-weight: 850 !important;
+  line-height: 1.3 !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  opacity: 1 !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameWaiting .gameTeams > div:first-child {
+  box-shadow: inset 4px 0 0 var(--ui-active-accent) !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameWaiting .gameTeams > div:last-child {
+  box-shadow: inset 4px 0 0 #f97316 !important;
+}
+
+/* Resultado preenchido: destaque sem perder contraste em nenhum tema. */
+.proDashboard .tournamentWorkspaceContent .gameFinished .gameTeams > div.winnerTeam {
+  border-color: color-mix(in srgb, #22c55e 52%, var(--ui-border)) !important;
+  background: color-mix(in srgb, #22c55e 13%, var(--ui-surface-raised)) !important;
+  color: #166534 !important;
+  box-shadow: inset 4px 0 0 #22c55e !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameFinished .gameTeams > div.loserTeam {
+  border-color: color-mix(in srgb, #ef4444 42%, var(--ui-border)) !important;
+  background: color-mix(in srgb, #ef4444 10%, var(--ui-surface-raised)) !important;
+  color: #991b1b !important;
+  box-shadow: inset 4px 0 0 #ef4444 !important;
+}
+
+.proDashboard.theme-dark .tournamentWorkspaceContent .gameFinished .gameTeams > div.winnerTeam {
+  border-color: rgba(74, 222, 128, 0.48) !important;
+  background: rgba(34, 197, 94, 0.14) !important;
+  color: #bbf7d0 !important;
+}
+
+.proDashboard.theme-dark .tournamentWorkspaceContent .gameFinished .gameTeams > div.loserTeam {
+  border-color: rgba(248, 113, 113, 0.46) !important;
+  background: rgba(239, 68, 68, 0.13) !important;
+  color: #fecaca !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameFinished .scoreRow input {
+  font-weight: 900 !important;
+}
+
+@media (max-width: 760px) {
+  .proDashboard.playAppShell .rankingScrollHint {
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 8px;
+    color: var(--ui-muted) !important;
+    font-size: 11px;
+    font-weight: 750;
+    line-height: 1.3;
+  }
+
+  .proDashboard.playAppShell .rankingTableScroll > .rankingTable {
+    min-width: 620px !important;
+  }
+
+  .proDashboard.playAppShell .rankingTable .rankingNameCell {
+    min-width: 170px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .proDashboard .tournamentWorkspaceContent .schedule .gameCard:not(.publicReadOnlyGame),
+  .proDashboard .tournamentWorkspaceContent .bracketColumn .gameCard {
+    grid-template-columns: minmax(0, 1fr) 52px !important;
+    grid-template-areas:
+      "top top"
+      "action action"
+      "team1 score1"
+      "team2 score2" !important;
+    min-height: 0 !important;
+    padding: 14px !important;
+    column-gap: 10px !important;
+    row-gap: 12px !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent .schedule .gameCard:not(.publicReadOnlyGame) .gameTeams > div,
+  .proDashboard .tournamentWorkspaceContent .bracketColumn .gameTeams > div {
+    min-height: 52px !important;
+    padding: 10px 12px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent .schedule .gameCard:not(.publicReadOnlyGame) .scoreRow,
+  .proDashboard .tournamentWorkspaceContent .bracketColumn .scoreRow {
+    display: contents !important;
+    min-width: 0 !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent .schedule .gameCard:not(.publicReadOnlyGame) .scoreRow > span,
+  .proDashboard .tournamentWorkspaceContent .bracketColumn .scoreRow > span {
+    display: none !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent .schedule .gameCard:not(.publicReadOnlyGame) .scoreRow input,
+  .proDashboard .tournamentWorkspaceContent .bracketColumn .scoreRow input {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    padding: 6px !important;
+    border-radius: 12px !important;
+    justify-self: stretch !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent .schedule .gameCard:not(.publicReadOnlyGame) .scoreRow input:first-of-type,
+  .proDashboard .tournamentWorkspaceContent .bracketColumn .scoreRow input:first-of-type {
+    grid-area: score1 !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent .schedule .gameCard:not(.publicReadOnlyGame) .scoreRow input:last-of-type,
+  .proDashboard .tournamentWorkspaceContent .bracketColumn .scoreRow input:last-of-type {
+    grid-area: score2 !important;
+  }
+}
