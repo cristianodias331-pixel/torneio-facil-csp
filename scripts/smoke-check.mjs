@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 
 const root = new URL("../", import.meta.url);
 const mainSource = readFileSync(new URL("src/main.jsx", root), "utf8");
+const styleSource = readFileSync(new URL("src/style.css", root), "utf8");
 const installSource = readFileSync(new URL("src/InstallAppBanner.jsx", root), "utf8");
 const indexSource = readFileSync(new URL("index.html", root), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("package.json", root), "utf8"));
@@ -46,10 +47,25 @@ const requiredApplicationMarkers = [
   'function confirmRankingFinal(',
   'function shareTournamentRanking(',
   'Ranking final confirmado',
+  'dashboardTitleActions',
+  'tournamentReferenceHeader',
+  'tournamentTableHeader',
 ];
 
 for (const marker of requiredApplicationMarkers) {
   assert.ok(mainSource.includes(marker), `Fluxo essencial ausente: ${marker}`);
+}
+
+for (const marker of [
+  "FIGMA MAKE — REPRODUÇÃO FIEL DO MODELO TORNEIO360",
+  "--ui-bg: #030b1f",
+  "--ui-surface: #081a33",
+  "--ui-surface-raised: #0d2344",
+  "--brand-cyan: #14a0ff",
+  "--brand-highlight: #ff7a00",
+  "font-family: Rajdhani, Inter",
+]) {
+  assert.ok(styleSource.includes(marker), `Detalhe visual do Figma ausente: ${marker}`);
 }
 
 assert.ok(indexSource.includes('src/main.jsx'), "A entrada React não está ligada ao index.html.");
