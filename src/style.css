@@ -16223,3 +16223,547 @@ html[data-theme="dark"] {
     animation: none;
   }
 }
+
+/* =========================================================
+   CONTRASTE ENTRE TEMAS E CIRCUITOS — AGOSTO 2026
+   Camada final: somente apresentação e interação visual.
+   ========================================================= */
+
+/* Rodadas, jogos e placares */
+.proDashboard .tournamentWorkspaceContent .roundCard {
+  overflow: hidden !important;
+  border: 1px solid var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+  box-shadow: var(--ui-shadow-soft) !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .roundHeader {
+  border-bottom: 1px solid var(--ui-border-soft) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .roundHeader h3 {
+  border: 1px solid color-mix(in srgb, var(--ui-active-accent) 34%, var(--ui-border)) !important;
+  background: var(--ui-active-bg) !important;
+  color: var(--ui-text-strong) !important;
+  text-shadow: none !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameCard {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameCard.gameWaiting,
+.proDashboard .tournamentWorkspaceContent .gameCard:not(.gameFinished) {
+  opacity: 1 !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameTeams > div,
+.proDashboard .tournamentWorkspaceContent .gameWaiting .gameTeams > div {
+  color: var(--ui-text-strong) !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameTeams > span,
+.proDashboard .tournamentWorkspaceContent .scoreRow > span {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .gameTopLine strong {
+  border-color: color-mix(in srgb, var(--brand-blue) 30%, var(--ui-border)) !important;
+  background: color-mix(in srgb, var(--brand-blue) 11%, var(--ui-surface-raised)) !important;
+  color: var(--brand-blue) !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .scoreRow input {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-input) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+/* Datas e horários */
+.proDashboard .eventScheduleBox,
+.proDashboard .dailyTimesBox,
+.proDashboard .categoryScheduleItem {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text) !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .eventScheduleHeader strong,
+.proDashboard .dailyTimesIntro strong,
+.proDashboard .eventScheduleGrid label,
+.proDashboard .dailyTimesGrid label,
+.proDashboard .categoryScheduleItem label {
+  color: var(--ui-text-strong) !important;
+  text-shadow: none !important;
+}
+
+.proDashboard .eventScheduleHeader strong svg,
+.proDashboard .dailyTimesIntro svg {
+  color: var(--ui-active-accent) !important;
+}
+
+.proDashboard .eventScheduleHeader span,
+.proDashboard .dailyTimesIntro span {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .eventScheduleBox input,
+.proDashboard .eventScheduleBox select,
+.proDashboard .dailyTimesBox input {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-input) !important;
+  color: var(--ui-text) !important;
+}
+
+/* Visão geral, pesquisa e perfis públicos das arenas */
+.proDashboard .playStatsGrid > div {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+}
+
+.proDashboard .playStatsGrid > div strong {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .playStatsGrid > div span {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .arenaFeedSection {
+  color: var(--ui-text) !important;
+}
+
+.proDashboard .arenaSearchRow {
+  align-items: stretch !important;
+}
+
+.proDashboard .arenaSearchBox,
+.proDashboard .platformSearchBox {
+  border: 1px solid var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  box-shadow: var(--ui-shadow-soft) !important;
+}
+
+.proDashboard .arenaSearchBox input,
+.proDashboard .platformSearchBox input {
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .arenaSearchBox > span,
+.proDashboard .platformSearchBox > span {
+  border-color: var(--ui-border-soft) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .arenaFeedCard,
+.proDashboard .arenaPublicPage,
+.proDashboard .arenaPublicTournamentCard {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+  box-shadow: var(--ui-shadow-soft) !important;
+}
+
+.proDashboard .arenaFeedCard > strong,
+.proDashboard .arenaPublicInfo h2,
+.proDashboard .arenaPublicTournamentCard strong,
+.proDashboard .arenaPublicPublicationsHeader strong,
+.proDashboard .arenaPublicLinksTitle {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .arenaFeedCard small,
+.proDashboard .arenaPublicInfo p,
+.proDashboard .arenaPublicInfo small,
+.proDashboard .arenaPublicTournamentCard small,
+.proDashboard .arenaPublicPublicationsHeader span {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .arenaPublicHero {
+  border-bottom-color: var(--ui-border) !important;
+}
+
+.proDashboard .arenaPublicDetailsGrid > div {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text) !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .arenaPublicDetailsGrid strong {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .arenaPublicDetailsGrid span {
+  color: var(--ui-text-strong) !important;
+  opacity: 1 !important;
+}
+
+.proDashboard .arenaPublicDetailsGrid svg {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .arenaFeedCover,
+.proDashboard .arenaPublicPhoto {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+}
+
+/* Circuitos */
+.proDashboard.playAppShell .circuitsCard {
+  overflow: visible !important;
+}
+
+.proDashboard .circuitsHeader {
+  align-items: flex-start !important;
+  padding-bottom: 18px !important;
+  border-bottom: 1px solid var(--ui-border-soft) !important;
+}
+
+.proDashboard .circuitsHeader h2,
+.proDashboard .circuitsList > h2,
+.proDashboard .circuitPickerTitle strong {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .circuitsHeader p,
+.proDashboard .circuitPickerTitle span {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .circuitsFormGrid,
+.proDashboard .circuitTournamentPicker {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text) !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .circuitTournamentOption {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+}
+
+.proDashboard .circuitTournamentOption.selected {
+  border-color: color-mix(in srgb, var(--ui-active-accent) 52%, var(--ui-border)) !important;
+  background: var(--ui-active-bg) !important;
+}
+
+.proDashboard .circuitTournamentText strong {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .circuitTournamentText small {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard.playAppShell .circuitsList,
+.proDashboard.playAppShell .circuitItem {
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.proDashboard.playAppShell .circuitItem {
+  overflow: hidden !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 18px !important;
+  background: var(--ui-surface-raised) !important;
+  box-shadow: var(--ui-shadow-soft) !important;
+}
+
+.proDashboard.playAppShell button.circuitItemSummary {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 18px !important;
+  width: 100% !important;
+  min-height: 112px !important;
+  margin: 0 !important;
+  padding: 18px 20px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--brand-blue) 8%, transparent), transparent 34%),
+    var(--ui-surface-muted) !important;
+  box-shadow: none !important;
+  color: var(--ui-text) !important;
+  text-align: left !important;
+}
+
+.proDashboard.playAppShell button.circuitItemSummary:hover {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--brand-blue) 12%, transparent), transparent 40%),
+    var(--ui-surface-muted) !important;
+  transform: none !important;
+}
+
+.proDashboard .circuitSummaryIdentity {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+  min-width: 0 !important;
+}
+
+.proDashboard .circuitMonogram {
+  display: grid !important;
+  place-items: center !important;
+  width: 54px !important;
+  min-width: 54px !important;
+  height: 54px !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 15px !important;
+  background: linear-gradient(145deg, #6d4aff, #8b5cf6) !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.04em !important;
+}
+
+.proDashboard .circuitItemMain {
+  display: grid !important;
+  min-width: 0 !important;
+  gap: 5px !important;
+}
+
+.proDashboard .circuitTitleLine {
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 9px !important;
+}
+
+.proDashboard .circuitTitleLine h3 {
+  margin: 0 !important;
+  color: var(--ui-text-strong) !important;
+  font-size: 18px !important;
+  line-height: 1.2 !important;
+}
+
+.proDashboard .circuitStatus {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: max-content !important;
+  padding: 4px 9px !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  font-size: 10px !important;
+  font-weight: 820 !important;
+  line-height: 1 !important;
+}
+
+.proDashboard .circuitStatus-active {
+  border-color: color-mix(in srgb, #8b5cf6 48%, var(--ui-border)) !important;
+  background: color-mix(in srgb, #8b5cf6 16%, var(--ui-surface-raised)) !important;
+  color: color-mix(in srgb, #8b5cf6 76%, var(--ui-text-strong)) !important;
+}
+
+.proDashboard.theme-dark .circuitStatus-active {
+  color: #c4b5fd !important;
+}
+
+.proDashboard .circuitStatus-closed {
+  border-color: color-mix(in srgb, #16a34a 42%, var(--ui-border)) !important;
+  background: color-mix(in srgb, #16a34a 14%, var(--ui-surface-raised)) !important;
+  color: #15803d !important;
+}
+
+.proDashboard.theme-dark .circuitStatus-closed {
+  color: #86efac !important;
+}
+
+.proDashboard .circuitItemMain p {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 !important;
+  color: var(--ui-text) !important;
+  font-size: 12px !important;
+}
+
+.proDashboard .circuitItemMain p svg {
+  width: 14px !important;
+  height: 14px !important;
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .circuitItemMain small {
+  overflow: hidden !important;
+  color: var(--ui-muted) !important;
+  font-size: 11px !important;
+  line-height: 1.35 !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.proDashboard .circuitExpandIcon {
+  display: grid !important;
+  place-items: center !important;
+  width: 40px !important;
+  min-width: 40px !important;
+  height: 40px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 12px !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text-strong) !important;
+  transition: transform 180ms ease !important;
+}
+
+.proDashboard .circuitExpandIcon svg {
+  width: 19px !important;
+  height: 19px !important;
+  stroke-width: 2.2 !important;
+}
+
+.proDashboard .circuitItem.expanded .circuitExpandIcon {
+  background: var(--ui-active-bg) !important;
+  color: var(--ui-active-accent) !important;
+  transform: rotate(180deg) !important;
+}
+
+.proDashboard.playAppShell .circuitItem > .circuitRankingBox,
+.proDashboard.playAppShell .circuitItem > .circuitRankingEmpty {
+  width: auto !important;
+  margin: 16px 18px 0 !important;
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+}
+
+.proDashboard.playAppShell .circuitItemActions {
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 9px !important;
+  width: auto !important;
+  margin: 16px 18px 18px !important;
+  padding: 14px 0 0 !important;
+  border-top: 1px solid var(--ui-border-soft) !important;
+  background: transparent !important;
+}
+
+/* Modais de circuito */
+.proDashboard .editTournamentOverlay,
+.proDashboard .confirmOverlay {
+  z-index: 20000 !important;
+}
+
+.proDashboard .editTournamentHeader h2 {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .editTournamentHeader p {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .circuitEditModal {
+  width: min(880px, calc(100vw - 32px)) !important;
+  max-width: 880px !important;
+  max-height: min(860px, calc(100vh - 40px)) !important;
+  overflow-y: auto !important;
+}
+
+.proDashboard .modalEyebrow,
+.proDashboard .confirmEyebrow {
+  display: block !important;
+  margin-bottom: 5px !important;
+  color: var(--ui-active-accent) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.proDashboard .circuitEditGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.proDashboard .circuitEditTournamentPicker {
+  margin-top: 18px !important;
+}
+
+.proDashboard .confirmBox {
+  border: 1px solid var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+  box-shadow: var(--ui-shadow) !important;
+}
+
+.proDashboard .confirmBox h2 {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .confirmBox p {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .circuitDeleteConfirmBox .confirmIcon {
+  display: grid !important;
+  place-items: center !important;
+  width: 52px !important;
+  height: 52px !important;
+  border: 1px solid var(--danger-border) !important;
+  border-radius: 15px !important;
+  background: var(--danger-bg) !important;
+  color: var(--danger-text) !important;
+}
+
+.proDashboard .circuitDeleteConfirmBox .confirmIcon svg {
+  width: 23px !important;
+  height: 23px !important;
+}
+
+@media (max-width: 720px) {
+  .proDashboard.playAppShell button.circuitItemSummary {
+    align-items: flex-start !important;
+    min-height: 0 !important;
+    padding: 16px !important;
+  }
+
+  .proDashboard .circuitSummaryIdentity {
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+
+  .proDashboard .circuitMonogram {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
+  }
+
+  .proDashboard .circuitItemMain small {
+    white-space: normal !important;
+  }
+
+  .proDashboard .circuitExpandIcon {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+  }
+
+  .proDashboard.playAppShell .circuitItemActions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .proDashboard.playAppShell .circuitItemActions button {
+    width: 100% !important;
+  }
+
+  .proDashboard .circuitEditGrid {
+    grid-template-columns: 1fr !important;
+  }
+}

@@ -518,6 +518,10 @@ function getModalityDisplayName(type) {
   return modalityDisplayNames[type] || type;
 }
 
+function normalizeCircuitStatus(status) {
+  return status === "closed" || status === "archived" ? "closed" : "active";
+}
+
 const allowedByPlan = {
   basic: [
     "Super 08",
@@ -2615,6 +2619,28 @@ function ConfirmModal({ target, onCancel, onConfirm }) {
   );
 }
 
+function ConfirmCircuitDeleteModal({ target, onCancel, onConfirm }) {
+  if (!target) return null;
+
+  return (
+    <div className="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="delete-circuit-title">
+      <div className="confirmBox circuitDeleteConfirmBox">
+        <div className="confirmIcon"><Trash2 aria-hidden="true" /></div>
+        <span className="confirmEyebrow">Excluir circuito</span>
+        <h2 id="delete-circuit-title">Deseja excluir “{target.name}”?</h2>
+        <p>
+          O circuito será removido, mas todos os torneios vinculados continuarão salvos normalmente.
+        </p>
+
+        <div className="confirmActions">
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Manter circuito</button>
+          <button type="button" className="deleteBtn" onClick={onConfirm}>Excluir circuito</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ConfirmClearScoresModal({ open, onCancel, onConfirm }) {
   if (!open) return null;
 
@@ -4124,7 +4150,9 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const [circuits, setCircuits] = useState([]);
-  const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
+  const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "active", tournamentIds: [] });
+  const [circuitEditForm, setCircuitEditForm] = useState(null);
+  const [circuitDeleteTarget, setCircuitDeleteTarget] = useState(null);
   const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
   const [expandedCircuitId, setExpandedCircuitId] = useState(null);
   const [restoredTournamentId, setRestoredTournamentId] = useState(null);
@@ -4581,7 +4609,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       name: row.name || "",
       startDate: row.start_date || "",
       endDate: row.end_date || "",
-      status: row.status || "draft",
+      status: normalizeCircuitStatus(row.status),
       tournamentIds: Array.isArray(row.tournament_ids) ? row.tournament_ids : [],
       rankingHistory: row.rankingHistory || {},
       updatedAt: row.updated_at,
@@ -4704,11 +4732,13 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   function resetCircuitForm() {
-    setCircuitForm({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
+    setCircuitForm({ id: null, name: "", startDate: "", endDate: "", status: "active", tournamentIds: [] });
   }
 
-  function toggleCircuitTournament(tournamentId) {
-    setCircuitForm((prev) => {
+  function toggleCircuitTournament(tournamentId, editing = false) {
+    const updateForm = editing ? setCircuitEditForm : setCircuitForm;
+    updateForm((prev) => {
+      if (!prev) return prev;
       const selected = prev.tournamentIds.includes(tournamentId);
       return {
         ...prev,
@@ -4719,29 +4749,31 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     });
   }
 
-  async function saveCircuit() {
-    if (!circuitForm.name.trim()) {
+  async function saveCircuit(form = circuitForm) {
+    if (!form?.name.trim()) {
       showNotice("warning", "Nome obrigatório", "Digite um nome para o circuito.");
       return;
     }
 
-    if (circuitForm.startDate && circuitForm.endDate && circuitForm.endDate < circuitForm.startDate) {
+    if (form.startDate && form.endDate && form.endDate < form.startDate) {
       showNotice("warning", "Período inválido", "A data final não pode ser anterior à data inicial.");
       return;
     }
 
+    const isEditing = Boolean(form.id);
+
     const rowPayload = {
       user_id: user.id,
-      name: circuitForm.name.trim(),
-      start_date: circuitForm.startDate || null,
-      end_date: circuitForm.endDate || null,
-      status: circuitForm.status || "draft",
-      tournament_ids: circuitForm.tournamentIds || [],
+      name: form.name.trim(),
+      start_date: form.startDate || null,
+      end_date: form.endDate || null,
+      status: normalizeCircuitStatus(form.status),
+      tournament_ids: form.tournamentIds || [],
       updated_at: new Date().toISOString(),
     };
 
-    const query = circuitForm.id
-      ? supabase.from("circuits").update(rowPayload).eq("id", circuitForm.id).eq("user_id", user.id).select("*").single()
+    const query = isEditing
+      ? supabase.from("circuits").update(rowPayload).eq("id", form.id).eq("user_id", user.id).select("*").single()
       : supabase.from("circuits").insert(rowPayload).select("*").single();
 
     const { data, error } = await query;
@@ -4758,30 +4790,31 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const updatedHistory = buildCircuitRankingHistory(payloadWithHistory);
     const finalPayload = { ...payloadWithHistory, rankingHistory: updatedHistory };
 
-    const nextCircuits = circuitForm.id
-      ? circuits.map((item) => item.id === circuitForm.id ? finalPayload : item)
+    const nextCircuits = isEditing
+      ? circuits.map((item) => item.id === form.id ? finalPayload : item)
       : [finalPayload, ...circuits];
 
     saveCircuits(nextCircuits);
     await saveCircuitHistoryToSupabase(finalPayload.id, finalPayload.rankingHistory);
-    resetCircuitForm();
-    showNotice("success", circuitForm.id ? "Circuito atualizado" : "Circuito criado", "As alterações foram salvas no Supabase.");
+    if (isEditing) setCircuitEditForm(null);
+    else resetCircuitForm();
+    showNotice("success", isEditing ? "Circuito atualizado" : "Circuito criado", "As alterações foram salvas no Supabase.");
   }
 
   function editCircuit(circuit) {
-    setCircuitForm({
+    setCircuitEditForm({
       id: circuit.id,
       name: circuit.name || "",
       startDate: circuit.startDate || "",
       endDate: circuit.endDate || "",
-      status: circuit.status || "draft",
+      status: normalizeCircuitStatus(circuit.status),
       tournamentIds: Array.isArray(circuit.tournamentIds) ? circuit.tournamentIds : [],
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  async function deleteCircuit(circuitId) {
-    if (!window.confirm("Excluir este circuito? Os torneios não serão apagados.")) return;
+  async function deleteCircuit() {
+    if (!circuitDeleteTarget) return;
+    const circuitId = circuitDeleteTarget.id;
     const { error } = await supabase
       .from("circuits")
       .delete()
@@ -4795,7 +4828,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     saveCircuits(circuits.filter((item) => item.id !== circuitId));
-    if (circuitForm.id === circuitId) resetCircuitForm();
+    if (circuitEditForm?.id === circuitId) setCircuitEditForm(null);
+    setCircuitDeleteTarget(null);
     showNotice("success", "Circuito excluído", "O circuito foi removido do Supabase. Os torneios continuam salvos.");
   }
 
@@ -5958,6 +5992,12 @@ setNewPublicInfo({
         onConfirm={confirmDeleteTournament}
       />
 
+      <ConfirmCircuitDeleteModal
+        target={circuitDeleteTarget}
+        onCancel={() => setCircuitDeleteTarget(null)}
+        onConfirm={deleteCircuit}
+      />
+
       {shareTarget ? (
         <div className="editTournamentOverlay" role="dialog" aria-modal="true">
           <div className="editTournamentModal shareTournamentModal">
@@ -6071,6 +6111,75 @@ setNewPublicInfo({
             <div className="editTournamentActions">
               <button type="button" className="cancelBtn" onClick={() => { setEditTarget(null); setEditForm(null); }}>Cancelar</button>
               <button type="button" onClick={saveEditedTournament}>Salvar alterações</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {circuitEditForm ? (
+        <div className="editTournamentOverlay" role="dialog" aria-modal="true" aria-labelledby="edit-circuit-title">
+          <div className="editTournamentModal circuitEditModal">
+            <div className="editTournamentHeader">
+              <div>
+                <span className="modalEyebrow">Circuitos</span>
+                <h2 id="edit-circuit-title">Editar circuito</h2>
+                <p>Atualize os dados e os torneios vinculados sem sair desta tela.</p>
+              </div>
+              <button type="button" className="secondaryBtn" onClick={() => setCircuitEditForm(null)}>Fechar</button>
+            </div>
+
+            <div className="editTournamentGrid circuitEditGrid">
+              <div className="formField fullField">
+                <label>Nome do circuito</label>
+                <input value={circuitEditForm.name} onChange={(e) => setCircuitEditForm((prev) => ({ ...prev, name: e.target.value }))} placeholder="Ex: Circuito Verão" />
+              </div>
+              <div className="formField">
+                <label>Data inicial</label>
+                <input className="clickableDateInput" type="date" value={circuitEditForm.startDate} onClick={openDatePicker} onFocus={openDatePicker} onChange={(e) => setCircuitEditForm((prev) => ({ ...prev, startDate: e.target.value }))} />
+              </div>
+              <div className="formField">
+                <label>Data final</label>
+                <input className="clickableDateInput" type="date" value={circuitEditForm.endDate} min={circuitEditForm.startDate || undefined} onClick={openDatePicker} onFocus={openDatePicker} onChange={(e) => setCircuitEditForm((prev) => ({ ...prev, endDate: e.target.value }))} />
+              </div>
+              <div className="formField fullField">
+                <label>Status</label>
+                <select value={circuitEditForm.status} onChange={(e) => setCircuitEditForm((prev) => ({ ...prev, status: e.target.value }))}>
+                  <option value="active">Em andamento</option>
+                  <option value="closed">Encerrado</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="circuitTournamentPicker circuitEditTournamentPicker">
+              <div className="circuitPickerTitle">
+                <strong>Torneios deste circuito</strong>
+                <span>{circuitEditForm.tournamentIds.length} selecionado(s)</span>
+              </div>
+              {tournaments.length === 0 ? (
+                <p>Nenhum torneio criado ainda.</p>
+              ) : (
+                <div className="circuitTournamentList">
+                  {tournaments.map((t) => {
+                    const details = t.data || {};
+                    const checked = circuitEditForm.tournamentIds.includes(t.id);
+                    return (
+                      <label className={`circuitTournamentOption ${checked ? "selected" : ""}`} key={t.id}>
+                        <input type="checkbox" checked={checked} onChange={() => toggleCircuitTournament(t.id, true)} />
+                        <span className="circuitCheckVisual">{checked ? "✓" : ""}</span>
+                        <span className="circuitTournamentText">
+                          <strong>{details.eventName || t.name}</strong>
+                          <small>{[t.name, getModalityDisplayName(t.type), details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="editTournamentActions">
+              <button type="button" className="secondaryBtn" onClick={() => setCircuitEditForm(null)}>Cancelar</button>
+              <button type="button" onClick={() => saveCircuit(circuitEditForm)}>Salvar alterações</button>
             </div>
           </div>
         </div>
@@ -6606,10 +6715,9 @@ setNewPublicInfo({
   <section className="card circuitsCard">
     <div className="circuitsHeader">
       <div>
-        <h2>{circuitForm.id ? "Editar circuito" : "Novo circuito"}</h2>
+        <h2>Novo circuito</h2>
         <p>Crie períodos flexíveis e escolha manualmente quais torneios entram. Isso não altera os torneios já criados.</p>
       </div>
-      {circuitForm.id ? <button type="button" className="secondaryBtn" onClick={resetCircuitForm}>Novo circuito</button> : null}
     </div>
 
     <div className="circuitsFormGrid">
@@ -6628,10 +6736,8 @@ setNewPublicInfo({
       <div className="formField">
         <label>Status</label>
         <select value={circuitForm.status} onChange={(e) => setCircuitForm((prev) => ({ ...prev, status: e.target.value }))}>
-          <option value="draft">Rascunho</option>
           <option value="active">Em andamento</option>
           <option value="closed">Encerrado</option>
-          <option value="archived">Arquivado</option>
         </select>
       </div>
     </div>
@@ -6664,8 +6770,7 @@ setNewPublicInfo({
     </div>
 
     <div className="circuitFormActions">
-      <button type="button" onClick={saveCircuit}>{circuitForm.id ? "Salvar alterações" : "Criar circuito"}</button>
-      {circuitForm.id ? <button type="button" className="cancelBtn" onClick={resetCircuitForm}>Cancelar edição</button> : null}
+      <button type="button" onClick={() => saveCircuit()}>Criar circuito</button>
     </div>
 
     <div className="circuitsList">
@@ -6674,23 +6779,33 @@ setNewPublicInfo({
         <p>Nenhum circuito criado ainda.</p>
       ) : circuits.map((circuit) => {
         const selectedNames = getCircuitSelectedTournaments(circuit);
+        const circuitStatus = normalizeCircuitStatus(circuit.status);
+        const isExpanded = expandedCircuitId === circuit.id;
         return (
-          <article className={`circuitItem ${expandedCircuitId === circuit.id ? "expanded" : ""}`} key={circuit.id}>
+          <article className={`circuitItem ${isExpanded ? "expanded" : ""}`} key={circuit.id}>
             <button
               type="button"
               className="circuitItemSummary"
-              onClick={() => { const nextId = expandedCircuitId === circuit.id ? null : circuit.id; setExpandedCircuitId(nextId); scheduleUserAppStateSave({ circuitId: nextId, activePanel: "circuitos" }); }}
+              aria-expanded={isExpanded}
+              onClick={() => { const nextId = isExpanded ? null : circuit.id; setExpandedCircuitId(nextId); scheduleUserAppStateSave({ circuitId: nextId, activePanel: "circuitos" }); }}
             >
-              <div className="circuitItemMain">
-                <span>{circuit.status === "active" ? "Em andamento" : circuit.status === "closed" ? "Encerrado" : circuit.status === "archived" ? "Arquivado" : "Rascunho"}</span>
-                <h3>{circuit.name}</h3>
-                <p>{circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} até {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim definido"}</p>
-                <small>{selectedNames.length} torneio(s): {selectedNames.length ? selectedNames.map((t) => t.data?.eventName || t.name).join(", ") : "nenhum selecionado"}</small>
+              <div className="circuitSummaryIdentity">
+                <span className="circuitMonogram">CIR</span>
+                <div className="circuitItemMain">
+                  <div className="circuitTitleLine">
+                    <h3>{circuit.name}</h3>
+                    <span className={`circuitStatus circuitStatus-${circuitStatus}`}>
+                      {circuitStatus === "closed" ? "Encerrado" : "Em andamento"}
+                    </span>
+                  </div>
+                  <p><CalendarDays aria-hidden="true" /> {circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} até {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim definido"}</p>
+                  <small>{selectedNames.length} torneio(s) · {selectedNames.length ? selectedNames.map((t) => t.data?.eventName || t.name).join(", ") : "nenhum selecionado"}</small>
+                </div>
               </div>
-              <strong className="circuitExpandIcon">{expandedCircuitId === circuit.id ? "−" : "+"}</strong>
+              <span className="circuitExpandIcon" aria-hidden="true"><ChevronDown /></span>
             </button>
 
-            {expandedCircuitId === circuit.id ? (() => {
+            {isExpanded ? (() => {
               const circuitRankingGroups = getCircuitRanking(circuit);
               return circuitRankingGroups.length ? (
                 <div className="circuitRankingBox">
@@ -6746,10 +6861,12 @@ setNewPublicInfo({
               ) : null;
             })() : null}
 
-            <div className="circuitItemActions">
-              <button type="button" className="editBtn" onClick={() => editCircuit(circuit)}>Editar</button>
-              <button type="button" className="deleteBtn" onClick={() => deleteCircuit(circuit.id)}>Excluir</button>
-            </div>
+            {isExpanded ? (
+              <div className="circuitItemActions">
+                <button type="button" className="editBtn" onClick={() => editCircuit(circuit)}>Editar circuito</button>
+                <button type="button" className="deleteBtn" onClick={() => setCircuitDeleteTarget(circuit)}>Excluir circuito</button>
+              </div>
+            ) : null}
           </article>
         );
       })}
