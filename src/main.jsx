@@ -460,6 +460,13 @@ function isEmailNotConfirmedError(error) {
   return /email[^\n]*not[^\n]*confirm|not[^\n]*confirm[^\n]*email|email_not_confirmed/i.test(`${error?.message || ""} ${error?.code || ""}`);
 }
 
+function isUserAlreadyRegisteredError(error) {
+  const code = String(error?.code || "").toLowerCase();
+  if (code === "user_already_exists" || code === "email_exists") return true;
+
+  return /user\s+already\s+registered|user[^\n]*already[^\n]*exists|email[^\n]*already[^\n]*exists/i.test(String(error?.message || ""));
+}
+
 function getAuthErrorMessage(error, fallback) {
   const message = `${error?.message || ""} ${error?.code || ""}`.toLowerCase();
 
@@ -3495,6 +3502,23 @@ function Login({
 
       if (error) {
         console.error(error);
+
+        if (isUserAlreadyRegisteredError(error)) {
+          setFirstName("");
+          setLastName("");
+          setBirthDate("");
+          setPassword("");
+          setConfirmPassword("");
+          setPendingVerificationEmail("");
+          setMode("login");
+          showNotice(
+            "warning",
+            "Este e-mail já possui uma conta",
+            "Digite sua senha para entrar. Se não lembrar, clique em “Esqueci minha senha?”."
+          );
+          return;
+        }
+
         showNotice("error", "Cadastro não concluído", getAuthErrorMessage(error, "Verifique os dados e tente novamente."));
         return;
       }
