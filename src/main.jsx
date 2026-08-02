@@ -41,11 +41,13 @@ import {
   X,
 } from "lucide-react";
 import InstallAppBanner from "./InstallAppBanner.jsx";
+import AthleteDashboard from "./AthleteDashboard.jsx";
 import "./style.css";
 import "./figma-complete.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
+const IS_ATHLETE_LINK_ROUTE = new URLSearchParams(window.location.search).has("vincular-atleta");
 const PLATFORM_SUPPORT = Object.freeze([
   {
     id: "whatsapp",
@@ -76,12 +78,41 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
+    // O fluxo de vínculo usa uma sessão isolada para não desconectar o
+    // organizador que abriu a nova aba.
+    detectSessionInUrl: !IS_ATHLETE_LINK_ROUTE,
   },
 });
+const athleteLinkSupabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false,
+    storageKey: "torneio360-athlete-link-auth",
+  },
+});
+const ATHLETE_LINK_RESULT_PREFIX = "torneio360:athlete-link-result:";
+const ATHLETE_PROFILE_DRAFT_PREFIX = "torneio360:athlete-profile:";
+const ACCOUNT_TYPE_ORGANIZER = "organizer";
+const ACCOUNT_TYPE_ORGANIZER_PENDING = "organizer_pending";
+const ACCOUNT_TYPE_ATHLETE = "athlete";
 const TORNEIO360_LOGO = "/torneio360-logo.png";
 const TORNEIO360_LOGO_BLUE = "/torneio360-logo-blue.png";
 const TORNEIO360_TAGLINE = "Gestão inteligente de torneios";
+
+function getUserAccountType(user) {
+  const trustedRole = user?.app_metadata?.role;
+  if (trustedRole === ACCOUNT_TYPE_ATHLETE) return ACCOUNT_TYPE_ATHLETE;
+  if (trustedRole === ACCOUNT_TYPE_ORGANIZER || trustedRole === ACCOUNT_TYPE_ORGANIZER_PENDING) {
+    return ACCOUNT_TYPE_ORGANIZER;
+  }
+
+  // Sem um papel emitido pelo servidor, a interface nunca promove a conta
+  // para organizador. O metadata editável pelo usuário só pode restringir o
+  // acesso durante a migração de contas antigas.
+  if (user?.user_metadata?.account_type === ACCOUNT_TYPE_ATHLETE) return ACCOUNT_TYPE_ATHLETE;
+  return null;
+}
 
 async function logout() {
   try {
@@ -745,6 +776,18 @@ function isCupType(config) {
   return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha";
 }
 
+function getCupGroupCount(config, teamCount) {
+  const groupSize = Math.max(1, Number(config?.groupSize) || 3);
+  return Math.max(0, Math.floor((Number(teamCount) || 0) / groupSize));
+}
+
+function formatCupGroupOption(config, teamCount) {
+  const groupCount = getCupGroupCount(config, teamCount);
+  const groupLabel = groupCount === 1 ? "grupo" : "grupos";
+  const teamLabel = Number(teamCount) === 1 ? "dupla" : "duplas";
+  return `${groupCount} ${groupLabel} · ${teamCount} ${teamLabel}`;
+}
+
 const super8Template = [
   [[[1, 2], [3, 4]], [[5, 6], [7, 8]]],
   [[[1, 3], [6, 8]], [[2, 4], [5, 7]]],
@@ -926,10 +969,11 @@ function createCupGroups(teamCount) {
   return groups;
 }
 
-function generateCupGroupSchedule(players, cupConfig) {
+function generateCupGroupSchedule(players, cupConfig, configuredCourts = 4) {
   const teamCount = cupConfig.teamCount || 12;
   const groups = createCupGroups(teamCount);
   const teamNames = players.teams.map((t) => getTeamName(t));
+  const courtCount = Math.max(1, Math.floor(Number(configuredCourts) || 1));
 
   const roundTemplates = [
     [0, 1],
@@ -948,7 +992,7 @@ function generateCupGroupSchedule(players, cupConfig) {
         phase: "groups",
         groupId: group.id,
         groupName: group.name,
-        court: groupIndex + 1,
+        court: ((groupIndex + roundIndex) % courtCount) + 1,
         team1: [teamNames[id1]],
         ids1: [id1],
         team2: [teamNames[id2]],
@@ -959,12 +1003,7 @@ function generateCupGroupSchedule(players, cupConfig) {
     });
   });
 
-  return rounds.map((round) =>
-    round.map((game, index) => ({
-      ...game,
-      court: index + 1,
-    }))
-  );
+  return rounds;
 }
 
 function getCupFormat(data) {
@@ -2898,6 +2937,13 @@ function App() {
     setSession((current) => (current ? { ...current, user: data.user } : current));
     activeUserIdRef.current = data.user.id;
 
+    const accountType = getUserAccountType(data.user);
+    if (accountType !== ACCOUNT_TYPE_ORGANIZER) {
+      setProfile(null);
+      setLoading(false);
+      return null;
+    }
+
     setLoading(true);
     const nextProfile = await loadProfile(data.user.id, { waitForAccess: true });
     setLoading(false);
@@ -2938,8 +2984,14 @@ function App() {
       const { data } = await supabase.auth.getSession();
       if (!active) return;
 
-      setSession(data.session);
-      activeUserIdRef.current = data.session?.user?.id || null;
+      let currentSession = data.session;
+      if (currentSession?.user && !getUserAccountType(currentSession.user)) {
+        const { data: currentUserData } = await supabase.auth.getUser();
+        if (currentUserData?.user) currentSession = { ...currentSession, user: currentUserData.user };
+      }
+
+      setSession(currentSession);
+      activeUserIdRef.current = currentSession?.user?.id || null;
 
       // A recuperação tem prioridade sobre qualquer Dashboard: o token desse
       // link só pode ser usado para trocar a senha.
@@ -2948,13 +3000,13 @@ function App() {
         return;
       }
 
-      if (data.session?.user?.id) {
-        await loadProfile(data.session.user.id, { waitForAccess: true });
+      if (currentSession?.user?.id && getUserAccountType(currentSession.user) === ACCOUNT_TYPE_ORGANIZER) {
+        await loadProfile(currentSession.user.id, { waitForAccess: true });
       }
 
       if (!active) return;
 
-      if (callbackFlow === "confirm" && data.session?.user?.email_confirmed_at) {
+      if (callbackFlow === "confirm" && currentSession?.user?.email_confirmed_at) {
         clearAuthCallbackUrl();
         setAuthFlow(null);
       }
@@ -2994,7 +3046,9 @@ function App() {
 
       if (isSameUser) {
         if (event === "USER_UPDATED") {
-          await loadProfile(nextUserId, { waitForAccess: true });
+          if (getUserAccountType(newSession?.user) === ACCOUNT_TYPE_ORGANIZER) {
+            await loadProfile(nextUserId, { waitForAccess: true });
+          }
 
           if (getAuthFlowFromLocation() === "confirm" && newSession?.user?.email_confirmed_at) {
             clearAuthCallbackUrl();
@@ -3005,7 +3059,11 @@ function App() {
       }
 
       setLoading(true);
-      await loadProfile(nextUserId, { waitForAccess: true });
+      if (getUserAccountType(newSession?.user) !== ACCOUNT_TYPE_ORGANIZER) {
+        setProfile(null);
+      } else {
+        await loadProfile(nextUserId, { waitForAccess: true });
+      }
 
       if (!active) return;
 
@@ -3062,6 +3120,16 @@ function App() {
         initialNotice={authCallbackError || authNotice}
       />
     );
+  }
+
+  const accountType = getUserAccountType(session.user);
+
+  if (accountType === ACCOUNT_TYPE_ATHLETE) {
+    return <AthleteDashboard user={session.user} supabase={supabase} onLogout={logout} logoSrc={TORNEIO360_LOGO} />;
+  }
+
+  if (accountType !== ACCOUNT_TYPE_ORGANIZER) {
+    return <ProfileUnavailable onRetry={refreshProfile} />;
   }
 
   if (!profile) {
@@ -3155,7 +3223,7 @@ function FigmaPublicHome({ onNavigate, onLogin, onSignup }) {
 
     async function loadPublicPortalData() {
       const [tournamentResult, arenaResult] = await Promise.all([
-        supabase.from("tournaments").select("*").eq("is_public", true).order("created_at", { ascending: false }).limit(3),
+        supabase.rpc("list_public_tournaments", { p_limit: 3 }),
         supabase.from("profiles").select("id, name, arena_name, city, state, photo_url, is_public").eq("is_public", true).order("arena_name", { ascending: true }).limit(4),
       ]);
 
@@ -3398,7 +3466,8 @@ function Login({
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [mode, setMode] = useState(initialMode);
+  const [mode, setMode] = useState(() => window.location.pathname.toLowerCase() === "/cadastro" ? "signup" : initialMode);
+  const [accountType, setAccountType] = useState(ACCOUNT_TYPE_ATHLETE);
   const [notice, setNotice] = useState(() => {
     if (!initialNotice) return null;
     return typeof initialNotice === "string"
@@ -3661,6 +3730,7 @@ function Login({
             first_name: firstName.trim(),
             last_name: lastName.trim(),
             birth_date: birthDate,
+            account_type: accountType,
           },
         },
       });
@@ -3681,8 +3751,12 @@ function Login({
         "success",
         confirmationRequired || existingAccountResponse ? "Confira seu e-mail" : "Conta criada",
         confirmationRequired || existingAccountResponse
-          ? "Se este endereço puder receber confirmações, enviamos um link. Abra-o para ativar sua conta e iniciar os 7 dias grátis."
-          : "Sua conta foi criada e os 7 dias grátis do plano Premium já estão ativos."
+          ? accountType === ACCOUNT_TYPE_ATHLETE
+            ? "Enviamos um link de confirmação. Abra-o para ativar gratuitamente seu perfil de atleta."
+            : "Enviamos um link de confirmação. Abra-o para ativar sua conta de organizador e iniciar o período de avaliação."
+          : accountType === ACCOUNT_TYPE_ATHLETE
+            ? "Seu perfil gratuito de atleta foi criado."
+            : "Sua conta de organizador foi criada e o período de avaliação já está ativo."
       );
     } catch (error) {
       console.error(error);
@@ -3704,9 +3778,29 @@ function Login({
         <section className="figmaAuthCard" aria-labelledby="figma-auth-title">
           <div className="figmaAuthIcon" aria-hidden="true"><Trophy /></div>
           <h1 id="figma-auth-title">
-            {mode === "login" ? "Entrar no Torneio360" : mode === "signup" ? "Criar perfil gratuito" : mode === "forgotPassword" ? "Recuperar senha" : "Criar nova senha"}
+            {mode === "login" ? "Entrar no Torneio360" : mode === "signup" ? "Escolha o seu perfil" : mode === "forgotPassword" ? "Recuperar senha" : "Criar nova senha"}
           </h1>
-          <p>{mode === "login" ? "Acesse sua conta para gerenciar seu perfil esportivo ou seus torneios." : mode === "signup" ? "Crie sua conta e organize seus torneios em um só lugar." : mode === "forgotPassword" ? "Informe seu e-mail para receber o link de recuperação." : "Escolha uma nova senha segura para a sua conta."}</p>
+          <p>{mode === "login" ? "Acesse sua conta de organizador ou atleta." : mode === "signup" ? "Cada tipo de conta possui permissões próprias e seguras." : mode === "forgotPassword" ? "Informe seu e-mail para receber o link de recuperação." : "Escolha uma nova senha segura para a sua conta."}</p>
+
+          {mode === "signup" ? (
+            <div className="accountTypeChooser" role="tablist" aria-label="Tipo de perfil">
+              <button type="button" role="tab" aria-selected={accountType === ACCOUNT_TYPE_ORGANIZER} className={accountType === ACCOUNT_TYPE_ORGANIZER ? "active organizer" : "organizer"} onClick={() => setAccountType(ACCOUNT_TYPE_ORGANIZER)}>
+                <span className="accountTypeIcon" aria-hidden="true">{"\uD83C\uDFC6"}</span>
+                <strong>Organizador</strong>
+                <small>Versão paga · Gestão completa</small>
+              </button>
+              <button type="button" role="tab" aria-selected={accountType === ACCOUNT_TYPE_ATHLETE} className={accountType === ACCOUNT_TYPE_ATHLETE ? "active athlete" : "athlete"} onClick={() => setAccountType(ACCOUNT_TYPE_ATHLETE)}>
+                <span className="accountTypeIcon" aria-hidden="true">{"\uD83C\uDFBE"}</span>
+                <strong>Atleta</strong>
+                <small>Gratuito · Perfil e inscrições</small>
+              </button>
+              <div className="accountTypeDescription">
+                {accountType === ACCOUNT_TYPE_ORGANIZER
+                  ? "Crie e edite torneios, organize grupos, partidas, rankings e valide conquistas dos atletas."
+                  : "Monte seu perfil, escolha a privacidade, acompanhe resultados e inscreva-se em torneios publicados."}
+              </div>
+            </div>
+          ) : null}
 
           <form onSubmit={handleSubmit} noValidate>
             {mode === "signup" ? (
@@ -3737,7 +3831,7 @@ function Login({
             ) : null}
 
             <button type="submit" className="figmaAuthSubmit" disabled={submitting || (mode === "resetPassword" && !recoverySession?.access_token)}>
-              {submitting ? "Aguarde..." : mode === "login" ? "↪  Entrar na conta" : mode === "signup" ? "Criar perfil gratuito" : mode === "forgotPassword" ? "Enviar link" : "Salvar nova senha"}
+              {submitting ? "Aguarde..." : mode === "login" ? "↪  Entrar na conta" : mode === "signup" ? accountType === ACCOUNT_TYPE_ATHLETE ? "Criar perfil gratuito de atleta" : "Criar perfil de organizador" : mode === "forgotPassword" ? "Enviar link" : "Salvar nova senha"}
             </button>
             {(mode === "forgotPassword" || mode === "resetPassword") ? <button type="button" className="figmaAuthBack" onClick={() => changeMode("login")}>Voltar para o login</button> : null}
           </form>
@@ -5703,12 +5797,10 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setSelectedArenaTournaments([]);
     setSelectedArenaLoading(true);
 
-    const result = await supabase
-      .from("tournaments")
-      .select("*")
-      .eq("user_id", arena.id)
-      .eq("is_public", true)
-      .order("created_at", { ascending: false });
+    const result = await supabase.rpc("list_public_tournaments_by_organizer", {
+      p_organizer_id: arena.id,
+      p_limit: 200,
+    });
 
     setSelectedArenaLoading(false);
 
@@ -6357,6 +6449,7 @@ setNewPublicInfo({
                 key={selected.id}
                 tournament={selected}
                 userId={user.id}
+                organizerProfile={organizerProfile}
                 onBack={closeSelectedTournament}
                 onEdit={() => {
                   const tournamentToEdit = selected;
@@ -6988,13 +7081,13 @@ setNewPublicInfo({
 
   {isCupType(selectedNewTournamentConfig) && selectedNewTournamentConfig.allowedTeamCounts?.length > 1 ? (
     <div className="formField">
-      <label>Quantidade de duplas</label>
+      <label>Quantidade de grupos e duplas</label>
       <select value={newCupTeamCount} onChange={(e) => setNewCupTeamCount(Number(e.target.value))}>
         {selectedNewTournamentConfig.allowedTeamCounts.map((teamCount) => (
-          <option key={teamCount} value={teamCount}>{teamCount} duplas</option>
+          <option key={teamCount} value={teamCount}>{formatCupGroupOption(selectedNewTournamentConfig, teamCount)}</option>
         ))}
       </select>
-      <small>Essa escolha define 4 grupos para 12 duplas ou 8 grupos para 24 duplas.</small>
+      <small>Quantidade de duplas: {newCupTeamCount}. Cada grupo terá {selectedNewTournamentConfig.groupSize || 3} duplas.</small>
     </div>
   ) : null}
 
@@ -7869,6 +7962,10 @@ function createInitialData(type, config, requestedTeamCount = null) {
           b: `Atleta 2 da dupla ${i + 1}`,
         })),
       },
+      participantMeta: {
+        ...base.participantMeta,
+        teams: normalizeParticipantMetaList([], config.teams, { athleteCount: 2 }),
+      },
     };
   }
 
@@ -7895,7 +7992,7 @@ function createInitialData(type, config, requestedTeamCount = null) {
       },
       participantMeta: {
         ...base.participantMeta,
-        teams: normalizeParticipantMetaList([], teamCount),
+        teams: normalizeParticipantMetaList([], teamCount, { athleteCount: 2 }),
       },
       brackets: [],
     };
@@ -8040,7 +8137,7 @@ function normalizeTournamentData(type, rawData) {
       },
       participantMeta: {
         ...defaults.participantMeta,
-        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, teamCount),
+        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, teamCount, { athleteCount: 2 }),
       },
       brackets: normalizeBrackets(source.brackets),
       groupsShuffled: Boolean(source.groupsShuffled),
@@ -8070,7 +8167,7 @@ function normalizeTournamentData(type, rawData) {
       },
       participantMeta: {
         ...defaults.participantMeta,
-        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, config.teams),
+        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, config.teams, { athleteCount: 2 }),
       },
     };
   }
@@ -8090,6 +8187,20 @@ function needsTournamentDataRepair(type, rawData) {
   if (!config || !isTournamentDataObject(rawData) || !Array.isArray(rawData.schedule)) return true;
 
   const players = isTournamentDataObject(rawData.players) ? rawData.players : {};
+  const participantMeta = isTournamentDataObject(rawData.participantMeta) ? rawData.participantMeta : {};
+  const hasStableAthleteId = (value) => isTournamentDataObject(value)
+    && Boolean(String(value.memberId || value.member_id || "").trim());
+  const hasStableSinglesMeta = (values, count) => Array.isArray(values)
+    && values.length === count
+    && values.every((value) => hasStableAthleteId(value));
+  const hasStableTeamsMeta = (values, count) => Array.isArray(values)
+    && values.length === count
+    && values.every((value) => (
+      isTournamentDataObject(value)
+      && Array.isArray(value.athletes)
+      && value.athletes.length >= 2
+      && value.athletes.slice(0, 2).every((athlete) => hasStableAthleteId(athlete))
+    ));
 
   if (isCupType(config)) {
     const cupConfig = isTournamentDataObject(rawData.cupConfig) ? rawData.cupConfig : {};
@@ -8098,21 +8209,28 @@ function needsTournamentDataRepair(type, rawData) {
     return !Array.isArray(players.teams)
       || !config.allowedTeamCounts.includes(teamCount)
       || players.teams.length !== teamCount
-      || !Array.isArray(rawData.brackets);
+      || !Array.isArray(rawData.brackets)
+      || !hasStableTeamsMeta(participantMeta.teams, teamCount);
   }
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return !Array.isArray(players.men)
       || !Array.isArray(players.women)
       || players.men.length !== config.men
-      || players.women.length !== config.women;
+      || players.women.length !== config.women
+      || !hasStableSinglesMeta(participantMeta.men, config.men)
+      || !hasStableSinglesMeta(participantMeta.women, config.women);
   }
 
   if (config.type === "fixed12" || config.type === "fixed16") {
-    return !Array.isArray(players.teams) || players.teams.length !== config.teams;
+    return !Array.isArray(players.teams)
+      || players.teams.length !== config.teams
+      || !hasStableTeamsMeta(participantMeta.teams, config.teams);
   }
 
-  return !Array.isArray(rawData.players) || rawData.players.length !== config.total;
+  return !Array.isArray(rawData.players)
+    || rawData.players.length !== config.total
+    || !hasStableSinglesMeta(participantMeta.normal, config.total);
 }
 
 function getShuffleNames(data, config) {
@@ -8170,7 +8288,7 @@ class TournamentErrorBoundary extends React.Component {
   }
 }
 
-function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNavigationStateChange }) {
+function TournamentScreen({ tournament, userId, organizerProfile, onBack, onEdit, onSave, onNavigationStateChange }) {
   const config = getModalityConfig(tournament.type);
 
   if (!config) {
@@ -8204,9 +8322,14 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
   const [shareLoading, setShareLoading] = useState(false);
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantFilter, setParticipantFilter] = useState("all");
+  const [onlineRegistrations, setOnlineRegistrations] = useState([]);
+  const [onlineRegistrationsLoading, setOnlineRegistrationsLoading] = useState(true);
+  const [onlineRegistrationsAvailable, setOnlineRegistrationsAvailable] = useState(true);
+  const [onlineRegistrationsError, setOnlineRegistrationsError] = useState("");
+  const [reviewingRegistrationId, setReviewingRegistrationId] = useState(null);
   const [rankingView, setRankingView] = useState("general");
   const [rankingSearch, setRankingSearch] = useState("");
-  const [groupsConfigOpen, setGroupsConfigOpen] = useState(false);
+  const [groupsConfigOpen, setGroupsConfigOpen] = useState(() => isCupType(config));
 
   const [shareInfo, setShareInfo] = useState({
     public_id: tournament.public_id || null,
@@ -8271,15 +8394,97 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
     updateTournamentUrl({ activeMatchesTab: normalizedTab });
   }
 
+  function isMissingOnlineRegistrationResource(error, resourceName = "tournament_registrations") {
+    const code = String(error?.code || "");
+    const message = `${error?.message || ""} ${error?.details || ""}`.toLowerCase();
+    return ["42P01", "PGRST202", "PGRST204", "PGRST205"].includes(code)
+      || (message.includes(resourceName.toLowerCase()) && /does not exist|not found|schema cache|could not find/.test(message));
+  }
+
+  function normalizeOnlineRegistrationStatus(value) {
+    const status = String(value || "pending").toLowerCase();
+    return ["confirmed", "rejected"].includes(status) ? status : "pending";
+  }
+
+  async function loadOnlineRegistrations({ showLoading = true } = {}) {
+    if (!tournament?.id) return;
+    if (showLoading) setOnlineRegistrationsLoading(true);
+    setOnlineRegistrationsError("");
+
+    const registrationResult = await supabase
+      .from("tournament_registrations")
+      .select("*")
+      .eq("tournament_id", tournament.id)
+      .order("created_at", { ascending: false });
+
+    if (registrationResult.error) {
+      setOnlineRegistrationsLoading(false);
+      setOnlineRegistrations([]);
+
+      if (isMissingOnlineRegistrationResource(registrationResult.error)) {
+        setOnlineRegistrationsAvailable(false);
+        return;
+      }
+
+      console.error("Erro ao carregar inscrições online:", registrationResult.error);
+      setOnlineRegistrationsAvailable(true);
+      setOnlineRegistrationsError("Não foi possível atualizar as inscrições online agora.");
+      return;
+    }
+
+    const rows = Array.isArray(registrationResult.data) ? registrationResult.data : [];
+    const athleteIds = Array.from(new Set(rows.map((row) => row.athlete_user_id).filter(Boolean)));
+    let profilesByUserId = {};
+
+    if (athleteIds.length) {
+      const profileResult = await supabase
+        .from("athlete_profiles")
+        .select("user_id, display_name, photo_url, bio, is_public, show_achievements")
+        .in("user_id", athleteIds);
+
+      if (!profileResult.error) {
+        profilesByUserId = Object.fromEntries((profileResult.data || []).map((profileRow) => [profileRow.user_id, profileRow]));
+      } else if (!isMissingOnlineRegistrationResource(profileResult.error, "athlete_profiles")) {
+        console.error("Erro ao carregar perfis das inscrições online:", profileResult.error);
+      }
+    }
+
+    setOnlineRegistrations(rows.map((row) => ({
+      ...row,
+      status: normalizeOnlineRegistrationStatus(row.status),
+      athleteProfile: profilesByUserId[row.athlete_user_id] || null,
+    })));
+    setOnlineRegistrationsAvailable(true);
+    setOnlineRegistrationsLoading(false);
+  }
+
   useEffect(() => {
     updateTournamentUrl();
   }, []);
 
+  useEffect(() => {
+    void loadOnlineRegistrations();
+  }, [tournament.id]);
+
   const saveTimerRef = useRef(null);
+  const saveQueueRef = useRef(Promise.resolve());
   const latestDataRef = useRef(data);
   const firstRenderRef = useRef(true);
   const shuffleAnimationTimerRef = useRef(null);
   const shuffleCountdownTimerRef = useRef(null);
+  const appliedAthleteLinkRequestsRef = useRef(new Set());
+
+  function enqueueTournamentSave(nextData) {
+    const updatedTournament = { ...tournament, data: nextData };
+    const queuedSave = saveQueueRef.current
+      .catch(() => undefined)
+      .then(() => onSave(updatedTournament));
+
+    // Toda gravação desta tela respeita a ordem em que foi solicitada. Assim,
+    // uma edição nova nunca é sobrescrita pelo retorno tardio de um save antigo.
+    saveQueueRef.current = queuedSave.then(() => undefined, () => undefined);
+    return queuedSave;
+  }
 
   function clearShuffleTimers() {
     if (shuffleAnimationTimerRef.current) clearInterval(shuffleAnimationTimerRef.current);
@@ -8302,9 +8507,12 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
     confirmed: participantRecords.filter((record) => record.meta.registration === "confirmed").length,
     pending: participantRecords.filter((record) => record.meta.registration !== "confirmed").length,
   }), [participantRecords]);
+  const plannedCupGroupCount = isCupType(config)
+    ? getCupGroupCount(config, data.cupConfig?.teamCount || config.defaultTeams)
+    : 0;
 
   const cupGroupRankings = useMemo(
-    () => isCupType(config) && (data.groupsShuffled || data.schedule?.length > 0)
+    () => isCupType(config) && data.groupsShuffled
       ? calculateCupGroupRankings(data, data.rankingCriteria)
       : [],
     [data, config.type]
@@ -8345,7 +8553,7 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
 
     saveTimerRef.current = setTimeout(async () => {
-      const ok = await onSave({ ...tournament, data: latestDataRef.current });
+      const ok = await enqueueTournamentSave(latestDataRef.current);
       setSavingStatus(ok ? "Salvo automaticamente" : "Erro ao salvar");
     }, 500);
 
@@ -8361,7 +8569,7 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
 
     async function persistRecoveredData() {
       setSavingStatus("Recuperando dados...");
-      const ok = await onSave({ ...tournament, data });
+      const ok = await enqueueTournamentSave(data);
 
       if (!cancelled) {
         setSavingStatus(ok ? "Dados recuperados" : "Erro ao recuperar dados");
@@ -8545,7 +8753,7 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
         });
         copy.participantMeta = {
           ...(copy.participantMeta || {}),
-          teams: normalizeParticipantMetaList(copy.participantMeta?.teams, teamCount),
+          teams: normalizeParticipantMetaList(copy.participantMeta?.teams, teamCount, { athleteCount: 2 }),
         };
 
         copy.schedule = [];
@@ -8652,16 +8860,441 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
       const kind = path.kind === "team" ? "teams" : path.kind;
       copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
       copy.participantMeta[kind] = Array.isArray(copy.participantMeta[kind]) ? copy.participantMeta[kind] : [];
-      copy.participantMeta[kind][path.index] = {
+      const currentMeta = {
         payment: "pending",
         registration: "pending",
         profileLinked: false,
         ...(copy.participantMeta[kind][path.index] || {}),
         [field]: value,
       };
+      copy.participantMeta[kind][path.index] = kind === "teams"
+        ? normalizeParticipantMetaList([currentMeta], 1, { athleteCount: 2 })[0]
+        : currentMeta;
       return copy;
     });
   }
+
+  function updateAllParticipantRegistrations(registration) {
+    const nextRegistration = registration === "confirmed" ? "confirmed" : "pending";
+
+    setData((currentData) => {
+      const copy = structuredClone(currentData);
+      copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
+
+      const kinds = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16"
+        ? ["men", "women"]
+        : config.type === "fixed12" || config.type === "fixed16" || isCupType(config)
+          ? ["teams"]
+          : ["normal"];
+
+      kinds.forEach((kind) => {
+        const count = kind === "teams"
+          ? (copy.players?.teams || []).length
+          : kind === "men"
+            ? (copy.players?.men || []).length
+            : kind === "women"
+              ? (copy.players?.women || []).length
+              : (copy.players || []).length;
+        const normalized = normalizeParticipantMetaList(
+          copy.participantMeta[kind],
+          count,
+          kind === "teams" ? { athleteCount: 2 } : undefined
+        );
+        copy.participantMeta[kind] = normalized.map((item, index) => {
+          const hasRealParticipant = kind === "teams"
+            ? !isAvailableOnlineRegistrationSlotName(copy.players?.teams?.[index]?.a)
+              || !isAvailableOnlineRegistrationSlotName(copy.players?.teams?.[index]?.b)
+            : kind === "men"
+              ? !isAvailableOnlineRegistrationSlotName(copy.players?.men?.[index])
+              : kind === "women"
+                ? !isAvailableOnlineRegistrationSlotName(copy.players?.women?.[index])
+                : !isAvailableOnlineRegistrationSlotName(copy.players?.[index]);
+          return hasRealParticipant ? { ...item, registration: nextRegistration } : item;
+        });
+      });
+
+      return copy;
+    });
+
+    showNotice(
+      "success",
+      nextRegistration === "confirmed" ? "Todos confirmados" : "Todos marcados como pendentes",
+      "O status de todas as inscrições foi atualizado em uma única ação."
+    );
+  }
+
+  function isAvailableOnlineRegistrationSlotName(value) {
+    const name = String(value || "").trim();
+    if (!name) return true;
+    return /^(participante|jogador|homem|mulher)\s+\d+$/i.test(name)
+      || /^atleta\s+[12]\s+da\s+dupla\s+\d+$/i.test(name);
+  }
+
+  function getOnlineRegistrationAthleteMeta(registration) {
+    const athleteProfile = registration.athleteProfile || {};
+    const athleteProfileId = registration.athlete_user_id || "";
+    const displayName = athleteProfile.display_name || registration.athlete_name || "Atleta";
+
+    return normalizeAthleteProfileMeta({
+      athleteProfileId,
+      profileSlug: athleteProfileId,
+      displayName,
+      photoUrl: athleteProfile.photo_url || "",
+      bio: athleteProfile.bio || "",
+      publicConsent: athleteProfile.is_public === true,
+      profileLinked: Boolean(athleteProfileId),
+      linkedAt: registration.updated_at || registration.created_at || new Date().toISOString(),
+      showAchievements: athleteProfile.show_achievements !== false,
+    });
+  }
+
+  function syncOnlineRegistrationToParticipantList(currentData, registration) {
+    const copy = structuredClone(currentData);
+    const externalRegistrationId = String(registration.id || "");
+    const athleteName = String(registration.athleteProfile?.display_name || registration.athlete_name || "Atleta").trim();
+    const partnerName = String(registration.partner_name || "").trim();
+    const athleteMeta = getOnlineRegistrationAthleteMeta(registration);
+    const hasRegistrationId = (item) => String(item?.externalRegistrationId || item?.external_registration_id || "") === externalRegistrationId;
+
+    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
+
+    if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+      const teams = Array.isArray(copy.players?.teams) ? copy.players.teams : [];
+      copy.participantMeta.teams = normalizeParticipantMetaList(copy.participantMeta.teams, teams.length, { athleteCount: 2 });
+      const existingIndex = copy.participantMeta.teams.findIndex(hasRegistrationId);
+
+      if (existingIndex >= 0) {
+        copy.participantMeta.teams[existingIndex] = {
+          ...copy.participantMeta.teams[existingIndex],
+          registration: "confirmed",
+        };
+        return { nextData: copy, synced: true, alreadySynced: true };
+      }
+
+      const slotIndex = teams.findIndex((team) => (
+        isAvailableOnlineRegistrationSlotName(team?.a) && isAvailableOnlineRegistrationSlotName(team?.b)
+      ));
+      if (slotIndex < 0) return { nextData: currentData, synced: false, full: true };
+
+      copy.players.teams[slotIndex] = {
+        ...copy.players.teams[slotIndex],
+        a: athleteName,
+        b: partnerName || "Parceiro a definir",
+      };
+      const teamMeta = normalizeParticipantMetaList([copy.participantMeta.teams[slotIndex]], 1, { athleteCount: 2 })[0];
+      teamMeta.externalRegistrationId = registration.id;
+      teamMeta.registration = "confirmed";
+      teamMeta.athletes[0] = normalizeAthleteProfileMeta({ ...teamMeta.athletes[0], ...athleteMeta });
+      teamMeta.profileLinked = teamMeta.athletes.some((athlete) => athlete.profileLinked);
+      copy.participantMeta.teams[slotIndex] = teamMeta;
+
+      return { nextData: refreshGameParticipantNames(copy), synced: true, alreadySynced: false };
+    }
+
+    const isMixed = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16";
+    const requestedCategory = String(registration.category || "").toLocaleLowerCase("pt-BR");
+    const candidateKinds = isMixed
+      ? (/femin|mulher/.test(requestedCategory)
+        ? ["women"]
+        : /mascul|homem/.test(requestedCategory)
+          ? ["men"]
+          : ["men", "women"])
+      : ["normal"];
+
+    for (const kind of candidateKinds) {
+      const players = kind === "normal" ? copy.players : copy.players?.[kind];
+      if (!Array.isArray(players)) continue;
+      copy.participantMeta[kind] = normalizeParticipantMetaList(copy.participantMeta[kind], players.length);
+      const existingIndex = copy.participantMeta[kind].findIndex(hasRegistrationId);
+
+      if (existingIndex >= 0) {
+        copy.participantMeta[kind][existingIndex] = {
+          ...copy.participantMeta[kind][existingIndex],
+          registration: "confirmed",
+        };
+        return { nextData: copy, synced: true, alreadySynced: true };
+      }
+
+      const slotIndex = players.findIndex(isAvailableOnlineRegistrationSlotName);
+      if (slotIndex < 0) continue;
+
+      players[slotIndex] = athleteName;
+      copy.participantMeta[kind][slotIndex] = {
+        ...copy.participantMeta[kind][slotIndex],
+        ...athleteMeta,
+        externalRegistrationId: registration.id,
+        registration: "confirmed",
+      };
+      return { nextData: refreshGameParticipantNames(copy), synced: true, alreadySynced: false };
+    }
+
+    return { nextData: currentData, synced: false, full: true };
+  }
+
+  function markSyncedOnlineRegistrationPending(currentData, registrationId) {
+    const copy = structuredClone(currentData);
+    const externalRegistrationId = String(registrationId || "");
+    let changed = false;
+    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
+
+    ["normal", "men", "women", "teams"].forEach((kind) => {
+      const values = Array.isArray(copy.participantMeta[kind]) ? copy.participantMeta[kind] : [];
+      copy.participantMeta[kind] = values.map((item) => {
+        if (String(item?.externalRegistrationId || item?.external_registration_id || "") !== externalRegistrationId) return item;
+        changed = true;
+        return { ...item, registration: "pending" };
+      });
+    });
+
+    return changed ? copy : currentData;
+  }
+
+  async function reviewOnlineRegistration(registration, nextStatus) {
+    if (!registration?.id || reviewingRegistrationId) return;
+    const status = normalizeOnlineRegistrationStatus(nextStatus);
+    setReviewingRegistrationId(registration.id);
+
+    const { data: reviewedData, error } = await supabase.rpc("review_tournament_registration", {
+      p_registration_id: registration.id,
+      p_status: status,
+    });
+
+    setReviewingRegistrationId(null);
+
+    if (error) {
+      console.error("Erro ao revisar inscrição online:", error);
+      showNotice("error", "Inscrição não atualizada", "Não foi possível alterar o status desta inscrição online.");
+      return;
+    }
+
+    const reviewedRow = Array.isArray(reviewedData) ? reviewedData[0] : reviewedData;
+    const updatedRegistration = {
+      ...registration,
+      ...(isTournamentDataObject(reviewedRow) ? reviewedRow : {}),
+      status,
+      athleteProfile: registration.athleteProfile || null,
+    };
+    setOnlineRegistrations((current) => current.map((item) => (
+      item.id === registration.id ? updatedRegistration : item
+    )));
+
+    if (status === "confirmed") {
+      const syncResult = syncOnlineRegistrationToParticipantList(latestDataRef.current, updatedRegistration);
+
+      if (!syncResult.synced) {
+        showNotice(
+          "warning",
+          "Inscrição confirmada, mas lista lotada",
+          "O status online foi confirmado, porém nenhum inscrito existente foi substituído. Libere um slot e confirme novamente para sincronizar."
+        );
+        return;
+      }
+
+      setData(syncResult.nextData);
+      showNotice(
+        "success",
+        syncResult.alreadySynced ? "Inscrição já sincronizada" : "Inscrição confirmada",
+        syncResult.alreadySynced
+          ? "O participante já estava vinculado à lista deste torneio."
+          : "O atleta foi confirmado e adicionado ao primeiro slot disponível, sem substituir outros inscritos."
+      );
+      return;
+    }
+
+    setData((currentData) => markSyncedOnlineRegistrationPending(currentData, registration.id));
+
+    showNotice(
+      "success",
+      status === "rejected" ? "Inscrição rejeitada" : "Inscrição pendente",
+      "O status da inscrição online foi atualizado."
+    );
+  }
+
+  function applyAthleteLinkResult(result) {
+    if (!result || String(result.tournamentId) !== String(tournament.id)) return false;
+    const path = result.path || {};
+    let index = Number(path.index);
+    const athleteIndex = Number(result.athleteIndex || 0);
+    if (!Number.isInteger(index) || index < 0 || !["normal", "men", "women", "team"].includes(path.kind)) return false;
+    if (path.kind === "team" && ![0, 1].includes(athleteIndex)) return false;
+
+    const requestedMemberId = String(path.memberId || path.member_id || "");
+    if (requestedMemberId) {
+      const currentMeta = latestDataRef.current?.participantMeta || {};
+      let currentIndex = -1;
+      if (path.kind === "team") {
+        const teams = normalizeParticipantMetaList(
+          currentMeta.teams,
+          latestDataRef.current?.players?.teams?.length || 0,
+          { athleteCount: 2 }
+        );
+        currentIndex = teams.findIndex((item) => String(item.athletes?.[athleteIndex]?.memberId || "") === requestedMemberId);
+      } else {
+        const values = Array.isArray(currentMeta[path.kind]) ? currentMeta[path.kind] : [];
+        currentIndex = values.findIndex((item) => String(normalizeAthleteProfileMeta(item).memberId || "") === requestedMemberId);
+      }
+      if (currentIndex < 0) return false;
+      index = currentIndex;
+    }
+
+    const copy = structuredClone(latestDataRef.current);
+    const kind = path.kind === "team" ? "teams" : path.kind;
+    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
+    copy.participantMeta[kind] = Array.isArray(copy.participantMeta[kind]) ? copy.participantMeta[kind] : [];
+
+    if (kind === "teams") {
+      const teamMeta = normalizeParticipantMetaList([copy.participantMeta.teams[index]], 1, { athleteCount: 2 })[0];
+      teamMeta.athletes[athleteIndex] = normalizeAthleteProfileMeta({
+        ...teamMeta.athletes[athleteIndex],
+        athleteProfileId: result.athleteProfileId,
+        profileSlug: result.profileSlug || result.athleteProfileId,
+        displayName: result.displayName || "",
+        photoUrl: result.photoUrl || "",
+        bio: "",
+        publicConsent: result.publicConsent === true,
+        profileLinked: true,
+        linkedAt: result.linkedAt || new Date().toISOString(),
+        linkRequestId: result.requestId || "",
+      });
+      teamMeta.profileLinked = teamMeta.athletes.some((athlete) => athlete.profileLinked);
+      copy.participantMeta.teams[index] = teamMeta;
+
+      if (result.displayName && copy.players?.teams?.[index]) {
+        copy.players.teams[index][athleteIndex === 0 ? "a" : "b"] = result.displayName;
+      }
+    } else {
+      const currentMeta = copy.participantMeta[kind][index] || {};
+      copy.participantMeta[kind][index] = {
+        ...currentMeta,
+        ...normalizeAthleteProfileMeta({
+          ...currentMeta,
+          athleteProfileId: result.athleteProfileId,
+          profileSlug: result.profileSlug || result.athleteProfileId,
+          displayName: result.displayName || "",
+          photoUrl: result.photoUrl || "",
+          bio: "",
+          publicConsent: result.publicConsent === true,
+          profileLinked: true,
+          linkedAt: result.linkedAt || new Date().toISOString(),
+          linkRequestId: result.requestId || "",
+        }),
+      };
+
+      if (result.displayName) {
+        if (kind === "normal" && Array.isArray(copy.players)) copy.players[index] = result.displayName;
+        if (kind === "men" && copy.players?.men) copy.players.men[index] = result.displayName;
+        if (kind === "women" && copy.players?.women) copy.players.women[index] = result.displayName;
+      }
+    }
+
+    const nextData = refreshGameParticipantNames(copy);
+    latestDataRef.current = nextData;
+    setData(nextData);
+
+    showNotice("success", "Perfil vinculado", `${result.displayName || "O atleta"} confirmou o perfil e a preferência de exibição.`);
+    return nextData;
+  }
+
+  async function startAthleteProfileLink(path, athleteIndex, athleteName, athleteMeta = {}) {
+    const linkWindow = window.open("about:blank", "_blank");
+    if (!linkWindow) {
+      showNotice("warning", "Nova aba bloqueada", "Permita pop-ups para abrir o login seguro do atleta.");
+      return;
+    }
+
+    linkWindow.opener = null;
+    const normalizedAthleteMeta = normalizeAthleteProfileMeta(athleteMeta);
+    const { data: requestData, error } = await supabase.rpc("create_athlete_link_request", {
+      p_tournament_id: tournament.id,
+      p_path: { ...path, memberId: normalizedAthleteMeta.memberId },
+      p_athlete_index: Number(athleteIndex || 0),
+      p_athlete_name: String(athleteName || "Atleta"),
+    });
+    const requestId = Array.isArray(requestData)
+      ? (requestData[0]?.requestId || requestData[0]?.id || requestData[0]?.request_id || requestData[0])
+      : (requestData?.requestId || requestData?.id || requestData?.request_id || requestData);
+
+    if (error || !requestId) {
+      linkWindow.close();
+      console.error("Erro ao criar convite de atleta", error);
+      showNotice("error", "Vínculo indisponível", "Não foi possível criar o convite seguro. Atualize o banco e tente novamente.");
+      return;
+    }
+
+    const linkUrl = new URL(window.location.origin + "/");
+    linkUrl.searchParams.set("vincular-atleta", String(requestId));
+    linkWindow.location.replace(linkUrl.toString());
+  }
+
+  useEffect(() => {
+    let active = true;
+    appliedAthleteLinkRequestsRef.current = new Set();
+
+    async function collectPendingResults() {
+      const { data: resultRows, error } = await supabase.rpc("get_my_athlete_link_results");
+      if (!active) return;
+      if (error) {
+        if (!isMissingOnlineRegistrationResource(error, "athlete_link_requests")) {
+          console.error("Não foi possível consultar os vínculos de atleta", error);
+        }
+        return;
+      }
+
+      for (const row of Array.isArray(resultRows) ? resultRows : []) {
+        const requestId = String(row.requestId || row.request_id || row.id || "");
+        if (!requestId || appliedAthleteLinkRequestsRef.current.has(requestId)) continue;
+        const result = {
+          requestId,
+          tournamentId: row.tournamentId || row.tournament_id,
+          path: row.path || row.participant_path || {},
+          athleteIndex: row.athleteIndex ?? row.athlete_index ?? 0,
+          athleteProfileId: row.athleteProfileId || row.athlete_profile_id || row.claimed_by || "",
+          profileSlug: row.profileSlug || row.athleteProfileId || row.athlete_profile_id || row.claimed_by || "",
+          displayName: row.displayName || row.display_name || row.athlete_name || "Atleta",
+          photoUrl: row.photoUrl || row.photo_url || "",
+          publicConsent: row.publicConsent === true || row.public_consent === true,
+          linkedAt: row.linkedAt || row.claimed_at || new Date().toISOString(),
+        };
+
+        const nextData = applyAthleteLinkResult(result);
+        if (!nextData) continue;
+        appliedAthleteLinkRequestsRef.current.add(requestId);
+
+        // A entrega é at-least-once: o servidor só deixa de reenviar o vínculo
+        // depois que o linkRequestId já estiver persistido no JSON do torneio.
+        const saved = await enqueueTournamentSave(nextData);
+        if (!saved) {
+          appliedAthleteLinkRequestsRef.current.delete(requestId);
+          showNotice("error", "Vínculo ainda não salvo", "O perfil foi confirmado, mas será tentado novamente quando a conexão voltar.");
+          continue;
+        }
+
+        const { error: acknowledgeError } = await supabase.rpc("acknowledge_athlete_link_request", {
+          p_request_id: requestId,
+        });
+        if (acknowledgeError) {
+          appliedAthleteLinkRequestsRef.current.delete(requestId);
+          console.error("Não foi possível concluir o consumo do vínculo", acknowledgeError);
+        }
+      }
+    }
+
+    function receiveLinkSignal(event) {
+      if (event.key?.startsWith(ATHLETE_LINK_RESULT_PREFIX)) void collectPendingResults();
+    }
+
+    const interval = window.setInterval(() => void collectPendingResults(), 5000);
+    window.addEventListener("storage", receiveLinkSignal);
+    window.addEventListener("focus", collectPendingResults);
+    void collectPendingResults();
+
+    return () => {
+      active = false;
+      window.clearInterval(interval);
+      window.removeEventListener("storage", receiveLinkSignal);
+      window.removeEventListener("focus", collectPendingResults);
+    };
+  }, [tournament.id]);
 
   function finishShuffle() {
     const copy = structuredClone(data);
@@ -8684,16 +9317,21 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
       copy.participantMeta.normal = shuffledPlayers.metadata;
     }
 
-    copy.schedule = [];
-
     if (isCupType(config)) {
       copy.brackets = [];
       copy.groupsShuffled = true;
       resetCopinhaTieBreaks(copy);
+      copy.schedule = generateCupGroupSchedule(copy.players, copy.cupConfig || {}, config.courts);
+    } else {
+      copy.schedule = [];
     }
 
     setData(copy);
     setShuffleOverlay(null);
+
+    if (isCupType(config)) {
+      showNotice("success", "Grupos sorteados", "Os grupos e as partidas da fase de grupos foram gerados em uma única ação.");
+    }
   }
 
 function shuffleNames() {
@@ -8730,7 +9368,7 @@ function shuffleNames() {
 
 function generate() {
   if (isCupType(config)) {
-    const schedule = generateCupGroupSchedule(data.players, data.cupConfig || {});
+    const schedule = generateCupGroupSchedule(data.players, data.cupConfig || {}, config.courts);
 
     setData((prev) => ({
       ...prev,
@@ -8914,6 +9552,90 @@ const completedTournamentMatches = completedScheduleGames.length + completedBrac
     );
   }
 
+  function isOnlineRegistrationSynced(registrationId) {
+    const expectedId = String(registrationId || "");
+    if (!expectedId) return false;
+
+    const participantMeta = data.participantMeta || {};
+    return ["normal", "men", "women", "teams"].some((kind) => (
+      Array.isArray(participantMeta[kind])
+      && participantMeta[kind].some((item) => (
+        String(item?.externalRegistrationId || item?.external_registration_id || "") === expectedId
+      ))
+    ));
+  }
+
+  function renderOnlineRegistrationsBox() {
+    if (!onlineRegistrationsAvailable) return null;
+
+    const statusLabels = {
+      pending: "Pendente",
+      confirmed: "Confirmada",
+      rejected: "Rejeitada",
+    };
+    const pendingCount = onlineRegistrations.filter((registration) => registration.status === "pending").length;
+
+    return (
+      <section className="onlineRegistrationsBox" aria-labelledby="online-registrations-title">
+        <header className="onlineRegistrationsHeader">
+          <div className="onlineRegistrationsHeading">
+            <span className="onlineRegistrationsIcon" aria-hidden="true"><Users /></span>
+            <div>
+              <h3 id="online-registrations-title">Inscrições online</h3>
+              <p>Revise as solicitações enviadas pelos atletas pela página pública.</p>
+            </div>
+          </div>
+          <div className="onlineRegistrationsSummary">
+            <strong>{onlineRegistrations.length}</strong>
+            <span>{pendingCount} {pendingCount === 1 ? "pendente" : "pendentes"}</span>
+          </div>
+        </header>
+
+        {onlineRegistrationsLoading ? (
+          <div className="onlineRegistrationsState"><div className="loadingSpinner" aria-hidden="true" /><span>Carregando inscrições...</span></div>
+        ) : onlineRegistrationsError ? (
+          <div className="onlineRegistrationsState error"><span>{onlineRegistrationsError}</span><button type="button" onClick={() => loadOnlineRegistrations()}>Tentar novamente</button></div>
+        ) : onlineRegistrations.length === 0 ? (
+          <div className="onlineRegistrationsState empty"><Users aria-hidden="true" /><div><strong>Nenhuma inscrição online</strong><span>As novas solicitações aparecerão aqui.</span></div></div>
+        ) : (
+          <div className="onlineRegistrationsList">
+            {onlineRegistrations.map((registration) => {
+              const profile = registration.athleteProfile || {};
+              const athleteName = profile.display_name || registration.athlete_name || "Atleta";
+              const status = normalizeOnlineRegistrationStatus(registration.status);
+              const isReviewing = reviewingRegistrationId === registration.id;
+              const isSynced = isOnlineRegistrationSynced(registration.id);
+
+              return (
+                <article className={`onlineRegistrationRow status-${status}`} key={registration.id}>
+                  <div className="onlineRegistrationAthlete">
+                    <span className="onlineRegistrationAvatar">
+                      {profile.photo_url ? <img src={profile.photo_url} alt="" /> : getAthleteInitials(athleteName)}
+                    </span>
+                    <div>
+                      <strong>{athleteName}</strong>
+                      <small>{registration.athlete_user_id ? "Perfil de atleta vinculado" : "Cadastro online"}</small>
+                    </div>
+                  </div>
+                  <dl className="onlineRegistrationDetails">
+                    <div><dt>Parceiro</dt><dd>{registration.partner_name || "Não informado"}</dd></div>
+                    <div><dt>Categoria</dt><dd>{registration.category || data.gender || "Geral"}</dd></div>
+                  </dl>
+                  <span className={`onlineRegistrationStatus status-${status}`}>{statusLabels[status]}</span>
+                  <div className="onlineRegistrationActions" aria-label={`Revisar inscrição de ${athleteName}`}>
+                    <button type="button" className="confirm" disabled={Boolean(reviewingRegistrationId) || (status === "confirmed" && isSynced)} onClick={() => reviewOnlineRegistration(registration, "confirmed")}>{isReviewing ? "Salvando..." : "Confirmar"}</button>
+                    <button type="button" className="pending" disabled={Boolean(reviewingRegistrationId) || status === "pending"} onClick={() => reviewOnlineRegistration(registration, "pending")}>Pendente</button>
+                    <button type="button" className="reject" disabled={Boolean(reviewingRegistrationId) || status === "rejected"} onClick={() => reviewOnlineRegistration(registration, "rejected")}>Rejeitar</button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </section>
+    );
+  }
+
   function startParticipantRegistration() {
     const participantInputs = Array.from(document.querySelectorAll(".tournamentReferencePage .participantSlotCard input"));
     const availableInput = participantInputs.find((input) => /^(participante|homem|mulher|atleta)/i.test(input.value.trim())) || participantInputs[0];
@@ -9051,12 +9773,12 @@ return (
         )}
 
         <nav className="tournamentTopTabs" aria-label="Organização do torneio">
-          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}><Users aria-hidden="true" /> Inscritos</button>
+          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83D\uDC65"}</span> Inscritos</button>
           {isCupType(config) && (
-            <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}><Grid3X3 aria-hidden="true" /> Grupos</button>
+            <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83C\uDFB2"}</span> Grupos</button>
           )}
-          <button type="button" className={activeTournamentTab === "partidas" ? "active" : ""} onClick={() => setActiveTournamentTab("partidas")}><Flame aria-hidden="true" /> Partidas</button>
-          <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}><Trophy aria-hidden="true" /> Ranking</button>
+          <button type="button" className={activeTournamentTab === "partidas" ? "active" : ""} onClick={() => setActiveTournamentTab("partidas")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83C\uDFBE"}</span> Partidas</button>
+          <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}><span className="tournamentTabEmoji" aria-hidden="true">{"\uD83C\uDFC6"}</span> Ranking</button>
         </nav>
 
         <section className="card figmaTournamentSection figmaParticipantsSection" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
@@ -9077,6 +9799,8 @@ return (
             <button type="button" className="active" aria-selected="true">Inscritos</button>
           </div>
 
+          {renderOnlineRegistrationsBox()}
+
           <div className="participantManagementStats figmaParticipantStats">
             <div className="total"><span>Total de inscritos</span><strong>{participantSummary.total} <small>{isCupType(config) ? "duplas" : "atletas"}</small></strong></div>
             <div className="confirmed"><span>Confirmados</span><strong>{participantSummary.confirmed} <small>Confirmados</small></strong></div>
@@ -9090,8 +9814,12 @@ return (
               <option value="pending">Pendentes</option>
             </select>
             <button type="button" className="secondaryBtn" onClick={() => { setParticipantSearch(""); setParticipantFilter("all"); }}><Filter aria-hidden="true" /> Limpar</button>
+            <div className="participantBulkStatusActions" aria-label="Alterar o status de todas as inscrições">
+              <button type="button" className="confirmAll" onClick={() => updateAllParticipantRegistrations("confirmed")}>Confirmar todos</button>
+              <button type="button" className="pendingAll" onClick={() => updateAllParticipantRegistrations("pending")}>Todos pendentes</button>
+            </div>
           </div>
-          <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} searchQuery={participantSearch} statusFilter={participantFilter} />
+          <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} onLinkAthlete={startAthleteProfileLink} searchQuery={participantSearch} statusFilter={participantFilter} />
           {!isCupType(config) && (
             <div className="actions figmaTournamentBottomActions">
               <button type="button" className="secondaryBtn" onClick={shuffleNames}>Sortear nomes</button>
@@ -9110,7 +9838,6 @@ return (
               <div className="figmaGroupActions">
                 <SavingStatusBadge />
                 <button type="button" className="figmaIconButton" onClick={() => setGroupsConfigOpen((current) => !current)} aria-label="Configurar grupos"><Filter aria-hidden="true" /></button>
-                <button type="button" className="secondaryBtn" onClick={generate}>Gerar fase de grupos</button>
                 <button type="button" onClick={shuffleNames}>Sortear grupos</button>
               </div>
             </div>
@@ -9120,7 +9847,7 @@ return (
             )}
 
             <div className="figmaGroupStats">
-              <div><span>Total de grupos</span><strong>{cupGroupRankings.length || data.cupConfig?.groups || 0}</strong></div>
+              <div><span>Total de grupos</span><strong>{data.groupsShuffled ? cupGroupRankings.length : plannedCupGroupCount}</strong></div>
               <div><span>Participantes alocados</span><strong>{allocatedGroupParticipants || participantSummary.total} <small>duplas</small></strong></div>
               <div><span>Partidas desta fase</span><strong>{scheduleGames.length}</strong></div>
               <div className={groupStageComplete ? "complete" : ""}><span>Situação atual</span><strong>{groupStageComplete ? "FASE CONCLUÍDA" : scheduleGames.length ? "EM ANDAMENTO" : "AGUARDANDO"}</strong></div>
@@ -9141,7 +9868,7 @@ return (
                 )}
               </div>
             ) : (
-              <div className="figmaTournamentEmpty"><Grid3X3 aria-hidden="true" /><strong>Os grupos ainda não foram gerados</strong><span>Configure a quantidade de duplas e use o sorteio acima.</span></div>
+              <div className="figmaTournamentEmpty"><Grid3X3 aria-hidden="true" /><strong>Os grupos ainda não foram sorteados</strong><span>Configure a quantidade de grupos e use o sorteio acima.</span></div>
             )}
           </section>
         )}
@@ -9160,11 +9887,11 @@ return (
               </div>
             </div>
           )}
-          {!isCupType(config) && <div className="cardTitleRow figmaTournamentSectionHeading"><div><h2>Fase de grupos</h2><p>Rodadas organizadas com até dois jogos por linha.</p></div><SavingStatusBadge /></div>}
+          {!isCupType(config) && <div className="cardTitleRow figmaTournamentSectionHeading"><div><h2>Partidas</h2><p>Rodadas organizadas com até dois jogos por linha.</p></div><SavingStatusBadge /></div>}
           <div className="figmaGroupScheduleMode" style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
 
           {!data.schedule || data.schedule.length === 0 ? (
-            <p>Clique em “Criar rodadas e jogos” para montar os jogos.</p>
+            <p>{isCupType(config) ? "Sorteie os grupos para gerar automaticamente as partidas." : "Clique em “Criar rodadas e jogos” para montar os jogos."}</p>
           ) : (
             <>
              <ScheduleView
@@ -9364,16 +10091,17 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
     <div className="cupConfigBox">
       <div className="twoCols">
         <div>
-          <label>Quantidade de duplas</label>
+          <label>Quantidade de grupos e duplas</label>
           <select
             value={cupConfig.teamCount || config.defaultTeams}
             onChange={(e) => updateCupConfig("teamCount", Number(e.target.value))}
             disabled={isFixedCupSize}
           >
             {config.allowedTeamCounts.map((count) => (
-              <option key={count} value={count}>{count} duplas</option>
+              <option key={count} value={count}>{formatCupGroupOption(config, count)}</option>
             ))}
           </select>
+          <small>Quantidade de duplas: {cupConfig.teamCount || config.defaultTeams}. Cada grupo terá {config.groupSize || 3} duplas.</small>
         </div>
 
         <div>
@@ -9432,18 +10160,22 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   );
 }
 
-function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQuery = "", statusFilter = "all" }) {
+function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, onLinkAthlete = () => {}, searchQuery = "", statusFilter = "all" }) {
   const config = getModalityConfig(type);
   const searchTerm = searchQuery.trim().toLocaleLowerCase("pt-BR");
 
   function getMeta(kind, index) {
     const metaKind = kind === "team" ? "teams" : kind;
-    return {
+    const meta = {
       payment: "pending",
       registration: "pending",
       profileLinked: false,
       ...(data.participantMeta?.[metaKind]?.[index] || {}),
     };
+
+    return kind === "team"
+      ? normalizeParticipantMetaList([meta], 1, { athleteCount: 2 })[0]
+      : meta;
   }
 
   function matchesParticipant(name, meta) {
@@ -9483,26 +10215,61 @@ function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQ
       </div>
       {entries.map((entry, rowIndex) => {
         const registration = entry.meta.registration === "confirmed" ? "confirmed" : "pending";
-        const initials = entry.names.filter(Boolean).map((name) => name.trim().charAt(0)).join("").slice(0, 2).toUpperCase();
 
         return (
         <div className="figmaParticipantRow participantSlotCard" key={entry.key}>
           <div className="figmaParticipantIdentity">
-            <span className="figmaParticipantAvatar">
-              {entry.meta.photoUrl || entry.meta.photo_url ? <img src={entry.meta.photoUrl || entry.meta.photo_url} alt="" /> : initials || rowIndex + 1}
-            </span>
             <div className="figmaParticipantNames">
-              {entry.names.map((name, nameIndex) => (
-                <label className="figmaParticipantNameRow" key={`${entry.key}-${nameIndex}`}>
-                  <span>{entry.names.length > 1 ? `Atleta ${nameIndex + 1}` : "Atleta"}</span>
-                  <input
-                    value={name}
-                    aria-label={entry.names.length > 1 ? `Atleta ${nameIndex + 1} da dupla ${rowIndex + 1}` : `Participante ${rowIndex + 1}`}
-                    onChange={(event) => updatePlayer(entry.path.kind === "team" ? { ...entry.path, field: nameIndex === 0 ? "a" : "b" } : entry.path, event.target.value)}
-                  />
-                </label>
-              ))}
-              <button type="button" className={entry.meta.profileLinked ? "linked" : ""} onClick={() => updateParticipantMeta(entry.path, "profileLinked", !entry.meta.profileLinked)}><Link2 aria-hidden="true" /> {entry.meta.profileLinked ? "Alterar vínculo" : "Vincular perfil"}</button>
+              {entry.names.map((name, nameIndex) => {
+                const athleteMeta = entry.path.kind === "team"
+                  ? normalizeAthleteProfileMeta(entry.meta.athletes?.[nameIndex])
+                  : normalizeAthleteProfileMeta(entry.meta);
+                const canOpenProfile = Boolean(athleteMeta.profileLinked && athleteMeta.athleteProfileId && athleteMeta.publicConsent);
+                const visiblePhoto = canOpenProfile ? athleteMeta.photoUrl : "";
+                const publicProfileUrl = canOpenProfile
+                  ? `${window.location.origin}${window.location.pathname}?atleta=${encodeURIComponent(athleteMeta.profileSlug || athleteMeta.athleteProfileId)}`
+                  : "";
+
+                return (
+                  <div className="figmaParticipantAthlete" key={`${entry.key}-${nameIndex}`}>
+                    {canOpenProfile ? (
+                      <button
+                        type="button"
+                        className="figmaParticipantAvatar figmaParticipantAvatarLink"
+                        onClick={() => window.open(publicProfileUrl, "_blank", "noopener,noreferrer")}
+                        title={`Abrir perfil de ${athleteMeta.displayName || name}`}
+                      >
+                        {visiblePhoto ? <img src={visiblePhoto} alt="" /> : getAthleteInitials(athleteMeta.displayName || name)}
+                      </button>
+                    ) : (
+                      <span className="figmaParticipantAvatar">
+                        {getAthleteInitials(name) || rowIndex + 1}
+                      </span>
+                    )}
+                    <div className="figmaParticipantAthleteFields">
+                      <label className="figmaParticipantNameRow">
+                        <span>{entry.names.length > 1 ? `Atleta ${nameIndex + 1}` : "Atleta"}</span>
+                        <input
+                          value={name}
+                          aria-label={entry.names.length > 1 ? `Atleta ${nameIndex + 1} da dupla ${rowIndex + 1}` : `Participante ${rowIndex + 1}`}
+                          onChange={(event) => updatePlayer(entry.path.kind === "team" ? { ...entry.path, field: nameIndex === 0 ? "a" : "b" } : entry.path, event.target.value)}
+                        />
+                      </label>
+                      <div className="figmaParticipantProfileActions">
+                        <button
+                          type="button"
+                          className={athleteMeta.profileLinked ? "linked" : ""}
+                          onClick={() => onLinkAthlete(entry.path, nameIndex, name, athleteMeta)}
+                        >
+                          <Link2 aria-hidden="true" /> {athleteMeta.profileLinked ? "Alterar vínculo" : "Vincular perfil"}
+                        </button>
+                        {canOpenProfile ? <a href={publicProfileUrl} target="_blank" rel="noreferrer">Ver perfil</a> : null}
+                        {athleteMeta.profileLinked && !athleteMeta.publicConsent ? <small>Vinculado em modo privado</small> : null}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
           <label className={`figmaInlineStatus registration-${registration}`}>
@@ -9746,7 +10513,10 @@ function ScheduleView({
       {schedule.map((round, roundIndex) => (
         <section className={`roundCard ${readOnly ? "readOnlyRoundCard publicReadOnlyRound" : ""}`} key={roundIndex}>
           <div className="roundHeader">
-            <div className="roundTitleBlock"><span>FASE DE GRUPOS</span><h3>Rodada {roundIndex + 1}</h3></div>
+            <div className={`roundTitleBlock ${showGroupName ? "cupRoundTitle" : "standardRoundTitle"}`}>
+              {showGroupName ? <span>FASE DE GRUPOS</span> : null}
+              <h3>Rodada {roundIndex + 1}</h3>
+            </div>
 
             {!readOnly ? (
               <div className="voiceActions">
@@ -9796,27 +10566,70 @@ function ScheduleView({
                     </label>
                   )}
                 </div>
-                {readOnly ? (
-                  game.scheduledTime ? <span className="gameScheduledTime"><Clock3 aria-hidden="true" /> {game.scheduledTime}</span> : null
-                ) : null}
-              </div>
-
-              <div className={`gameTeams ${readOnly ? "publicGameTeams" : ""}`}>
-                <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>
-                  {team1Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />)}
-                </div>
-                <span>x</span>
-                <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>
-                  {team2Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />)}
+                <div className="gameTopStatus">
+                  {readOnly && game.scheduledTime ? <span className="gameScheduledTime"><Clock3 aria-hidden="true" /> {game.scheduledTime}</span> : null}
+                  <span className={`matchStatusBadge ${isFinished ? "finished" : "inProgress"}`}>
+                    {isFinished ? "Finalizado" : "Em andamento"}
+                  </span>
                 </div>
               </div>
 
-              <div
-                className={`scoreRow ${readOnly ? "publicReadOnlyScoreRow" : ""}`}
-                aria-label={readOnly ? (hasPublicScore ? `Placar: ${game.s1} a ${game.s2}` : "Placar ainda não informado") : undefined}
-              >
-                {readOnly ? (
-                  hasPublicScore ? (
+              <div className={`gameTeams ${readOnly ? "publicGameTeams" : "gameTeamsWithInlineScores"}`}>
+                <div className={`gameTeamPanel ${winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}`}>
+                  {readOnly ? (
+                    team1Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />)
+                  ) : (
+                    <>
+                      <div className="gameTeamRoster">
+                        {team1Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />)}
+                      </div>
+                      <label className="inlineTeamScore">
+                        <span className="srOnly">Placar de {team1Names.join(" e ")}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={getMaxScore(winningScore)}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={game.s1}
+                          onChange={(event) => updateScore(roundIndex, gameIndex, "s1", event.target.value)}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+                <span>VS</span>
+                <div className={`gameTeamPanel ${winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}`}>
+                  {readOnly ? (
+                    team2Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />)
+                  ) : (
+                    <>
+                      <div className="gameTeamRoster">
+                        {team2Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />)}
+                      </div>
+                      <label className="inlineTeamScore">
+                        <span className="srOnly">Placar de {team2Names.join(" e ")}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max={getMaxScore(winningScore)}
+                          inputMode="numeric"
+                          pattern="[0-9]*"
+                          value={game.s2}
+                          onChange={(event) => updateScore(roundIndex, gameIndex, "s2", event.target.value)}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {readOnly ? (
+                <div
+                  className="scoreRow publicReadOnlyScoreRow"
+                  aria-label={hasPublicScore ? `Placar: ${game.s1} a ${game.s2}` : "Placar ainda não informado"}
+                >
+                  {hasPublicScore ? (
                     <>
                       <output className="publicScoreValue">{game.s1}</output>
                       <span aria-hidden="true">—</span>
@@ -9824,42 +10637,13 @@ function ScheduleView({
                     </>
                   ) : (
                     <span className="publicScorePending">Aguardando placar</span>
-                  )
-                ) : (
-                  <>
-           <input
-  type="number"
-  min="0"
- max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s1}
-  onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
-  readOnly={readOnly}
-  disabled={readOnly}
-/>
-
-                <span>—</span>
-
-               <input
-  type="number"
-  min="0"
-  max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s2}
-  onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
-  readOnly={readOnly}
-  disabled={readOnly}
-/>
-                  </>
-                )}
-              </div>
+                  )}
+                </div>
+              ) : null}
 
               {!readOnly && !isFinished ? (
                 <div className="voiceActions gameVoiceActions">
                   <button type="button" className="voiceBtn" onClick={() => speakGame(game, { roundLabel: `Rodada ${roundIndex + 1}`, includeGroup: showGroupName, repeat: voiceRepeat })}>🔊 Chamar jogo</button>
-                  <button type="button" className="voiceBtn gameResultBtn" onClick={(event) => event.currentTarget.closest(".gameCard")?.querySelector(".scoreRow input")?.focus()}>Inserir resultado</button>
                 </div>
               ) : null}
             </div>
@@ -10461,23 +11245,43 @@ function BracketColumn({
 function PublicTournamentPage({ publicId }) {
   const [loading, setLoading] = useState(true);
   const [tournament, setTournament] = useState(null);
+  const [publicAthleteIds, setPublicAthleteIds] = useState(null);
   const [error, setError] = useState(null);
 
   async function loadPublicTournament({ silent = false } = {}) {
     if (!silent) setLoading(true);
 
     const { data, error } = await supabase
-      .from("tournaments")
-      .select("*")
-      .eq("public_id", publicId)
-      .eq("is_public", true)
-      .single();
+      .rpc("get_public_tournament", { p_public_id: publicId })
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error(error);
       setError("Link público não encontrado ou desativado.");
       setTournament(null);
     } else {
+      const publicConfig = getModalityConfig(data.type);
+      const normalizedPublicData = publicConfig ? normalizeTournamentData(data.type, data.data) : null;
+      const linkedIds = publicConfig
+        ? [...new Set(getRegisteredAthletesForPublic(normalizedPublicData, publicConfig)
+          .flatMap((group) => group.names)
+          .flatMap((entry) => entry.members)
+          .map((member) => member.profile.athleteProfileId)
+          .filter(Boolean))]
+        : [];
+      let verifiedPublicIds = [];
+
+      if (linkedIds.length) {
+        const athleteProfileResult = await supabase
+          .from("athlete_profiles")
+          .select("user_id")
+          .in("user_id", linkedIds)
+          .eq("is_public", true);
+        const tableUnavailable = ["42P01", "PGRST205"].includes(String(athleteProfileResult.error?.code || ""));
+        verifiedPublicIds = tableUnavailable ? null : (athleteProfileResult.data || []).map((profile) => String(profile.user_id));
+      }
+
+      setPublicAthleteIds(verifiedPublicIds);
       setTournament(data);
       setError(null);
     }
@@ -10516,21 +11320,33 @@ function PublicTournamentPage({ publicId }) {
     );
   }
 
-  return <PublicTournamentScreen tournament={tournament} />;
+  return <PublicTournamentScreen tournament={tournament} publicAthleteIds={publicAthleteIds} />;
 }
 
-function getRegisteredAthletesForPublic(data, config) {
+function getRegisteredAthletesForPublic(data, config, publicAthleteIds = null) {
   if (!data?.players) return [];
+  const participantMeta = data.participantMeta || {};
+  const member = (name, value) => {
+    const profile = normalizeAthleteProfileMeta(value);
+    const profileIsCurrentlyPublic = Array.isArray(publicAthleteIds)
+      ? publicAthleteIds.includes(String(profile.athleteProfileId || ""))
+      : profile.publicConsent;
+    return {
+      name,
+      profile,
+      canOpenProfile: Boolean(profile.profileLinked && profile.athleteProfileId && profile.publicConsent && profileIsCurrentlyPublic),
+    };
+  };
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return [
       {
         title: "Masculino",
-        names: (data.players.men || []).filter(Boolean),
+        names: (data.players.men || []).filter(Boolean).map((name, index) => ({ label: name, members: [member(name, participantMeta.men?.[index])] })),
       },
       {
         title: "Feminino",
-        names: (data.players.women || []).filter(Boolean),
+        names: (data.players.women || []).filter(Boolean).map((name, index) => ({ label: name, members: [member(name, participantMeta.women?.[index])] })),
       },
     ];
   }
@@ -10540,7 +11356,13 @@ function getRegisteredAthletesForPublic(data, config) {
       {
         title: "Duplas cadastradas",
         names: (data.players.teams || [])
-          .map((team, index) => `${index + 1}. ${team.a || "Atleta 1"} + ${team.b || "Atleta 2"}`)
+          .map((team, index) => {
+            const teamMeta = normalizeParticipantMetaList([participantMeta.teams?.[index]], 1, { athleteCount: 2 })[0];
+            return {
+              label: `Dupla ${index + 1}`,
+              members: [member(team.a || "Atleta 1", teamMeta.athletes[0]), member(team.b || "Atleta 2", teamMeta.athletes[1])],
+            };
+          })
           .filter(Boolean),
       },
     ];
@@ -10549,12 +11371,38 @@ function getRegisteredAthletesForPublic(data, config) {
   return [
     {
       title: "Atletas cadastrados",
-      names: (data.players || []).filter(Boolean),
+      names: (data.players || []).filter(Boolean).map((name, index) => ({ label: name, members: [member(name, participantMeta.normal?.[index])] })),
     },
   ];
 }
 
-function PublicTournamentScreen({ tournament }) {
+function PublicTournamentAthleteEntry({ entry }) {
+  return (
+    <article className="publicTournamentAthleteEntry">
+      {entry.members.length > 1 ? <strong>{entry.label}</strong> : null}
+      <div>
+        {entry.members.map((member, index) => {
+          const profileUrl = member.canOpenProfile
+            ? `/?atleta=${encodeURIComponent(member.profile.profileSlug || member.profile.athleteProfileId)}`
+            : "";
+          const content = (
+            <>
+              <span>{member.canOpenProfile && member.profile.photoUrl ? <img src={member.profile.photoUrl} alt="" /> : getAthleteInitials(member.name)}</span>
+              <strong>{member.profile.displayName || member.name}</strong>
+              {member.canOpenProfile ? <small>Ver perfil</small> : null}
+            </>
+          );
+
+          return member.canOpenProfile
+            ? <a href={profileUrl} target="_blank" rel="noreferrer" key={`${member.name}-${index}`}>{content}</a>
+            : <div className="publicTournamentAthletePlain" key={`${member.name}-${index}`}>{content}</div>;
+        })}
+      </div>
+    </article>
+  );
+}
+
+function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
   const publicTabStorageKey = `publicTournamentTab:${tournament.public_id || tournament.id}`;
   const publicMatchesTabStorageKey = `publicTournamentMatchesTab:${tournament.public_id || tournament.id}`;
   const [activePublicTab, setActivePublicTabState] = useState(() => readPublicViewStorage(publicTabStorageKey, "participantes"));
@@ -10591,13 +11439,13 @@ function PublicTournamentScreen({ tournament }) {
 
   const isCup = isCupType(config);
 
-  const cupGroupRankings = isCup
+  const cupGroupRankings = isCup && data.groupsShuffled
     ? calculateCupGroupRankings(data, data.rankingCriteria)
     : [];
 
   const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
 
-  const publicAthletes = getRegisteredAthletesForPublic(data, config);
+  const publicAthletes = getRegisteredAthletesForPublic(data, config, publicAthleteIds);
 
   return (
     <div className="publicPage">
@@ -10687,8 +11535,8 @@ function PublicTournamentScreen({ tournament }) {
                   <p>Nenhum atleta cadastrado ainda.</p>
                 ) : (
                   <div className="publicAthleteList">
-                    {group.names.map((name, index) => (
-                      <span key={`${group.title}-${index}`}>{name}</span>
+                    {group.names.map((entry, index) => (
+                      <PublicTournamentAthleteEntry entry={entry} key={`${group.title}-${index}`} />
                     ))}
                   </div>
                 )}
@@ -10901,9 +11749,589 @@ function PublicBracketColumn({ rounds = [], title, variant }) {
   );
 }
 
+function resizeAthletePhoto(file) {
+  return new Promise((resolve, reject) => {
+    if (!file?.type?.startsWith("image/")) {
+      reject(new Error("Escolha uma imagem JPG ou PNG."));
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      reject(new Error("A foto deve ter no máximo 3 MB."));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Não foi possível ler a imagem."));
+    reader.onload = () => {
+      const image = new Image();
+      image.onerror = () => reject(new Error("Não foi possível abrir a imagem."));
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        const size = 320;
+        canvas.width = size;
+        canvas.height = size;
+        const context = canvas.getContext("2d");
+        if (!context) {
+          reject(new Error("Não foi possível preparar a foto."));
+          return;
+        }
+        const sourceSize = Math.min(image.width, image.height);
+        const sourceX = (image.width - sourceSize) / 2;
+        const sourceY = (image.height - sourceSize) / 2;
+        context.drawImage(image, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
+        resolve(canvas.toDataURL("image/jpeg", 0.84));
+      };
+      image.src = String(reader.result || "");
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function AthleteLinkPage({ requestId }) {
+  const [request, setRequest] = useState(null);
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [publicConsent, setPublicConsent] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [notice, setNotice] = useState(null);
+  const [completed, setCompleted] = useState(false);
+  const hydratedUserRef = useRef("");
+
+  useEffect(() => {
+    let active = true;
+
+    async function prepareIsolatedSession() {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+        const hash = new URLSearchParams(url.hash.replace(/^#/, ""));
+        const accessToken = hash.get("access_token");
+        const refreshToken = hash.get("refresh_token");
+
+        if (code) {
+          await athleteLinkSupabase.auth.exchangeCodeForSession(code);
+          url.searchParams.delete("code");
+          window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+        } else if (accessToken && refreshToken) {
+          await athleteLinkSupabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          url.hash = "";
+          window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+        }
+      } catch (error) {
+        console.error("Erro no retorno do login do atleta", error);
+      }
+
+      const { data } = await athleteLinkSupabase.auth.getSession();
+      if (!active) return;
+      const { data: requestData, error: requestError } = await athleteLinkSupabase
+        .rpc("get_athlete_link_request", { p_request_id: requestId });
+      if (!active) return;
+
+      if (requestError || !requestData) {
+        console.error("Convite de atleta não encontrado", requestError);
+        setRequest(null);
+      } else {
+        const nextRequest = {
+          requestId: requestData.requestId || requestData.request_id || requestData.id || requestId,
+          tournamentId: requestData.tournamentId || requestData.tournament_id || "",
+          tournamentName: requestData.tournamentName || requestData.tournament_name || "Torneio",
+          tournamentType: requestData.tournamentType || requestData.tournament_type || "",
+          path: requestData.path || requestData.participant_path || {},
+          athleteIndex: requestData.athleteIndex ?? requestData.athlete_index ?? 0,
+          athleteName: requestData.athleteName || requestData.athlete_name || "Atleta",
+          expiresAt: requestData.expiresAt || requestData.expires_at || "",
+        };
+        setRequest(nextRequest);
+        setDisplayName((current) => current || nextRequest.athleteName);
+      }
+      setSession(data.session || null);
+      setLoading(false);
+    }
+
+    void prepareIsolatedSession();
+    const { data: listener } = athleteLinkSupabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (active) setSession(nextSession);
+    });
+
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    const user = session?.user;
+    if (!user?.id || hydratedUserRef.current === user.id) return;
+    hydratedUserRef.current = user.id;
+
+    async function hydrateProfile() {
+      const metadata = user.user_metadata || {};
+      let savedProfile = null;
+      try {
+        savedProfile = JSON.parse(localStorage.getItem(`${ATHLETE_PROFILE_DRAFT_PREFIX}${user.id}`) || "null");
+      } catch {
+        savedProfile = null;
+      }
+      const [legacyProfileResult, athleteProfileResult] = await Promise.all([
+        athleteLinkSupabase.from("profiles").select("id, name, photo_url").eq("id", user.id).maybeSingle(),
+        athleteLinkSupabase.from("athlete_profiles").select("display_name, photo_url, bio, is_public").eq("user_id", user.id).maybeSingle(),
+      ]);
+      const profileData = legacyProfileResult.data;
+      const athleteProfileData = athleteProfileResult.data;
+
+      if (athleteProfileResult.error) {
+        console.error("Erro ao carregar perfil de atleta", athleteProfileResult.error);
+        setPublicConsent(false);
+        setNotice({ type: "warning", message: "Não foi possível carregar suas preferências de privacidade. Tente novamente." });
+        return;
+      }
+
+      if (athleteProfileData) {
+        setDisplayName(athleteProfileData.display_name || request?.athleteName || "Atleta");
+        setPhotoUrl(athleteProfileData.photo_url ?? "");
+        setBio(athleteProfileData.bio ?? "");
+        setPublicConsent(athleteProfileData.is_public === true);
+        return;
+      }
+
+      setDisplayName((current) => savedProfile?.displayName || metadata.name || metadata.full_name || profileData?.name || current || request?.athleteName || "Atleta");
+      setPhotoUrl((current) => savedProfile?.photoUrl || profileData?.photo_url || current || "");
+      setBio((current) => savedProfile?.bio || metadata.athlete_bio || current || "");
+      setPublicConsent(savedProfile?.publicConsent === true || metadata.athlete_profile_public === true);
+    }
+
+    void hydrateProfile();
+  }, [session?.user?.id]);
+
+  async function submitAuth(event) {
+    event.preventDefault();
+    if (submitting) return;
+    if (!email.trim() || !password) {
+      setNotice({ type: "warning", message: "Informe e-mail e senha para continuar." });
+      return;
+    }
+    if (mode === "signup" && password.length < 8) {
+      setNotice({ type: "warning", message: "A senha deve ter pelo menos 8 caracteres." });
+      return;
+    }
+    if (mode === "signup" && !displayName.trim()) {
+      setNotice({ type: "warning", message: "Informe o nome que aparecerá no perfil." });
+      return;
+    }
+
+    setSubmitting(true);
+    setNotice(null);
+    const authResult = mode === "login"
+      ? await athleteLinkSupabase.auth.signInWithPassword({ email: normalizeEmail(email), password })
+      : await athleteLinkSupabase.auth.signUp({
+        email: normalizeEmail(email),
+        password,
+        options: {
+          emailRedirectTo: window.location.href.split("#")[0],
+          data: { name: displayName.trim(), account_type: "athlete" },
+        },
+      });
+    setSubmitting(false);
+
+    if (authResult.error) {
+      setNotice({ type: "error", message: getAuthErrorMessage(authResult.error, "Não foi possível entrar. Confira os dados e tente novamente.") });
+      return;
+    }
+
+    if (mode === "signup" && !authResult.data?.session) {
+      setNotice({ type: "success", message: "Enviamos a confirmação por e-mail. Depois de confirmar, volte a esta aba e entre na conta." });
+      setMode("login");
+    }
+  }
+
+  async function handleAthletePhoto(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      setPhotoUrl(await resizeAthletePhoto(file));
+      setNotice(null);
+    } catch (error) {
+      setNotice({ type: "warning", message: error.message });
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  async function confirmLink() {
+    if (!request || !session?.user?.id || submitting) return;
+    if (!displayName.trim()) {
+      setNotice({ type: "warning", message: "Informe o nome do atleta." });
+      return;
+    }
+
+    setSubmitting(true);
+    setNotice(null);
+    const linkedAt = new Date().toISOString();
+    const userId = session.user.id;
+    const result = {
+      requestId,
+      tournamentId: request.tournamentId,
+      path: request.path,
+      athleteIndex: request.athleteIndex,
+      athleteProfileId: userId,
+      profileSlug: userId,
+      displayName: displayName.trim(),
+      photoUrl,
+      bio: bio.trim().slice(0, 240),
+      publicConsent,
+      linkedAt,
+    };
+
+    const { error: userError } = await athleteLinkSupabase.auth.updateUser({
+      data: {
+        name: result.displayName,
+        account_type: ACCOUNT_TYPE_ATHLETE,
+        athlete_bio: result.bio,
+        athlete_profile_public: result.publicConsent,
+      },
+    });
+
+    if (userError) {
+      setSubmitting(false);
+      setNotice({ type: "error", message: "Não foi possível confirmar os dados do perfil." });
+      return;
+    }
+
+    const { error: profileError } = await athleteLinkSupabase.from("athlete_profiles").upsert({
+      user_id: userId,
+      display_name: result.displayName,
+      photo_url: result.photoUrl,
+      bio: result.bio,
+      is_public: result.publicConsent,
+      show_achievements: true,
+      updated_at: linkedAt,
+    }, { onConflict: "user_id" });
+
+    if (profileError) {
+      console.error("Erro ao salvar perfil do atleta", profileError);
+      setSubmitting(false);
+      setNotice({ type: "error", message: "Não foi possível salvar o perfil do atleta. Tente novamente." });
+      return;
+    }
+
+    const { error: claimError } = await athleteLinkSupabase.rpc("claim_athlete_link_request", {
+      p_request_id: requestId,
+      p_public_consent: result.publicConsent,
+    });
+
+    if (claimError) {
+      console.error("Erro ao confirmar convite do atleta", claimError);
+      setSubmitting(false);
+      setNotice({ type: "error", message: "Este convite expirou ou já foi utilizado. Peça um novo vínculo ao organizador." });
+      return;
+    }
+
+    try {
+      localStorage.setItem(`${ATHLETE_PROFILE_DRAFT_PREFIX}${userId}`, JSON.stringify({
+        displayName: result.displayName,
+        photoUrl: result.photoUrl,
+        bio: result.bio,
+        publicConsent: result.publicConsent,
+        updatedAt: linkedAt,
+      }));
+    } catch {
+      // O banco continua sendo a fonte oficial do vínculo e da privacidade.
+    }
+
+    try {
+      localStorage.setItem(`${ATHLETE_LINK_RESULT_PREFIX}${requestId}`, JSON.stringify({ requestId, linkedAt }));
+    } catch {
+      // O organizador também consulta o resultado diretamente no servidor.
+    }
+
+    setSubmitting(false);
+    setCompleted(true);
+  }
+
+  async function changeAthleteAccount() {
+    await athleteLinkSupabase.auth.signOut({ scope: "local" });
+    hydratedUserRef.current = "";
+    setSession(null);
+  }
+
+  if (loading) {
+    return <div className="athleteLinkPage"><section className="athleteLinkCard"><div className="loadingSpinner" /><p>Preparando o login seguro do atleta...</p></section></div>;
+  }
+
+  if (!request) {
+    return (
+      <div className="athleteLinkPage"><section className="athleteLinkCard athleteLinkMissing"><BeachLogo /><h1>Vínculo não encontrado</h1><p>Este convite expirou ou já foi concluído. Peça ao organizador para abrir novamente o botão Vincular perfil.</p></section></div>
+    );
+  }
+
+  if (completed) {
+    return (
+      <div className="athleteLinkPage">
+        <section className="athleteLinkCard athleteLinkComplete">
+          <div className="athleteLinkSuccessIcon"><Trophy aria-hidden="true" /></div>
+          <h1>Perfil vinculado</h1>
+          <p>A confirmação foi enviada para o torneio <strong>{request.tournamentName}</strong>. Você já pode fechar esta aba.</p>
+          <button type="button" onClick={() => window.close()}>Fechar aba</button>
+        </section>
+      </div>
+    );
+  }
+
+  if (session && getUserAccountType(session.user) !== ACCOUNT_TYPE_ATHLETE) {
+    return (
+      <div className="athleteLinkPage">
+        <header className="athleteLinkHeader"><BeachLogo /></header>
+        <main className="athleteLinkMain">
+          <section className="athleteLinkCard athleteLinkMissing">
+            <UserRound aria-hidden="true" />
+            <h1>Use uma conta de atleta</h1>
+            <p>Este vínculo só pode ser confirmado por um perfil gratuito de atleta. A conta de organizador permanece separada e não será alterada.</p>
+            <button type="button" onClick={changeAthleteAccount}>Entrar com outra conta</button>
+          </section>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="athleteLinkPage">
+      <header className="athleteLinkHeader"><BeachLogo /></header>
+      <main className="athleteLinkMain">
+        <section className="athleteLinkContext">
+          <span>VÍNCULO DE ATLETA</span>
+          <h1>{request.tournamentName}</h1>
+          <p>O organizador cadastrou esta vaga como <strong>{request.athleteName}</strong>. Entre na sua própria conta para confirmar que esse participante é você.</p>
+        </section>
+
+        {!session ? (
+          <section className="athleteLinkCard">
+            <div className="athleteLinkMode" role="tablist">
+              <button type="button" className={mode === "login" ? "active" : ""} onClick={() => setMode("login")}>Já tenho conta</button>
+              <button type="button" className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Criar perfil de atleta</button>
+            </div>
+            <form onSubmit={submitAuth}>
+              {mode === "signup" ? <label>Nome no perfil<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} placeholder="Seu nome completo" /></label> : null}
+              <label>E-mail<input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seu@email.com" /></label>
+              <label>Senha<input type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" /></label>
+              {notice ? <div className={`athleteLinkNotice ${notice.type}`}>{notice.message}</div> : null}
+              <button type="submit" disabled={submitting}>{submitting ? "Aguarde..." : mode === "login" ? "Entrar e continuar" : "Criar perfil"}</button>
+            </form>
+            <small className="athleteLinkSecurity"><LockKeyhole aria-hidden="true" /> Este login usa uma sessão separada e não desconecta o organizador.</small>
+          </section>
+        ) : (
+          <section className="athleteLinkCard athleteProfileConfirmCard">
+            <div className="athleteProfileConfirmHeader">
+              <label className="athletePhotoPicker">
+                <span>{photoUrl ? <img src={photoUrl} alt="Foto do atleta" /> : getAthleteInitials(displayName || request.athleteName)}</span>
+                <input type="file" accept="image/png,image/jpeg" onChange={handleAthletePhoto} />
+                <small><Camera aria-hidden="true" /> Escolher foto</small>
+              </label>
+              <div><span>PERFIL DO ATLETA</span><h2>{displayName || request.athleteName}</h2><button type="button" onClick={changeAthleteAccount}>Usar outra conta</button></div>
+            </div>
+            <label>Nome público<input value={displayName} onChange={(event) => setDisplayName(event.target.value)} maxLength={90} /></label>
+            <label>Bio opcional<textarea value={bio} onChange={(event) => setBio(event.target.value)} maxLength={240} placeholder="Uma frase curta que resuma você como atleta." /><small>{bio.length}/240</small></label>
+            <label className="athleteConsentOption">
+              <input type="checkbox" checked={publicConsent} onChange={(event) => setPublicConsent(event.target.checked)} />
+              <span><strong>Exibir meu perfil nos torneios</strong><small>Minha foto e meu nome poderão ser clicados para abrir o perfil público. Posso manter o vínculo privado se preferir.</small></span>
+            </label>
+            {notice ? <div className={`athleteLinkNotice ${notice.type}`}>{notice.message}</div> : null}
+            <button type="button" className="athleteConfirmButton" onClick={confirmLink} disabled={submitting}>{submitting ? "Confirmando..." : "Confirmar que este perfil é meu"}</button>
+          </section>
+        )}
+      </main>
+    </div>
+  );
+}
+
+function normalizeAthleteLookupKey(value) {
+  return String(value || "").trim().toLocaleLowerCase("pt-BR").replace(/\s+/g, " ");
+}
+
+function findAthleteLinksInTournament(tournament, athleteKey) {
+  const config = getModalityConfig(tournament.type);
+  if (!config) return [];
+  const data = normalizeTournamentData(tournament.type, tournament.data);
+  const meta = data.participantMeta || {};
+  const matchesKey = (athlete) => {
+    const normalized = normalizeAthleteProfileMeta(athlete);
+    return normalized.publicConsent && [normalized.athleteProfileId, normalized.profileSlug].some((value) => String(value || "") === String(athleteKey));
+  };
+
+  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+    return (data.players?.teams || []).flatMap((team, teamIndex) => {
+      const teamMeta = normalizeParticipantMetaList([meta.teams?.[teamIndex]], 1, { athleteCount: 2 })[0];
+      return teamMeta.athletes.flatMap((athlete, athleteIndex) => matchesKey(athlete) ? [{
+        athlete: normalizeAthleteProfileMeta(athlete),
+        kind: "team",
+        index: teamIndex,
+        athleteIndex,
+        teamName: getTeamName(team),
+        data,
+        config,
+      }] : []);
+    });
+  }
+
+  const collections = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16"
+    ? [
+      { kind: "men", names: data.players?.men || [], values: meta.men || [] },
+      { kind: "women", names: data.players?.women || [], values: meta.women || [] },
+    ]
+    : [{ kind: "normal", names: data.players || [], values: meta.normal || [] }];
+
+  return collections.flatMap((collection) => collection.names.flatMap((name, index) => {
+    const athlete = normalizeAthleteProfileMeta(collection.values[index]);
+    return matchesKey(athlete) ? [{ athlete, kind: collection.kind, index, athleteIndex: 0, teamName: name, data, config }] : [];
+  }));
+}
+
+function getValidatedAthleteAchievement(tournament, link) {
+  const { data, config, kind, index, teamName } = link;
+  if (!data.rankingConfirmedAt) return null;
+  let placement = 0;
+
+  if (isCupType(config)) {
+    const podium = getSafeCupPresentation(data, config).mainCupPodium;
+    const target = normalizeAthleteLookupKey(teamName);
+    placement = podium.findIndex((item) => normalizeAthleteLookupKey(item.name) === target) + 1;
+  } else {
+    const ranking = calculateRanking(data, tournament.type, data.rankingCriteria);
+    const participantId = kind === "women" ? Number(config.men || 0) + index : index;
+    placement = ranking.findIndex((item) => Number(item.id) === participantId) + 1;
+  }
+
+  if (placement < 1 || placement > 3) return null;
+  const organizer = data.publicInfo?.organizer || {};
+  return {
+    id: `${tournament.id}-${placement}`,
+    placement,
+    tournamentName: data.eventName || tournament.name,
+    modality: normalizeModalityName(tournament.type),
+    date: data.eventDate || tournament.updated_at || "",
+    arenaName: organizer.arenaName || organizer.organizerName || "Organizador do torneio",
+    publicId: tournament.public_id,
+  };
+}
+
+function PublicAthletePage({ athleteKey }) {
+  const [state, setState] = useState({ loading: true, profile: null, achievements: [], showAchievements: true, error: "" });
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadAthlete() {
+      const tournamentsPromise = supabase.rpc("list_public_tournaments", { p_limit: 500 });
+      const canQueryProfileById = /^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(String(athleteKey || ""));
+      const profilePromise = canQueryProfileById
+        ? supabase.from("profiles").select("id, name, photo_url, is_public").eq("id", athleteKey).eq("is_public", true).maybeSingle()
+        : Promise.resolve({ data: null, error: null });
+      const athleteProfilePromise = canQueryProfileById
+        ? supabase.from("athlete_profiles").select("user_id, display_name, photo_url, bio, is_public, show_achievements").eq("user_id", athleteKey).eq("is_public", true).maybeSingle()
+        : Promise.resolve({ data: null, error: null });
+      const [tournamentResult, profileResult, athleteProfileResult] = await Promise.all([tournamentsPromise, profilePromise, athleteProfilePromise]);
+      if (!active) return;
+
+      if (tournamentResult.error) {
+        setState({ loading: false, profile: null, achievements: [], showAchievements: true, error: "Não foi possível carregar este perfil agora." });
+        return;
+      }
+
+      const linked = [];
+      (tournamentResult.data || []).forEach((tournament) => {
+        findAthleteLinksInTournament(tournament, athleteKey).forEach((link) => linked.push({ tournament, link }));
+      });
+      const snapshot = linked.map((item) => item.link.athlete).find((athlete) => athlete.publicConsent) || null;
+      const publicProfile = profileResult.data;
+      const athleteProfile = athleteProfileResult.data;
+      const athleteProfileTableUnavailable = ["42P01", "PGRST205"].includes(String(athleteProfileResult.error?.code || ""));
+      const legacyProfile = athleteProfileTableUnavailable ? (snapshot || publicProfile) : null;
+      const profile = athleteProfile
+        ? {
+          displayName: athleteProfile.display_name || "Atleta",
+          photoUrl: athleteProfile.photo_url ?? "",
+          bio: athleteProfile.bio ?? "",
+        }
+        : legacyProfile
+          ? {
+            displayName: snapshot?.displayName || publicProfile?.name || "Atleta",
+            photoUrl: snapshot?.photoUrl || publicProfile?.photo_url || "",
+            bio: snapshot?.bio || "",
+          }
+          : null;
+      const showAchievements = athleteProfile?.show_achievements !== false;
+      const achievements = (showAchievements ? linked : [])
+        .map(({ tournament, link }) => getValidatedAthleteAchievement(tournament, link))
+        .filter(Boolean)
+        .filter((achievement, index, values) => values.findIndex((item) => item.id === achievement.id) === index)
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+
+      setState({ loading: false, profile, achievements, showAchievements, error: profile ? "" : "Este atleta ainda não autorizou um perfil público." });
+    }
+
+    void loadAthlete();
+    return () => { active = false; };
+  }, [athleteKey]);
+
+  if (state.loading) return <div className="publicAthletePage"><div className="publicAthleteState"><div className="loadingSpinner" /><p>Carregando perfil do atleta...</p></div></div>;
+  if (!state.profile) return <div className="publicAthletePage"><div className="publicAthleteState"><BeachLogo /><h1>Perfil indisponível</h1><p>{state.error}</p><a href="/">Voltar ao Torneio360</a></div></div>;
+
+  const podiumCount = state.achievements.length;
+  const placementCounts = [1, 2, 3].map((placement) => state.achievements.filter((item) => item.placement === placement).length);
+
+  return (
+    <div className="publicAthletePage">
+      <header className="publicAthleteHeader"><a href="/"><BeachLogo /></a><a href="/">Início</a></header>
+      <main className="publicAthleteContent">
+        <section className="publicAthleteHero">
+          <div className="publicAthletePhoto">{state.profile.photoUrl ? <img src={state.profile.photoUrl} alt={`Foto de ${state.profile.displayName}`} /> : getAthleteInitials(state.profile.displayName)}</div>
+          <div><span>PERFIL DE ATLETA</span><h1>{state.profile.displayName}</h1>{state.profile.bio ? <p>{state.profile.bio}</p> : <p>Atleta vinculado aos torneios do Torneio360.</p>}</div>
+        </section>
+        {state.showAchievements ? <section className="publicAthleteStats" aria-label="Resumo de conquistas">
+          <div className="total"><Trophy aria-hidden="true" /><span>Pódios validados</span><strong>{podiumCount}</strong></div>
+          <div><span>1º lugar</span><strong>{placementCounts[0]}</strong></div>
+          <div><span>2º lugar</span><strong>{placementCounts[1]}</strong></div>
+          <div><span>3º lugar</span><strong>{placementCounts[2]}</strong></div>
+        </section> : null}
+        <section className="publicAthleteAchievements">
+          <div className="publicAthleteSectionTitle"><div><span>CONQUISTAS</span><h2>Resultados oficiais</h2></div><small>Somente resultados confirmados por organizadores</small></div>
+          {!state.showAchievements ? (
+            <div className="publicAthleteEmpty"><LockKeyhole aria-hidden="true" /><strong>Conquistas privadas</strong><p>Este atleta escolheu não exibir publicamente o histórico de resultados.</p></div>
+          ) : state.achievements.length ? (
+            <div className="publicAthleteAchievementList">
+              {state.achievements.map((achievement) => (
+                <article key={achievement.id} className={`placement-${achievement.placement}`}>
+                  <div className="achievementPlace">{achievement.placement}<sup>º</sup></div>
+                  <div className="achievementCopy"><strong>{achievement.tournamentName}</strong><span>{achievement.modality}</span>{achievement.date ? <small><CalendarDays aria-hidden="true" /> {formatDateBR(String(achievement.date).slice(0, 10))}</small> : null}</div>
+                  <div className="achievementSignature"><span><Trophy aria-hidden="true" /> Resultado validado</span><strong>{achievement.arenaName}</strong>{achievement.publicId ? <a href={`/?public=${encodeURIComponent(achievement.publicId)}`}>Ver torneio</a> : null}</div>
+                </article>
+              ))}
+            </div>
+          ) : <div className="publicAthleteEmpty"><Trophy aria-hidden="true" /><strong>Nenhum pódio validado ainda</strong><p>As conquistas aparecerão aqui quando um organizador confirmar o ranking de um torneio público.</p></div>}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function RootApp() {
+  const params = new URLSearchParams(window.location.search);
+  const athleteLinkId = params.get("vincular-atleta");
+  const athleteKey = params.get("atleta");
+
+  if (athleteLinkId) return <AthleteLinkPage requestId={athleteLinkId} />;
+  if (athleteKey) return <PublicAthletePage athleteKey={athleteKey} />;
+  return <App />;
+}
+
 createRoot(document.getElementById("root")).render(
   <>
-    <App />
+    <RootApp />
     <InstallAppBanner />
   </>
 );
@@ -10916,16 +12344,53 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
   });
 }
 
-function normalizeParticipantMetaList(values, count) {
+function createParticipantReference() {
+  if (typeof globalThis.crypto?.randomUUID === "function") return globalThis.crypto.randomUUID();
+  return `participante-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function normalizeAthleteProfileMeta(value, legacy = {}) {
+  const item = isTournamentDataObject(value) ? value : {};
+  const fallback = isTournamentDataObject(legacy) ? legacy : {};
+  const athleteProfileId = item.athleteProfileId || item.athlete_profile_id || fallback.athleteProfileId || fallback.athlete_profile_id || "";
+  const photoUrl = item.photoUrl || item.photo_url || item.avatarUrl || item.avatar_url || fallback.photoUrl || fallback.photo_url || "";
+
+  return {
+    ...item,
+    memberId: item.memberId || item.member_id || createParticipantReference(),
+    athleteProfileId,
+    profileSlug: item.profileSlug || item.profile_slug || athleteProfileId || "",
+    displayName: item.displayName || item.display_name || "",
+    photoUrl,
+    bio: typeof item.bio === "string" ? item.bio : "",
+    publicConsent: item.publicConsent === true || item.public_consent === true,
+    profileLinked: Boolean(item.profileLinked || item.profile_linked || athleteProfileId),
+    linkedAt: item.linkedAt || item.linked_at || "",
+  };
+}
+
+function normalizeParticipantMetaList(values, count, options = {}) {
   const source = Array.isArray(values) ? values : [];
   return Array.from({ length: count }, (_, index) => {
     const item = isTournamentDataObject(source[index]) ? source[index] : {};
-    return {
+    const normalized = {
       ...item,
+      entryId: item.entryId || item.entry_id || createParticipantReference(),
       payment: ["pending", "paid", "exempt"].includes(item.payment) ? item.payment : "pending",
       registration: item.registration === "confirmed" ? "confirmed" : "pending",
       profileLinked: Boolean(item.profileLinked),
     };
+
+    if (Number(options.athleteCount) === 2) {
+      const sourceAthletes = Array.isArray(item.athletes) ? item.athletes : [];
+      normalized.athletes = [
+        normalizeAthleteProfileMeta(sourceAthletes[0], sourceAthletes.length ? {} : item),
+        normalizeAthleteProfileMeta(sourceAthletes[1]),
+      ];
+      normalized.profileLinked = normalized.athletes.some((athlete) => athlete.profileLinked);
+    }
+
+    return normalized;
   });
 }
 

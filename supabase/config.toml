@@ -1,0 +1,13 @@
+# Local project configuration used by the Supabase CLI.
+project_id = "torneio360"
+
+[db]
+major_version = 17
+
+[db.migrations]
+enabled = true
+schema_paths = []
+
+[db.seed]
+enabled = false
+sql_paths = []
