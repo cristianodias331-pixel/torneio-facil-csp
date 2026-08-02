@@ -528,26 +528,26 @@ function normalizeScoreInput(value, winningScore = 4) {
 
 const allowedByPlan = {
   basic: [
-    "Super 08",
+    "Super 8",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
   ],
   pro: [
-    "Super 08",
+    "Super 8",
+    "Super 8 (Dupla Fixa)",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Fixa)",
-    "Super 16 Mista (Dupla Fixa)",
   ],
   premium: [
-    "Super 08",
+    "Super 8",
+    "Super 8 (Dupla Fixa)",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Fixa)",
-    "Super 16 Mista (Dupla Fixa)",
     "Simples 8",
     "Copa - 12 ou 24 duplas",
     "Copa - 18 duplas",
@@ -606,12 +606,27 @@ function getSportDefinition(sportId) {
   return SPORT_CATALOG.find((sport) => sport.id === sportId) || SPORT_CATALOG[0];
 }
 
+const LEGACY_MODALITY_NAMES = Object.freeze({
+  "Super 08": "Super 8",
+  "Super 16 Mista (Dupla Fixa)": "Super 8 (Dupla Fixa)",
+});
+
+function normalizeModalityName(type) {
+  return LEGACY_MODALITY_NAMES[type] || type;
+}
+
 const modalityConfig = {
-  "Super 08": {
+  "Super 8": {
     type: "super8",
     total: 8,
     label: "Participante",
     courts: 2,
+  },
+
+  "Super 8 (Dupla Fixa)": {
+    type: "fixed16",
+    teams: 8,
+    courts: 4,
   },
 
   "Super 10 Mista (Dupla Aleatória)": {
@@ -639,12 +654,6 @@ const modalityConfig = {
     type: "fixed12",
     teams: 6,
     courts: 3,
-  },
-
-  "Super 16 Mista (Dupla Fixa)": {
-    type: "fixed16",
-    teams: 8,
-    courts: 4,
   },
 
   "Simples 8": {
@@ -698,6 +707,10 @@ const modalityConfig = {
     courts: 4,
   },
 };
+
+function getModalityConfig(type) {
+  return modalityConfig[normalizeModalityName(type)];
+}
 
 function getWinningScore(data) {
   return Number(data?.winningScore || 4);
@@ -3194,7 +3207,7 @@ function FigmaPublicHome({ onNavigate, onLogin, onSignup }) {
                         <span className={`status ${uiStatusKey}`}>{uiStatus}</span>
                       </div>
                       <div className="figmaPublicTournamentBody">
-                        <small>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || tournament.type}</small>
+                        <small>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || normalizeModalityName(tournament.type)}</small>
                         <h3>{details.eventName || tournament.name}</h3>
                         <p><MapPin aria-hidden="true" /> {details.location || "Local a confirmar"}</p>
                         <p><CalendarDays aria-hidden="true" /> {details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data a confirmar")}</p>
@@ -3887,7 +3900,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 08, Super 12, Super 16, Simples 8 ou Copas conforme a realidade do evento.
+                Selecione Super 8, Super 12, Super 16, Simples 8 ou Copas conforme a realidade do evento.
               </p>
             </div>
 
@@ -3961,9 +3974,9 @@ function Login({
               title="Basic"
               tag="Entrada"
               price="R$ 19,90"
-              text="Para começar com torneios mistos e Super 08."
+              text="Para começar com torneios mistos e Super 8."
               items={[
-                "Super 08",
+                "Super 8",
                 "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
@@ -3979,12 +3992,12 @@ function Login({
               price="R$ 39,90"
               text="Para organizadores que precisam de modalidades com duplas fixas."
               items={[
-                "Super 08",
+                "Super 8",
+                "Super 8 (Dupla Fixa)",
                 "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
                 "Super 12 Mista Dupla Fixa",
-                "Super 16 Mista Dupla Fixa",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -3995,12 +4008,12 @@ function Login({
               price="R$ 59,90"
               text="Para quem quer liberar todos os formatos disponíveis."
               items={[
-                "Super 08",
+                "Super 8",
+                "Super 8 (Dupla Fixa)",
                 "Super 10 Mista Aleatória",
                 "Super 12 Mista Aleatória",
                 "Super 16 Mista Aleatória",
                 "Super 12 Mista Dupla Fixa",
-                "Super 16 Mista Dupla Fixa",
                 "Simples 8",
                 "Copa - 12 ou 24 duplas",
                 "Copa - 18 duplas",
@@ -4021,8 +4034,13 @@ function Login({
 
           <div className="modalitiesGrid landingModalities">
             <Info
-              title="Super 08"
+              title="Super 8"
               text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
+            />
+
+            <Info
+              title="Super 8 (Dupla Fixa)"
+              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
@@ -4043,11 +4061,6 @@ function Login({
             <Info
               title="Super 12 Mista Dupla Fixa"
               text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
-            />
-
-            <Info
-              title="Super 16 Mista Dupla Fixa"
-              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
@@ -4910,7 +4923,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const matchesSearch = !term || [tournament.name, details.eventName, details.gender, details.location]
       .filter(Boolean)
       .some((value) => String(value).toLocaleLowerCase("pt-BR").includes(term));
-    const matchesFormat = tournamentFormatFilter === "all" || tournament.type === tournamentFormatFilter;
+    const matchesFormat = tournamentFormatFilter === "all" || normalizeModalityName(tournament.type) === tournamentFormatFilter;
     const matchesStatus = tournamentStatusFilter === "all" || getTournamentUiStatus(tournament) === tournamentStatusFilter;
     return matchesSearch && matchesFormat && matchesStatus;
   });
@@ -5175,7 +5188,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         tournament.type,
         tournament.data?.rankingCriteria || defaultRankingCriteria
       );
-      const config = modalityConfig[tournament.type];
+      const config = getModalityConfig(tournament.type);
       const separated = config?.type === "mixed10" || config?.type === "mixed12" || config?.type === "mixed16";
       const nameOccurrences = new Map();
 
@@ -5835,7 +5848,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
-    const config = modalityConfig[newType];
+    const config = getModalityConfig(newType);
     const isMultiCategory = newMultiCategoryEvent === "sim";
     const validCategorySchedules = newCategorySchedules.filter((item) => item.category.trim());
 
@@ -6034,7 +6047,7 @@ setNewPublicInfo({
     setEditForm({
       name: tournament.name || "",
       sport: details.sport || DEFAULT_SPORT_ID,
-      type: tournament.type || "",
+      type: normalizeModalityName(tournament.type) || "",
       eventName: details.eventName || "",
       gender: details.gender || "",
       eventDate: details.eventDate || "",
@@ -6684,7 +6697,7 @@ setNewPublicInfo({
           <article className="arenaPublicTournamentCard" key={t.id}>
             <div>
               <strong>{t.name}</strong>
-              <small>{t.type}</small>
+              <small>{normalizeModalityName(t.type)}</small>
             </div>
             <div className="tournamentMeta">
               {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
@@ -7194,7 +7207,7 @@ setNewPublicInfo({
                 <span className="circuitCheckVisual">{checked ? "✓" : ""}</span>
                 <span className="circuitTournamentText">
                   <strong>{details.eventName || t.name}</strong>
-                  <small>{[t.name, t.type, details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
+                  <small>{[t.name, normalizeModalityName(t.type), details.eventDate ? formatDateBR(details.eventDate) : null].filter(Boolean).join(" · ")}</small>
                 </span>
               </label>
             );
@@ -7391,7 +7404,7 @@ setNewPublicInfo({
             <div className="tournamentInfo">
               <div className="tournamentTitleRow">
                 <strong>{t.name}</strong>
-                <span className="tournamentTypeBadge">{t.type}</span>
+                <span className="tournamentTypeBadge">{normalizeModalityName(t.type)}</span>
               </div>
 
               <div className="tournamentMeta">
@@ -7447,7 +7460,7 @@ setNewPublicInfo({
             <article className="figmaProfilePost" key={tournament.id}>
               <div className="figmaProfilePostTop"><span>{getTournamentUiStatus(tournament) === "Encerrado" ? "TORNEIO CONCLUÍDO" : getTournamentUiStatus(tournament).toUpperCase()}</span><button type="button" aria-label="Mais opções"><MoreVertical /></button></div>
               <h3>{details.eventName || tournament.name}</h3>
-              <p>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || tournament.type}</p>
+              <p>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || normalizeModalityName(tournament.type)}</p>
               <p><CalendarDays aria-hidden="true" /> {details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data não informada")}</p>
               <p><MapPin aria-hidden="true" /> {details.location || "Local não informado"}</p>
               <div className="figmaProfilePostActions">
@@ -7584,7 +7597,7 @@ setNewPublicInfo({
             <div className="tournamentInfo">
               <div className="tournamentTitleRow">
                 <strong>{t.name}</strong>
-                <span className="tournamentTypeBadge">{t.type}</span>
+                <span className="tournamentTypeBadge">{normalizeModalityName(t.type)}</span>
               </div>
               <div className="tournamentMeta">
                 {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
@@ -7934,7 +7947,7 @@ function normalizeBrackets(brackets) {
 }
 
 function normalizeTournamentData(type, rawData) {
-  const config = modalityConfig[type];
+  const config = getModalityConfig(type);
 
   if (!config) {
     return isTournamentDataObject(rawData) ? rawData : createInitialData(type, config);
@@ -8034,7 +8047,7 @@ function normalizeTournamentData(type, rawData) {
 }
 
 function needsTournamentDataRepair(type, rawData) {
-  const config = modalityConfig[type];
+  const config = getModalityConfig(type);
   if (!config || !isTournamentDataObject(rawData) || !Array.isArray(rawData.schedule)) return true;
 
   const players = isTournamentDataObject(rawData.players) ? rawData.players : {};
@@ -8119,7 +8132,7 @@ class TournamentErrorBoundary extends React.Component {
 }
 
 function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNavigationStateChange }) {
-  const config = modalityConfig[tournament.type];
+  const config = getModalityConfig(tournament.type);
 
   if (!config) {
     return (
@@ -9401,7 +9414,7 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
 }
 
 function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQuery = "", statusFilter = "all", viewMode = "confirmed" }) {
-  const config = modalityConfig[type];
+  const config = getModalityConfig(type);
   const searchTerm = searchQuery.trim().toLocaleLowerCase("pt-BR");
 
   function getMeta(kind, index) {
@@ -9549,7 +9562,7 @@ function buildFromMixedTemplate(template, players) {
 }
 
 function generateSchedule(type, players) {
-  const config = modalityConfig[type];
+  const config = getModalityConfig(type);
 
   if (config.type === "super8") {
     return optimizeCourts(buildFromPairTemplate(super8Template, players));
@@ -9792,7 +9805,7 @@ function ScheduleView({
 }
 
 function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCriteria) {
-  const config = modalityConfig[type];
+  const config = getModalityConfig(type);
   const winningScore = getWinningScore(data);
 
   if (!data.players) return [];
@@ -9895,7 +9908,7 @@ function FigmaRankingLeaders({ ranking }) {
 }
 
 function RankingView({ ranking, type, rankingCriteria, figma = false, rankingFinalized = false }) {
-  const config = modalityConfig[type];
+  const config = getModalityConfig(type);
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     const menLimit = config.men;
@@ -10493,7 +10506,7 @@ function PublicTournamentScreen({ tournament }) {
     savePublicViewStorage(publicMatchesTabStorageKey, tab);
     setActivePublicMatchesTabState(tab);
   }
-  const config = modalityConfig[tournament.type];
+  const config = getModalityConfig(tournament.type);
   const data = normalizeTournamentData(tournament.type, tournament.data);
 
   if (!config) {
@@ -10537,7 +10550,7 @@ function PublicTournamentScreen({ tournament }) {
           <span>Tabela pública</span>
           <h1>{tournament.name}</h1>
           <p>
-            {tournament.type}
+            {normalizeModalityName(tournament.type)}
             {data.gender ? ` · ${data.gender}` : ""}
             {data.eventDay ? ` · ${data.eventDay}` : ""}
             {data.eventDate ? ` · ${formatDateBR(data.eventDate)}` : ""}
@@ -10853,7 +10866,7 @@ function normalizeParticipantMetaList(values, count) {
 }
 
 function getTournamentParticipantRecords(type, data) {
-  const config = modalityConfig[type];
+  const config = getModalityConfig(type);
   const meta = data?.participantMeta || {};
   if (!config || !data?.players) return [];
 
