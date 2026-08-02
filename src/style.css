@@ -17403,6 +17403,24 @@ html[data-theme="dark"] {
   display: none !important;
 }
 
+/* O checkbox invisível fica contido no próprio cartão, sem alargar a página. */
+.proDashboard.playAppShell .circuitTournamentOption {
+  position: relative !important;
+  min-width: 0 !important;
+}
+
+.proDashboard.playAppShell .circuitTournamentOption > input[type="checkbox"] {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* O mesmo contrato de largura e alinhamento vale para rankings de circuitos e torneios. */
 .proDashboard.playAppShell .circuitRankingTables,
 .proDashboard.playAppShell .rankingTablePanel {
