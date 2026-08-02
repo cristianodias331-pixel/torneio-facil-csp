@@ -4062,6 +4062,13 @@ body:has(.proDashboard) .installAppBanner {
   }
 }
 
+html[data-theme="light"] body .proDashboard.theme-light .figmaMatchesSection .roundTitleBlock h3 {
+  border: 1px solid var(--t360-border) !important;
+  background: var(--t360-card-highlight) !important;
+  color: var(--t360-white) !important;
+  box-shadow: none !important;
+}
+
 /* ======================================================================
    RANKING — fidelidade visual do Figma (escopo exclusivo da seção)
    ====================================================================== */
@@ -5298,5 +5305,336 @@ body:has(.proDashboard) .installAppBanner {
   .proDashboard .figmaBracketSection .figmaBracketRound:not(:last-child) .figmaBracketGame::after,
   .proDashboard .figmaBracketSection .figmaBracketRound:not(:first-child) .figmaBracketGame::before {
     width: 22px;
+  }
+}
+
+/* Tournament management refinements: inscritos, rounds and athlete identity. */
+.proDashboard .figmaParticipantTableHead,
+.proDashboard .figmaParticipantRow {
+  grid-template-columns: minmax(0, 1fr) minmax(140px, 180px) !important;
+  gap: 24px !important;
+}
+
+.proDashboard .figmaParticipantRow {
+  min-height: 108px !important;
+}
+
+.proDashboard .figmaParticipantAvatar {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  overflow: hidden;
+  color: var(--t360-white);
+  font-size: 12px;
+}
+
+.proDashboard .figmaParticipantAvatar img,
+.proDashboard .matchAthleteAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.proDashboard .figmaParticipantIdentity > .figmaParticipantNames {
+  display: grid !important;
+  width: 100%;
+  gap: 7px !important;
+}
+
+.proDashboard .figmaParticipantNameRow {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.proDashboard .figmaParticipantNameRow > span {
+  color: var(--t360-muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.proDashboard .figmaParticipantIdentity .figmaParticipantNameRow input {
+  width: 100% !important;
+  height: 28px !important;
+  min-height: 28px !important;
+  padding: 0 8px !important;
+  border: 1px solid transparent !important;
+  border-radius: 5px !important;
+}
+
+.proDashboard .figmaParticipantIdentity .figmaParticipantNameRow input:focus {
+  border-color: var(--t360-cyan) !important;
+  background: var(--t360-input) !important;
+}
+
+.proDashboard .figmaMatchesSection .schedule {
+  display: flex !important;
+  width: 100%;
+  flex-direction: column !important;
+  gap: 24px !important;
+}
+
+.proDashboard .figmaMatchesSection .schedule > .roundCard {
+  display: block !important;
+  overflow: hidden !important;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid var(--t360-border) !important;
+  border-radius: 12px !important;
+  background: var(--t360-surface) !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .figmaMatchesSection .roundHeader {
+  display: flex !important;
+  min-height: 74px;
+  padding: 14px 18px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-bottom: 1px solid var(--t360-border);
+  background: var(--t360-card-highlight);
+}
+
+.proDashboard .figmaMatchesSection .roundTitleBlock {
+  display: grid;
+  gap: 2px;
+}
+
+.proDashboard .figmaMatchesSection .roundTitleBlock > span {
+  color: var(--t360-cyan);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.proDashboard .figmaMatchesSection .roundHeader h3 {
+  margin: 0 !important;
+  color: var(--t360-white) !important;
+  font-size: 24px !important;
+}
+
+.proDashboard .figmaMatchesSection .roundGamesGrid {
+  display: grid;
+  padding: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.proDashboard .figmaMatchesSection .gameCard {
+  min-height: 0 !important;
+  padding: 18px !important;
+  gap: 14px !important;
+}
+
+.proDashboard .figmaMatchesSection .gameTopLine {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px !important;
+}
+
+.proDashboard.playAppShell .tournamentReferencePage .figmaMatchesSection .schedule .gameTopLine {
+  display: flex !important;
+}
+
+.proDashboard.playAppShell .tournamentReferencePage .figmaMatchesSection .schedule .gameTopLine > * {
+  width: auto !important;
+  order: initial !important;
+}
+
+.proDashboard .figmaMatchesSection .gameContextLabels {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.proDashboard .figmaMatchesSection .gameGroupLabel,
+.proDashboard .figmaMatchesSection .gameCourtLabel,
+.proDashboard .figmaMatchesSection .gameCourtEditor {
+  display: inline-flex;
+  min-height: 34px;
+  padding: 0 11px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--t360-border);
+  border-radius: 7px;
+  background: var(--t360-input);
+  color: var(--t360-white);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+
+.proDashboard .figmaMatchesSection .gameGroupLabel {
+  border-color: color-mix(in srgb, var(--t360-cyan) 55%, var(--t360-border));
+  color: var(--t360-cyan);
+}
+
+.proDashboard .figmaMatchesSection .gameCourtEditor input {
+  width: 52px !important;
+  height: 27px !important;
+  min-height: 27px !important;
+  margin: 0 !important;
+  padding: 0 5px !important;
+  border: 1px solid var(--t360-cyan) !important;
+  border-radius: 5px !important;
+  background: var(--t360-card) !important;
+  color: var(--t360-white) !important;
+  text-align: center;
+}
+
+.proDashboard .figmaMatchesSection .gameTeams > div {
+  display: grid !important;
+  min-height: 68px !important;
+  padding: 9px 11px !important;
+  grid-template-areas: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-flow: row !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  gap: 7px;
+  text-align: left !important;
+}
+
+.proDashboard .figmaMatchesSection .matchAthlete {
+  display: grid !important;
+  width: 100% !important;
+  min-height: 0 !important;
+  min-width: 0;
+  height: auto !important;
+  padding: 0 !important;
+  grid-template-columns: 9px 38px minmax(0, 1fr);
+  grid-area: auto !important;
+  align-items: center;
+  justify-content: stretch !important;
+  gap: 9px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: left !important;
+}
+
+.proDashboard .figmaMatchesSection .gameTeams > div > .matchAthlete {
+  grid-area: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+.proDashboard .figmaMatchesSection .matchOutcomeDot {
+  display: block !important;
+  width: 8px !important;
+  min-width: 8px !important;
+  height: 8px !important;
+  min-height: 8px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  background: var(--t360-border);
+  opacity: .35;
+}
+
+.proDashboard .figmaMatchesSection .matchAthlete-winner .matchOutcomeDot {
+  background: var(--t360-success);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--t360-success) 70%, transparent);
+  opacity: 1;
+}
+
+.proDashboard .figmaMatchesSection .matchAthlete-loser .matchOutcomeDot {
+  background: var(--t360-orange);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--t360-orange) 70%, transparent);
+  opacity: 1;
+}
+
+.proDashboard .figmaMatchesSection .matchAthleteAvatar {
+  display: grid !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--t360-border);
+  border-radius: 50%;
+  background: var(--t360-card-highlight);
+  color: var(--t360-white);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.proDashboard .figmaMatchesSection .matchAthlete strong {
+  display: block !important;
+  overflow: hidden;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--t360-white);
+  font-size: 13px;
+  font-weight: 800 !important;
+  letter-spacing: normal !important;
+  line-height: 1.25;
+  text-overflow: ellipsis;
+  text-transform: none !important;
+  white-space: nowrap;
+}
+
+.proDashboard .figmaRankingSection .figmaRankingTable {
+  min-width: 780px !important;
+}
+
+.proDashboard .figmaRankingSection .figmaRankingTable th:nth-child(7),
+.proDashboard .figmaRankingSection .figmaRankingTable td:nth-child(7) {
+  width: 112px !important;
+  min-width: 112px !important;
+  text-align: right !important;
+}
+
+@media (max-width: 820px) {
+  .proDashboard .figmaParticipantTableHead,
+  .proDashboard .figmaParticipantRow {
+    width: 100% !important;
+    grid-template-columns: minmax(0, 1fr) 130px !important;
+  }
+
+  .proDashboard .figmaMatchesSection .roundGamesGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .proDashboard .figmaParticipantTableHead {
+    display: none !important;
+  }
+
+  .proDashboard .figmaParticipantRow {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .proDashboard .figmaInlineStatus {
+    width: 100%;
+  }
+
+  .proDashboard .figmaMatchesSection .roundHeader,
+  .proDashboard .figmaMatchesSection .gameTopLine {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .proDashboard .figmaMatchesSection .roundGamesGrid {
+    padding: 12px;
   }
 }

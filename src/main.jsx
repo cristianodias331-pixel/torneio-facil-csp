@@ -4402,6 +4402,7 @@ const [newDailyStartTimes, setNewDailyStartTimes] = useState({});
 const [newDay, setNewDay] = useState("");
 const [newLocation, setNewLocation] = useState("");
 const [newWinningScore, setNewWinningScore] = useState(4);
+const [newCupTeamCount, setNewCupTeamCount] = useState(12);
 const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCriteria);
 const [newPublicInfo, setNewPublicInfo] = useState({
   showArenaName: true,
@@ -4440,7 +4441,14 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [tournamentFormatFilter, setTournamentFormatFilter] = useState("all");
   const [tournamentStatusFilter, setTournamentStatusFilter] = useState("all");
   const [tournamentFiltersOpen, setTournamentFiltersOpen] = useState(false);
-  const [colorMode, setColorMode] = useState("dark");
+  const [colorMode, setColorMode] = useState(() => {
+    try {
+      const savedMode = localStorage.getItem(`torneio360:color-mode:${user.id}`);
+      return savedMode === "light" ? "light" : "dark";
+    } catch {
+      return "dark";
+    }
+  });
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const [circuits, setCircuits] = useState([]);
@@ -4873,6 +4881,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   });
 
   const allowedTypes = allowedByPlan[profile.plan] || [];
+  const selectedNewTournamentConfig = getModalityConfig(newType);
   const freeTrialDetails = getFreeTrialDetails(profile, user);
   const profileDisplayName = organizerProfile.organizerName || profile.name || user.email?.split("@")[0] || "Organizador";
   const profileInitials = profileDisplayName
@@ -5880,7 +5889,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
           name: item.category.trim(),
           type: newType,
           data: {
-            ...createInitialData(newType, config),
+            ...createInitialData(newType, config, newCupTeamCount),
             ...baseData,
             gender: item.category.trim(),
             eventDate: item.date || newDate,
@@ -5894,7 +5903,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
           name: newName.trim(),
           type: newType,
           data: {
-            ...createInitialData(newType, config),
+            ...createInitialData(newType, config, newCupTeamCount),
             ...baseData,
             gender: newGender,
             eventDate: newDate,
@@ -5928,6 +5937,7 @@ setNewDailyStartTimes({});
 setNewDay("");
 setNewLocation("");
 setNewWinningScore(4);
+setNewCupTeamCount(12);
 setNewRankingCriteria(defaultRankingCriteria);
 setNewPublicInfo({
   showArenaName: true,
@@ -6349,8 +6359,9 @@ setNewPublicInfo({
                 userId={user.id}
                 onBack={closeSelectedTournament}
                 onEdit={() => {
-                  setSelected(null);
-                  openEditTournament(selected);
+                  const tournamentToEdit = selected;
+                  closeSelectedTournament();
+                  openEditTournament(tournamentToEdit);
                 }}
                 onSave={saveTournament}
                 onNavigationStateChange={rememberTournamentNavigation}
@@ -6959,13 +6970,33 @@ setNewPublicInfo({
 
   <div className="formField fullField">
     <label>Formato do Beach Tennis</label>
-    <select value={newType} onChange={(e) => setNewType(e.target.value)}>
+    <select
+      value={newType}
+      onChange={(e) => {
+        const nextType = e.target.value;
+        const nextConfig = getModalityConfig(nextType);
+        setNewType(nextType);
+        if (isCupType(nextConfig)) setNewCupTeamCount(nextConfig.defaultTeams);
+      }}
+    >
       <option value="">Escolha o formato</option>
       {allowedTypes.map((type) => (
         <option key={type} value={type}>{type}</option>
       ))}
     </select>
   </div>
+
+  {isCupType(selectedNewTournamentConfig) && selectedNewTournamentConfig.allowedTeamCounts?.length > 1 ? (
+    <div className="formField">
+      <label>Quantidade de duplas</label>
+      <select value={newCupTeamCount} onChange={(e) => setNewCupTeamCount(Number(e.target.value))}>
+        {selectedNewTournamentConfig.allowedTeamCounts.map((teamCount) => (
+          <option key={teamCount} value={teamCount}>{teamCount} duplas</option>
+        ))}
+      </select>
+      <small>Essa escolha define 4 grupos para 12 duplas ou 8 grupos para 24 duplas.</small>
+    </div>
+  ) : null}
 
   <div className="formField">
     <label>Set para vencer</label>
@@ -7803,7 +7834,7 @@ setNewPublicInfo({
   );
 }
 
-function createInitialData(type, config) {
+function createInitialData(type, config, requestedTeamCount = null) {
   const base = {
   rankingCriteria: defaultRankingCriteria,
   winningScore: 4,
@@ -7842,21 +7873,29 @@ function createInitialData(type, config) {
   }
 
   if (isCupType(config)) {
+    const teamCount = config.allowedTeamCounts?.includes(Number(requestedTeamCount))
+      ? Number(requestedTeamCount)
+      : config.defaultTeams;
+
     return {
       ...base,
       cupConfig: {
         format: config.cupMode || "standard",
-        teamCount: config.defaultTeams,
+        teamCount,
         mainBracketName: config.defaultMainBracketName,
         repechageName: config.defaultRepechageName,
         tieBreakOverrides: {},
         groupTieBreakOverrides: {},
       },
       players: {
-        teams: Array.from({ length: config.defaultTeams }, (_, i) => ({
+        teams: Array.from({ length: teamCount }, (_, i) => ({
           a: `Atleta 1 da dupla ${i + 1}`,
           b: `Atleta 2 da dupla ${i + 1}`,
         })),
+      },
+      participantMeta: {
+        ...base.participantMeta,
+        teams: normalizeParticipantMetaList([], teamCount),
       },
       brackets: [],
     };
@@ -8165,7 +8204,6 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
   const [shareLoading, setShareLoading] = useState(false);
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantFilter, setParticipantFilter] = useState("all");
-  const [participantView, setParticipantView] = useState("confirmed");
   const [rankingView, setRankingView] = useState("general");
   const [rankingSearch, setRankingSearch] = useState("");
   const [groupsConfigOpen, setGroupsConfigOpen] = useState(false);
@@ -8182,7 +8220,8 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
   });
   const [activeMatchesTab, setActiveMatchesTabState] = useState(() => {
     const params = new URLSearchParams(window.location.search);
-    return params.get("partidas") || "grupos";
+    const requestedTab = params.get("partidas");
+    return ["grupos", "chaves", "paralela"].includes(requestedTab) ? requestedTab : "grupos";
   });
 
   async function updateTournamentUrl(next = {}) {
@@ -8227,8 +8266,9 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
   }
 
   function setActiveMatchesTab(tab) {
-    setActiveMatchesTabState(tab);
-    updateTournamentUrl({ activeMatchesTab: tab });
+    const normalizedTab = ["grupos", "chaves", "paralela"].includes(tab) ? tab : "grupos";
+    setActiveMatchesTabState(normalizedTab);
+    updateTournamentUrl({ activeMatchesTab: normalizedTab });
   }
 
   useEffect(() => {
@@ -8260,8 +8300,7 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
   const participantSummary = useMemo(() => ({
     total: participantRecords.length,
     confirmed: participantRecords.filter((record) => record.meta.registration === "confirmed").length,
-    paid: participantRecords.filter((record) => record.meta.payment === "paid").length,
-    pending: participantRecords.filter((record) => record.meta.registration !== "confirmed" || record.meta.payment === "pending").length,
+    pending: participantRecords.filter((record) => record.meta.registration !== "confirmed").length,
   }), [participantRecords]);
 
   const cupGroupRankings = useMemo(
@@ -9012,7 +9051,7 @@ return (
         )}
 
         <nav className="tournamentTopTabs" aria-label="Organização do torneio">
-          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}><Users aria-hidden="true" /> Participantes</button>
+          <button type="button" className={activeTournamentTab === "participantes" ? "active" : ""} onClick={() => setActiveTournamentTab("participantes")}><Users aria-hidden="true" /> Inscritos</button>
           {isCupType(config) && (
             <button type="button" className={activeTournamentTab === "grupos" ? "active" : ""} onClick={() => setActiveTournamentTab("grupos")}><Grid3X3 aria-hidden="true" /> Grupos</button>
           )}
@@ -9023,8 +9062,8 @@ return (
         <section className="card figmaTournamentSection figmaParticipantsSection" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
           <div className="cardTitleRow figmaTournamentSectionHeading">
             <div>
-              <h2>Gestão de participantes</h2>
-              <p>Acompanhe as inscrições, confirme pagamentos e gerencie a lista.</p>
+              <h2>Inscritos</h2>
+              <p>Acompanhe as inscrições, confirme os participantes e gerencie a lista.</p>
             </div>
             <div className="participantHeaderActions">
               <SavingStatusBadge />
@@ -9034,50 +9073,29 @@ return (
             </div>
           </div>
 
-          <div className="figmaInnerTabs" role="tablist" aria-label="Gestão de inscrições">
-            <button type="button" className={participantView === "confirmed" ? "active" : ""} onClick={() => setParticipantView("confirmed")}>Participantes confirmados</button>
-            <button type="button" className={participantView === "registrations" ? "active" : ""} onClick={() => setParticipantView("registrations")}>Inscrições</button>
+          <div className="figmaInnerTabs" role="tablist" aria-label="Gestão de inscritos">
+            <button type="button" className="active" aria-selected="true">Inscritos</button>
           </div>
 
-          {participantView === "confirmed" && (
-            <>
-              <div className="participantManagementStats figmaParticipantStats">
-                <div className="total"><span>Total de inscritos</span><strong>{participantSummary.total} <small>{isCupType(config) ? "duplas" : "atletas"}</small></strong></div>
-                <div className="confirmed"><span>Inscrições confirmadas</span><strong>{participantSummary.paid} <small>Pagas</small></strong></div>
-                <div className="pending"><span>Inscrições pendentes</span><strong>{participantSummary.pending} <small>Aguardando</small></strong></div>
-              </div>
-              <div className="participantManagementToolbar">
-                <label><Search aria-hidden="true" /><input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar participante..." /></label>
-                <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar participantes">
-                  <option value="all">Todas categorias</option>
-                  <option value="confirmed">Confirmados</option>
-                  <option value="pending">Pendentes</option>
-                  <option value="linked">Perfil vinculado</option>
-                </select>
-                <button type="button" className="secondaryBtn" onClick={() => { setParticipantSearch(""); setParticipantFilter("all"); }}><Filter aria-hidden="true" /> Status</button>
-              </div>
-              <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} searchQuery={participantSearch} statusFilter={participantFilter} viewMode="confirmed" />
-              {!isCupType(config) && (
-                <div className="actions figmaTournamentBottomActions">
-                  <button type="button" className="secondaryBtn" onClick={shuffleNames}>Sortear nomes</button>
-                  <button type="button" onClick={generate}>Criar rodadas e jogos</button>
-                </div>
-              )}
-            </>
-          )}
-
-          {participantView === "registrations" && (
-            <div className="figmaRegistrationInbox">
-              <div className="participantManagementToolbar">
-                <label><Search aria-hidden="true" /><input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar por atleta ou dupla..." /></label>
-                <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar inscrições">
-                  <option value="all">Todos os status</option>
-                  <option value="confirmed">Aprovadas</option>
-                  <option value="pending">Aguardando pagamento</option>
-                  <option value="linked">Perfil vinculado</option>
-                </select>
-              </div>
-              <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} searchQuery={participantSearch} statusFilter={participantFilter} viewMode="registrations" />
+          <div className="participantManagementStats figmaParticipantStats">
+            <div className="total"><span>Total de inscritos</span><strong>{participantSummary.total} <small>{isCupType(config) ? "duplas" : "atletas"}</small></strong></div>
+            <div className="confirmed"><span>Confirmados</span><strong>{participantSummary.confirmed} <small>Confirmados</small></strong></div>
+            <div className="pending"><span>Pendentes</span><strong>{participantSummary.pending} <small>Aguardando</small></strong></div>
+          </div>
+          <div className="participantManagementToolbar">
+            <label><Search aria-hidden="true" /><input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar atleta ou dupla..." /></label>
+            <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar inscritos por status">
+              <option value="all">Todos os status</option>
+              <option value="confirmed">Confirmados</option>
+              <option value="pending">Pendentes</option>
+            </select>
+            <button type="button" className="secondaryBtn" onClick={() => { setParticipantSearch(""); setParticipantFilter("all"); }}><Filter aria-hidden="true" /> Limpar</button>
+          </div>
+          <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} searchQuery={participantSearch} statusFilter={participantFilter} />
+          {!isCupType(config) && (
+            <div className="actions figmaTournamentBottomActions">
+              <button type="button" className="secondaryBtn" onClick={shuffleNames}>Sortear nomes</button>
+              <button type="button" onClick={generate}>Criar rodadas e jogos</button>
             </div>
           )}
         </section>
@@ -9132,20 +9150,18 @@ return (
           {isCupType(config) && (
             <div className="figmaMatchesWorkbenchNav">
               <div className="matchesSubTabs">
-                <button type="button" className={activeMatchesTab === "quadras" ? "active" : ""} onClick={() => setActiveMatchesTab("quadras")}>Quadras e horários</button>
                 <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
                 <button type="button" className={activeMatchesTab === "chaves" ? "active" : ""} onClick={() => setActiveMatchesTab("chaves")}>Chave principal</button>
                 <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>Repescagem</button>
               </div>
               <div className="figmaMatchToolbarActions">
                 <SavingStatusBadge />
-                <button type="button" className="secondaryBtn" onClick={() => setActiveMatchesTab("quadras")}>Organizar partidas</button>
                 <button type="button" className="secondaryBtn"><Target aria-hidden="true" /> Central de chamadas</button>
               </div>
             </div>
           )}
-          {!isCupType(config) && <div className="cardTitleRow figmaTournamentSectionHeading"><h2>Rodadas e partidas</h2><SavingStatusBadge /></div>}
-          <div className={activeMatchesTab === "quadras" ? "figmaCourtScheduleMode" : "figmaGroupScheduleMode"} style={{ display: !isCupType(config) || activeMatchesTab === "grupos" || activeMatchesTab === "quadras" ? undefined : "none" }}>
+          {!isCupType(config) && <div className="cardTitleRow figmaTournamentSectionHeading"><div><h2>Fase de grupos</h2><p>Rodadas organizadas com até dois jogos por linha.</p></div><SavingStatusBadge /></div>}
+          <div className="figmaGroupScheduleMode" style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
 
           {!data.schedule || data.schedule.length === 0 ? (
             <p>Clique em “Criar rodadas e jogos” para montar os jogos.</p>
@@ -9159,6 +9175,9 @@ return (
   voiceRepeat={voiceRepeat}
   setVoiceRepeat={setVoiceRepeat}
   winningScore={getWinningScore(data)}
+  tournamentType={tournament.type}
+  players={data.players}
+  participantMeta={data.participantMeta}
 />
 
               <div className="actions">
@@ -9413,7 +9432,7 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   );
 }
 
-function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQuery = "", statusFilter = "all", viewMode = "confirmed" }) {
+function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQuery = "", statusFilter = "all" }) {
   const config = getModalityConfig(type);
   const searchTerm = searchQuery.trim().toLocaleLowerCase("pt-BR");
 
@@ -9431,8 +9450,7 @@ function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQ
     const matchesSearch = !searchTerm || String(name || "").toLocaleLowerCase("pt-BR").includes(searchTerm);
     const matchesStatus = statusFilter === "all"
       || (statusFilter === "confirmed" && meta.registration === "confirmed")
-      || (statusFilter === "pending" && (meta.registration !== "confirmed" || meta.payment === "pending"))
-      || (statusFilter === "linked" && meta.profileLinked);
+      || (statusFilter === "pending" && meta.registration !== "confirmed");
     return matchesSearch && matchesStatus;
   }
 
@@ -9440,13 +9458,13 @@ function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQ
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     entries = [
-      ...data.players.men.map((name, index) => ({ key: `men-${index}`, path: { kind: "men", index }, names: [name], category: "Masculino", meta: getMeta("men", index) })),
-      ...data.players.women.map((name, index) => ({ key: `women-${index}`, path: { kind: "women", index }, names: [name], category: "Feminino", meta: getMeta("women", index) })),
+      ...data.players.men.map((name, index) => ({ key: `men-${index}`, path: { kind: "men", index }, names: [name], meta: getMeta("men", index) })),
+      ...data.players.women.map((name, index) => ({ key: `women-${index}`, path: { kind: "women", index }, names: [name], meta: getMeta("women", index) })),
     ];
   } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-    entries = data.players.teams.map((team, index) => ({ key: `team-${index}`, path: { kind: "team", index }, names: [team.a, team.b], category: data.gender || "Open", meta: getMeta("team", index) }));
+    entries = data.players.teams.map((team, index) => ({ key: `team-${index}`, path: { kind: "team", index }, names: [team.a, team.b], meta: getMeta("team", index) }));
   } else {
-    entries = data.players.map((name, index) => ({ key: `normal-${index}`, path: { kind: "normal", index }, names: [name], category: data.gender || "Open", meta: getMeta("normal", index) }));
+    entries = data.players.map((name, index) => ({ key: `normal-${index}`, path: { kind: "normal", index }, names: [name], meta: getMeta("normal", index) }));
   }
 
   entries = entries.filter((entry) => matchesParticipant(entry.names.join(" "), entry.meta));
@@ -9455,58 +9473,48 @@ function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQ
     return <div className="participantEmptyState"><Search aria-hidden="true" /><strong>Nenhum participante encontrado</strong><span>Ajuste a busca ou o filtro selecionado.</span></div>;
   }
 
-  const paymentLabel = { pending: "Pendente", paid: "Pago", exempt: "Isento" };
-  const registrationLabel = { pending: "Pendente", confirmed: "Confirmado", substituted: "Substituído", incomplete: "Lista incompleta" };
+  const registrationLabel = { pending: "Pendente", confirmed: "Confirmado" };
 
   return (
-    <div className={`figmaParticipantTable participantManagementList ${viewMode === "registrations" ? "registrationMode" : ""}`}>
+    <div className="figmaParticipantTable participantManagementList">
       <div className="figmaParticipantTableHead" aria-hidden="true">
-        <span>{viewMode === "registrations" ? "ATLETA / PARCEIRO" : "PARTICIPANTE / DUPLA"}</span>
-        <span>CATEGORIA</span>
-        <span>PAGAMENTO</span>
+        <span>PARTICIPANTE / DUPLA</span>
         <span>STATUS</span>
-        <span>AÇÕES</span>
       </div>
-      {entries.map((entry, rowIndex) => (
+      {entries.map((entry, rowIndex) => {
+        const registration = entry.meta.registration === "confirmed" ? "confirmed" : "pending";
+        const initials = entry.names.filter(Boolean).map((name) => name.trim().charAt(0)).join("").slice(0, 2).toUpperCase();
+
+        return (
         <div className="figmaParticipantRow participantSlotCard" key={entry.key}>
           <div className="figmaParticipantIdentity">
-            <span className="figmaParticipantAvatar">{entry.names.filter(Boolean).map((name) => name.charAt(0)).join("").slice(0, 2) || rowIndex + 1}</span>
-            <div>
+            <span className="figmaParticipantAvatar">
+              {entry.meta.photoUrl || entry.meta.photo_url ? <img src={entry.meta.photoUrl || entry.meta.photo_url} alt="" /> : initials || rowIndex + 1}
+            </span>
+            <div className="figmaParticipantNames">
               {entry.names.map((name, nameIndex) => (
-                <React.Fragment key={`${entry.key}-${nameIndex}`}>
-                  {nameIndex > 0 ? <span className="figmaParticipantJoiner">&amp;</span> : null}
+                <label className="figmaParticipantNameRow" key={`${entry.key}-${nameIndex}`}>
+                  <span>{entry.names.length > 1 ? `Atleta ${nameIndex + 1}` : "Atleta"}</span>
                   <input
                     value={name}
-                    style={{ width: `${Math.max(5, String(name || "").length + 1)}ch` }}
                     aria-label={entry.names.length > 1 ? `Atleta ${nameIndex + 1} da dupla ${rowIndex + 1}` : `Participante ${rowIndex + 1}`}
                     onChange={(event) => updatePlayer(entry.path.kind === "team" ? { ...entry.path, field: nameIndex === 0 ? "a" : "b" } : entry.path, event.target.value)}
                   />
-                </React.Fragment>
+                </label>
               ))}
               <button type="button" className={entry.meta.profileLinked ? "linked" : ""} onClick={() => updateParticipantMeta(entry.path, "profileLinked", !entry.meta.profileLinked)}><Link2 aria-hidden="true" /> {entry.meta.profileLinked ? "Alterar vínculo" : "Vincular perfil"}</button>
             </div>
           </div>
-          <span className="figmaParticipantCategory">{entry.category}</span>
-          <label className={`figmaInlineStatus payment-${entry.meta.payment}`}>
-            <span className="srOnly">Pagamento</span>
-            <select value={entry.meta.payment} onChange={(event) => updateParticipantMeta(entry.path, "payment", event.target.value)} aria-label={`Pagamento de ${entry.names.join(" e ")}`}>
-              <option value="pending">{paymentLabel.pending}</option>
-              <option value="paid">{paymentLabel.paid}</option>
-              <option value="exempt">{paymentLabel.exempt}</option>
-            </select>
-          </label>
-          <label className={`figmaInlineStatus registration-${entry.meta.registration}`}>
+          <label className={`figmaInlineStatus registration-${registration}`}>
             <span className="srOnly">Status da inscrição</span>
-            <select value={entry.meta.registration} onChange={(event) => updateParticipantMeta(entry.path, "registration", event.target.value)} aria-label={`Status de ${entry.names.join(" e ")}`}>
+            <select value={registration} onChange={(event) => updateParticipantMeta(entry.path, "registration", event.target.value)} aria-label={`Status de ${entry.names.join(" e ")}`}>
               <option value="pending">{registrationLabel.pending}</option>
               <option value="confirmed">{registrationLabel.confirmed}</option>
-              <option value="substituted">{registrationLabel.substituted}</option>
-              <option value="incomplete">{registrationLabel.incomplete}</option>
             </select>
           </label>
-          <div className="figmaParticipantActions"><button type="button" onClick={(event) => event.currentTarget.closest(".figmaParticipantRow")?.querySelector("input")?.focus()}>{viewMode === "registrations" ? "Analisar" : "Editar"}</button></div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -9651,6 +9659,66 @@ function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
   );
 }
 
+function getAthleteInitials(name) {
+  return String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase() || "?";
+}
+
+function getScheduleAthleteNames(team) {
+  const names = Array.isArray(team) ? team : [];
+  return names
+    .flatMap((name) => String(name || "").split(/\s+\+\s+/))
+    .map((name) => name.trim())
+    .filter(Boolean);
+}
+
+function buildScheduleProfileLookup(tournamentType, players, participantMeta) {
+  const lookup = new Map();
+  const config = getModalityConfig(tournamentType);
+  const metadata = participantMeta || {};
+  const register = (name, meta = {}) => {
+    if (name) lookup.set(String(name).trim(), meta || {});
+  };
+
+  if (!config || !players) return lookup;
+
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+    (players.men || []).forEach((name, index) => register(name, metadata.men?.[index]));
+    (players.women || []).forEach((name, index) => register(name, metadata.women?.[index]));
+  } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+    (players.teams || []).forEach((team, index) => {
+      const teamMeta = metadata.teams?.[index] || {};
+      const athleteProfiles = Array.isArray(teamMeta.athletes) ? teamMeta.athletes : [];
+      register(team?.a, athleteProfiles[0] || teamMeta);
+      register(team?.b, athleteProfiles[1] || teamMeta);
+    });
+  } else {
+    (players || []).forEach((name, index) => register(name, metadata.normal?.[index]));
+  }
+
+  return lookup;
+}
+
+function MatchAthlete({ name, profile = {}, outcome = "" }) {
+  const photoUrl = profile.photoUrl || profile.photo_url || profile.avatarUrl || profile.avatar_url || "";
+
+  return (
+    <div className={`matchAthlete ${outcome ? `matchAthlete-${outcome}` : ""}`}>
+      <span className="matchOutcomeDot" aria-hidden="true" />
+      <span className="matchAthleteAvatar" aria-hidden="true">
+        {photoUrl ? <img src={photoUrl} alt="" /> : getAthleteInitials(name)}
+      </span>
+      <strong>{name}</strong>
+    </div>
+  );
+}
+
 function ScheduleView({
   schedule,
   updateScore = () => {},
@@ -9660,7 +9728,12 @@ function ScheduleView({
   setVoiceRepeat = () => {},
   winningScore = 4,
   readOnly = false,
+  tournamentType = "",
+  players = null,
+  participantMeta = null,
 }) {
+  const profileLookup = buildScheduleProfileLookup(tournamentType, players, participantMeta);
+
   return (
     <div className={`schedule ${readOnly ? "readOnlySchedule publicSchedule" : ""}`}>
       {!readOnly ? (
@@ -9671,9 +9744,9 @@ function ScheduleView({
       ) : null}
 
       {schedule.map((round, roundIndex) => (
-        <div className={`roundCard ${readOnly ? "readOnlyRoundCard publicReadOnlyRound" : ""}`} key={roundIndex}>
+        <section className={`roundCard ${readOnly ? "readOnlyRoundCard publicReadOnlyRound" : ""}`} key={roundIndex}>
           <div className="roundHeader">
-            <h3>Rodada {roundIndex + 1}</h3>
+            <div className="roundTitleBlock"><span>FASE DE GRUPOS</span><h3>Rodada {roundIndex + 1}</h3></div>
 
             {!readOnly ? (
               <div className="voiceActions">
@@ -9701,38 +9774,41 @@ function ScheduleView({
             ) : null}
           </div>
 
+          <div className="roundGamesGrid">
           {round.map((game, gameIndex) => {
             const winnerSide = getScoreWinnerSide(game, winningScore);
             const isFinished = winnerSide !== null;
             const hasPublicScore = readOnly && game.s1 !== "" && game.s1 != null && game.s2 !== "" && game.s2 != null;
+            const team1Names = getScheduleAthleteNames(game.team1);
+            const team2Names = getScheduleAthleteNames(game.team2);
 
             return (
             <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"} ${readOnly ? "publicReadOnlyGame" : ""}`} key={gameIndex}>
               <div className={`gameTopLine ${readOnly ? "publicGameTopLine" : ""}`}>
-                <strong>
-                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                  Quadra {game.court}
-                </strong>
+                <div className="gameContextLabels">
+                  {showGroupName && game.groupName ? <span className="gameGroupLabel">{game.groupName}</span> : null}
+                  {readOnly ? (
+                    <span className="gameCourtLabel">Quadra {game.court}</span>
+                  ) : (
+                    <label className="gameCourtEditor">
+                      <span>Quadra</span>
+                      <input type="number" min="1" value={game.court || 1} onChange={(event) => updateGameDetails(roundIndex, gameIndex, "court", event.target.value)} aria-label={`Quadra do jogo ${gameIndex + 1} da rodada ${roundIndex + 1}`} />
+                    </label>
+                  )}
+                </div>
                 {readOnly ? (
                   game.scheduledTime ? <span className="gameScheduledTime"><Clock3 aria-hidden="true" /> {game.scheduledTime}</span> : null
-                ) : (
-                  <div className="gameLogisticsControls">
-                    <label>
-                      <span>Quadra</span>
-                      <input type="number" min="1" value={game.court || 1} onChange={(event) => updateGameDetails(roundIndex, gameIndex, "court", event.target.value)} />
-                    </label>
-                    <label>
-                      <span>Horário</span>
-                      <input type="time" value={game.scheduledTime || ""} onChange={(event) => updateGameDetails(roundIndex, gameIndex, "scheduledTime", event.target.value)} />
-                    </label>
-                  </div>
-                )}
+                ) : null}
               </div>
 
               <div className={`gameTeams ${readOnly ? "publicGameTeams" : ""}`}>
-                <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
+                <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>
+                  {team1Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />)}
+                </div>
                 <span>x</span>
-                <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
+                <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>
+                  {team2Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />)}
+                </div>
               </div>
 
               <div
@@ -9780,25 +9856,17 @@ function ScheduleView({
                 )}
               </div>
 
-              {!readOnly ? (
+              {!readOnly && !isFinished ? (
                 <div className="voiceActions gameVoiceActions">
-                  {isFinished ? (
-                    <>
-                      <button type="button" className="voiceBtn gameShareBtn" onClick={() => copyToClipboard(`${game.team1.join(" + ")} ${game.s1} x ${game.s2} ${game.team2.join(" + ")}`)}><Share2 aria-hidden="true" /> Compartilhar</button>
-                      <button type="button" className="voiceBtn gameEditScoreBtn" onClick={(event) => event.currentTarget.closest(".gameCard")?.querySelector(".scoreRow input")?.focus()}>Editar placar</button>
-                    </>
-                  ) : (
-                    <>
-                      <button type="button" className="voiceBtn" onClick={() => speakGame(game, { roundLabel: `Rodada ${roundIndex + 1}`, includeGroup: showGroupName, repeat: voiceRepeat })}>🔊 Chamar jogo</button>
-                      <button type="button" className="voiceBtn gameResultBtn" onClick={(event) => event.currentTarget.closest(".gameCard")?.querySelector(".scoreRow input")?.focus()}>Inserir resultado</button>
-                    </>
-                  )}
+                  <button type="button" className="voiceBtn" onClick={() => speakGame(game, { roundLabel: `Rodada ${roundIndex + 1}`, includeGroup: showGroupName, repeat: voiceRepeat })}>🔊 Chamar jogo</button>
+                  <button type="button" className="voiceBtn gameResultBtn" onClick={(event) => event.currentTarget.closest(".gameCard")?.querySelector(".scoreRow input")?.focus()}>Inserir resultado</button>
                 </div>
               ) : null}
             </div>
             );
           })}
-        </div>
+          </div>
+        </section>
       ))}
     </div>
   );
@@ -9964,7 +10032,6 @@ function RankingTable({ title, rows, rankingCriteria, figma = false, rankingFina
                 <th>VITÓRIAS</th>
                 <th>PONTOS</th>
                 <th>SALDO G.</th>
-                <th>STATUS</th>
                 <th>AÇÃO</th>
               </tr>
             </thead>
@@ -9972,9 +10039,6 @@ function RankingTable({ title, rows, rankingCriteria, figma = false, rankingFina
               {rows.map((row, index) => {
                 const rowId = row.id ?? row.name;
                 const displayPosition = row.figmaRankPosition ?? index + 1;
-                const isCurrentQualifier = displayPosition <= 2;
-                const status = isCurrentQualifier ? "CLASSIFICADO" : rankingFinalized ? "ELIMINADO" : "PENDENTE";
-                const statusClass = isCurrentQualifier ? "qualified" : rankingFinalized ? "eliminated" : "pending";
                 const initials = String(row.name || "")
                   .split(/\s+/)
                   .filter(Boolean)
@@ -9998,12 +10062,11 @@ function RankingTable({ title, rows, rankingCriteria, figma = false, rankingFina
                       <td><strong>{row.w ?? 0}</strong></td>
                       <td className="points">{row.pts ?? 0}</td>
                       <td>{Number(row.bal) > 0 ? `+${row.bal}` : row.bal ?? 0}</td>
-                      <td><span className={`figmaRankingStatus ${statusClass}`}>{status}</span></td>
                       <td><button type="button" className="figmaRankingDetailsButton" onClick={() => setExpandedRowId(isExpanded ? null : rowId)} aria-expanded={isExpanded}>Ver detalhes</button></td>
                     </tr>
                     {isExpanded ? (
                       <tr className="figmaRankingDetailsRow">
-                        <td colSpan="8">
+                        <td colSpan="7">
                           <div><strong>{row.name}</strong><span>{row.played ?? 0} jogos</span><span>{row.w ?? 0} vitórias</span><span>{row.pts ?? 0} pontos</span><span>Saldo {Number(row.bal) > 0 ? `+${row.bal}` : row.bal ?? 0}</span><small>Desempate: {criteria.label}</small></div>
                         </td>
                       </tr>
@@ -10858,8 +10921,9 @@ function normalizeParticipantMetaList(values, count) {
   return Array.from({ length: count }, (_, index) => {
     const item = isTournamentDataObject(source[index]) ? source[index] : {};
     return {
+      ...item,
       payment: ["pending", "paid", "exempt"].includes(item.payment) ? item.payment : "pending",
-      registration: ["pending", "confirmed", "substituted", "incomplete"].includes(item.registration) ? item.registration : "pending",
+      registration: item.registration === "confirmed" ? "confirmed" : "pending",
       profileLinked: Boolean(item.profileLinked),
     };
   });
