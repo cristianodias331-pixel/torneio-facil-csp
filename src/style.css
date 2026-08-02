@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap");
+
 * {
   box-sizing: border-box;
 }
@@ -13511,11 +13513,11 @@ button.removePhotoBtn:hover {
    Camada final escopada para preservar as regras de negócio.
    ========================================================= */
 :root {
-  --brand-navy: #081a49;
-  --brand-blue: #1749a8;
-  --brand-cyan: #1090c0;
-  --brand-highlight: #f04b18;
-  --brand-action: #c2410c;
+  --brand-navy: #081a33;
+  --brand-blue: #1f5eff;
+  --brand-cyan: #14a0ff;
+  --brand-highlight: #ff7a00;
+  --brand-action: #ff7a00;
 }
 
 html[data-theme="dark"] {
@@ -13546,27 +13548,27 @@ html[data-theme="dark"] {
 
 .proDashboard.theme-dark {
   color-scheme: dark;
-  --brand-blue: #76a4ff;
-  --brand-cyan: #67d5e8;
-  --ui-bg: #0b1018;
-  --ui-bg-soft: #0f1620;
-  --ui-surface: #121a24;
-  --ui-surface-raised: #18222f;
-  --ui-surface-muted: #141e2a;
-  --ui-text: #e7eef8;
-  --ui-text-strong: #f5f8fc;
-  --ui-muted: #aab6c5;
-  --ui-border: #2b3745;
-  --ui-border-soft: #222e3b;
-  --ui-selected: #1b2633;
-  --ui-active-bg: rgba(251, 146, 60, 0.12);
-  --ui-active-accent: #fb923c;
+  --brand-blue: #1f5eff;
+  --brand-cyan: #14a0ff;
+  --ui-bg: #030b1f;
+  --ui-bg-soft: #06152d;
+  --ui-surface: #081a33;
+  --ui-surface-raised: #0d2344;
+  --ui-surface-muted: #102b52;
+  --ui-text: #ffffff;
+  --ui-text-strong: #ffffff;
+  --ui-muted: #b8cae6;
+  --ui-border: #1c3d68;
+  --ui-border-soft: rgba(28, 61, 104, 0.72);
+  --ui-selected: #102b52;
+  --ui-active-bg: rgba(255, 122, 0, 0.12);
+  --ui-active-accent: #ff7a00;
   --danger-bg: rgba(239, 68, 68, 0.10);
   --danger-border: rgba(248, 113, 113, 0.32);
   --danger-text: #fda4af;
-  --ui-input: #0f1722;
-  --ui-shadow: 0 22px 54px rgba(0, 0, 0, 0.34);
-  --ui-shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.24);
+  --ui-input: #06152d;
+  --ui-shadow: 0 22px 54px rgba(1, 8, 24, 0.38);
+  --ui-shadow-soft: 0 10px 28px rgba(1, 8, 24, 0.26);
 }
 
 .proDashboard.playAppShell {
@@ -14591,6 +14593,584 @@ html[data-theme="dark"] {
   }
 
   .proDashboard .shareActionRow button {
+    width: 100% !important;
+  }
+}
+
+/* Gestão de torneios alinhada ao fluxo do Figma Make. */
+.proDashboard .tournamentWorkspaceHeading {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.proDashboard .tournamentWorkspaceHeading > button {
+  width: max-content;
+  min-height: 42px;
+  margin: 0 !important;
+}
+
+.proDashboard .tournamentWorkspaceHeading > div {
+  display: grid;
+  gap: 5px;
+}
+
+.proDashboard .tournamentWorkspaceHeading span {
+  color: var(--brand-cyan);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.proDashboard .tournamentWorkspaceHeading h2,
+.proDashboard .tournamentWorkspaceHeading p {
+  margin: 0;
+}
+
+.proDashboard .tournamentWorkspaceHeading h2 {
+  color: var(--ui-text-strong);
+  font-size: clamp(24px, 3vw, 32px);
+}
+
+.proDashboard .tournamentWorkspaceHeading p {
+  color: var(--ui-muted);
+}
+
+.proDashboard .tournamentCreateActions {
+  display: flex;
+  grid-column: 1 / -1;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-top: 18px;
+  border-top: 1px solid var(--ui-border-soft);
+}
+
+.proDashboard .tournamentCreateActions button {
+  min-width: 150px;
+  min-height: 44px;
+  margin: 0 !important;
+}
+
+.proDashboard .tournamentManagementCard {
+  display: grid !important;
+  gap: 22px !important;
+}
+
+.proDashboard .tournamentManagementHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.proDashboard .tournamentManagementHeader h2,
+.proDashboard .tournamentManagementHeader p {
+  margin: 0;
+}
+
+.proDashboard .tournamentManagementHeader h2 {
+  color: var(--ui-text-strong);
+}
+
+.proDashboard .tournamentManagementHeader p {
+  margin-top: 6px;
+  color: var(--ui-muted);
+}
+
+.proDashboard.playAppShell .tournamentManagementHeader > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding-inline: 18px !important;
+  white-space: nowrap;
+}
+
+.proDashboard .tournamentManagementHeader > button svg {
+  width: 18px;
+  height: 18px;
+}
+
+.proDashboard .tournamentOverviewStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.proDashboard .tournamentOverviewStats > div {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: 13px;
+  background: var(--ui-surface-raised);
+}
+
+.proDashboard .tournamentOverviewStats span {
+  color: var(--ui-muted);
+  font-size: 11.5px;
+  font-weight: 650;
+}
+
+.proDashboard .tournamentOverviewStats strong {
+  color: var(--ui-text-strong);
+  font-size: 27px;
+  line-height: 1;
+}
+
+.proDashboard .tournamentFilterBar {
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) minmax(170px, 240px) minmax(170px, 220px) auto;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 13px;
+  background: var(--ui-surface-raised);
+}
+
+.proDashboard .tournamentSearchField {
+  position: relative;
+  display: block;
+}
+
+.proDashboard .tournamentSearchField svg {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  width: 17px;
+  height: 17px;
+  color: var(--brand-cyan);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.proDashboard .tournamentSearchField input {
+  width: 100%;
+  min-height: 44px;
+  padding-left: 40px !important;
+}
+
+.proDashboard .tournamentFilterBar select,
+.proDashboard .tournamentFilterBar button {
+  min-height: 44px !important;
+  margin: 0 !important;
+}
+
+.proDashboard .tournamentLifecycleBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-selected);
+  color: var(--ui-muted);
+  font-size: 10px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.proDashboard .tournamentLifecycleBadge.status-inscrições-abertas {
+  border-color: rgba(46, 204, 113, 0.26);
+  background: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+}
+
+.proDashboard .tournamentLifecycleBadge.status-em-andamento {
+  border-color: rgba(20, 160, 255, 0.34);
+  background: rgba(20, 160, 255, 0.12);
+  color: #3db7ff;
+}
+
+.proDashboard .tournamentLifecycleBadge.status-encerrado {
+  color: var(--ui-muted);
+}
+
+.proDashboard .tournamentLifecycleBadge.status-programado {
+  border-color: rgba(31, 94, 255, 0.34);
+  background: rgba(31, 94, 255, 0.12);
+  color: #76a4ff;
+}
+
+.proDashboard .tournamentManagementCard .tournamentActions > button:nth-child(2) {
+  border-color: rgba(31, 94, 255, 0.5) !important;
+  background: #1f5eff !important;
+  color: #ffffff !important;
+}
+
+.proDashboard .tournamentManagementCard .tournamentActions > button:nth-child(2):hover {
+  border-color: #14a0ff !important;
+  background: #174bd0 !important;
+}
+
+.proDashboard .tournamentEmptyState {
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  padding: 46px 20px;
+  border: 1px dashed var(--ui-border);
+  border-radius: 15px;
+  background: var(--ui-bg-soft);
+  text-align: center;
+}
+
+.proDashboard .tournamentEmptyState > svg {
+  width: 34px;
+  height: 34px;
+  color: var(--ui-muted);
+}
+
+.proDashboard .tournamentEmptyState h3,
+.proDashboard .tournamentEmptyState p {
+  margin: 0;
+}
+
+.proDashboard .tournamentEmptyState h3 {
+  color: var(--ui-text-strong);
+}
+
+.proDashboard .tournamentEmptyState p {
+  color: var(--ui-muted);
+}
+
+@media (max-width: 1080px) {
+  .proDashboard .tournamentOverviewStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .proDashboard .tournamentFilterBar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .proDashboard .tournamentSearchField {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 680px) {
+  .proDashboard .tournamentManagementHeader,
+  .proDashboard .tournamentCreateActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .proDashboard.playAppShell .tournamentManagementHeader > button,
+  .proDashboard .tournamentCreateActions button {
+    width: 100% !important;
+  }
+
+  .proDashboard .tournamentOverviewStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .proDashboard .tournamentFilterBar {
+    grid-template-columns: 1fr;
+  }
+
+  .proDashboard .tournamentSearchField {
+    grid-column: auto;
+  }
+}
+
+/* Inscrições e pagamentos integrados sem alterar o motor das competições. */
+.proDashboard .participantManagementStats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+  margin: 18px 0;
+}
+
+.proDashboard .participantManagementStats > div {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface-raised);
+}
+
+.proDashboard .participantManagementStats span {
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.proDashboard .participantManagementStats strong {
+  color: var(--ui-text-strong);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.proDashboard .participantManagementToolbar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(180px, 220px) auto;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface-raised);
+}
+
+.proDashboard .participantManagementToolbar > label {
+  position: relative;
+}
+
+.proDashboard .participantManagementToolbar > label svg {
+  position: absolute;
+  top: 50%;
+  left: 13px;
+  width: 17px;
+  height: 17px;
+  color: var(--brand-cyan);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.proDashboard .participantManagementToolbar input {
+  width: 100%;
+  min-height: 42px;
+  padding-left: 40px !important;
+}
+
+.proDashboard .participantManagementToolbar select,
+.proDashboard .participantManagementToolbar button {
+  min-height: 42px !important;
+  margin: 0 !important;
+}
+
+.proDashboard .participantManagementList {
+  align-items: start;
+  gap: 12px !important;
+}
+
+.proDashboard .participantGroupColumn {
+  display: grid;
+  gap: 10px;
+}
+
+.proDashboard .participantSlotCard {
+  display: grid;
+  gap: 10px;
+  padding: 13px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 12px !important;
+  background: var(--ui-surface-raised) !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .participantSlotCard > h3 {
+  margin: 0;
+  color: var(--ui-text-strong);
+  font-size: 14px;
+}
+
+.proDashboard .participantMetaControls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ui-border-soft);
+}
+
+.proDashboard .participantMetaControls label {
+  display: grid;
+  gap: 5px;
+}
+
+.proDashboard .participantMetaControls label > span {
+  color: var(--ui-muted);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.proDashboard .participantMetaControls select {
+  width: 100%;
+  min-height: 38px;
+  padding: 7px 9px !important;
+  font-size: 11px !important;
+}
+
+.proDashboard.playAppShell button.participantProfileLink {
+  grid-column: 1 / -1;
+  min-height: 38px !important;
+  margin: 0 !important;
+  border: 1px solid var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  box-shadow: none !important;
+  color: var(--brand-cyan) !important;
+  font-size: 11px !important;
+}
+
+.proDashboard.playAppShell button.participantProfileLink.linked {
+  border-color: rgba(46, 204, 113, 0.28) !important;
+  background: rgba(46, 204, 113, 0.1) !important;
+  color: #2ecc71 !important;
+}
+
+.proDashboard .participantEmptyState {
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  padding: 36px 20px;
+  border: 1px dashed var(--ui-border);
+  border-radius: 12px;
+  color: var(--ui-muted);
+  text-align: center;
+}
+
+.proDashboard .participantEmptyState svg {
+  width: 28px;
+  height: 28px;
+}
+
+.proDashboard .participantEmptyState strong {
+  color: var(--ui-text-strong);
+}
+
+@media (max-width: 920px) {
+  .proDashboard .participantManagementStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .proDashboard .participantManagementToolbar,
+  .proDashboard .participantMetaControls {
+    grid-template-columns: 1fr;
+  }
+
+  .proDashboard.playAppShell button.participantProfileLink {
+    grid-column: auto;
+  }
+}
+
+.proDashboard .gameTopLine {
+  align-items: center;
+  gap: 12px;
+}
+
+.proDashboard .gameLogisticsControls {
+  display: flex;
+  align-items: end;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.proDashboard .gameLogisticsControls label {
+  display: grid;
+  gap: 4px;
+}
+
+.proDashboard .gameLogisticsControls label > span {
+  color: var(--ui-muted);
+  font-size: 9px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.proDashboard .gameLogisticsControls input {
+  width: 92px;
+  min-height: 36px;
+  padding: 6px 8px !important;
+  font-size: 11px !important;
+}
+
+.proDashboard .gameLogisticsControls input[type="number"] {
+  width: 70px;
+}
+
+.gameScheduledTime {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--ui-muted, #64748b);
+  font-size: 11px;
+}
+
+.gameScheduledTime svg {
+  width: 14px;
+  height: 14px;
+}
+
+@media (max-width: 680px) {
+  .proDashboard .gameTopLine {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .proDashboard .gameLogisticsControls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .proDashboard .gameLogisticsControls input,
+  .proDashboard .gameLogisticsControls input[type="number"] {
+    width: 100%;
+  }
+}
+
+.proDashboard .rankingManagementActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 9px;
+  margin: 14px 0 18px;
+  padding: 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface-raised);
+}
+
+.proDashboard .rankingManagementActions > span {
+  margin-right: auto;
+  color: var(--ui-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.proDashboard .rankingManagementActions > span.rankingConfirmedBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(46, 204, 113, 0.26);
+  border-radius: 999px;
+  background: rgba(46, 204, 113, 0.1);
+  color: #2ecc71;
+}
+
+.proDashboard .rankingManagementActions button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 40px !important;
+  margin: 0 !important;
+}
+
+.proDashboard .rankingManagementActions button svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (max-width: 760px) {
+  .proDashboard .rankingManagementActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .proDashboard .rankingManagementActions > span {
+    margin: 0;
+    text-align: center;
+  }
+
+  .proDashboard .rankingManagementActions button {
     width: 100% !important;
   }
 }
@@ -16221,5 +16801,496 @@ html[data-theme="dark"] {
 
   .installAppSpinner {
     animation: none;
+  }
+}
+
+/* Catálogo de modalidades esportivas: Beach Tennis ativo nesta etapa. */
+.proDashboard .fieldSupportText {
+  display: block;
+  margin-top: 7px;
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.proDashboard .sportCatalogSection {
+  display: grid !important;
+  gap: 24px !important;
+}
+
+.proDashboard .sportCatalogHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.proDashboard .sportCatalogHeader h2 {
+  margin: 0 0 7px;
+  color: var(--ui-text-strong);
+}
+
+.proDashboard .sportCatalogHeader p {
+  max-width: 760px;
+  margin: 0;
+  color: var(--ui-muted);
+  line-height: 1.6;
+}
+
+.proDashboard .sportCatalogSummary {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.proDashboard .sportCatalogSummary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid var(--ui-border);
+  border-radius: 999px;
+  background: var(--ui-surface-muted);
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.proDashboard .sportCatalogSummary strong {
+  color: var(--ui-text-strong);
+  font-size: 14px;
+}
+
+.proDashboard .sportCatalogStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.proDashboard .sportCatalogStats > div {
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--ui-surface-raised);
+}
+
+.proDashboard .sportCatalogStats span,
+.proDashboard .sportCatalogStats small {
+  color: var(--ui-muted);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.proDashboard .sportCatalogStats strong {
+  color: var(--ui-text-strong);
+  font-size: 30px;
+  line-height: 1;
+}
+
+.proDashboard .sportCatalogToolbar {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) minmax(190px, 230px) auto;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  background: var(--ui-surface-raised);
+}
+
+.proDashboard .sportSearchField {
+  position: relative;
+  display: block;
+}
+
+.proDashboard .sportSearchField svg {
+  position: absolute;
+  top: 50%;
+  left: 14px;
+  width: 17px;
+  height: 17px;
+  color: var(--brand-cyan);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.proDashboard .sportSearchField input {
+  width: 100%;
+  min-height: 44px;
+  padding-left: 42px !important;
+}
+
+.proDashboard .sportCatalogToolbar select,
+.proDashboard .sportCatalogToolbar button {
+  min-height: 44px !important;
+  margin: 0 !important;
+}
+
+.proDashboard .sportCatalogEmpty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 48px 20px;
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  background: var(--ui-surface-raised);
+  text-align: center;
+}
+
+.proDashboard .sportCatalogEmpty > svg {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 5px;
+  color: var(--ui-muted);
+}
+
+.proDashboard .sportCatalogEmpty h3,
+.proDashboard .sportCatalogEmpty p {
+  margin: 0;
+}
+
+.proDashboard .sportCatalogEmpty h3 {
+  color: var(--ui-text-strong);
+}
+
+.proDashboard .sportCatalogEmpty p {
+  color: var(--ui-muted);
+}
+
+.proDashboard .sportCatalogGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.proDashboard .sportCatalogCard {
+  display: flex;
+  min-height: 300px;
+  flex-direction: column;
+  padding: 22px;
+  border: 1px solid var(--ui-border);
+  border-radius: 18px;
+  background: var(--ui-surface-raised);
+  box-shadow: var(--ui-shadow-soft);
+}
+
+.proDashboard .sportCatalogCard.active {
+  border-color: color-mix(in srgb, var(--ui-active-accent) 62%, var(--ui-border));
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--ui-active-accent) 8%, transparent), transparent 55%),
+    var(--ui-surface-raised);
+}
+
+.proDashboard .sportCatalogCard.comingSoon {
+  background: color-mix(in srgb, var(--ui-surface-raised) 80%, var(--ui-bg-soft));
+}
+
+.proDashboard .sportCatalogCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.proDashboard .sportCatalogIcon {
+  display: grid;
+  width: 50px;
+  height: 50px;
+  place-items: center;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 15px;
+  background: var(--ui-surface-muted);
+  font-size: 25px;
+}
+
+.proDashboard .sportStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.proDashboard .sportStatusBadge.active {
+  background: rgba(34, 197, 94, 0.14);
+  color: #16a34a;
+}
+
+.proDashboard.theme-dark .sportStatusBadge.active {
+  color: #86efac;
+}
+
+.proDashboard .sportStatusBadge.comingSoon {
+  background: var(--ui-selected);
+  color: var(--ui-muted);
+}
+
+.proDashboard .sportCatalogCard h3 {
+  margin: 22px 0 8px;
+  color: var(--ui-text-strong);
+  font-size: 19px;
+}
+
+.proDashboard .sportCatalogCard p {
+  margin: 0 0 18px;
+  color: var(--ui-muted);
+  line-height: 1.55;
+}
+
+.proDashboard .sportCatalogCard small {
+  display: block;
+  margin: auto 0 16px;
+  color: var(--ui-muted);
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.proDashboard.playAppShell .sportCatalogCard button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-height: 43px !important;
+  margin: 0 !important;
+}
+
+.proDashboard .sportCatalogCard button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.proDashboard.playAppShell .sportCatalogCard button:disabled {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-selected) !important;
+  box-shadow: none !important;
+  color: var(--ui-muted) !important;
+  cursor: not-allowed !important;
+  opacity: 0.72 !important;
+  transform: none !important;
+}
+
+@media (max-width: 980px) {
+  .proDashboard .sportCatalogStats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .proDashboard .sportCatalogToolbar {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .proDashboard .sportSearchField {
+    grid-column: 1 / -1;
+  }
+
+  .proDashboard .sportCatalogGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .proDashboard .sportCatalogHeader {
+    flex-direction: column;
+  }
+
+  .proDashboard .sportCatalogSummary {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .proDashboard .sportCatalogGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .proDashboard .sportCatalogStats,
+  .proDashboard .sportCatalogToolbar {
+    grid-template-columns: 1fr;
+  }
+
+  .proDashboard .sportSearchField {
+    grid-column: auto;
+  }
+
+  .proDashboard .sportCatalogCard {
+    min-height: 270px;
+  }
+}
+
+/* Sincronização do shell com o layout aprovado no Figma Make. */
+@media (min-width: 901px) {
+  .proDashboard .playSidebar.proSidebar {
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 240px !important;
+    padding: 0 16px 18px !important;
+    border: 0 !important;
+    border-right: 1px solid var(--ui-border) !important;
+    border-radius: 0 !important;
+    background: var(--ui-surface) !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .proDashboard .playMain {
+    padding: 80px 24px 42px 264px !important;
+  }
+
+  .proDashboard .playTopbar.proTopbar {
+    left: 240px !important;
+    height: 80px !important;
+    min-height: 80px !important;
+    border-bottom: 1px solid var(--ui-border) !important;
+    background: color-mix(in srgb, var(--ui-surface) 95%, transparent) !important;
+    box-shadow: none !important;
+    backdrop-filter: blur(14px) !important;
+    justify-content: flex-end !important;
+  }
+
+  .proDashboard .proTopbar .playTopBrand {
+    display: none !important;
+  }
+}
+
+.proDashboard.playAppShell {
+  background: var(--ui-bg) !important;
+  font-family: Inter, "Segoe UI", Arial, system-ui, sans-serif !important;
+}
+
+.proDashboard .playTitleBlock h1,
+.proDashboard .tournamentWorkspaceHeading h2,
+.proDashboard .tournamentManagementHeader h2,
+.proDashboard .sportCatalogHeader h2,
+.proDashboard .sportCatalogCard h3,
+.proDashboard .tournamentWorkspaceContent h1,
+.proDashboard .tournamentWorkspaceContent h2,
+.proDashboard .tournamentWorkspaceContent h3 {
+  font-family: Rajdhani, Inter, "Segoe UI", sans-serif !important;
+  letter-spacing: -0.02em;
+}
+
+.proDashboard .sidebarLogoButton {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: calc(100% + 32px) !important;
+  min-height: 80px !important;
+  margin: 0 -16px 22px !important;
+  padding: 7px 20px !important;
+  border: 0 !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .sidebarLogoButton:hover {
+  background: var(--ui-surface-muted) !important;
+  transform: none !important;
+}
+
+.proDashboard .sidebarLogoButton .torneio360Logo {
+  width: 154px !important;
+  min-width: 154px !important;
+  max-width: 154px !important;
+  height: 64px !important;
+  margin: 0 !important;
+}
+
+.proDashboard .sidebarLogoButton .torneio360Logo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+.proDashboard .playSidebar .playNavItem {
+  min-height: 48px !important;
+  height: 48px !important;
+  border-radius: 9px !important;
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .playSidebar .playNavItem:hover {
+  border-color: var(--ui-border) !important;
+  background: color-mix(in srgb, var(--ui-surface-muted) 58%, transparent) !important;
+}
+
+.proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"]) {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  box-shadow: inset 3px 0 0 var(--brand-highlight) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"]) .navIcon {
+  color: var(--brand-cyan) !important;
+}
+
+.proDashboard .sidebarBrandAccent > span {
+  background: var(--brand-highlight) !important;
+  box-shadow: 0 0 0 4px rgba(255, 122, 0, 0.12) !important;
+}
+
+.proDashboard .playTopbar.proTopbar {
+  border-bottom-color: var(--ui-border) !important;
+}
+
+.proDashboard.playAppShell button.themeToggleButton {
+  border-color: var(--ui-border) !important;
+  background: transparent !important;
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard.playAppShell button.themeToggleButton:hover {
+  border-color: var(--brand-cyan) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--brand-cyan) !important;
+}
+
+.proDashboard .profileControl {
+  border-color: var(--ui-border) !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+}
+
+.proDashboard .profileAvatar {
+  border-color: var(--brand-cyan) !important;
+}
+
+.proDashboard .pageEyebrow {
+  color: var(--brand-cyan) !important;
+}
+
+.proDashboard .playPlanPill {
+  border-color: rgba(46, 204, 113, 0.28) !important;
+  background: rgba(46, 204, 113, 0.1) !important;
+  color: #2ecc71 !important;
+  text-transform: none !important;
+}
+
+.proDashboard.playAppShell button:not(.profileTrigger):not(.profileMenuToggle):not(.themeToggleButton):not(.playNavItem):not(.sidebarLogoButton) {
+  border-radius: 9px;
+}
+
+@media (max-width: 900px) {
+  .proDashboard .sidebarLogoButton {
+    display: none !important;
+  }
+
+  .proDashboard .playTopbar.proTopbar {
+    border-bottom: 1px solid var(--ui-border) !important;
+    background: var(--ui-surface) !important;
+    box-shadow: none !important;
+  }
+
+  .proDashboard .playSidebar.proSidebar {
+    border-color: var(--ui-border) !important;
+    background: rgba(8, 26, 51, 0.97) !important;
   }
 }
