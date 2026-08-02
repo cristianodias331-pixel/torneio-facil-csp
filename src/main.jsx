@@ -2,29 +2,34 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { createClient } from "@supabase/supabase-js";
 import {
+  Activity,
   AtSign,
   Camera,
   CalendarDays,
   ChevronDown,
   Clock3,
   Copy,
+  Edit2,
+  Filter,
   Flame,
   Gift,
-  GitBranch,
   Grid3X3,
+  HelpCircle,
   LayoutDashboard,
   LifeBuoy,
   Link2,
   LockKeyhole,
+  LockOpen,
   LogOut,
   Mail,
+  Map as MapIcon,
   MapPin,
   MessageCircle,
+  MoreVertical,
   Moon,
   PlusCircle,
   Search,
   Settings,
-  Shapes,
   Share2,
   Sun,
   Tag,
@@ -33,9 +38,11 @@ import {
   Trophy,
   UserRound,
   Users,
+  X,
 } from "lucide-react";
 import InstallAppBanner from "./InstallAppBanner.jsx";
 import "./style.css";
+import "./figma-complete.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_Tr5qiUea-p42UknVoWwPKg_6K_b1EX_";
@@ -3084,6 +3091,144 @@ function BeachLogo({ variant = "light" } = {}) {
   );
 }
 
+function PublicPortalHeader({ active = "inicio", onNavigate, onLogin, onSignup }) {
+  const links = [
+    ["inicio", "Início"],
+    ["torneios", "Torneios"],
+    ["circuitos", "Circuitos"],
+    ["arenas", "Arenas"],
+    ["publicacoes", "Publicações"],
+  ];
+
+  return (
+    <header className="figmaPublicHeader">
+      <button type="button" className="figmaPublicBrand" onClick={() => onNavigate?.("inicio")} aria-label="Ir para o início">
+        <BeachLogo />
+      </button>
+      <nav aria-label="Navegação pública">
+        {links.map(([key, label]) => (
+          <button key={key} type="button" className={active === key ? "active" : ""} onClick={() => onNavigate?.(key)}>{label}</button>
+        ))}
+      </nav>
+      <label className="figmaPublicSearch">
+        <Search aria-hidden="true" />
+        <input placeholder="Buscar torneios..." aria-label="Buscar torneios" />
+      </label>
+      <button type="button" className="figmaPublicTheme" aria-label="Alternar aparência"><Sun aria-hidden="true" /></button>
+      <button type="button" className="figmaPublicLogin" onClick={onLogin}>Entrar</button>
+      <button type="button" className="figmaPublicSignup" onClick={onSignup}>Criar perfil gratuito</button>
+    </header>
+  );
+}
+
+function PublicPortalFooter() {
+  return (
+    <footer className="figmaPublicFooter">
+      <BeachLogo />
+      <div>
+        <strong>Acompanhamento público gerado pela plataforma.</strong>
+        <span>Torneio360 © 2026. Todos os direitos reservados.</span>
+      </div>
+    </footer>
+  );
+}
+
+function FigmaPublicHome({ onNavigate, onLogin, onSignup }) {
+  const [publicTournaments, setPublicTournaments] = useState([]);
+  const [publicArenas, setPublicArenas] = useState([]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function loadPublicPortalData() {
+      const [tournamentResult, arenaResult] = await Promise.all([
+        supabase.from("tournaments").select("*").eq("is_public", true).order("created_at", { ascending: false }).limit(3),
+        supabase.from("profiles").select("id, name, arena_name, city, state, photo_url, is_public").eq("is_public", true).order("arena_name", { ascending: true }).limit(4),
+      ]);
+
+      if (!active) return;
+      if (!tournamentResult.error) setPublicTournaments((tournamentResult.data || []).filter((item) => !item.data?.deletedAt));
+      if (!arenaResult.error) setPublicArenas(arenaResult.data || []);
+    }
+
+    void loadPublicPortalData();
+    return () => { active = false; };
+  }, []);
+
+  const visibleTournaments = publicTournaments.slice(0, 2);
+  const visibleArenas = publicArenas.slice(0, 4);
+
+  return (
+    <div className="figmaPublicPage">
+      <PublicPortalHeader active="inicio" onNavigate={onNavigate} onLogin={onLogin} onSignup={onSignup} />
+      <main>
+        <section className="figmaPublicHero">
+          <div className="figmaPublicHeroInner">
+            <span className="figmaPublicHeroBadge">A PLATAFORMA OFICIAL DE GESTÃO</span>
+            <h1>Sua jornada esportiva começa <em>aqui</em></h1>
+            <p>Acompanhe torneios, resultados, rankings, atletas e arenas em um só lugar.<br />Tenha o seu perfil esportivo oficial gratuito.</p>
+            <div className="figmaPublicHeroActions">
+              <button type="button" className="primary" onClick={() => document.getElementById("torneios-publicos")?.scrollIntoView({ behavior: "smooth" })}><Search aria-hidden="true" /> Encontrar torneios</button>
+              <button type="button" className="secondary" onClick={onSignup}>Criar perfil gratuito</button>
+            </div>
+            <button type="button" className="figmaOrganizerLink" onClick={onLogin}>Sou organizador de torneios <span aria-hidden="true">→</span></button>
+          </div>
+        </section>
+
+        <div className="figmaPublicSections">
+          <section id="torneios-publicos" className="figmaPublicSection">
+            <div className="figmaPublicSectionHeader">
+              <div><h2><span className="pulse" />Acontecendo agora</h2><p>Torneios ativos e com partidas em andamento.</p></div>
+              <button type="button" onClick={() => onNavigate?.("torneios")}>Ver todos <span>›</span></button>
+            </div>
+            {visibleTournaments.length ? (
+              <div className="figmaPublicTournamentGrid">
+                {visibleTournaments.map((tournament) => {
+                  const details = tournament.data || {};
+                  const uiStatus = getTournamentUiStatus(tournament);
+                  const uiStatusKey = uiStatus === "Em andamento" ? "in_progress" : uiStatus === "Inscrições abertas" ? "open" : uiStatus === "Encerrado" ? "closed" : "scheduled";
+                  return (
+                    <article className="figmaPublicTournamentCard" key={tournament.id}>
+                      <div className="figmaPublicTournamentCover">
+                        {details.coverImage ? <img src={details.coverImage} alt="" /> : null}
+                        <span className={`status ${uiStatusKey}`}>{uiStatus}</span>
+                      </div>
+                      <div className="figmaPublicTournamentBody">
+                        <small>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || tournament.type}</small>
+                        <h3>{details.eventName || tournament.name}</h3>
+                        <p><MapPin aria-hidden="true" /> {details.location || "Local a confirmar"}</p>
+                        <p><CalendarDays aria-hidden="true" /> {details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data a confirmar")}</p>
+                        <button type="button" onClick={() => tournament.public_id && window.location.assign(`/?public=${tournament.public_id}`)}>{uiStatusKey === "in_progress" ? "Acompanhar" : "Ver detalhes"}</button>
+                      </div>
+                    </article>
+                  );
+                })}
+              </div>
+            ) : <div className="figmaPublicEmpty">Nenhum torneio público disponível neste momento.</div>}
+          </section>
+
+          <section className="figmaPublicSection">
+            <div className="figmaPublicSectionHeader"><div><h2>Arenas perto de você</h2><p>Descubra os melhores locais e organizadores da sua região.</p></div></div>
+            {visibleArenas.length ? (
+              <div className="figmaPublicArenaGrid">
+                {visibleArenas.map((arena) => (
+                  <article className="figmaPublicArenaCard" key={arena.id}>
+                    <div className="figmaPublicArenaAvatar">{arena.photo_url ? <img src={arena.photo_url} alt="" /> : <span>{(arena.arena_name || arena.name || "A").slice(0, 2).toUpperCase()}</span>}</div>
+                    <h3>{arena.arena_name || arena.name || "Arena Torneio360"}</h3>
+                    <p><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join(", ") || "Local não informado"}</p>
+                    <div><span>Perfil oficial</span><strong>Ver arena</strong></div>
+                  </article>
+                ))}
+              </div>
+            ) : <div className="figmaPublicEmpty">As arenas públicas aparecerão aqui.</div>}
+          </section>
+        </div>
+      </main>
+      <PublicPortalFooter />
+    </div>
+  );
+}
+
 
 function EmailConfirmationPending({ email, onRefresh }) {
   const [notice, setNotice] = useState(null);
@@ -3250,6 +3395,22 @@ function Login({
   const [submitting, setSubmitting] = useState(false);
   const [pendingVerificationEmail, setPendingVerificationEmail] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [guestScreen, setGuestScreen] = useState(() => {
+    const path = window.location.pathname.toLowerCase();
+    return path === "/login" || path === "/cadastro" || initialMode !== "login" ? "auth" : "home";
+  });
+
+  useEffect(() => {
+    function handleGuestPopState() {
+      const path = window.location.pathname.toLowerCase();
+      setGuestScreen(path === "/login" || path === "/cadastro" ? "auth" : "home");
+      if (path === "/cadastro") setMode("signup");
+      if (path === "/login") setMode("login");
+    }
+
+    window.addEventListener("popstate", handleGuestPopState);
+    return () => window.removeEventListener("popstate", handleGuestPopState);
+  }, []);
 
   useEffect(() => {
     if (resendCooldown <= 0) return undefined;
@@ -3290,6 +3451,26 @@ function Login({
 
     setNotice(null);
     setMode(nextMode);
+  }
+
+  function openGuestAuth(nextMode = "login") {
+    changeMode(nextMode);
+    setGuestScreen("auth");
+    window.history.pushState({}, "", nextMode === "signup" ? "/cadastro" : "/login");
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function openGuestHome(section = "inicio") {
+    setGuestScreen("home");
+    window.history.pushState({}, "", "/");
+    if (section !== "inicio") {
+      window.setTimeout(() => {
+        const target = section === "arenas" ? document.querySelector(".figmaPublicArenaGrid") : document.getElementById("torneios-publicos");
+        target?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 40);
+    } else {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
   }
 
   async function handleResendVerification() {
@@ -3497,6 +3678,70 @@ function Login({
       setSubmitting(false);
     }
   }
+
+  if (guestScreen === "home" && mode !== "resetPassword" && mode !== "forgotPassword") {
+    return <FigmaPublicHome onNavigate={openGuestHome} onLogin={() => openGuestAuth("login")} onSignup={() => openGuestAuth("signup")} />;
+  }
+
+  return (
+    <div className="figmaPublicPage figmaAuthPage">
+      <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+      <PublicPortalHeader onNavigate={openGuestHome} onLogin={() => openGuestAuth("login")} onSignup={() => openGuestAuth("signup")} />
+      <main className="figmaAuthMain">
+        <section className="figmaAuthCard" aria-labelledby="figma-auth-title">
+          <div className="figmaAuthIcon" aria-hidden="true"><Trophy /></div>
+          <h1 id="figma-auth-title">
+            {mode === "login" ? "Entrar no Torneio360" : mode === "signup" ? "Criar perfil gratuito" : mode === "forgotPassword" ? "Recuperar senha" : "Criar nova senha"}
+          </h1>
+          <p>{mode === "login" ? "Acesse sua conta para gerenciar seu perfil esportivo ou seus torneios." : mode === "signup" ? "Crie sua conta e organize seus torneios em um só lugar." : mode === "forgotPassword" ? "Informe seu e-mail para receber o link de recuperação." : "Escolha uma nova senha segura para a sua conta."}</p>
+
+          <form onSubmit={handleSubmit} noValidate>
+            {mode === "signup" ? (
+              <div className="figmaAuthTwoCols">
+                <label><span>NOME</span><input autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} placeholder="Seu nome" /></label>
+                <label><span>SOBRENOME</span><input autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} placeholder="Seu sobrenome" /></label>
+                <label className="full"><span>DATA DE NASCIMENTO</span><input type="date" autoComplete="bday" value={birthDate} onChange={(event) => setBirthDate(event.target.value)} /></label>
+              </div>
+            ) : null}
+
+            {mode !== "resetPassword" ? (
+              <label><span>E-MAIL</span><input type="email" autoComplete="email" inputMode="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seu@email.com" /></label>
+            ) : null}
+
+            {mode === "resetPassword" ? (
+              <>
+                <label><span>NOVA SENHA</span><input type="password" autoComplete="new-password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" /></label>
+                <label><span>REPITA A NOVA SENHA</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repita a nova senha" /></label>
+              </>
+            ) : mode !== "forgotPassword" ? (
+              <>
+                <label className="figmaPasswordLabel">
+                  <span>SENHA {mode === "login" ? <button type="button" onClick={() => changeMode("forgotPassword")}>Esqueci a senha</button> : null}</span>
+                  <input type="password" autoComplete={mode === "signup" ? "new-password" : "current-password"} value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" />
+                </label>
+                {mode === "signup" ? <label><span>REPITA A SENHA</span><input type="password" autoComplete="new-password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="Repita a senha" /></label> : null}
+              </>
+            ) : null}
+
+            <button type="submit" className="figmaAuthSubmit" disabled={submitting || (mode === "resetPassword" && !recoverySession?.access_token)}>
+              {submitting ? "Aguarde..." : mode === "login" ? "↪  Entrar na conta" : mode === "signup" ? "Criar perfil gratuito" : mode === "forgotPassword" ? "Enviar link" : "Salvar nova senha"}
+            </button>
+            {(mode === "forgotPassword" || mode === "resetPassword") ? <button type="button" className="figmaAuthBack" onClick={() => changeMode("login")}>Voltar para o login</button> : null}
+          </form>
+
+          {mode === "login" ? (
+            <div className="figmaAuthAlternate">
+              <span>Ainda não tem um perfil?</span>
+              <button type="button" onClick={() => openGuestAuth("signup")}>Criar perfil gratuito de atleta</button>
+            </div>
+          ) : mode === "signup" ? (
+            <div className="figmaAuthAlternate"><span>Já possui uma conta?</span><button type="button" onClick={() => openGuestAuth("login")}>Entrar</button></div>
+          ) : null}
+        </section>
+      </main>
+      <PublicPortalFooter />
+    </div>
+  );
 
   return (
     <div className="landingPage">
@@ -4181,11 +4426,16 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [tournamentSearch, setTournamentSearch] = useState("");
   const [tournamentFormatFilter, setTournamentFormatFilter] = useState("all");
   const [tournamentStatusFilter, setTournamentStatusFilter] = useState("all");
+  const [tournamentFiltersOpen, setTournamentFiltersOpen] = useState(false);
   const [colorMode, setColorMode] = useState("dark");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const [circuits, setCircuits] = useState([]);
   const [circuitForm, setCircuitForm] = useState({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
+  const [circuitEditorOpen, setCircuitEditorOpen] = useState(false);
+  const [circuitSearch, setCircuitSearch] = useState("");
+  const [circuitStatusFilter, setCircuitStatusFilter] = useState("all");
+  const [profilePublicationSearch, setProfilePublicationSearch] = useState("");
   const [circuitRankingCriteria, setCircuitRankingCriteria] = useState(defaultRankingCriteria);
   const [expandedCircuitId, setExpandedCircuitId] = useState(null);
   const [restoredTournamentId, setRestoredTournamentId] = useState(null);
@@ -4364,7 +4614,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
   }
 
-  function openProfileSection(nextSubtab = "editar") {
+  function openProfileSection(nextSubtab = "publicacoes") {
     setProfileMenuOpen(false);
     setSelected(null);
     setProfileSubtab(nextSubtab);
@@ -4373,7 +4623,29 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   function openProfileSettings() {
-    openProfileSection("editar");
+    openProfileSection("publicacoes");
+  }
+
+  function openOwnPublicProfile() {
+    setProfileMenuOpen(false);
+    setSelected(null);
+    setActivePanel("inicio");
+    updateAppUrl({ activePanel: "inicio", selectedTournamentId: null });
+    void openArenaProfile({
+      id: user.id,
+      name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
+      arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
+      city: organizerProfile.city || profile.city || "",
+      state: organizerProfile.state || profile.state || "",
+      photo_url: organizerProfile.photoUrl || profile.photo_url || "",
+      phone: organizerProfile.whatsapp || profile.phone || "",
+      address: organizerProfile.address || profile.address || "",
+      maps_link: organizerProfile.mapsLink || profile.maps_link || "",
+      instagram_handle: organizerProfile.instagramHandle || profile.instagram_handle || "",
+      instagram_link: organizerProfile.instagramLink || profile.instagram_link || "",
+      whatsapp_group_link: organizerProfile.whatsappGroupLink || profile.whatsapp_group_link || "",
+      is_public: organizerProfile.isPublic !== false,
+    });
   }
 
   function toggleColorMode() {
@@ -4551,6 +4823,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
   const [photoEditor, setPhotoEditor] = useState(null);
   const [profileEditing, setProfileEditing] = useState(false);
+  const [profileEditSnapshot, setProfileEditSnapshot] = useState(null);
 
   const photoPointersRef = useRef(new Map());
   const photoPreviewRef = useRef(null);
@@ -4572,6 +4845,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       arenaName: profile.arena_name || "",
       organizerName: profile.name || "",
       email: user.email || "",
+      publicEmail: user.email || "",
+      description: "",
       whatsapp: profile.phone || "",
       address: profile.address || "",
       mapsLink: profile.maps_link || "",
@@ -4600,11 +4875,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     },
     criar: {
       title: "Torneios",
-      description: "Gerencie seus torneios de Beach Tennis e continue de onde parou.",
+      description: "Gerencie todos os torneios e eventos criados.",
     },
     circuitos: {
       title: "Circuitos",
-      description: "Reúna torneios e acompanhe a classificação acumulada durante a temporada.",
+      description: "Organize torneios em um circuito e acompanhe a classificação acumulada.",
     },
     modalidades: {
       title: "Modalidades",
@@ -4639,20 +4914,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const matchesStatus = tournamentStatusFilter === "all" || getTournamentUiStatus(tournament) === tournamentStatusFilter;
     return matchesSearch && matchesFormat && matchesStatus;
   });
-
-  const groupedTournaments = filteredTournaments.reduce((groups, item) => {
-    const groupKey = item.data?.eventGroupKey || item.id;
-    const groupName = item.data?.eventName || item.name;
-    const existing = groups.find((group) => group.key === groupKey);
-
-    if (existing) existing.items.push(item);
-    else groups.push({ key: groupKey, name: groupName, items: [item] });
-
-    return groups;
-  }, []);
-
-  const multiTournamentGroups = groupedTournaments.filter((group) => group.items.length > 1);
-  const isolatedTournaments = groupedTournaments.flatMap((group) => group.items.length === 1 ? group.items : []);
 
   const filteredArenaProfiles = publicArenaProfiles.filter((arena) => {
     const term = arenaProfileSearch.trim().toLowerCase();
@@ -4794,6 +5055,16 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setCircuitForm({ id: null, name: "", startDate: "", endDate: "", status: "draft", tournamentIds: [] });
   }
 
+  function openCircuitCreator() {
+    resetCircuitForm();
+    setCircuitEditorOpen(true);
+  }
+
+  function closeCircuitEditor() {
+    resetCircuitForm();
+    setCircuitEditorOpen(false);
+  }
+
   function toggleCircuitTournament(tournamentId) {
     setCircuitForm((prev) => {
       const selected = prev.tournamentIds.includes(tournamentId);
@@ -4852,6 +5123,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     saveCircuits(nextCircuits);
     await saveCircuitHistoryToSupabase(finalPayload.id, finalPayload.rankingHistory);
     resetCircuitForm();
+    setCircuitEditorOpen(false);
     showNotice("success", circuitForm.id ? "Circuito atualizado" : "Circuito criado", "As alterações foram salvas no Supabase.");
   }
 
@@ -4864,6 +5136,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       status: circuit.status || "draft",
       tournamentIds: Array.isArray(circuit.tournamentIds) ? circuit.tournamentIds : [],
     });
+    setCircuitEditorOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -5037,6 +5310,22 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setOrganizerProfile((prev) => ({ ...prev, [field]: value }));
   }
 
+  function openOrganizerProfileEditor() {
+    setProfileEditSnapshot(structuredClone(organizerProfile));
+    setProfileEditing(true);
+  }
+
+  function closeOrganizerProfileEditor({ restore = true } = {}) {
+    if (restore && profileEditSnapshot) setOrganizerProfile(profileEditSnapshot);
+    setProfileEditing(false);
+    setProfileEditSnapshot(null);
+  }
+
+  async function saveOrganizerProfileEditor() {
+    const saved = await saveOrganizerProfile();
+    if (saved) closeOrganizerProfileEditor({ restore: false });
+  }
+
   function openDatePicker(e) {
     e.currentTarget.showPicker?.();
   }
@@ -5059,7 +5348,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   async function saveOrganizerProfile() {
-    if (!user?.id || profileSaving) return;
+    if (!user?.id || profileSaving) return false;
     setProfileSaveSuccess(false);
     if (profileSaveSuccessTimerRef.current) clearTimeout(profileSaveSuccessTimerRef.current);
     setProfileSaving(true);
@@ -5085,7 +5374,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     if (error) {
       console.error("Erro ao salvar perfil no Supabase:", error);
       showNotice("error", "Perfil não salvo", `O Supabase recusou a alteração. Detalhe: ${error.message || "erro desconhecido"}`);
-      return;
+      return false;
     }
 
     if (data) {
@@ -5114,6 +5403,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       setProfileSaveSuccess(false);
       profileSaveSuccessTimerRef.current = null;
     }, 2600);
+    return true;
   }
 
   async function toggleOrganizerProfileVisibility() {
@@ -5903,8 +6193,8 @@ setNewPublicInfo({
     const navItems = [
       { panel: "inicio", label: "Visão geral", Icon: LayoutDashboard },
       { panel: "criar", label: "Torneios", Icon: Trophy },
-      { panel: "circuitos", label: "Circuitos", Icon: GitBranch },
-      { panel: "modalidades", label: "Modalidades", Icon: Shapes },
+      { panel: "circuitos", label: "Circuitos", Icon: MapIcon },
+      { panel: "modalidades", label: "Modalidades", Icon: Activity },
     ];
 
     return (
@@ -5958,7 +6248,7 @@ setNewPublicInfo({
 
           <div className="profileMenuWrap" ref={profileMenuRef}>
             <div className={`profileControl ${activePanel === "ajustes" || activePanel === "lixeira" ? "accountAreaActive" : ""}`}>
-              <button type="button" className="profileTrigger" onClick={openProfileSettings} title="Abrir configurações do perfil">
+              <button type="button" className="profileTrigger" onClick={() => setProfileMenuOpen((open) => !open)} title="Abrir menu do perfil">
                 <span className="profileAvatar" aria-hidden="true">
                   {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="" /> : <span>{profileInitials}</span>}
                 </span>
@@ -5987,8 +6277,17 @@ setNewPublicInfo({
                   onClick={openProfileSettings}
                   aria-current={activePanel === "ajustes" && profileSubtab !== "conta" ? "page" : undefined}
                 >
-                  <Settings aria-hidden="true" />
-                  <span><strong>Meu perfil</strong><small>Dados e foto da arena</small></span>
+                  <UserRound aria-hidden="true" />
+                  <span><strong>Meu perfil</strong></span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  className="profileDropdownItem"
+                  onClick={openOwnPublicProfile}
+                >
+                  <LayoutDashboard aria-hidden="true" />
+                  <span><strong>Área pública</strong></span>
                 </button>
                 <button
                   type="button"
@@ -5997,8 +6296,8 @@ setNewPublicInfo({
                   onClick={() => openProfileSection("conta")}
                   aria-current={activePanel === "ajustes" && profileSubtab === "conta" ? "page" : undefined}
                 >
-                  <LifeBuoy aria-hidden="true" />
-                  <span><strong>Ajuda e suporte</strong><small>WhatsApp, Instagram e e-mail</small></span>
+                  <HelpCircle aria-hidden="true" />
+                  <span><strong>Ajuda e suporte</strong></span>
                 </button>
                 <button
                   type="button"
@@ -6008,12 +6307,12 @@ setNewPublicInfo({
                   aria-current={activePanel === "lixeira" ? "page" : undefined}
                 >
                   <Trash2 aria-hidden="true" />
-                  <span><strong>Lixeira</strong><small>Itens excluídos recentemente</small></span>
+                  <span><strong>Lixeira</strong></span>
                 </button>
                 <div className="profileDropdownDivider" />
                 <button type="button" role="menuitem" className="profileDropdownItem profileDropdownLogout" onClick={logout}>
                   <LogOut aria-hidden="true" />
-                  <span><strong>Sair</strong><small>Encerrar esta sessão</small></span>
+                  <span><strong>Sair</strong></span>
                 </button>
               </div>
             ) : null}
@@ -6189,6 +6488,62 @@ setNewPublicInfo({
         </div>
       ) : null}
 
+      {profileEditing ? (
+        <div className="figmaProfileEditOverlay" role="dialog" aria-modal="true" aria-labelledby="profile-edit-title">
+          <section className="figmaProfileEditModal">
+            <header>
+              <h2 id="profile-edit-title"><Edit2 aria-hidden="true" /> Editar Perfil</h2>
+              <button type="button" onClick={() => closeOrganizerProfileEditor()} aria-label="Fechar"><X aria-hidden="true" /></button>
+            </header>
+            <div className="figmaProfileEditBody">
+              <label className="figmaProfilePhotoPicker" onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); handleOrganizerPhotoFile(event.dataTransfer.files?.[0]); }}>
+                <input type="file" accept="image/*" onChange={(event) => handleOrganizerPhotoFile(event.target.files?.[0])} />
+                <span>{organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto atual" /> : <Camera aria-hidden="true" />}<PlusCircle className="figmaProfilePhotoAdd" aria-hidden="true" /></span>
+                <small>Clique para trocar a imagem (JPG ou PNG)</small>
+              </label>
+
+              <section>
+                <h3>INFORMAÇÕES PÚBLICAS</h3>
+                <label><span>Nome da Arena ou Organizador</span><input value={organizerProfile.arenaName} onChange={(event) => updateOrganizerProfile("arenaName", event.target.value)} /></label>
+                <label><span>Descrição curta</span><textarea rows={3} value={organizerProfile.description || ""} onChange={(event) => updateOrganizerProfile("description", event.target.value)} placeholder="Conte um pouco sobre a sua arena." /></label>
+              </section>
+
+              <section>
+                <h3>CONTATO E LOCALIZAÇÃO</h3>
+                <div className="figmaProfileEditGrid">
+                  <label><span>Cidade, UF</span><input value={[organizerProfile.city, organizerProfile.state].filter(Boolean).join(", ")} onChange={(event) => {
+                    const [cityValue, stateValue = ""] = event.target.value.split(",");
+                    updateOrganizerProfile("city", cityValue.trim());
+                    updateOrganizerProfile("state", stateValue.trim());
+                  }} /></label>
+                  <label><span>WhatsApp</span><input value={organizerProfile.whatsapp} onChange={(event) => updateOrganizerProfile("whatsapp", event.target.value)} /></label>
+                  <label><span>Instagram (sem @)</span><input value={String(organizerProfile.instagramHandle || "").replace(/^@/, "")} onChange={(event) => updateOrganizerProfile("instagramHandle", event.target.value.replace(/^@/, ""))} /></label>
+                  <label><span>E-mail público</span><input type="email" value={organizerProfile.publicEmail || organizerProfile.email || ""} onChange={(event) => updateOrganizerProfile("publicEmail", event.target.value)} /></label>
+                </div>
+              </section>
+
+              <section>
+                <h3>PRIVACIDADE DO PERFIL</h3>
+                <div className="figmaPrivacyOptions">
+                  <label className={organizerProfile.isPublic !== false ? "selected" : ""}>
+                    <input type="radio" name="profile-privacy" checked={organizerProfile.isPublic !== false} onChange={() => updateOrganizerProfile("isPublic", true)} />
+                    <span><strong>Perfil Público</strong><small>Outros usuários poderão encontrar a arena nas buscas, acessar torneios abertos e as informações de contato fornecidas acima.</small></span>
+                  </label>
+                  <label className={organizerProfile.isPublic === false ? "selected" : ""}>
+                    <input type="radio" name="profile-privacy" checked={organizerProfile.isPublic === false} onChange={() => updateOrganizerProfile("isPublic", false)} />
+                    <span><strong>Perfil Privado</strong><small>O perfil não aparecerá nas buscas públicas do Torneio360. Apenas pessoas com links diretos conseguirão acessá-lo.</small></span>
+                  </label>
+                </div>
+              </section>
+            </div>
+            <footer>
+              <button type="button" className="cancel" onClick={() => closeOrganizerProfileEditor()}>Cancelar</button>
+              <button type="button" className="save" onClick={saveOrganizerProfileEditor} disabled={profileSaving}>{profileSaving ? "Salvando..." : "Salvar alterações"}</button>
+            </footer>
+          </section>
+        </div>
+      ) : null}
+
       {photoEditor ? (
         <div className="photoEditorOverlay" role="dialog" aria-modal="true">
           <div className="photoEditorModal">
@@ -6230,19 +6585,23 @@ setNewPublicInfo({
               <span className="pageEyebrow">Painel de gestão</span>
               <div className="playTitleHeadingRow">
                 <h1>{currentPanelMeta.title}</h1>
-                <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
+                <div className="playPlanPill">Plano {String(profile.plan || "PRO").replace(/^plano\s+/i, "")} · {formatStatusBR(profile.status)}</div>
               </div>
               <p>{currentPanelMeta.description}</p>
             </div>
             {activePanel === "inicio" ? (
               <div className="dashboardTitleActions">
-                <button type="button" className="secondaryBtn" onClick={() => goToPanel("circuitos")}><GitBranch aria-hidden="true" /> Circuitos</button>
-                <button type="button" className="secondaryBtn" onClick={() => goToPanel("modalidades")}><Shapes aria-hidden="true" /> Modalidades</button>
+                <button type="button" className="secondaryBtn" onClick={() => goToPanel("circuitos")}><MapIcon aria-hidden="true" /> Circuitos</button>
+                <button type="button" className="secondaryBtn" onClick={() => goToPanel("modalidades")}><Activity aria-hidden="true" /> Modalidades</button>
                 <button type="button" className="dashboardPrimaryAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
               </div>
             ) : activePanel === "criar" && tournamentWorkspace === "list" ? (
               <div className="dashboardTitleActions">
                 <button type="button" className="dashboardPrimaryAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
+              </div>
+            ) : activePanel === "circuitos" && !circuitEditorOpen ? (
+              <div className="dashboardTitleActions">
+                <button type="button" className="dashboardPrimaryAction" onClick={openCircuitCreator}><PlusCircle aria-hidden="true" /> Criar circuito</button>
               </div>
             ) : null}
           </section>
@@ -6257,14 +6616,14 @@ setNewPublicInfo({
                 <small>Gestão centralizada</small>
               </div>
               <div>
-                <span className="dashboardStatLabel">Circuitos cadastrados <GitBranch aria-hidden="true" /></span>
+                <span className="dashboardStatLabel">Circuitos cadastrados <MapIcon aria-hidden="true" /></span>
                 <strong>{circuits.length}</strong>
                 <small>Temporada 2026</small>
               </div>
               <div>
-                <span className="dashboardStatLabel">Modalidades disponíveis <Shapes aria-hidden="true" /></span>
-                <strong>{SPORT_CATALOG.filter((sport) => sport.enabled).length}</strong>
-                <small>Beach Tennis ativo</small>
+                <span className="dashboardStatLabel">Modalidades disponíveis <Activity aria-hidden="true" /></span>
+                <strong>{SPORT_CATALOG.length}</strong>
+                <small>Beach Tennis ativo no seu clube</small>
               </div>
             </section>
           )}
@@ -6353,9 +6712,9 @@ setNewPublicInfo({
       <input
         value={arenaProfileSearch}
         onChange={(e) => setArenaProfileSearch(e.target.value)}
-        placeholder="Busque perfis públicos da plataforma..."
+        placeholder="Buscar arenas ou organizadores parceiros..."
       />
-      <span>🔍</span>
+      <span><Search aria-hidden="true" /></span>
     </div>
 
     <button
@@ -6363,7 +6722,7 @@ setNewPublicInfo({
       className="mapsMiniBtn"
       onClick={() => window.open("https://www.google.com/maps/search/arena+beach+tennis+perto+de+mim", "_blank", "noopener,noreferrer")}
     >
-      Google Maps
+      <MapPin aria-hidden="true" /> Google Maps
     </button>
   </div>
 
@@ -6376,9 +6735,11 @@ setNewPublicInfo({
         </div>
         <strong>{arena.arena_name || arena.name || "Arena cadastrada"}</strong>
         <small><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</small>
+        {arena.courts || arena.surface ? <div className="arenaFeedChips">{arena.courts ? <span>{arena.courts} quadras</span> : null}{arena.surface ? <span>{arena.surface}</span> : null}</div> : null}
         <button type="button" onClick={() => openArenaProfile(arena)}>Acessar arena</button>
       </article>
     ))}
+    {filteredArenaProfiles.length === 0 ? <div className="arenaFeedEmpty"><Search aria-hidden="true" /><strong>Nenhuma arena encontrada</strong><span>Tente outro nome ou localização.</span></div> : null}
   </div>
 </section>
 )}
@@ -6626,19 +6987,24 @@ setNewPublicInfo({
       <Search aria-hidden="true" />
       <input value={tournamentSearch} onChange={(event) => setTournamentSearch(event.target.value)} placeholder="Buscar torneio..." />
     </label>
-    <select value={tournamentFormatFilter} onChange={(event) => setTournamentFormatFilter(event.target.value)} aria-label="Filtrar por formato">
-      <option value="all">Todos os formatos</option>
-      {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
-    </select>
-    <select value={tournamentStatusFilter} onChange={(event) => setTournamentStatusFilter(event.target.value)} aria-label="Filtrar por status">
-      <option value="all">Todos os status</option>
-      <option value="Inscrições abertas">Inscrições abertas</option>
-      <option value="Programado">Programado</option>
-      <option value="Em andamento">Em andamento</option>
-      <option value="Encerrado">Encerrado</option>
-      <option value="Rascunho">Rascunho</option>
-    </select>
-    <button type="button" className="secondaryBtn" onClick={() => { setTournamentSearch(""); setTournamentFormatFilter("all"); setTournamentStatusFilter("all"); }}>Limpar</button>
+    <button type="button" className={`secondaryBtn tournamentFilterToggle ${tournamentFiltersOpen ? "active" : ""}`} onClick={() => setTournamentFiltersOpen((current) => !current)}><Filter aria-hidden="true" /> Filtrar</button>
+    {tournamentFiltersOpen && (
+      <div className="tournamentAdvancedFilters">
+        <select value={tournamentFormatFilter} onChange={(event) => setTournamentFormatFilter(event.target.value)} aria-label="Filtrar por formato">
+          <option value="all">Todos os formatos</option>
+          {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+        </select>
+        <select value={tournamentStatusFilter} onChange={(event) => setTournamentStatusFilter(event.target.value)} aria-label="Filtrar por status">
+          <option value="all">Todos os status</option>
+          <option value="Inscrições abertas">Inscrições abertas</option>
+          <option value="Programado">Programado</option>
+          <option value="Em andamento">Em andamento</option>
+          <option value="Encerrado">Encerrado</option>
+          <option value="Rascunho">Rascunho</option>
+        </select>
+        <button type="button" className="secondaryBtn" onClick={() => { setTournamentSearch(""); setTournamentFormatFilter("all"); setTournamentStatusFilter("all"); }}>Limpar filtros</button>
+      </div>
+    )}
   </div>
 
   {tournaments.length === 0 ? (
@@ -6646,141 +7012,58 @@ setNewPublicInfo({
   ) : filteredTournaments.length === 0 ? (
     <div className="tournamentEmptyState"><Search aria-hidden="true" /><h3>Nenhum resultado encontrado</h3><p>Ajuste a busca ou limpe os filtros.</p><button type="button" className="secondaryBtn" onClick={() => { setTournamentSearch(""); setTournamentFormatFilter("all"); setTournamentStatusFilter("all"); }}>Limpar filtros</button></div>
   ) : (
-    <div className="eventGroupList">
-      {isolatedTournaments.length > 0 && (
-        <div className="tournamentList isolatedTournamentGrid">
-          <div className="tournamentTableHeader" aria-hidden="true">
-            <span>Nome do torneio</span>
-            <span>Data / Local</span>
-            <span>Formato</span>
-            <span>Status</span>
-            <span>Ação</span>
+    <div className="tournamentList isolatedTournamentGrid">
+      <div className="tournamentTableHeader" aria-hidden="true">
+        <span>Nome do torneio</span>
+        <span>Data / Local</span>
+        <span>Formato</span>
+        <span>Status</span>
+        <span>Ação</span>
+      </div>
+      {filteredTournaments.map((t) => {
+        const details = t.data || {};
+        const formatLabel = details.gender || (String(t.type || "").toLowerCase().includes("individual") ? "Individual" : "Duplas");
+
+        return (
+          <div
+            className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
+            key={t.id}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={() => {
+              moveTournamentByDrag(draggedTournamentId, t.id);
+              setDraggedTournamentId(null);
+            }}
+          >
+            <button
+              type="button"
+              className="moveLineBtn"
+              title="Segure e arraste para mover"
+              draggable
+              onDragStart={(event) => {
+                setDraggedTournamentId(t.id);
+                event.dataTransfer.effectAllowed = "move";
+              }}
+              onDragEnd={() => setDraggedTournamentId(null)}
+            >
+              <span>—</span><span>—</span><span>—</span>
+            </button>
+
+            <div className="tournamentNameCell"><strong>{t.name}</strong></div>
+            <div className="tournamentDateCell">
+              <span>{details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data não informada")}</span>
+              <small>{details.location || "Local não informado"}</small>
+            </div>
+            <div className="tournamentFormatCell"><span>{formatLabel}</span></div>
+            <div className="tournamentStatusCell">
+              <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
+            </div>
+            <div className="tournamentActions">
+              <button type="button" className="tableIconAction shareTournamentBtn" title="Compartilhar" aria-label={`Compartilhar ${t.name}`} onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /></button>
+              <button type="button" className="tournamentOpenAction" onClick={() => openTournament(t)}>Abrir</button>
+            </div>
           </div>
-          {isolatedTournaments.map((t) => {
-            const details = t.data || {};
-
-            return (
-                <div
-                  className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
-                  key={t.id}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => {
-                    moveTournamentByDrag(draggedTournamentId, t.id);
-                    setDraggedTournamentId(null);
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="moveLineBtn"
-                    title="Segure e arraste para mover"
-                    draggable
-                    onDragStart={(e) => {
-                      setDraggedTournamentId(t.id);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
-                    onDragEnd={() => setDraggedTournamentId(null)}
-                  >
-                    <span>—</span>
-                    <span>—</span>
-                    <span>—</span>
-                  </button>
-
-                  <div className="tournamentNameCell">
-                    <strong>{t.name}</strong>
-                    <small>{details.gender || "Beach Tennis"}</small>
-                  </div>
-
-                  <div className="tournamentDateCell">
-                    <span>{details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data não informada")}</span>
-                    <small>{details.location || "Local não informado"}</small>
-                  </div>
-
-                  <div className="tournamentFormatCell">
-                    <span className="tournamentTypeBadge">{t.type}</span>
-                  </div>
-
-                  <div className="tournamentStatusCell">
-                    <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
-                  </div>
-
-                  <div className="tournamentActions">
-                    <button type="button" className="tableIconAction editBtn" title="Editar" aria-label={`Editar ${t.name}`} onClick={() => openEditTournament(t)}><Settings aria-hidden="true" /></button>
-                    <button type="button" className="tableIconAction shareTournamentBtn" title="Compartilhar" aria-label={`Compartilhar ${t.name}`} onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /></button>
-                    <button type="button" className="tournamentOpenAction" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="tableIconAction deleteBtn" title="Excluir" aria-label={`Excluir ${t.name}`} onClick={() => setDeleteTarget(t)}><Trash2 aria-hidden="true" /></button>
-                  </div>
-                </div>
-            );
-          })}
-        </div>
-      )}
-
-      {multiTournamentGroups.map((group) => (
-        <div className="eventGroupCard" key={group.key}>
-          <div className="eventGroupHeader">
-            <strong>{group.name}</strong>
-            <span>{group.items.length} categorias</span>
-          </div>
-
-          <div className="tournamentList eventTournamentGrid">
-            {group.items.map((t) => {
-              const details = t.data || {};
-
-              return (
-                <div
-                  className={`tournamentItem ${draggedTournamentId === t.id ? "dragging" : ""}`}
-                  key={t.id}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={() => {
-                    moveTournamentByDrag(draggedTournamentId, t.id);
-                    setDraggedTournamentId(null);
-                  }}
-                >
-                  <button
-                    type="button"
-                    className="moveLineBtn"
-                    title="Segure e arraste para mover"
-                    draggable
-                    onDragStart={(e) => {
-                      setDraggedTournamentId(t.id);
-                      e.dataTransfer.effectAllowed = "move";
-                    }}
-                    onDragEnd={() => setDraggedTournamentId(null)}
-                  >
-                    <span>—</span>
-                    <span>—</span>
-                    <span>—</span>
-                  </button>
-
-                  <div className="tournamentInfo">
-                    <div className="tournamentTitleRow">
-                      <strong>{t.name}</strong>
-                      <span className="tournamentTypeBadge">{t.type}</span>
-                      <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
-                    </div>
-
-                    <div className="tournamentMeta">
-                      {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
-                      {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
-                      {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
-                      {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
-                      {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
-                      {details.winningScore ? <span><Target aria-hidden="true" /> {details.winningScore} games</span> : null}
-                    </div>
-                  </div>
-
-                  <div className="tournamentActions">
-                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
-                    <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /> Compartilhar</button>
-                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   )}
 </section>
@@ -6789,14 +7072,84 @@ setNewPublicInfo({
     )}
 
 
-{activePanel === "circuitos" && (
+{activePanel === "circuitos" && !circuitEditorOpen && (() => {
+  const normalizedSearch = circuitSearch.trim().toLocaleLowerCase("pt-BR");
+  const visibleCircuits = circuits.filter((circuit) => {
+    const matchesSearch = !normalizedSearch || circuit.name.toLocaleLowerCase("pt-BR").includes(normalizedSearch);
+    const matchesStatus = circuitStatusFilter === "all" || circuit.status === circuitStatusFilter;
+    return matchesSearch && matchesStatus;
+  });
+  const activeCircuitCount = circuits.filter((circuit) => circuit.status === "active").length;
+  const linkedTournamentCount = circuits.reduce((total, circuit) => total + (circuit.tournamentIds?.length || 0), 0);
+  const classifiedNames = new Set(circuits.flatMap((circuit) => getCircuitRanking(circuit).flatMap((group) => group.rows.map((row) => row.name))));
+
+  return (
+    <section className="figmaCircuitOverview">
+      <div className="figmaCircuitStats">
+        <div><span>Circuitos cadastrados</span><strong>{circuits.length}</strong><small>Histórico total</small></div>
+        <div><span>Circuitos ativos</span><strong>{activeCircuitCount}</strong><small>Temporada atual</small></div>
+        <div><span>Torneios vinculados</span><strong>{linkedTournamentCount}</strong><small>Somando os circuitos</small></div>
+        <div><span>Participantes classificados</span><strong>{classifiedNames.size}</strong><small>Ranking geral</small></div>
+      </div>
+
+      <section className="figmaCircuitTableCard">
+        <div className="figmaCircuitToolbar">
+          <label><Search aria-hidden="true" /><input value={circuitSearch} onChange={(event) => setCircuitSearch(event.target.value)} placeholder="Buscar por nome do circuito..." /></label>
+          <select value={circuitStatusFilter} onChange={(event) => setCircuitStatusFilter(event.target.value)} aria-label="Status do circuito">
+            <option value="all">Todos os status</option>
+            <option value="active">Ativo</option>
+            <option value="closed">Encerrado</option>
+            <option value="draft">Rascunho</option>
+            <option value="archived">Arquivado</option>
+          </select>
+        </div>
+
+        <div className="figmaCircuitTableHeader" aria-hidden="true">
+          <span>Nome / Período</span><span>Modalidade / Categorias</span><span>Torneios vinc.</span><span>Progresso</span><span>Status</span><span>Ação</span>
+        </div>
+
+        <div className="figmaCircuitRows">
+          {visibleCircuits.length ? visibleCircuits.map((circuit) => {
+            const selectedTournaments = getCircuitSelectedTournaments(circuit);
+            const finishedCount = selectedTournaments.filter((tournament) => getTournamentUiStatus(tournament) === "Encerrado").length;
+            const progress = selectedTournaments.length ? Math.round((finishedCount / selectedTournaments.length) * 100) : 0;
+            const rankingGroups = getCircuitRanking(circuit);
+            const rankedCount = new Set(rankingGroups.flatMap((group) => group.rows.map((row) => row.name))).size;
+            const categoryText = selectedTournaments.map((tournament) => tournament.data?.gender).filter(Boolean).slice(0, 2).join(", ") || "Beach Tennis";
+            const statusLabel = circuit.status === "active" ? "Ativo" : circuit.status === "closed" ? "Encerrado" : circuit.status === "archived" ? "Arquivado" : "Rascunho";
+            return (
+              <React.Fragment key={circuit.id}>
+                <article className="figmaCircuitRow">
+                  <div><strong>{circuit.name}</strong><small>{circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} a {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim"}</small></div>
+                  <div><span>{categoryText}</span><small>{rankingCriteriaOptions.find((option) => option.value === circuitRankingCriteria)?.label || "Ranking configurável"}</small></div>
+                  <div className="center"><strong>{selectedTournaments.length}</strong><small>{rankedCount} ranqueados</small></div>
+                  <div className="progress"><span>{progress}%</span><i><b style={{ width: `${progress}%` }} /></i></div>
+                  <div><span className={`figmaCircuitStatus ${circuit.status}`}>{statusLabel}</span></div>
+                  <div className="actions"><button type="button" onClick={() => setExpandedCircuitId(expandedCircuitId === circuit.id ? null : circuit.id)}>Abrir</button><button type="button" className="icon" onClick={() => editCircuit(circuit)} aria-label={`Editar ${circuit.name}`}><Edit2 /></button></div>
+                </article>
+                {expandedCircuitId === circuit.id ? (
+                  <div className="figmaCircuitRankingDrawer">
+                    <div><h3>Ranking do circuito</h3><button type="button" onClick={() => editCircuit(circuit)}><Edit2 /> Editar circuito</button></div>
+                    {rankingGroups.length ? rankingGroups.map((group) => <RankingTable key={group.key} title={group.title} rows={group.rows} rankingCriteria={circuitRankingCriteria} />) : <p>O ranking aparecerá quando os torneios vinculados tiverem placares.</p>}
+                  </div>
+                ) : null}
+              </React.Fragment>
+            );
+          }) : <div className="figmaCircuitEmpty">Nenhum circuito encontrado.</div>}
+        </div>
+      </section>
+    </section>
+  );
+})()}
+
+{activePanel === "circuitos" && circuitEditorOpen && (
   <section className="card circuitsCard">
     <div className="circuitsHeader">
       <div>
         <h2>{circuitForm.id ? "Editar circuito" : "Novo circuito"}</h2>
         <p>Crie períodos flexíveis e escolha manualmente quais torneios entram. Isso não altera os torneios já criados.</p>
       </div>
-      {circuitForm.id ? <button type="button" className="secondaryBtn" onClick={resetCircuitForm}>Novo circuito</button> : null}
+      <button type="button" className="secondaryBtn" onClick={closeCircuitEditor}>Voltar para circuitos</button>
     </div>
 
     <div className="circuitsFormGrid">
@@ -6852,7 +7205,7 @@ setNewPublicInfo({
 
     <div className="circuitFormActions">
       <button type="button" onClick={saveCircuit}>{circuitForm.id ? "Salvar alterações" : "Criar circuito"}</button>
-      {circuitForm.id ? <button type="button" className="cancelBtn" onClick={resetCircuitForm}>Cancelar edição</button> : null}
+      <button type="button" className="cancelBtn" onClick={closeCircuitEditor}>Cancelar</button>
     </div>
 
     <div className="circuitsList">
@@ -7062,6 +7415,97 @@ setNewPublicInfo({
 )}
 
 {activePanel === "ajustes" && (
+<div className="figmaProfilePage">
+  <section className="figmaProfileHeroCard">
+    <div className="figmaProfileHeroAvatar">
+      {organizerProfile.photoUrl ? <img src={organizerProfile.photoUrl} alt="Foto do perfil" /> : <UserRound aria-hidden="true" />}
+    </div>
+    <div className="figmaProfileHeroCopy">
+      <div><h1>{organizerProfile.arenaName || profile.name || "Meu perfil"}</h1><span>PLANO {String(profile.plan || "PRO").replace(/^plano\s+/i, "")} {formatStatusBR(profile.status)}</span></div>
+      <p>{organizerProfile.description || "Perfil oficial na plataforma Torneio360. Adicione mais detalhes sobre a arena para facilitar o contato com os atletas."}</p>
+      <small>{organizerProfile.isPublic !== false ? <><LockOpen aria-hidden="true" /> Perfil Público</> : <><LockKeyhole aria-hidden="true" /> Perfil Privado</>}</small>
+    </div>
+    <button type="button" onClick={openOrganizerProfileEditor}><Edit2 aria-hidden="true" /> Editar perfil</button>
+  </section>
+
+  <nav className="figmaProfileTabs" role="tablist" aria-label="Seções do perfil">
+    <button type="button" role="tab" className={profileSubtab === "publicacoes" ? "active" : ""} onClick={() => openProfileSection("publicacoes")}>Publicações</button>
+    <button type="button" role="tab" className={profileSubtab === "editar" ? "active" : ""} onClick={() => openProfileSection("editar")}>Dados da arena</button>
+    <button type="button" role="tab" className={profileSubtab === "conta" ? "active" : ""} onClick={() => openProfileSection("conta")}>Conta e suporte</button>
+  </nav>
+
+  {profileSubtab === "publicacoes" ? (
+    <section className="figmaProfilePublications">
+      <div className="figmaProfileSectionHeader">
+        <div><h2>Campeonatos Criados</h2><p>Total de {tournaments.length} publicações na plataforma.</p></div>
+        <label><Search aria-hidden="true" /><input value={profilePublicationSearch} onChange={(event) => setProfilePublicationSearch(event.target.value)} placeholder="Buscar publicação..." /></label>
+      </div>
+      <div className="figmaProfilePostGrid">
+        {tournaments.filter((tournament) => !profilePublicationSearch.trim() || tournament.name.toLocaleLowerCase("pt-BR").includes(profilePublicationSearch.trim().toLocaleLowerCase("pt-BR"))).map((tournament) => {
+          const details = tournament.data || {};
+          return (
+            <article className="figmaProfilePost" key={tournament.id}>
+              <div className="figmaProfilePostTop"><span>{getTournamentUiStatus(tournament) === "Encerrado" ? "TORNEIO CONCLUÍDO" : getTournamentUiStatus(tournament).toUpperCase()}</span><button type="button" aria-label="Mais opções"><MoreVertical /></button></div>
+              <h3>{details.eventName || tournament.name}</h3>
+              <p>⌁ {getSportDefinition(details.sport || DEFAULT_SPORT_ID).name} • {details.gender || tournament.type}</p>
+              <p><CalendarDays aria-hidden="true" /> {details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data não informada")}</p>
+              <p><MapPin aria-hidden="true" /> {details.location || "Local não informado"}</p>
+              <div className="figmaProfilePostActions">
+                <button type="button" onClick={() => openTournament(tournament)}>Abrir gestão</button>
+                <button type="button" onClick={() => tournament.public_id ? window.open(getPublicUrl(tournament.public_id), "_blank", "noopener,noreferrer") : setShareTarget(tournament)}>Ver página</button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  ) : null}
+
+  {profileSubtab === "editar" ? (
+    <div className="figmaProfileDataGrid">
+      <section>
+        <h3><MapPin aria-hidden="true" /> Identidade e Localização</h3>
+        <dl>
+          <div className="full"><dt>Nome oficial</dt><dd>{organizerProfile.arenaName || "Não informado"}</dd></div>
+          <div className="full description"><dt>Descrição pública</dt><dd>{organizerProfile.description || "Adicione uma descrição no botão Editar perfil."}</dd></div>
+          <div><dt>Cidade / Estado</dt><dd>{[organizerProfile.city, organizerProfile.state].filter(Boolean).join(", ") || "Não informado"}</dd></div>
+          <div><dt>Endereço completo</dt><dd>{organizerProfile.address || "Não informado"}</dd></div>
+        </dl>
+      </section>
+      <section>
+        <h3><MessageCircle aria-hidden="true" /> Contato e Redes Sociais</h3>
+        <div className="figmaContactCards">
+          <div className="whatsapp"><span><MessageCircle aria-hidden="true" /></span><p><small>WHATSAPP OFICIAL</small><strong>{organizerProfile.whatsapp || "Não informado"}</strong></p></div>
+          <div className="instagram"><span><AtSign aria-hidden="true" /></span><p><small>INSTAGRAM</small><strong>{organizerProfile.instagramHandle ? `@${String(organizerProfile.instagramHandle).replace(/^@/, "")}` : "Não informado"}</strong></p></div>
+          <div className="email"><span><Mail aria-hidden="true" /></span><p><small>E-MAIL DE CONTATO</small><strong>{organizerProfile.publicEmail || user.email}</strong></p></div>
+        </div>
+      </section>
+    </div>
+  ) : null}
+
+  {profileSubtab === "conta" ? (
+    <div className="figmaProfileAccountGrid">
+      <section>
+        <h3><UserRound aria-hidden="true" /> Acesso e Assinatura</h3>
+        <dl>
+          <div><dt>E-mail de acesso</dt><dd>{user.email}</dd></div>
+          <div><dt>Status da assinatura</dt><dd><span className="active">{formatStatusBR(profile.status)}</span></dd></div>
+          <div><dt>Plano atual</dt><dd className="blue">Plano {String(profile.plan || "PRO").replace(/^plano\s+/i, "")}</dd></div>
+          <div><dt>Próximo vencimento</dt><dd>{profile.expires_at ? formatDateBR(profile.expires_at) : "Não definido"}</dd></div>
+        </dl>
+      </section>
+      <section>
+        <h3><HelpCircle aria-hidden="true" /> Fale com o Torneio360</h3>
+        <p>Precisa de ajuda com a plataforma? Entre em contato com nosso time de suporte através dos canais oficiais abaixo.</p>
+        <a href={PLATFORM_SUPPORT.find((item) => item.id === "whatsapp")?.href} target="_blank" rel="noreferrer"><i><MessageCircle aria-hidden="true" /></i><span><strong>WhatsApp Torneio360</strong><small>Suporte ágil via mensagem</small></span><b>→</b></a>
+        <a href="mailto:torneio360@gmail.com"><i><Mail aria-hidden="true" /></i><span><strong>E-mail de Suporte</strong><small>torneio360@gmail.com</small></span><b>→</b></a>
+      </section>
+    </div>
+  ) : null}
+</div>
+)}
+
+{activePanel === "ajustes" && false && (
 <>
   <section className="card instagramProfileCard">
     <div className="instagramProfileHeader">
@@ -7708,6 +8152,10 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
   const [shareLoading, setShareLoading] = useState(false);
   const [participantSearch, setParticipantSearch] = useState("");
   const [participantFilter, setParticipantFilter] = useState("all");
+  const [participantView, setParticipantView] = useState("confirmed");
+  const [rankingView, setRankingView] = useState("general");
+  const [rankingSearch, setRankingSearch] = useState("");
+  const [groupsConfigOpen, setGroupsConfigOpen] = useState(false);
 
   const [shareInfo, setShareInfo] = useState({
     public_id: tournament.public_id || null,
@@ -7809,6 +8257,17 @@ function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNaviga
       : [],
     [data, config.type]
   );
+
+  const scheduleGames = useMemo(() => (data.schedule || []).flat(), [data.schedule]);
+  const completedScheduleGames = useMemo(() => {
+    const winningScore = getWinningScore(data);
+    return scheduleGames.filter((game) => getScoreWinnerSide(game, winningScore) !== null);
+  }, [scheduleGames, data.winningScore]);
+  const allocatedGroupParticipants = useMemo(
+    () => cupGroupRankings.reduce((total, group) => total + (group.rows?.length || 0), 0),
+    [cupGroupRankings]
+  );
+  const groupStageComplete = scheduleGames.length > 0 && completedScheduleGames.length === scheduleGames.length;
 
   const copinhaGroupCampaignTies = useMemo(
     () => isCopinhaData(data) && data.schedule?.length > 0
@@ -8388,6 +8847,12 @@ function clearTable() {
 }
 
 const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
+const bracketGames = currentBrackets
+  ? [...(currentBrackets.main || []), ...(currentBrackets.repechage || [])]
+  : [];
+const completedBracketGames = bracketGames.filter((game) => getScoreWinnerSide(game, getWinningScore(data)) !== null);
+const totalTournamentMatches = scheduleGames.length + bracketGames.length;
+const completedTournamentMatches = completedScheduleGames.length + completedBracketGames.length;
 
   function SavingStatusBadge() {
     return (
@@ -8482,7 +8947,10 @@ return (
             <Share2 aria-hidden="true" /> Compartilhar tabela pública
           </button>
           <button type="button" className="tournamentEditAction" onClick={onEdit}>
-            <Settings aria-hidden="true" /> Editar torneio
+            <Edit2 aria-hidden="true" /> Editar torneio
+          </button>
+          <button type="button" className="tournamentMoreAction" aria-label="Mais opções do torneio">
+            <MoreVertical aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -8539,11 +9007,11 @@ return (
           <button type="button" className={activeTournamentTab === "ranking" ? "active" : ""} onClick={() => setActiveTournamentTab("ranking")}><Trophy aria-hidden="true" /> Ranking</button>
         </nav>
 
-        <section className="card" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
-          <div className="cardTitleRow">
+        <section className="card figmaTournamentSection figmaParticipantsSection" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
+          <div className="cardTitleRow figmaTournamentSectionHeading">
             <div>
               <h2>Gestão de participantes</h2>
-              <p>Acompanhe as inscrições, confirme pagamentos e mantenha os vínculos dos atletas.</p>
+              <p>Acompanhe as inscrições, confirme pagamentos e gerencie a lista.</p>
             </div>
             <div className="participantHeaderActions">
               <SavingStatusBadge />
@@ -8553,97 +9021,118 @@ return (
             </div>
           </div>
 
-          <div className="participantManagementStats">
-            <div><span>Total de inscritos</span><strong>{participantSummary.total}</strong></div>
-            <div><span>Confirmados</span><strong>{participantSummary.confirmed}</strong></div>
-            <div><span>Pagamentos confirmados</span><strong>{participantSummary.paid}</strong></div>
-            <div><span>Pendências</span><strong>{participantSummary.pending}</strong></div>
+          <div className="figmaInnerTabs" role="tablist" aria-label="Gestão de inscrições">
+            <button type="button" className={participantView === "confirmed" ? "active" : ""} onClick={() => setParticipantView("confirmed")}>Participantes confirmados</button>
+            <button type="button" className={participantView === "registrations" ? "active" : ""} onClick={() => setParticipantView("registrations")}>Inscrições</button>
           </div>
 
-          <div className="participantManagementToolbar">
-            <label>
-              <Search aria-hidden="true" />
-              <input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar participante..." />
-            </label>
-            <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar participantes">
-              <option value="all">Todos os status</option>
-              <option value="confirmed">Confirmados</option>
-              <option value="pending">Pendentes</option>
-              <option value="linked">Perfil vinculado</option>
-            </select>
-            <button type="button" className="secondaryBtn" onClick={() => { setParticipantSearch(""); setParticipantFilter("all"); }}>Limpar</button>
-          </div>
-
-
-          {isCupType(config) && (
-            <CupConfigPanel
-              data={data}
-              config={config}
-              updateCupConfig={updateCupConfig}
-            />
+          {participantView === "confirmed" && (
+            <>
+              <div className="participantManagementStats figmaParticipantStats">
+                <div className="total"><span>Total de inscritos</span><strong>{participantSummary.total} <small>{isCupType(config) ? "duplas" : "atletas"}</small></strong></div>
+                <div className="confirmed"><span>Inscrições confirmadas</span><strong>{participantSummary.paid} <small>Pagas</small></strong></div>
+                <div className="pending"><span>Inscrições pendentes</span><strong>{participantSummary.pending} <small>Aguardando</small></strong></div>
+              </div>
+              <div className="participantManagementToolbar">
+                <label><Search aria-hidden="true" /><input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar participante..." /></label>
+                <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar participantes">
+                  <option value="all">Todas categorias</option>
+                  <option value="confirmed">Confirmados</option>
+                  <option value="pending">Pendentes</option>
+                  <option value="linked">Perfil vinculado</option>
+                </select>
+                <button type="button" className="secondaryBtn" onClick={() => { setParticipantSearch(""); setParticipantFilter("all"); }}><Filter aria-hidden="true" /> Status</button>
+              </div>
+              <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} searchQuery={participantSearch} statusFilter={participantFilter} viewMode="confirmed" />
+              {!isCupType(config) && (
+                <div className="actions figmaTournamentBottomActions">
+                  <button type="button" className="secondaryBtn" onClick={shuffleNames}>Sortear nomes</button>
+                  <button type="button" onClick={generate}>Criar rodadas e jogos</button>
+                </div>
+              )}
+            </>
           )}
 
-          <PlayerInputs
-            type={tournament.type}
-            data={data}
-            updatePlayer={updatePlayer}
-            updateParticipantMeta={updateParticipantMeta}
-            searchQuery={participantSearch}
-            statusFilter={participantFilter}
-          />
-
-          {!isCupType(config) && (
-            <div className="actions">
-              <button type="button" onClick={shuffleNames}>Sortear nomes</button>
-              <button type="button" onClick={generate}>Criar rodadas e jogos</button>
+          {participantView === "registrations" && (
+            <div className="figmaRegistrationInbox">
+              <div className="participantManagementToolbar">
+                <label><Search aria-hidden="true" /><input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar por atleta ou dupla..." /></label>
+                <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar inscrições">
+                  <option value="all">Todos os status</option>
+                  <option value="confirmed">Aprovadas</option>
+                  <option value="pending">Aguardando pagamento</option>
+                  <option value="linked">Perfil vinculado</option>
+                </select>
+              </div>
+              <PlayerInputs type={tournament.type} data={data} updatePlayer={updatePlayer} updateParticipantMeta={updateParticipantMeta} searchQuery={participantSearch} statusFilter={participantFilter} viewMode="registrations" />
             </div>
           )}
         </section>
 
         {isCupType(config) && (
-          <section className="card" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
-            <div className="cardTitleRow">
-              <h2>Grupos</h2>
-              <SavingStatusBadge />
+          <section className="card figmaTournamentSection figmaGroupsSection" style={{ display: activeTournamentTab === "grupos" ? undefined : "none" }}>
+            <div className="cardTitleRow figmaTournamentSectionHeading">
+              <div>
+                <h2>Fase de Grupos</h2>
+                <p>Organize os participantes, realize o sorteio e acompanhe a classificação da fase de grupos.</p>
+              </div>
+              <div className="figmaGroupActions">
+                <SavingStatusBadge />
+                <button type="button" className="figmaIconButton" onClick={() => setGroupsConfigOpen((current) => !current)} aria-label="Configurar grupos"><Filter aria-hidden="true" /></button>
+                <button type="button" className="secondaryBtn" onClick={generate}>Gerar fase de grupos</button>
+                <button type="button" onClick={shuffleNames}>Sortear grupos</button>
+              </div>
             </div>
-            <p>Use o sorteio para embaralhar as duplas e depois gere a fase de grupos.</p>
-            <div className="actions">
-              <button type="button" onClick={shuffleNames}>Sortear grupos</button>
-              <button type="button" onClick={generate}>Gerar fase de grupos</button>
+
+            {groupsConfigOpen && (
+              <CupConfigPanel data={data} config={config} updateCupConfig={updateCupConfig} />
+            )}
+
+            <div className="figmaGroupStats">
+              <div><span>Total de grupos</span><strong>{cupGroupRankings.length || data.cupConfig?.groups || 0}</strong></div>
+              <div><span>Participantes alocados</span><strong>{allocatedGroupParticipants || participantSummary.total} <small>duplas</small></strong></div>
+              <div><span>Partidas desta fase</span><strong>{scheduleGames.length}</strong></div>
+              <div className={groupStageComplete ? "complete" : ""}><span>Situação atual</span><strong>{groupStageComplete ? "FASE CONCLUÍDA" : scheduleGames.length ? "EM ANDAMENTO" : "AGUARDANDO"}</strong></div>
             </div>
-            {cupGroupRankings.length > 0 && (
-              <div className="groupsPreviewBox">
-                <h3>Classificação dos grupos</h3>
-                <CupGroupRankingView
-                  groupRankings={cupGroupRankings}
-                  rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-                />
+
+            {groupStageComplete && (
+              <div className="figmaGroupCompleteBanner">
+                <div><strong>Fase de grupos e chaves finalizadas</strong><span>Todos os resultados desta fase foram registrados no ranking.</span></div>
+                <button type="button" onClick={() => setActiveTournamentTab("ranking")}><Trophy aria-hidden="true" /> Ver classificação</button>
+              </div>
+            )}
+
+            {cupGroupRankings.length > 0 ? (
+              <div className="groupsPreviewBox figmaGroupCards">
+                <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} className="figmaCupGroupGrid" />
                 {isCopinhaData(data) && (
-                  <CopinhaTieBreakPanel
-                    groupRankings={cupGroupRankings}
-                    onResolveTie={resolveCopinhaTie}
-                    groupCampaignTies={copinhaGroupCampaignTies}
-                    onResolveGroupTie={resolveCopinhaGroupTie}
-                  />
+                  <CopinhaTieBreakPanel groupRankings={cupGroupRankings} onResolveTie={resolveCopinhaTie} groupCampaignTies={copinhaGroupCampaignTies} onResolveGroupTie={resolveCopinhaGroupTie} />
                 )}
               </div>
+            ) : (
+              <div className="figmaTournamentEmpty"><Grid3X3 aria-hidden="true" /><strong>Os grupos ainda não foram gerados</strong><span>Configure a quantidade de duplas e use o sorteio acima.</span></div>
             )}
           </section>
         )}
 
-        <section className="card" style={{ display: activeTournamentTab === "partidas" ? undefined : "none" }}>
-          <div className="cardTitleRow">
-            <h2>{isCupType(config) ? "Partidas" : "Rodadas"}</h2>
-            <SavingStatusBadge />
-          </div>
+        <section className="card figmaTournamentSection figmaMatchesSection" style={{ display: activeTournamentTab === "partidas" ? undefined : "none" }}>
           {isCupType(config) && (
-            <div className="matchesSubTabs">
-              <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
-              <button type="button" className={activeMatchesTab === "chaves" ? "active" : ""} onClick={() => setActiveMatchesTab("chaves")}>Chaves finais</button>
-              <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>{data.cupConfig?.repechageName || "Disputa paralela"}</button>
+            <div className="figmaMatchesWorkbenchNav">
+              <div className="matchesSubTabs">
+                <button type="button" className={activeMatchesTab === "quadras" ? "active" : ""} onClick={() => setActiveMatchesTab("quadras")}>Quadras e horários</button>
+                <button type="button" className={activeMatchesTab === "grupos" ? "active" : ""} onClick={() => setActiveMatchesTab("grupos")}>Fase de grupos</button>
+                <button type="button" className={activeMatchesTab === "chaves" ? "active" : ""} onClick={() => setActiveMatchesTab("chaves")}>Chave principal</button>
+                <button type="button" className={activeMatchesTab === "paralela" ? "active" : ""} onClick={() => setActiveMatchesTab("paralela")}>Repescagem</button>
+              </div>
+              <div className="figmaMatchToolbarActions">
+                <SavingStatusBadge />
+                <button type="button" className="secondaryBtn" onClick={() => setActiveMatchesTab("quadras")}>Organizar partidas</button>
+                <button type="button" className="secondaryBtn"><Target aria-hidden="true" /> Central de chamadas</button>
+              </div>
             </div>
           )}
-          <div style={{ display: !isCupType(config) || activeMatchesTab === "grupos" ? undefined : "none" }}>
+          {!isCupType(config) && <div className="cardTitleRow figmaTournamentSectionHeading"><h2>Rodadas e partidas</h2><SavingStatusBadge /></div>}
+          <div className={activeMatchesTab === "quadras" ? "figmaCourtScheduleMode" : "figmaGroupScheduleMode"} style={{ display: !isCupType(config) || activeMatchesTab === "grupos" || activeMatchesTab === "quadras" ? undefined : "none" }}>
 
           {!data.schedule || data.schedule.length === 0 ? (
             <p>Clique em “Criar rodadas e jogos” para montar os jogos.</p>
@@ -8698,10 +9187,10 @@ return (
               </div>
             </section>
 
-            <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "chaves" ? undefined : "none" }}>
-              <div className="cardTitleRow">
-                <h2>Chaves finais</h2>
-                <SavingStatusBadge />
+            <section className="card figmaTournamentSection figmaBracketSection" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "chaves" ? undefined : "none" }}>
+              <div className="cardTitleRow figmaBracketHeading">
+                <div><h2><Trophy aria-hidden="true" /> Chave principal</h2><p>Classificados da fase de grupos e progressão até a final.</p></div>
+                <div className="figmaBracketActions"><SavingStatusBadge /><button type="button" className="secondaryBtn">Todas as fases</button><button type="button" className="secondaryBtn">Tela cheia</button><button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar chave</button></div>
               </div>
 
               {!currentBrackets ? (
@@ -8732,60 +9221,62 @@ return (
               )}
             </section>
 
-            <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
-              <div className="cardTitleRow">
-                <h2>Ranking</h2>
-                <SavingStatusBadge />
-              </div>
-              <div className="rankingManagementActions">
-                {data.rankingConfirmedAt ? <span className="rankingConfirmedBadge">Resultado oficial confirmado</span> : <span>Ranking em atualização</span>}
-                <button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button>
-                <button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button>
-              </div>
-
-              <div className="cupRankingSplit">
-                <div className="cupRankingPanel">
-                  <h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>
-                  {mainCupPodium.length > 0 ? (
-                    <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
-                  ) : (
-                    <p>Finalize a chave principal para ver o ranking da chave principal.</p>
-                  )}
-                </div>
-
-                <div className="cupRankingPanel">
-                  <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
-                  {isCopinhaData(data) ? (
-                    data.cupConfig?.teamCount === 6 ? (
-                      <p>Com 2 grupos, não há consolação neste formato.</p>
-                    ) : consolationCupPodium.length > 0 ? (
-                      <CupPodiumView
-                        podium={consolationCupPodium}
-                        title={data.cupConfig?.repechageName || "Consolação"}
-                        variant="parallel"
-                      />
-                    ) : (
-                      <p>Finalize a consolação para ver o pódio.</p>
-                    )
-                  ) : parallelRanking.length > 0 ? (
-                    <CupPodiumView
-                      podium={parallelRanking.slice(0, 3).map((item, index) => ({
-                        position: index === 0 ? "🏆 Campeão" : index === 1 ? "🥈 Vice" : "🥉 3º lugar",
-                        name: item.name,
-                      }))}
-                      title={data.cupConfig?.repechageName || "Disputa Paralela"}
-                      variant="parallel"
-                    />
-                  ) : (
-                    <p>Gere ou finalize a disputa paralela para ver o ranking separado.</p>
-                  )}
+            <section className="card figmaTournamentSection figmaRankingSection" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
+              <div className="cardTitleRow figmaTournamentSectionHeading figmaRankingHeading">
+                <div><h2>Classificação Oficial</h2><p>Acompanhe a classificação, confira os critérios e confirme o resultado final.</p></div>
+                <div className="rankingManagementActions">
+                  <SavingStatusBadge />
+                  <button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button>
+                  <button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button>
                 </div>
               </div>
+
+              <div className="figmaInnerTabs figmaRankingTabs" role="tablist" aria-label="Visualizações do ranking">
+                <button type="button" className={rankingView === "general" ? "active" : ""} onClick={() => setRankingView("general")}>Classificação geral</button>
+                <button type="button" className={rankingView === "groups" ? "active" : ""} onClick={() => setRankingView("groups")}>Classificação por grupos</button>
+                <button type="button" className={rankingView === "final" ? "active" : ""} onClick={() => setRankingView("final")}>Ranking final</button>
+                <button type="button" className={rankingView === "podium" ? "active" : ""} onClick={() => setRankingView("podium")}>Pódio</button>
+              </div>
+
+              <div className="figmaRankingStats">
+                <div><span>Participantes</span><strong>{participantSummary.total} <small>duplas</small></strong></div>
+                <div><span>Partidas realizadas</span><strong>{completedTournamentMatches}</strong></div>
+                <div><span>Resultados pendentes</span><strong>{Math.max(0, totalTournamentMatches - completedTournamentMatches)}</strong></div>
+                <div className={data.rankingConfirmedAt ? "complete" : "updating"}><span>Situação do ranking</span><strong>{data.rankingConfirmedAt ? "CONFIRMADO" : "EM ATUALIZAÇÃO"}</strong></div>
+              </div>
+
+              <div className="figmaRankingCriteriaBand">
+                <div><span>CRITÉRIO DE DESEMPATE ATIVO</span><div>{getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.map((key, index) => <React.Fragment key={key}><strong>{index + 1}. {getRankingColumnLabel(key)}</strong>{index < getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.length - 1 ? <b>›</b> : null}</React.Fragment>)}</div></div>
+                <button type="button" onClick={() => setGroupsConfigOpen(true)}>Entender regras de empate</button>
+              </div>
+
+              {rankingView === "general" && (
+                <>
+                  <FigmaRankingLeaders ranking={ranking} />
+                  <div className="figmaRankingTableToolbar"><label><Search aria-hidden="true" /><input value={rankingSearch} onChange={(event) => setRankingSearch(event.target.value)} placeholder="Buscar participante..." /></label><span>Ranking Geral <ChevronDown aria-hidden="true" /></span></div>
+                  <RankingView
+                    ranking={ranking.map((row, index) => ({ ...row, figmaRankPosition: index + 1 })).filter((row) => !rankingSearch.trim() || row.name.toLocaleLowerCase("pt-BR").includes(rankingSearch.trim().toLocaleLowerCase("pt-BR")))}
+                    type={tournament.type}
+                    rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                    figma
+                    rankingFinalized={Boolean(data.rankingConfirmedAt)}
+                  />
+                </>
+              )}
+
+              {rankingView === "groups" && <CupGroupRankingView groupRankings={cupGroupRankings} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} className="figmaCupGroupGrid" />}
+
+              {(rankingView === "final" || rankingView === "podium") && (
+                <div className="cupRankingSplit figmaFinalPodiums">
+                  <div className="cupRankingPanel"><h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>{mainCupPodium.length > 0 ? <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} /> : <p>Finalize a chave principal para ver o pódio.</p>}</div>
+                  <div className="cupRankingPanel"><h3>{data.cupConfig?.repechageName || "Repescagem"}</h3>{consolationCupPodium.length > 0 ? <CupPodiumView podium={consolationCupPodium} title={data.cupConfig?.repechageName || "Consolação"} variant="parallel" /> : parallelRanking.length > 0 ? <CupPodiumView podium={parallelRanking.slice(0, 3).map((item, index) => ({ position: index === 0 ? "🏆 Campeão" : index === 1 ? "🥈 Vice" : "🥉 3º lugar", name: item.name }))} title={data.cupConfig?.repechageName || "Repescagem"} variant="parallel" /> : <p>Finalize a repescagem para ver o pódio.</p>}</div>
+                </div>
+              )}
             </section>
 
-            <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
-              <div className="cardTitleRow">
-                <h2>{data.cupConfig?.repechageName || "Disputa Paralela"}</h2>
+            <section className="card figmaTournamentSection figmaBracketSection" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
+              <div className="cardTitleRow figmaBracketHeading">
+                <h2>{data.cupConfig?.repechageName || "Repescagem"}</h2>
                 <SavingStatusBadge />
               </div>
               {!currentBrackets ? (
@@ -8806,21 +9297,22 @@ return (
             </section>
           </>
         ) : (
-          <section className="card" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
-            <div className="cardTitleRow">
-              <h2>Ranking</h2>
-              <SavingStatusBadge />
+          <section className="card figmaTournamentSection figmaRankingSection" style={{ display: activeTournamentTab === "ranking" ? undefined : "none" }}>
+            <div className="cardTitleRow figmaTournamentSectionHeading figmaRankingHeading">
+              <div><h2>Classificação Oficial</h2><p>Acompanhe a classificação, confira os critérios e confirme o resultado final.</p></div>
+              <div className="rankingManagementActions"><SavingStatusBadge /><button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button><button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button></div>
             </div>
-            <div className="rankingManagementActions">
-              {data.rankingConfirmedAt ? <span className="rankingConfirmedBadge">Resultado oficial confirmado</span> : <span>Ranking em atualização</span>}
-              <button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button>
-              <button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button>
-            </div>
-
+            <div className="figmaInnerTabs figmaRankingTabs"><button type="button" className="active">Classificação geral</button><button type="button" disabled>Classificação por grupos</button><button type="button" disabled>Ranking final</button><button type="button" disabled>Pódio</button></div>
+            <div className="figmaRankingStats"><div><span>Participantes</span><strong>{participantSummary.total}</strong></div><div><span>Partidas realizadas</span><strong>{completedTournamentMatches}</strong></div><div><span>Resultados pendentes</span><strong>{Math.max(0, totalTournamentMatches - completedTournamentMatches)}</strong></div><div className={data.rankingConfirmedAt ? "complete" : "updating"}><span>Situação do ranking</span><strong>{data.rankingConfirmedAt ? "CONFIRMADO" : "EM ATUALIZAÇÃO"}</strong></div></div>
+            <div className="figmaRankingCriteriaBand"><div><span>CRITÉRIO DE DESEMPATE ATIVO</span><div>{getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.map((key, index) => <React.Fragment key={key}><strong>{index + 1}. {getRankingColumnLabel(key)}</strong>{index < getRankingCriteria(data.rankingCriteria || defaultRankingCriteria).order.length - 1 ? <b>›</b> : null}</React.Fragment>)}</div></div></div>
+            <FigmaRankingLeaders ranking={ranking} />
+            <div className="figmaRankingTableToolbar"><label><Search aria-hidden="true" /><input value={rankingSearch} onChange={(event) => setRankingSearch(event.target.value)} placeholder="Buscar participante..." /></label><span>Ranking Geral <ChevronDown aria-hidden="true" /></span></div>
             <RankingView
-              ranking={ranking}
+              ranking={ranking.map((row, index) => ({ ...row, figmaRankPosition: index + 1 })).filter((row) => !rankingSearch.trim() || row.name.toLocaleLowerCase("pt-BR").includes(rankingSearch.trim().toLocaleLowerCase("pt-BR")))}
               type={tournament.type}
               rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+              figma
+              rankingFinalized={Boolean(data.rankingConfirmedAt)}
             />
           </section>
         )}
@@ -8908,16 +9400,17 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   );
 }
 
-function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQuery = "", statusFilter = "all" }) {
+function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQuery = "", statusFilter = "all", viewMode = "confirmed" }) {
   const config = modalityConfig[type];
   const searchTerm = searchQuery.trim().toLocaleLowerCase("pt-BR");
 
   function getMeta(kind, index) {
     const metaKind = kind === "team" ? "teams" : kind;
-    return data.participantMeta?.[metaKind]?.[index] || {
+    return {
       payment: "pending",
       registration: "pending",
       profileLinked: false,
+      ...(data.participantMeta?.[metaKind]?.[index] || {}),
     };
   }
 
@@ -8930,121 +9423,75 @@ function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQ
     return matchesSearch && matchesStatus;
   }
 
-  function renderManagementFields(path) {
-    const meta = getMeta(path.kind, path.index);
-    return (
-      <div className="participantMetaControls">
-        <label>
-          <span>Pagamento</span>
-          <select value={meta.payment || "pending"} onChange={(event) => updateParticipantMeta(path, "payment", event.target.value)}>
-            <option value="pending">Pendente</option>
-            <option value="paid">Pago</option>
-            <option value="exempt">Isento</option>
-          </select>
-        </label>
-        <label>
-          <span>Inscrição</span>
-          <select value={meta.registration || "pending"} onChange={(event) => updateParticipantMeta(path, "registration", event.target.value)}>
-            <option value="pending">Pendente</option>
-            <option value="confirmed">Confirmada</option>
-            <option value="substituted">Substituída</option>
-            <option value="incomplete">Lista incompleta</option>
-          </select>
-        </label>
-        <button
-          type="button"
-          className={`participantProfileLink ${meta.profileLinked ? "linked" : ""}`}
-          onClick={() => updateParticipantMeta(path, "profileLinked", !meta.profileLinked)}
-          aria-pressed={Boolean(meta.profileLinked)}
-        >
-          {meta.profileLinked ? "Perfil vinculado" : "Vincular perfil"}
-        </button>
-      </div>
-    );
+  let entries = [];
+
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+    entries = [
+      ...data.players.men.map((name, index) => ({ key: `men-${index}`, path: { kind: "men", index }, names: [name], category: "Masculino", meta: getMeta("men", index) })),
+      ...data.players.women.map((name, index) => ({ key: `women-${index}`, path: { kind: "women", index }, names: [name], category: "Feminino", meta: getMeta("women", index) })),
+    ];
+  } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+    entries = data.players.teams.map((team, index) => ({ key: `team-${index}`, path: { kind: "team", index }, names: [team.a, team.b], category: data.gender || "Open", meta: getMeta("team", index) }));
+  } else {
+    entries = data.players.map((name, index) => ({ key: `normal-${index}`, path: { kind: "normal", index }, names: [name], category: data.gender || "Open", meta: getMeta("normal", index) }));
   }
 
-  const visibleRecords = getTournamentParticipantRecords(type, data).filter((record) => matchesParticipant(record.name, record.meta));
-  if (visibleRecords.length === 0) {
+  entries = entries.filter((entry) => matchesParticipant(entry.names.join(" "), entry.meta));
+
+  if (entries.length === 0) {
     return <div className="participantEmptyState"><Search aria-hidden="true" /><strong>Nenhum participante encontrado</strong><span>Ajuste a busca ou o filtro selecionado.</span></div>;
   }
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
-    return (
-      <div className="twoCols participantManagementList">
-        <div className="participantGroupColumn">
-          <h3>Homens</h3>
-
-          {data.players.men.map((name, i) => ({ name, i, meta: getMeta("men", i) }))
-            .filter((record) => matchesParticipant(record.name, record.meta))
-            .map(({ name, i }) => (
-              <div className="participantSlotCard" key={i}>
-                <div className="numberedInput">
-                  <span>{i + 1}</span>
-                  <input value={name} onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)} />
-                </div>
-                {renderManagementFields({ kind: "men", index: i })}
-              </div>
-            ))}
-        </div>
-
-        <div className="participantGroupColumn">
-          <h3>Mulheres</h3>
-
-          {data.players.women.map((name, i) => ({ name, i, meta: getMeta("women", i) }))
-            .filter((record) => matchesParticipant(record.name, record.meta))
-            .map(({ name, i }) => (
-              <div className="participantSlotCard" key={i}>
-                <div className="numberedInput">
-                  <span>{config.men + i + 1}</span>
-                  <input value={name} onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)} />
-                </div>
-                {renderManagementFields({ kind: "women", index: i })}
-              </div>
-            ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-    return (
-      <div className="twoCols participantManagementList">
-        {data.players.teams.map((team, i) => ({ team, i, meta: getMeta("team", i) }))
-          .filter((record) => matchesParticipant(`${record.team.a} ${record.team.b}`, record.meta))
-          .map(({ team, i }) => (
-          <div key={i} className="miniCard participantSlotCard">
-            <h3>Dupla {i + 1}</h3>
-
-            <div className="numberedInput">
-              <span>{i + 1}</span>
-              <input
-                value={team.a}
-                onChange={(e) => updatePlayer({ kind: "team", index: i, field: "a" }, e.target.value)}
-              />
-            </div>
-
-            <input
-              value={team.b}
-              onChange={(e) => updatePlayer({ kind: "team", index: i, field: "b" }, e.target.value)}
-            />
-            {renderManagementFields({ kind: "team", index: i })}
-          </div>
-        ))}
-      </div>
-    );
-  }
+  const paymentLabel = { pending: "Pendente", paid: "Pago", exempt: "Isento" };
+  const registrationLabel = { pending: "Pendente", confirmed: "Confirmado", substituted: "Substituído", incomplete: "Lista incompleta" };
 
   return (
-    <div className="twoCols participantManagementList">
-      {data.players.map((name, i) => ({ name, i, meta: getMeta("normal", i) }))
-        .filter((record) => matchesParticipant(record.name, record.meta))
-        .map(({ name, i }) => (
-        <div className="participantSlotCard" key={i}>
-          <div className="numberedInput">
-            <span>{i + 1}</span>
-            <input value={name} onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)} />
+    <div className={`figmaParticipantTable participantManagementList ${viewMode === "registrations" ? "registrationMode" : ""}`}>
+      <div className="figmaParticipantTableHead" aria-hidden="true">
+        <span>{viewMode === "registrations" ? "ATLETA / PARCEIRO" : "PARTICIPANTE / DUPLA"}</span>
+        <span>CATEGORIA</span>
+        <span>PAGAMENTO</span>
+        <span>STATUS</span>
+        <span>AÇÕES</span>
+      </div>
+      {entries.map((entry, rowIndex) => (
+        <div className="figmaParticipantRow participantSlotCard" key={entry.key}>
+          <div className="figmaParticipantIdentity">
+            <span className="figmaParticipantAvatar">{entry.names.filter(Boolean).map((name) => name.charAt(0)).join("").slice(0, 2) || rowIndex + 1}</span>
+            <div>
+              {entry.names.map((name, nameIndex) => (
+                <React.Fragment key={`${entry.key}-${nameIndex}`}>
+                  {nameIndex > 0 ? <span className="figmaParticipantJoiner">&amp;</span> : null}
+                  <input
+                    value={name}
+                    style={{ width: `${Math.max(5, String(name || "").length + 1)}ch` }}
+                    aria-label={entry.names.length > 1 ? `Atleta ${nameIndex + 1} da dupla ${rowIndex + 1}` : `Participante ${rowIndex + 1}`}
+                    onChange={(event) => updatePlayer(entry.path.kind === "team" ? { ...entry.path, field: nameIndex === 0 ? "a" : "b" } : entry.path, event.target.value)}
+                  />
+                </React.Fragment>
+              ))}
+              <button type="button" className={entry.meta.profileLinked ? "linked" : ""} onClick={() => updateParticipantMeta(entry.path, "profileLinked", !entry.meta.profileLinked)}><Link2 aria-hidden="true" /> {entry.meta.profileLinked ? "Alterar vínculo" : "Vincular perfil"}</button>
+            </div>
           </div>
-          {renderManagementFields({ kind: "normal", index: i })}
+          <span className="figmaParticipantCategory">{entry.category}</span>
+          <label className={`figmaInlineStatus payment-${entry.meta.payment}`}>
+            <span className="srOnly">Pagamento</span>
+            <select value={entry.meta.payment} onChange={(event) => updateParticipantMeta(entry.path, "payment", event.target.value)} aria-label={`Pagamento de ${entry.names.join(" e ")}`}>
+              <option value="pending">{paymentLabel.pending}</option>
+              <option value="paid">{paymentLabel.paid}</option>
+              <option value="exempt">{paymentLabel.exempt}</option>
+            </select>
+          </label>
+          <label className={`figmaInlineStatus registration-${entry.meta.registration}`}>
+            <span className="srOnly">Status da inscrição</span>
+            <select value={entry.meta.registration} onChange={(event) => updateParticipantMeta(entry.path, "registration", event.target.value)} aria-label={`Status de ${entry.names.join(" e ")}`}>
+              <option value="pending">{registrationLabel.pending}</option>
+              <option value="confirmed">{registrationLabel.confirmed}</option>
+              <option value="substituted">{registrationLabel.substituted}</option>
+              <option value="incomplete">{registrationLabel.incomplete}</option>
+            </select>
+          </label>
+          <div className="figmaParticipantActions"><button type="button" onClick={(event) => event.currentTarget.closest(".figmaParticipantRow")?.querySelector("input")?.focus()}>{viewMode === "registrations" ? "Analisar" : "Editar"}</button></div>
         </div>
       ))}
     </div>
@@ -9322,19 +9769,17 @@ function ScheduleView({
 
               {!readOnly ? (
                 <div className="voiceActions gameVoiceActions">
-                  <button
-                    type="button"
-                    className="voiceBtn"
-                    onClick={() =>
-                      speakGame(game, {
-                        roundLabel: `Rodada ${roundIndex + 1}`,
-                        includeGroup: showGroupName,
-                        repeat: voiceRepeat,
-                      })
-                    }
-                  >
-                    🔊 Chamar jogo
-                  </button>
+                  {isFinished ? (
+                    <>
+                      <button type="button" className="voiceBtn gameShareBtn" onClick={() => copyToClipboard(`${game.team1.join(" + ")} ${game.s1} x ${game.s2} ${game.team2.join(" + ")}`)}><Share2 aria-hidden="true" /> Compartilhar</button>
+                      <button type="button" className="voiceBtn gameEditScoreBtn" onClick={(event) => event.currentTarget.closest(".gameCard")?.querySelector(".scoreRow input")?.focus()}>Editar placar</button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" className="voiceBtn" onClick={() => speakGame(game, { roundLabel: `Rodada ${roundIndex + 1}`, includeGroup: showGroupName, repeat: voiceRepeat })}>🔊 Chamar jogo</button>
+                      <button type="button" className="voiceBtn gameResultBtn" onClick={(event) => event.currentTarget.closest(".gameCard")?.querySelector(".scoreRow input")?.focus()}>Inserir resultado</button>
+                    </>
+                  )}
                 </div>
               ) : null}
             </div>
@@ -9422,7 +9867,34 @@ function podium(i) {
   return i + 1;
 }
 
-function RankingView({ ranking, type, rankingCriteria }) {
+function FigmaRankingLeaders({ ranking }) {
+  const podiumEntries = [
+    { row: ranking[1], position: 2, className: "second" },
+    { row: ranking[0], position: 1, className: "champion" },
+    { row: ranking[2], position: 3, className: "third" },
+  ].filter((entry) => entry.row);
+
+  return (
+    <div className="figmaRankingLeaders">
+      <h3>Líderes atuais</h3>
+      {podiumEntries.length ? (
+        <div>
+          {podiumEntries.map(({ row, position, className }) => (
+            <article className={className} key={row.id ?? row.name}>
+              <span>{position === 1 ? <Trophy aria-hidden="true" /> : `${position}º`}</span>
+              <strong>{row.name}</strong>
+              <small>{row.pts ?? 0} pts • {row.w ?? 0} vitórias</small>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <p className="figmaRankingEmpty">Os líderes aparecerão após os primeiros resultados.</p>
+      )}
+    </div>
+  );
+}
+
+function RankingView({ ranking, type, rankingCriteria, figma = false, rankingFinalized = false }) {
   const config = modalityConfig[type];
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
@@ -9431,16 +9903,20 @@ function RankingView({ ranking, type, rankingCriteria }) {
     const women = ranking.filter((p) => p.id >= menLimit);
 
     return (
-      <div className="twoCols">
+      <div className={`twoCols ${figma ? "figmaRankingSplitTables" : ""}`.trim()}>
         <RankingTable
           title="Ranking Masculino"
           rows={men}
           rankingCriteria={rankingCriteria}
+          figma={figma}
+          rankingFinalized={rankingFinalized}
         />
         <RankingTable
           title="Ranking Feminino"
           rows={women}
           rankingCriteria={rankingCriteria}
+          figma={figma}
+          rankingFinalized={rankingFinalized}
         />
       </div>
     );
@@ -9451,12 +9927,84 @@ function RankingView({ ranking, type, rankingCriteria }) {
       title="Ranking Geral"
       rows={ranking}
       rankingCriteria={rankingCriteria}
+      figma={figma}
+      rankingFinalized={rankingFinalized}
     />
   );
 }
 
-function RankingTable({ title, rows, rankingCriteria }) {
+function RankingTable({ title, rows, rankingCriteria, figma = false, rankingFinalized = false }) {
   const criteria = getRankingCriteria(rankingCriteria);
+  const [expandedRowId, setExpandedRowId] = useState(null);
+
+  if (figma) {
+    return (
+      <div className="figmaRankingTableShell">
+        {title !== "Ranking Geral" ? <h3>{title}</h3> : null}
+        <div className="figmaRankingTableScroll" tabIndex="0" aria-label={`Tabela ${title}; deslize horizontalmente para ver todas as colunas`}>
+          <table className="figmaRankingTable">
+            <thead>
+              <tr>
+                <th>POS</th>
+                <th>DUPLA</th>
+                <th>JOGOS</th>
+                <th>VITÓRIAS</th>
+                <th>PONTOS</th>
+                <th>SALDO G.</th>
+                <th>STATUS</th>
+                <th>AÇÃO</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => {
+                const rowId = row.id ?? row.name;
+                const displayPosition = row.figmaRankPosition ?? index + 1;
+                const isCurrentQualifier = displayPosition <= 2;
+                const status = isCurrentQualifier ? "CLASSIFICADO" : rankingFinalized ? "ELIMINADO" : "PENDENTE";
+                const statusClass = isCurrentQualifier ? "qualified" : rankingFinalized ? "eliminated" : "pending";
+                const initials = String(row.name || "")
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join("")
+                  .toUpperCase();
+                const isExpanded = expandedRowId === rowId;
+
+                return (
+                  <React.Fragment key={rowId}>
+                    <tr className={index === 0 ? "leader" : ""}>
+                      <td><span className={`figmaRankingPosition position-${Math.min(displayPosition, 4)}`}>{displayPosition}</span></td>
+                      <td>
+                        <div className="figmaRankingTeam">
+                          <span className="figmaRankingAvatar" aria-hidden="true">{initials || <UserRound />}</span>
+                          <span><strong>{row.name}</strong><small>{row.groupName || title}</small></span>
+                        </div>
+                      </td>
+                      <td>{row.played ?? 0}</td>
+                      <td><strong>{row.w ?? 0}</strong></td>
+                      <td className="points">{row.pts ?? 0}</td>
+                      <td>{Number(row.bal) > 0 ? `+${row.bal}` : row.bal ?? 0}</td>
+                      <td><span className={`figmaRankingStatus ${statusClass}`}>{status}</span></td>
+                      <td><button type="button" className="figmaRankingDetailsButton" onClick={() => setExpandedRowId(isExpanded ? null : rowId)} aria-expanded={isExpanded}>Ver detalhes</button></td>
+                    </tr>
+                    {isExpanded ? (
+                      <tr className="figmaRankingDetailsRow">
+                        <td colSpan="8">
+                          <div><strong>{row.name}</strong><span>{row.played ?? 0} jogos</span><span>{row.w ?? 0} vitórias</span><span>{row.pts ?? 0} pontos</span><span>Saldo {Number(row.bal) > 0 ? `+${row.bal}` : row.bal ?? 0}</span><small>Desempate: {criteria.label}</small></div>
+                        </td>
+                      </tr>
+                    ) : null}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        {!rows.length ? <p className="figmaRankingEmpty">Nenhum participante corresponde à busca.</p> : null}
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -9551,6 +10099,27 @@ function CupGroupRankingView({ groupRankings, rankingCriteria, className = "" })
     ? "wins_balance_points"
     : rankingCriteria;
 
+  if (className.includes("figmaCupGroupGrid")) {
+    return (
+      <div className="figmaCupGroupCards">
+        {groupRankings.map((group, groupIndex) => {
+          const completedRows = group.rows.filter((row) => row.played > 0).length;
+          const status = completedRows === group.rows.length && group.rows.length > 0 ? "CONCLUÍDO" : completedRows > 0 ? "EM ANDAMENTO" : "PROGRAMADO";
+          return (
+            <article className="figmaCupGroupCard" key={group.id}>
+              <header><span>{String(group.name || String.fromCharCode(65 + groupIndex)).replace(/^Grupo\s*/i, "")}</span><div><strong>{group.name}</strong><small>{group.rows.length} duplas</small></div><button type="button" aria-label={`Opções do ${group.name}`}><MoreVertical aria-hidden="true" /></button></header>
+              <div className="figmaCupGroupTable">
+                <div className="head"><span>#</span><span>DUPLA</span><span>PTS</span><span>V</span><span>SG</span></div>
+                {group.rows.map((row, index) => <div className={index < 2 ? "qualified" : ""} key={row.id}><span>{index + 1}</span><strong>{row.name}</strong><b>{row.pts}</b><span>{row.w}</span><span>{row.bal > 0 ? `+${row.bal}` : row.bal}</span></div>)}
+              </div>
+              <footer><span className={`status ${status === "CONCLUÍDO" ? "complete" : status === "EM ANDAMENTO" ? "active" : ""}`}>{status}</span><button type="button">Ver partidas ›</button></footer>
+            </article>
+          );
+        })}
+      </div>
+    );
+  }
+
   return (
     <div className={`twoCols ${className}`.trim()}>
       {groupRankings.map((group) => (
@@ -9624,13 +10193,26 @@ function CupBracketView({
   winningScore = 4,
 }) {
   return (
-    <div>
-      <VoiceRepeatSelector
-        voiceRepeat={voiceRepeat}
-        setVoiceRepeat={setVoiceRepeat}
-      />
+    <div className="figmaBracketBoard">
+      <div className="figmaBracketUtilityBar">
+        <div>
+          <strong>Central de chamadas</strong>
+          <span>Configure quantas vezes cada chamada deve ser repetida.</span>
+        </div>
 
-      <div className="cupBrackets">
+        <label className="figmaBracketRepeatSelect">
+          <span>Repetir chamada</span>
+          <select
+            value={voiceRepeat}
+            onChange={(event) => setVoiceRepeat(Number(event.target.value))}
+          >
+            <option value={1}>1 vez</option>
+            <option value={2}>2 vezes</option>
+          </select>
+        </label>
+      </div>
+
+      <div className="cupBrackets figmaBracketCanvas">
         {groupedBrackets.main?.length > 0 && (
           <BracketColumn
             title={data.cupConfig?.mainBracketName || "Principal"}
@@ -9662,103 +10244,140 @@ function BracketColumn({
   voiceRepeat = 1,
   winningScore = 4,
 }) {
+  const isRepechage = rounds?.[0]?.games?.[0]?.phase === "repechage";
+
   return (
-    <div className={`bracketColumn ${rounds?.[0]?.games?.[0]?.phase === "repechage" ? "repechageBracket" : "mainBracket"}`}>
-      <h3>{title}</h3>
-
-      {rounds.map((round, roundIndex) => (
-        <div className="roundCard" key={roundIndex}>
-          <div className="roundHeader">
-            <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
-
-            <div className="voiceActions">
-              <button
-                type="button"
-                className="voiceBtn"
-                onClick={() => speakBracketRound(round, voiceRepeat)}
-              >
-                🔊 Chamar fase
-              </button>
-
-              <button
-                type="button"
-                className="secondaryBtn stopBtn"
-                onClick={stopSpeech}
-              >
-                ⏹️ Parar
-              </button>
-            </div>
-          </div>
-
-          {round.games.map((game) => {
-            const blocked =
-              !game.ids1?.length ||
-              !game.ids2?.length ||
-              game.team1?.[0] === "Aguardando" ||
-              game.team2?.[0] === "Aguardando";
-
-            const winnerSide = getScoreWinnerSide(game, winningScore);
-            const isFinished = winnerSide !== null;
-
-            return (
-              <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
-                <div className="gameTopLine">
-                  <strong>Quadra {game.court}</strong>
-                </div>
-
-                <div className="gameTeams">
-                  <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1?.join(" + ") || "Aguardando"}</div>
-                  <span>x</span>
-                  <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
-                </div>
-
-                <div className="scoreRow">
-                  <input
-  type="number"
-  min="0"
-  max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s1}
-  onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
-  disabled={blocked}
-/>
-
-                  <span>—</span>
-
-            <input
-  type="number"
-  min="0"
-  max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s2}
-  onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
-  disabled={blocked}
-/>
-                </div>
-
-                <div className="voiceActions gameVoiceActions">
-                  <button
-                    type="button"
-                    className="voiceBtn"
-                    onClick={() =>
-                      speakGame(game, {
-                        roundLabel: `${round.title} da chave ${title}`,
-                        includeGroup: false,
-                        repeat: voiceRepeat,
-                      })
-                    }
-                    disabled={blocked}
-                  >
-                    🔊 Chamar jogo
-                  </button>
-                </div>
+    <div
+      className={`bracketColumn figmaBracketColumn ${isRepechage ? "repechageBracket" : "mainBracket"}`}
+      aria-label={title}
+    >
+      <div
+        className="figmaBracketRounds"
+        style={{ "--figma-bracket-round-count": Math.max(rounds.length, 1) }}
+      >
+        {rounds.map((round, roundIndex) => (
+          <section className="figmaBracketRound" key={`${round.title}-${roundIndex}`}>
+            <header className="figmaBracketRoundHeader">
+              <div>
+                <span>FASE {roundIndex + 1}</span>
+                <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
               </div>
-            );
-          })}
-        </div>
-      ))}
+
+              <div className="figmaBracketRoundActions">
+                <button
+                  type="button"
+                  onClick={() => speakBracketRound(round, voiceRepeat)}
+                  aria-label={`Chamar ${round.title}`}
+                >
+                  Chamar fase
+                </button>
+
+                <button
+                  type="button"
+                  className="figmaBracketStopButton"
+                  onClick={stopSpeech}
+                  aria-label="Parar chamada"
+                >
+                  Parar
+                </button>
+              </div>
+            </header>
+
+            <div className="figmaBracketGames">
+              {round.games.map((game, gameIndex) => {
+                const blocked =
+                  !game.ids1?.length ||
+                  !game.ids2?.length ||
+                  game.team1?.[0] === "Aguardando" ||
+                  game.team2?.[0] === "Aguardando";
+
+                const winnerSide = getScoreWinnerSide(game, winningScore);
+                const isFinished = winnerSide !== null;
+                const statusLabel = isFinished
+                  ? "FINALIZADO"
+                  : blocked
+                    ? "AGUARDANDO"
+                    : "EM ANDAMENTO";
+                const teamOne = game.team1?.join(" + ") || "Aguardando vencedor";
+                const teamTwo = game.team2?.join(" + ") || "Aguardando vencedor";
+
+                return (
+                  <article
+                    className={`figmaBracketGame ${isFinished ? "is-finished" : "is-waiting"} ${blocked ? "is-blocked" : ""}`}
+                    key={game.matchKey}
+                  >
+                    <header className="figmaBracketGameMeta">
+                      <span>Jogo {gameIndex + 1} &bull; Quadra {game.court}</span>
+                      <strong className={`figmaBracketStatus ${isFinished ? "is-finished" : blocked ? "is-blocked" : "is-live"}`}>
+                        {statusLabel}
+                      </strong>
+                    </header>
+
+                    <div className={`figmaBracketTeam ${winnerSide === "team1" ? "is-winner" : winnerSide === "team2" ? "is-loser" : ""}`}>
+                      <span className="figmaBracketAvatar" aria-hidden="true">{blocked ? "?" : teamOne.charAt(0).toUpperCase()}</span>
+                      <strong>{teamOne}</strong>
+                      <input
+                        type="number"
+                        min="0"
+                        max={getMaxScore(winningScore)}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={game.s1}
+                        placeholder="-"
+                        aria-label={`Placar de ${teamOne}`}
+                        onChange={(event) => updateBracketScore(game.matchKey, "s1", event.target.value)}
+                        disabled={blocked}
+                      />
+                    </div>
+
+                    <div className={`figmaBracketTeam ${winnerSide === "team2" ? "is-winner" : winnerSide === "team1" ? "is-loser" : ""}`}>
+                      <span className="figmaBracketAvatar" aria-hidden="true">{blocked ? "?" : teamTwo.charAt(0).toUpperCase()}</span>
+                      <strong>{teamTwo}</strong>
+                      <input
+                        type="number"
+                        min="0"
+                        max={getMaxScore(winningScore)}
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        value={game.s2}
+                        placeholder="-"
+                        aria-label={`Placar de ${teamTwo}`}
+                        onChange={(event) => updateBracketScore(game.matchKey, "s2", event.target.value)}
+                        disabled={blocked}
+                      />
+                    </div>
+
+                    <footer className="figmaBracketGameActions">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          speakGame(game, {
+                            roundLabel: `${round.title} da chave ${title}`,
+                            includeGroup: false,
+                            repeat: voiceRepeat,
+                          })
+                        }
+                        disabled={blocked}
+                      >
+                        Chamar
+                      </button>
+
+                      <button
+                        type="button"
+                        className={isFinished ? "figmaBracketEditScore" : "figmaBracketRegisterScore"}
+                        onClick={(event) => event.currentTarget.closest(".figmaBracketGame")?.querySelector("input:not(:disabled)")?.focus()}
+                        disabled={blocked}
+                      >
+                        {isFinished ? "Editar placar" : "Registrar placar"}
+                      </button>
+                    </footer>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+        ))}
+      </div>
     </div>
   );
 }
