@@ -4181,16 +4181,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [tournamentSearch, setTournamentSearch] = useState("");
   const [tournamentFormatFilter, setTournamentFormatFilter] = useState("all");
   const [tournamentStatusFilter, setTournamentStatusFilter] = useState("all");
-  const [colorMode, setColorMode] = useState(() => {
-    try {
-      const savedMode = localStorage.getItem(`torneio360:color-mode:${user.id}`);
-      if (savedMode === "light" || savedMode === "dark") return savedMode;
-    } catch {
-      // A preferência continua funcional durante a sessão mesmo sem armazenamento local.
-    }
-
-    return "dark";
-  });
+  const [colorMode, setColorMode] = useState("dark");
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const [circuits, setCircuits] = useState([]);
@@ -4638,11 +4629,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     return matchesSearch && matchesFilter;
   });
 
-  const tournamentStatusCounts = tournaments.reduce((counts, tournament) => {
-    const status = getTournamentUiStatus(tournament);
-    counts[status] = (counts[status] || 0) + 1;
-    return counts;
-  }, {});
   const filteredTournaments = tournaments.filter((tournament) => {
     const term = tournamentSearch.trim().toLocaleLowerCase("pt-BR");
     const details = tournament.data || {};
@@ -5942,10 +5928,7 @@ setNewPublicInfo({
             </button>
           ))}
         </nav>
-        <div className="sidebarBrandAccent" aria-hidden="true">
-          <span />
-          <small>Torneio 360</small>
-        </div>
+        <div className="sidebarBrandAccent" aria-hidden="true">TORNEIO360 • 2026</div>
       </aside>
     );
   }
@@ -5981,7 +5964,7 @@ setNewPublicInfo({
                 </span>
                 <span className="profileTriggerCopy">
                   <strong>{profileDisplayName}</strong>
-                  <small>Configurações do perfil</small>
+                  <small>Organizador</small>
                 </span>
               </button>
               <button
@@ -6042,7 +6025,7 @@ setNewPublicInfo({
 
   if (selected) {
     return (
-      <div className={`playAppShell proDashboard theme-${colorMode}`}>
+      <div className={`playAppShell proDashboard theme-${colorMode} panel-${activePanel} tournament-selected`}>
         {renderAppSidebar()}
         <div className="playMain">
           {renderAppTopbar()}
@@ -6053,6 +6036,10 @@ setNewPublicInfo({
                 tournament={selected}
                 userId={user.id}
                 onBack={closeSelectedTournament}
+                onEdit={() => {
+                  setSelected(null);
+                  openEditTournament(selected);
+                }}
                 onSave={saveTournament}
                 onNavigationStateChange={rememberTournamentNavigation}
               />
@@ -6064,7 +6051,7 @@ setNewPublicInfo({
   }
 
   return (
-    <div className={`playAppShell proDashboard theme-${colorMode}`}>
+    <div className={`playAppShell proDashboard theme-${colorMode} panel-${activePanel}`}>
       <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
       <ConfirmModal
@@ -6239,30 +6226,47 @@ setNewPublicInfo({
 
         <main className="playContent">
           <section className="playTitleBlock">
-            <div>
+            <div className="playTitleCopy">
               <span className="pageEyebrow">Painel de gestão</span>
-              <h1>{currentPanelMeta.title}</h1>
+              <div className="playTitleHeadingRow">
+                <h1>{currentPanelMeta.title}</h1>
+                <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
+              </div>
               <p>{currentPanelMeta.description}</p>
             </div>
-            <div className="playPlanPill">Plano {profile.plan} · {formatStatusBR(profile.status)}</div>
+            {activePanel === "inicio" ? (
+              <div className="dashboardTitleActions">
+                <button type="button" className="secondaryBtn" onClick={() => goToPanel("circuitos")}><GitBranch aria-hidden="true" /> Circuitos</button>
+                <button type="button" className="secondaryBtn" onClick={() => goToPanel("modalidades")}><Shapes aria-hidden="true" /> Modalidades</button>
+                <button type="button" className="dashboardPrimaryAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
+              </div>
+            ) : activePanel === "criar" && tournamentWorkspace === "list" ? (
+              <div className="dashboardTitleActions">
+                <button type="button" className="dashboardPrimaryAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
+              </div>
+            ) : null}
           </section>
 
           {freeTrialDetails ? <FreeTrialNotice details={freeTrialDetails} /> : null}
 
           {activePanel === "inicio" && (
-            <>
-              <section className="playTabs homeQuickActions homeQuickActionsThree" aria-label="Ações rápidas">
-                <button type="button" className="primaryQuickAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
-                <button type="button" onClick={() => goToPanel("circuitos")}><GitBranch aria-hidden="true" /> Circuitos</button>
-                <button type="button" onClick={() => goToPanel("modalidades")}><Shapes aria-hidden="true" /> Modalidades</button>
-              </section>
-
-              <section className="playStatsGrid">
-                <div><strong>{tournaments.length}</strong><span>Torneios criados</span></div>
-                <div><strong>{circuits.length}</strong><span>Circuitos cadastrados</span></div>
-                <div><strong>{SPORT_CATALOG.filter((sport) => sport.enabled).length}</strong><span>Modalidade ativa</span></div>
-              </section>
-            </>
+            <section className="playStatsGrid">
+              <div>
+                <span className="dashboardStatLabel">Torneios criados <Trophy aria-hidden="true" /></span>
+                <strong>{tournaments.length}</strong>
+                <small>Gestão centralizada</small>
+              </div>
+              <div>
+                <span className="dashboardStatLabel">Circuitos cadastrados <GitBranch aria-hidden="true" /></span>
+                <strong>{circuits.length}</strong>
+                <small>Temporada 2026</small>
+              </div>
+              <div>
+                <span className="dashboardStatLabel">Modalidades disponíveis <Shapes aria-hidden="true" /></span>
+                <strong>{SPORT_CATALOG.filter((sport) => sport.enabled).length}</strong>
+                <small>Beach Tennis ativo</small>
+              </div>
+            </section>
           )}
 
 {activePanel === "inicio" && selectedArenaProfile ? (
@@ -6363,6 +6367,7 @@ setNewPublicInfo({
     </button>
   </div>
 
+  <h2 className="arenaFeedTitle">Arenas em destaque</h2>
   <div className="arenaFeedGrid">
     {filteredArenaProfiles.map((arena) => (
       <article className="arenaFeedCard" key={arena.id}>
@@ -6616,21 +6621,6 @@ setNewPublicInfo({
     ) : (
 
 <section id="historico-torneios" className="card tournamentManagementCard">
-  <div className="tournamentManagementHeader">
-    <div>
-      <h2>Meus torneios</h2>
-      <p>Busque, filtre e continue a gestão dos torneios já cadastrados.</p>
-    </div>
-    <button type="button" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Criar novo torneio</button>
-  </div>
-
-  <div className="tournamentOverviewStats">
-    <div><span>Torneios criados</span><strong>{tournaments.length}</strong></div>
-    <div><span>Inscrições abertas</span><strong>{tournamentStatusCounts["Inscrições abertas"] || 0}</strong></div>
-    <div><span>Em andamento</span><strong>{tournamentStatusCounts["Em andamento"] || 0}</strong></div>
-    <div><span>Encerrados</span><strong>{tournamentStatusCounts.Encerrado || 0}</strong></div>
-  </div>
-
   <div className="tournamentFilterBar">
     <label className="tournamentSearchField">
       <Search aria-hidden="true" />
@@ -6659,6 +6649,13 @@ setNewPublicInfo({
     <div className="eventGroupList">
       {isolatedTournaments.length > 0 && (
         <div className="tournamentList isolatedTournamentGrid">
+          <div className="tournamentTableHeader" aria-hidden="true">
+            <span>Nome do torneio</span>
+            <span>Data / Local</span>
+            <span>Formato</span>
+            <span>Status</span>
+            <span>Ação</span>
+          </div>
           {isolatedTournaments.map((t) => {
             const details = t.data || {};
 
@@ -6688,28 +6685,29 @@ setNewPublicInfo({
                     <span>—</span>
                   </button>
 
-                  <div className="tournamentInfo">
-                    <div className="tournamentTitleRow">
-                      <strong>{t.name}</strong>
-                      <span className="tournamentTypeBadge">{t.type}</span>
-                      <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
-                    </div>
+                  <div className="tournamentNameCell">
+                    <strong>{t.name}</strong>
+                    <small>{details.gender || "Beach Tennis"}</small>
+                  </div>
 
-                    <div className="tournamentMeta">
-                      {details.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> {details.eventName}</span> : null}
-                      {details.gender ? <span><Tag aria-hidden="true" /> {details.gender}</span> : null}
-                      {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
-                      {details.eventStartTime ? <span><Clock3 aria-hidden="true" /> {details.eventStartTime}</span> : null}
-                      {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
-                      {details.winningScore ? <span><Target aria-hidden="true" /> {details.winningScore} games</span> : null}
-                    </div>
+                  <div className="tournamentDateCell">
+                    <span>{details.eventPeriodLabel || (details.eventDate ? formatDateBR(details.eventDate) : "Data não informada")}</span>
+                    <small>{details.location || "Local não informado"}</small>
+                  </div>
+
+                  <div className="tournamentFormatCell">
+                    <span className="tournamentTypeBadge">{t.type}</span>
+                  </div>
+
+                  <div className="tournamentStatusCell">
+                    <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
                   </div>
 
                   <div className="tournamentActions">
-                    <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
-                    <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /> Compartilhar</button>
-                    <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
+                    <button type="button" className="tableIconAction editBtn" title="Editar" aria-label={`Editar ${t.name}`} onClick={() => openEditTournament(t)}><Settings aria-hidden="true" /></button>
+                    <button type="button" className="tableIconAction shareTournamentBtn" title="Compartilhar" aria-label={`Compartilhar ${t.name}`} onClick={() => setShareTarget(t)}><Share2 aria-hidden="true" /></button>
+                    <button type="button" className="tournamentOpenAction" onClick={() => openTournament(t)}>Abrir</button>
+                    <button type="button" className="tableIconAction deleteBtn" title="Excluir" aria-label={`Excluir ${t.name}`} onClick={() => setDeleteTarget(t)}><Trash2 aria-hidden="true" /></button>
                   </div>
                 </div>
             );
@@ -7676,7 +7674,7 @@ class TournamentErrorBoundary extends React.Component {
   }
 }
 
-function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStateChange }) {
+function TournamentScreen({ tournament, userId, onBack, onEdit, onSave, onNavigationStateChange }) {
   const config = modalityConfig[tournament.type];
 
   if (!config) {
@@ -8399,6 +8397,16 @@ const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } 
     );
   }
 
+  function startParticipantRegistration() {
+    const participantInputs = Array.from(document.querySelectorAll(".tournamentReferencePage .participantSlotCard input"));
+    const availableInput = participantInputs.find((input) => /^(participante|homem|mulher|atleta)/i.test(input.value.trim())) || participantInputs[0];
+
+    if (!availableInput) return;
+    availableInput.scrollIntoView({ behavior: "smooth", block: "center" });
+    availableInput.focus();
+    availableInput.select();
+  }
+
 return (
   <>
     <NoticeModal notice={notice} onClose={() => setNotice(null)} />
@@ -8450,46 +8458,34 @@ return (
       </div>
     )}
 
-    <div className="appPage">
-      <header>
-        <div>
+    <div className="appPage tournamentReferencePage">
+      <button type="button" className="tournamentBackLink" onClick={handleBack}>‹ Voltar para torneios</button>
+
+      <header className="tournamentReferenceHeader">
+        <div className="tournamentReferenceCopy">
           <h1>{tournament.name}</h1>
-          <div className="tournamentHeaderMeta">
-            <span><Trophy aria-hidden="true" /> {tournament.type}</span>
-            {data.multiCategoryEvent ? <span><Grid3X3 aria-hidden="true" /> Várias categorias</span> : null}
-            {data.gender ? <span><Tag aria-hidden="true" /> {data.gender}</span> : null}
+          <div className="tournamentHeaderMeta tournamentHeaderMetaPrimary">
             {data.eventPeriodLabel || data.eventDate ? <span><CalendarDays aria-hidden="true" /> {data.eventPeriodLabel || formatDateBR(data.eventDate)}</span> : null}
-            {data.eventDay ? <span><CalendarDays aria-hidden="true" /> {data.eventDay}</span> : null}
-            {data.registrationDeadline ? <span><CalendarDays aria-hidden="true" /> Inscrições até {formatDateBR(data.registrationDeadline)}</span> : null}
-            {data.eventStartTime ? <span><Clock3 aria-hidden="true" /> Início {data.eventStartTime}</span> : null}
-            {data.dailyStartTimes && Object.keys(data.dailyStartTimes).length > 0 ? (
-              <span><Clock3 aria-hidden="true" /> Horários por dia definidos</span>
-            ) : null}
+            {data.eventDay ? <span>{data.eventDay}</span> : null}
             {data.location ? <span><MapPin aria-hidden="true" /> {data.location}</span> : null}
-            {data.winningScore ? <span><Target aria-hidden="true" /> {data.winningScore} games</span> : null}
+          </div>
+          <div className="tournamentHeaderMeta tournamentHeaderMetaSecondary">
+            {data.gender ? <span>{data.gender}</span> : null}
+            <span>{getSportDefinition(data.sport || DEFAULT_SPORT_ID).name}</span>
+            {data.registrationDeadline ? <span>Inscrições encerram {formatDateBR(data.registrationDeadline)}</span> : null}
+            <span>Set único de {data.winningScore || 4} games</span>
           </div>
         </div>
 
         <div className="actions tournamentHeaderActions">
-          <button type="button" onClick={handleBack}>Voltar</button>
+          <button type="button" className="tournamentShareAction" onClick={() => setShareOpen((prev) => !prev)}>
+            <Share2 aria-hidden="true" /> Compartilhar tabela pública
+          </button>
+          <button type="button" className="tournamentEditAction" onClick={onEdit}>
+            <Settings aria-hidden="true" /> Editar torneio
+          </button>
         </div>
       </header>
-
-        <section className="shareHighlightBox">
-          <div>
-            <strong><Share2 aria-hidden="true" /> Compartilhar tabela pública</strong>
-            <p>Envie um link para atletas e convidados acompanharem o torneio sem acessar sua área de edição.</p>
-          </div>
-
-          <button
-            type="button"
-            className="shareHighlightBtn"
-            onClick={() => setShareOpen((prev) => !prev)}
-          >
-            <Share2 aria-hidden="true" />
-            {shareOpen ? "Fechar" : "Compartilhar"}
-          </button>
-        </section>
 
               {shareOpen && (
           <section className="card shareCard">
@@ -8549,7 +8545,12 @@ return (
               <h2>Gestão de participantes</h2>
               <p>Acompanhe as inscrições, confirme pagamentos e mantenha os vínculos dos atletas.</p>
             </div>
-            <SavingStatusBadge />
+            <div className="participantHeaderActions">
+              <SavingStatusBadge />
+              <button type="button" className="participantAddAction" onClick={startParticipantRegistration}>
+                <PlusCircle aria-hidden="true" /> Adicionar inscrição
+              </button>
+            </div>
           </div>
 
           <div className="participantManagementStats">

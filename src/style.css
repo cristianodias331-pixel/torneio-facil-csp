@@ -17294,3 +17294,1239 @@ html[data-theme="dark"] {
     background: rgba(8, 26, 51, 0.97) !important;
   }
 }
+
+/* =========================================================
+   FIGMA MAKE — REPRODUÇÃO FIEL DO MODELO TORNEIO360
+   Esta camada é intencionalmente final e mantém o dashboard
+   no tema escuro aprovado, independentemente de preferências
+   salvas por versões anteriores.
+   ========================================================= */
+.proDashboard.theme-dark,
+.proDashboard.theme-light {
+  color-scheme: dark;
+  --ui-bg: #030b1f;
+  --ui-bg-soft: #06152d;
+  --ui-surface: #081a33;
+  --ui-surface-raised: #0d2344;
+  --ui-surface-muted: #102b52;
+  --ui-input: #06152d;
+  --ui-text: #ffffff;
+  --ui-text-strong: #ffffff;
+  --ui-muted: #b8cae6;
+  --ui-border: #1c3d68;
+  --ui-border-soft: rgba(28, 61, 104, 0.72);
+  --ui-selected: #102b52;
+  --ui-active-accent: #ff7a00;
+  --brand-blue: #1f5eff;
+  --brand-cyan: #14a0ff;
+  --brand-highlight: #ff7a00;
+  --brand-action: #ff7a00;
+  --ui-shadow: 0 18px 44px rgba(0, 5, 18, 0.32);
+  --ui-shadow-soft: 0 8px 24px rgba(0, 5, 18, 0.18);
+}
+
+.proDashboard.playAppShell {
+  min-height: 100vh !important;
+  background: #030b1f !important;
+  color: #ffffff !important;
+  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+}
+
+.proDashboard .playMain {
+  display: block !important;
+  min-height: 100vh !important;
+  padding: 80px 0 0 240px !important;
+  background: #030b1f !important;
+}
+
+.proDashboard .playContent {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 40px clamp(24px, 3vw, 48px) 64px !important;
+}
+
+.proDashboard .playContent > * {
+  width: min(1280px, 100%);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* Sidebar */
+.proDashboard .playSidebar.proSidebar {
+  position: fixed !important;
+  inset: 0 auto 0 0 !important;
+  z-index: 9000 !important;
+  display: flex !important;
+  width: 240px !important;
+  height: 100vh !important;
+  padding: 0 16px 18px !important;
+  overflow: hidden !important;
+  flex-direction: column !important;
+  border: 0 !important;
+  border-right: 1px solid #1c3d68 !important;
+  border-radius: 0 !important;
+  background: #081a33 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.proDashboard .sidebarLogoButton {
+  display: flex !important;
+  width: calc(100% + 32px) !important;
+  min-height: 80px !important;
+  margin: 0 -16px 24px !important;
+  padding: 7px 20px !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  border: 0 !important;
+  border-bottom: 1px solid #1c3d68 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .sidebarLogoButton:hover {
+  background: #102b52 !important;
+  transform: none !important;
+}
+
+.proDashboard .sidebarLogoButton .torneio360Logo {
+  width: 154px !important;
+  min-width: 154px !important;
+  max-width: 154px !important;
+  height: 64px !important;
+  margin: 0 !important;
+}
+
+.proDashboard .sidebarLogoButton .torneio360Logo img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+}
+
+.proDashboard .sidebarSectionLabel {
+  display: none !important;
+}
+
+.proDashboard .sidebarNav {
+  display: grid !important;
+  gap: 8px !important;
+}
+
+.proDashboard .playSidebar .playNavItem {
+  position: relative !important;
+  display: flex !important;
+  width: 100% !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 0 13px !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 12px !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #b8cae6 !important;
+}
+
+.proDashboard .playSidebar .playNavItem:hover {
+  border-color: #1c3d68 !important;
+  background: rgba(13, 35, 68, 0.58) !important;
+  color: #ffffff !important;
+  transform: none !important;
+}
+
+.proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"]) {
+  border-color: #1c3d68 !important;
+  background: #102b52 !important;
+  box-shadow: inset 4px 0 0 #ff7a00 !important;
+  color: #ffffff !important;
+}
+
+.proDashboard .playSidebar .playNavItem .navIcon,
+.proDashboard .playSidebar .playNavItem .navIcon svg {
+  width: 20px !important;
+  min-width: 20px !important;
+  height: 20px !important;
+}
+
+.proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"]) .navIcon {
+  color: #14a0ff !important;
+}
+
+.proDashboard .playSidebar .playNavItem::after {
+  display: none !important;
+}
+
+.proDashboard .playSidebar .playNavItem small {
+  display: block !important;
+  color: currentColor !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.proDashboard .sidebarBrandAccent {
+  display: block !important;
+  margin-top: auto !important;
+  padding: 18px 8px 2px !important;
+  border-top: 1px solid #1c3d68 !important;
+  color: #b8cae6 !important;
+  font-size: 10px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em !important;
+  text-align: center !important;
+}
+
+/* Topbar */
+.proDashboard .playTopbar.proTopbar {
+  position: fixed !important;
+  inset: 0 0 auto 240px !important;
+  z-index: 8000 !important;
+  display: flex !important;
+  width: auto !important;
+  height: 80px !important;
+  min-height: 80px !important;
+  padding: 0 24px !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  border: 0 !important;
+  border-bottom: 1px solid #1c3d68 !important;
+  background: rgba(8, 26, 51, 0.96) !important;
+  box-shadow: none !important;
+  backdrop-filter: blur(14px) !important;
+}
+
+.proDashboard .proTopbar .playTopBrand {
+  display: none !important;
+}
+
+.proDashboard .proTopActions {
+  gap: 10px !important;
+}
+
+.proDashboard.playAppShell button.themeToggleButton {
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 50% !important;
+  background: transparent !important;
+  color: #b8cae6 !important;
+}
+
+.proDashboard.playAppShell button.themeToggleButton span {
+  display: none !important;
+}
+
+.proDashboard.playAppShell button.themeToggleButton:hover {
+  background: #0d2344 !important;
+  color: #14a0ff !important;
+  transform: none !important;
+}
+
+.proDashboard .profileControl {
+  min-height: 48px !important;
+  border: 1px solid transparent !important;
+  border-radius: 999px !important;
+  background: transparent !important;
+}
+
+.proDashboard .profileControl:hover {
+  border-color: #1c3d68 !important;
+  background: #0d2344 !important;
+}
+
+.proDashboard.playAppShell button.profileTrigger {
+  min-height: 46px !important;
+  height: 46px !important;
+  padding: 3px 10px 3px 4px !important;
+}
+
+.proDashboard .profileAvatar {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  border: 2px solid #14a0ff !important;
+}
+
+.proDashboard .profileTriggerCopy strong {
+  color: #ffffff !important;
+  font-size: 13px !important;
+}
+
+.proDashboard .profileTriggerCopy small {
+  color: #b8cae6 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+}
+
+/* Cabeçalhos das páginas */
+.proDashboard .playTitleBlock {
+  display: flex !important;
+  margin: 0 0 24px !important;
+  padding: 0 0 24px !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  border-bottom: 1px solid #1c3d68 !important;
+}
+
+.proDashboard .playTitleCopy {
+  min-width: 0;
+}
+
+.proDashboard .pageEyebrow {
+  margin: 0 0 5px !important;
+  color: #14a0ff !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.12em !important;
+}
+
+.proDashboard .playTitleHeadingRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.proDashboard .playTitleBlock h1 {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-family: Rajdhani, Inter, sans-serif !important;
+  font-size: clamp(28px, 3vw, 36px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+  line-height: 1 !important;
+}
+
+.proDashboard .playTitleBlock p {
+  margin: 8px 0 0 !important;
+  color: #b8cae6 !important;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+
+.proDashboard .playPlanPill {
+  min-height: 25px !important;
+  padding: 5px 9px !important;
+  border: 1px solid rgba(46, 204, 113, 0.26) !important;
+  border-radius: 5px !important;
+  background: rgba(46, 204, 113, 0.10) !important;
+  color: #2ecc71 !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  line-height: 1 !important;
+  text-transform: uppercase !important;
+}
+
+.proDashboard .dashboardTitleActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.proDashboard.playAppShell .dashboardTitleActions button {
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 16px !important;
+  border-radius: 9px !important;
+  white-space: nowrap;
+}
+
+.proDashboard.playAppShell .dashboardTitleActions button.secondaryBtn {
+  border-color: #1c3d68 !important;
+  background: #081a33 !important;
+  color: #ffffff !important;
+}
+
+.proDashboard.playAppShell .dashboardTitleActions button.secondaryBtn svg {
+  color: #14a0ff !important;
+}
+
+.proDashboard.playAppShell .dashboardTitleActions button.dashboardPrimaryAction {
+  border-color: rgba(255, 122, 0, 0.62) !important;
+  background: #ff7a00 !important;
+  box-shadow: 0 0 16px rgba(255, 122, 0, 0.35) !important;
+  color: #ffffff !important;
+}
+
+.proDashboard.playAppShell .dashboardTitleActions button.dashboardPrimaryAction:hover {
+  background: #ff922e !important;
+  box-shadow: 0 0 24px rgba(255, 146, 46, 0.48) !important;
+}
+
+/* Visão geral */
+.proDashboard .playStatsGrid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+  margin: 0 0 32px !important;
+}
+
+.proDashboard .playStatsGrid > div {
+  display: flex !important;
+  min-height: 132px !important;
+  padding: 20px !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+  box-shadow: none !important;
+  transition: border-color 160ms ease, box-shadow 160ms ease !important;
+}
+
+.proDashboard .playStatsGrid > div:hover {
+  border-color: rgba(20, 160, 255, 0.56) !important;
+  box-shadow: 0 0 16px rgba(20, 160, 255, 0.12) !important;
+}
+
+.proDashboard .dashboardStatLabel {
+  display: flex !important;
+  margin-bottom: 7px !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  color: #b8cae6 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.proDashboard .dashboardStatLabel svg {
+  width: 20px !important;
+  height: 20px !important;
+  color: #14a0ff !important;
+}
+
+.proDashboard .playStatsGrid strong {
+  color: #ffffff !important;
+  font-family: Rajdhani, Inter, sans-serif !important;
+  font-size: 38px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+
+.proDashboard .playStatsGrid small {
+  margin-top: 9px !important;
+  color: #b8cae6 !important;
+  font-size: 12px !important;
+}
+
+.proDashboard .arenaFeedSection {
+  display: grid;
+  gap: 22px;
+}
+
+.proDashboard .arenaSearchRow {
+  display: flex !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 24px !important;
+  align-items: center !important;
+  gap: 16px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+}
+
+.proDashboard .platformSearchBox {
+  position: relative !important;
+  display: block !important;
+  flex: 1 1 auto !important;
+  width: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .platformSearchBox input {
+  width: 100% !important;
+  min-height: 48px !important;
+  padding: 0 46px 0 44px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 9px !important;
+  background: #030b1f !important;
+  color: #ffffff !important;
+}
+
+.proDashboard .platformSearchBox > span {
+  position: absolute !important;
+  top: 50% !important;
+  left: 16px !important;
+  transform: translateY(-50%) !important;
+  display: block !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #14a0ff !important;
+}
+
+.proDashboard + .installAppBanner {
+  display: none !important;
+}
+
+.proDashboard.playAppShell .arenaSearchRow .mapsMiniBtn {
+  min-height: 48px !important;
+  padding: 0 24px !important;
+  border: 1px solid rgba(66, 133, 244, 0.34) !important;
+  background: rgba(66, 133, 244, 0.10) !important;
+  color: #4285f4 !important;
+}
+
+.proDashboard .arenaFeedTitle {
+  margin: 0 !important;
+  color: #ffffff !important;
+  font-family: Rajdhani, Inter, sans-serif !important;
+  font-size: 22px !important;
+  font-weight: 700 !important;
+}
+
+.proDashboard .arenaFeedGrid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+}
+
+.proDashboard .arenaFeedCard {
+  display: grid !important;
+  min-height: 220px !important;
+  padding: 20px !important;
+  grid-template-columns: 58px minmax(0, 1fr) !important;
+  grid-template-rows: auto auto 1fr auto !important;
+  align-items: center !important;
+  column-gap: 16px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+  box-shadow: none !important;
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease !important;
+}
+
+.proDashboard .arenaFeedCard:hover {
+  border-color: rgba(20, 160, 255, 0.52) !important;
+  box-shadow: 0 5px 20px rgba(20, 160, 255, 0.10) !important;
+  transform: translateY(-3px) !important;
+}
+
+.proDashboard .arenaFeedCover {
+  width: 58px !important;
+  height: 58px !important;
+  grid-row: 1 / 3 !important;
+  border: 2px solid rgba(20, 160, 255, 0.5) !important;
+  border-radius: 50% !important;
+}
+
+.proDashboard .arenaFeedCard > strong {
+  align-self: end !important;
+  color: #ffffff !important;
+  font-size: 16px !important;
+}
+
+.proDashboard .arenaFeedCard > small {
+  align-self: start !important;
+  color: #b8cae6 !important;
+}
+
+.proDashboard.playAppShell .arenaFeedCard > button {
+  grid-column: 1 / -1 !important;
+  min-height: 44px !important;
+  margin: 18px 0 0 !important;
+  border: 1px solid rgba(31, 94, 255, 0.35) !important;
+  background: rgba(31, 94, 255, 0.10) !important;
+  color: #1f5eff !important;
+}
+
+/* Torneios */
+.proDashboard.playAppShell .tournamentManagementCard {
+  padding: 24px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .tournamentFilterBar {
+  display: grid !important;
+  grid-template-columns: minmax(280px, 1fr) 210px 190px auto !important;
+  gap: 12px !important;
+  margin: 0 0 22px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.proDashboard .tournamentFilterBar input,
+.proDashboard .tournamentFilterBar select,
+.proDashboard .tournamentFilterBar button {
+  min-height: 44px !important;
+  margin: 0 !important;
+  border-radius: 9px !important;
+}
+
+.proDashboard .tournamentFilterBar input,
+.proDashboard .tournamentFilterBar select {
+  border-color: #1c3d68 !important;
+  background: #081a33 !important;
+}
+
+.proDashboard .tournamentTableHeader {
+  display: grid;
+  padding: 0 14px 12px;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1.1fr) minmax(130px, 0.8fr) minmax(135px, 0.8fr) minmax(180px, 0.9fr);
+  gap: 14px;
+  border-bottom: 1px solid #1c3d68;
+  color: #b8cae6;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.proDashboard .isolatedTournamentGrid {
+  display: block !important;
+}
+
+.proDashboard .isolatedTournamentGrid .tournamentItem {
+  display: grid !important;
+  min-height: 84px !important;
+  padding: 14px !important;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(190px, 1.1fr) minmax(130px, 0.8fr) minmax(135px, 0.8fr) minmax(180px, 0.9fr) !important;
+  align-items: center !important;
+  gap: 14px !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(28, 61, 104, 0.58) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .isolatedTournamentGrid .tournamentItem:hover {
+  background: rgba(8, 26, 51, 0.52) !important;
+}
+
+.proDashboard .isolatedTournamentGrid .moveLineBtn {
+  display: none !important;
+}
+
+.proDashboard .tournamentNameCell,
+.proDashboard .tournamentDateCell {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.proDashboard .tournamentNameCell strong,
+.proDashboard .tournamentDateCell span {
+  overflow: hidden;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proDashboard .tournamentNameCell small,
+.proDashboard .tournamentDateCell small {
+  overflow: hidden;
+  color: #b8cae6;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.proDashboard .tournamentFormatCell,
+.proDashboard .tournamentStatusCell {
+  display: flex;
+  justify-content: center;
+}
+
+.proDashboard .tournamentActions {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 6px !important;
+}
+
+.proDashboard.playAppShell .tournamentActions button.tableIconAction {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+  padding: 0 !important;
+  border-color: transparent !important;
+  background: transparent !important;
+  color: #b8cae6 !important;
+}
+
+.proDashboard.playAppShell .tournamentActions button.tableIconAction:hover {
+  border-color: #1c3d68 !important;
+  background: #081a33 !important;
+  color: #ffffff !important;
+}
+
+.proDashboard.playAppShell .tournamentActions button.tournamentOpenAction {
+  min-height: 38px !important;
+  padding: 0 16px !important;
+  border: 1px solid rgba(31, 94, 255, 0.34) !important;
+  background: rgba(31, 94, 255, 0.10) !important;
+  color: #1f5eff !important;
+}
+
+/* Modalidades */
+.proDashboard.playAppShell .sportCatalogSection {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .sportCatalogHeader {
+  display: none !important;
+}
+
+.proDashboard .sportCatalogStats {
+  gap: 24px !important;
+}
+
+.proDashboard .sportCatalogStats > div {
+  min-height: 112px !important;
+  padding: 20px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+}
+
+.proDashboard .sportCatalogStats > div:nth-child(2) {
+  border-left: 4px solid #14a0ff !important;
+}
+
+.proDashboard .sportCatalogStats > div:nth-child(3) {
+  border-left: 4px solid #ff7a00 !important;
+}
+
+.proDashboard .sportCatalogToolbar {
+  padding: 20px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+}
+
+.proDashboard .sportCatalogGrid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 24px !important;
+}
+
+.proDashboard .sportCatalogCard {
+  min-height: 288px !important;
+  padding: 20px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .sportCatalogCard.active {
+  border-color: rgba(20, 160, 255, 0.52) !important;
+  background: #0d2344 !important;
+  box-shadow: 0 0 16px rgba(20, 160, 255, 0.08) !important;
+}
+
+.proDashboard .sportCatalogCard.comingSoon {
+  opacity: 0.64 !important;
+}
+
+.proDashboard .sportCatalogIcon {
+  border-color: rgba(20, 160, 255, 0.22) !important;
+  border-radius: 9px !important;
+  background: rgba(20, 160, 255, 0.10) !important;
+}
+
+.proDashboard .sportCatalogCard h3 {
+  font-size: 22px !important;
+}
+
+/* Detalhe do torneio */
+.proDashboard .tournamentWorkspaceContent {
+  padding-top: 36px !important;
+}
+
+.proDashboard .tournamentReferencePage {
+  display: grid;
+  gap: 24px;
+}
+
+.proDashboard.playAppShell .tournamentBackLink {
+  width: max-content !important;
+  min-height: 32px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #b8cae6 !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+}
+
+.proDashboard.playAppShell .tournamentBackLink:hover {
+  color: #14a0ff !important;
+  transform: none !important;
+}
+
+.proDashboard .tournamentReferenceHeader {
+  display: flex !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 24px !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .tournamentWorkspaceContent > .tournamentReferencePage > header.tournamentReferenceHeader {
+  overflow: visible !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+}
+
+.proDashboard .tournamentWorkspaceContent > .tournamentReferencePage > header.tournamentReferenceHeader::after {
+  display: none !important;
+}
+
+.proDashboard .tournamentReferenceCopy {
+  min-width: 0;
+}
+
+.proDashboard .tournamentReferenceHeader h1 {
+  margin: 0 0 8px !important;
+  color: #ffffff !important;
+  font-family: Rajdhani, Inter, sans-serif !important;
+  font-size: clamp(30px, 3vw, 38px) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.02em !important;
+}
+
+.proDashboard .tournamentHeaderMeta {
+  display: flex !important;
+  max-width: 820px !important;
+  flex-wrap: wrap !important;
+  gap: 4px 8px !important;
+  color: #b8cae6 !important;
+}
+
+.proDashboard .tournamentHeaderMeta span {
+  display: inline-flex !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #b8cae6 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  line-height: 1.45 !important;
+}
+
+.proDashboard .tournamentHeaderMeta span + span::before {
+  margin-right: 2px;
+  color: #b8cae6;
+  content: "•";
+}
+
+.proDashboard .tournamentHeaderMetaPrimary {
+  margin-top: 0 !important;
+}
+
+.proDashboard .tournamentHeaderMetaSecondary {
+  margin-top: 2px !important;
+}
+
+.proDashboard .tournamentHeaderActions {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  gap: 10px !important;
+}
+
+.proDashboard.playAppShell .tournamentHeaderActions button {
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 16px !important;
+  border-radius: 9px !important;
+  white-space: nowrap;
+}
+
+.proDashboard.playAppShell .tournamentHeaderActions .tournamentShareAction {
+  border: 1px solid #1c3d68 !important;
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+.proDashboard.playAppShell .tournamentHeaderActions .tournamentEditAction {
+  border: 1px solid rgba(31, 94, 255, 0.46) !important;
+  background: rgba(31, 94, 255, 0.10) !important;
+  color: #1f5eff !important;
+}
+
+.proDashboard .tournamentTopTabs {
+  display: flex !important;
+  min-height: 62px !important;
+  margin: 0 !important;
+  padding: 8px !important;
+  align-items: center !important;
+  gap: 4px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+}
+
+.proDashboard.playAppShell .tournamentTopTabs button {
+  min-height: 44px !important;
+  padding: 0 18px !important;
+  border: 1px solid transparent !important;
+  border-radius: 9px !important;
+  background: transparent !important;
+  color: #b8cae6 !important;
+  font-size: 14px !important;
+}
+
+.proDashboard .tournamentTopTabs button svg {
+  display: none !important;
+}
+
+.proDashboard.playAppShell .tournamentTopTabs button.active {
+  border-color: rgba(20, 160, 255, 0.36) !important;
+  background: rgba(20, 160, 255, 0.10) !important;
+  color: #14a0ff !important;
+  box-shadow: 0 0 10px rgba(20, 160, 255, 0.15) !important;
+}
+
+.proDashboard.playAppShell .tournamentReferencePage .tournamentTopTabs button.active {
+  border-color: rgba(20, 160, 255, 0.36) !important;
+  background: rgba(20, 160, 255, 0.10) !important;
+  color: #14a0ff !important;
+  box-shadow: 0 0 10px rgba(20, 160, 255, 0.15) !important;
+}
+
+.proDashboard.playAppShell .tournamentReferencePage > .card {
+  padding: 24px !important;
+  border: 1px solid #1c3d68 !important;
+  border-radius: 12px !important;
+  background: #0d2344 !important;
+  box-shadow: none !important;
+}
+
+.proDashboard.playAppShell .tournamentReferencePage > section.card:not(.shareCard) {
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .participantManagementStats > div,
+.proDashboard .rankingManagementActions,
+.proDashboard .participantManagementToolbar {
+  border-color: #1c3d68 !important;
+  background: #081a33 !important;
+}
+
+.proDashboard .participantHeaderActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.proDashboard.playAppShell .participantAddAction {
+  display: inline-flex !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  border: 1px solid rgba(255, 122, 0, 0.52) !important;
+  border-radius: 9px !important;
+  background: #ff7a00 !important;
+  box-shadow: 0 0 15px rgba(255, 122, 0, 0.35) !important;
+  color: #ffffff !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+}
+
+.proDashboard.playAppShell .participantAddAction:hover {
+  background: #ff922e !important;
+  box-shadow: 0 0 22px rgba(255, 146, 46, 0.46) !important;
+  transform: none !important;
+}
+
+.proDashboard.playAppShell .tournamentReferencePage > section.card .participantHeaderActions > button.participantAddAction {
+  border-color: rgba(255, 122, 0, 0.52) !important;
+  background: #ff7a00 !important;
+  background-image: none !important;
+  box-shadow: 0 0 15px rgba(255, 122, 0, 0.35) !important;
+  color: #ffffff !important;
+}
+
+.proDashboard.playAppShell .tournamentReferencePage > section.card .participantHeaderActions > button.participantAddAction:hover {
+  background: #ff922e !important;
+  background-image: none !important;
+  box-shadow: 0 0 22px rgba(255, 146, 46, 0.46) !important;
+}
+
+.proDashboard.playAppShell .tournamentWorkspaceContent .tournamentReferencePage > button.tournamentBackLink {
+  border: 0 !important;
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: #b8cae6 !important;
+}
+
+.proDashboard .participantAddAction svg {
+  width: 17px;
+  height: 17px;
+}
+
+@media (max-width: 1280px) {
+  .proDashboard .tournamentReferencePage > section.card:not(.shareCard) > .cardTitleRow {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .proDashboard .participantHeaderActions {
+    width: 100%;
+  }
+
+  .proDashboard .participantHeaderActions .savingBadge {
+    display: none !important;
+  }
+
+  .proDashboard.playAppShell .participantAddAction {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 1120px) {
+  .proDashboard .playStatsGrid,
+  .proDashboard .arenaFeedGrid,
+  .proDashboard .sportCatalogGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .proDashboard .tournamentFilterBar {
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .proDashboard .tournamentSearchField {
+    grid-column: 1 / -1;
+  }
+
+  .proDashboard .tournamentTableHeader {
+    display: none;
+  }
+
+  .proDashboard .isolatedTournamentGrid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .proDashboard .isolatedTournamentGrid .tournamentItem {
+    display: grid !important;
+    padding: 18px !important;
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    border: 1px solid #1c3d68 !important;
+    border-radius: 12px !important;
+    background: #081a33 !important;
+  }
+
+  .proDashboard .tournamentFormatCell,
+  .proDashboard .tournamentStatusCell {
+    justify-content: flex-start;
+  }
+
+  .proDashboard .tournamentActions {
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .proDashboard .playMain {
+    padding: 64px 0 80px !important;
+  }
+
+  .proDashboard .playContent {
+    padding: 24px 16px 48px !important;
+  }
+
+  .proDashboard .playTopbar.proTopbar {
+    inset: 0 0 auto 0 !important;
+    height: 64px !important;
+    min-height: 64px !important;
+    padding: 0 12px !important;
+  }
+
+  .proDashboard .proTopbar .playTopBrand {
+    display: flex !important;
+    margin-right: auto !important;
+  }
+
+  .proDashboard .proTopbar .playTopBrand .torneio360Logo {
+    width: 112px !important;
+    min-width: 112px !important;
+    height: 50px !important;
+  }
+
+  .proDashboard .proTopbar .brandTaglineOnly {
+    display: none !important;
+  }
+
+  .proDashboard .sidebarLogoButton {
+    display: none !important;
+  }
+
+  .proDashboard .playSidebar.proSidebar {
+    inset: auto 0 0 0 !important;
+    display: block !important;
+    width: 100% !important;
+    height: 66px !important;
+    min-height: 66px !important;
+    padding: 5px 8px !important;
+    border: 0 !important;
+    border-top: 1px solid #1c3d68 !important;
+    border-radius: 0 !important;
+    background: rgba(8, 26, 51, 0.98) !important;
+  }
+
+  .proDashboard .sidebarNav {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+    height: 100% !important;
+  }
+
+  .proDashboard .playSidebar .playNavItem {
+    height: 56px !important;
+    min-height: 56px !important;
+    padding: 4px 2px !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 4px !important;
+  }
+
+  .proDashboard .playSidebar .playNavItem:is(.active, [aria-current="page"]) {
+    box-shadow: inset 0 3px 0 #ff7a00 !important;
+  }
+
+  .proDashboard .playSidebar .playNavItem small {
+    font-size: 10px !important;
+  }
+
+  .proDashboard .sidebarBrandAccent {
+    display: none !important;
+  }
+
+  .proDashboard .playTitleBlock {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  .proDashboard .dashboardTitleActions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .proDashboard.playAppShell .dashboardTitleActions button {
+    flex: 1 1 150px;
+  }
+
+  .proDashboard .playStatsGrid,
+  .proDashboard .arenaFeedGrid,
+  .proDashboard .sportCatalogGrid,
+  .proDashboard .isolatedTournamentGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .proDashboard .arenaSearchRow,
+  .proDashboard .tournamentReferenceHeader {
+    align-items: stretch !important;
+    flex-direction: column !important;
+  }
+
+  .proDashboard.playAppShell .arenaSearchRow .mapsMiniBtn {
+    width: 100% !important;
+  }
+
+  .proDashboard .tournamentHeaderActions {
+    display: grid !important;
+    width: 100% !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
+  .proDashboard .tournamentTopTabs {
+    overflow-x: auto !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .proDashboard .playTitleHeadingRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .proDashboard .playTitleBlock h1 {
+    font-size: 30px !important;
+  }
+
+  .proDashboard .playStatsGrid {
+    gap: 14px !important;
+  }
+
+  .proDashboard .tournamentFilterBar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .proDashboard .tournamentSearchField {
+    grid-column: auto;
+  }
+
+  .proDashboard .tournamentHeaderActions {
+    grid-template-columns: 1fr !important;
+  }
+
+  .proDashboard.playAppShell .tournamentHeaderActions button {
+    width: 100% !important;
+  }
+}
+
+.proDashboard :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #14a0ff !important;
+  outline-offset: 2px !important;
+}
+
+.proDashboard .playSidebar .playNavItem:focus-visible {
+  outline: 2px solid #14a0ff !important;
+  outline-offset: 1px !important;
+}
