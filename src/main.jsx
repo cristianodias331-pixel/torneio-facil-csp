@@ -432,6 +432,17 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
+function getBrazilianWhatsAppUrl(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+
+  const numberWithCountryCode = digits.startsWith("55") && digits.length >= 12
+    ? digits
+    : `55${digits}`;
+
+  return `https://wa.me/${numberWithCountryCode}`;
+}
+
 function isEmailNotConfirmedError(error) {
   return /email[^\n]*not[^\n]*confirm|not[^\n]*confirm[^\n]*email|email_not_confirmed/i.test(`${error?.message || ""} ${error?.code || ""}`);
 }
@@ -6283,7 +6294,7 @@ setNewPublicInfo({
       <a href={"https://instagram.com/" + String(selectedArenaProfile.instagram_handle).replace("@", "")} target="_blank" rel="noreferrer">Instagram</a>
     ) : null}
     {selectedArenaProfile.whatsapp_group_link ? <a href={selectedArenaProfile.whatsapp_group_link} target="_blank" rel="noreferrer">Grupo WhatsApp</a> : null}
-    {selectedArenaProfile.phone ? <a href={"https://wa.me/" + String(selectedArenaProfile.phone).replace(/\D/g, "")} target="_blank" rel="noreferrer">WhatsApp</a> : null}
+    {selectedArenaProfile.phone ? <a href={getBrazilianWhatsAppUrl(selectedArenaProfile.phone)} target="_blank" rel="noreferrer">WhatsApp</a> : null}
     {selectedArenaProfile.maps_link ? <a href={selectedArenaProfile.maps_link} target="_blank" rel="noreferrer">Google Maps</a> : null}
   </div>
 
@@ -6315,7 +6326,7 @@ setNewPublicInfo({
             {selectedArenaProfile.whatsapp_group_link ? (
               <button type="button" onClick={() => window.open(selectedArenaProfile.whatsapp_group_link, "_blank", "noopener,noreferrer")}>Inscreva-se</button>
             ) : selectedArenaProfile.phone ? (
-              <button type="button" onClick={() => window.open("https://wa.me/" + String(selectedArenaProfile.phone).replace(/\D/g, ""), "_blank", "noopener,noreferrer")}>Inscreva-se</button>
+              <button type="button" onClick={() => window.open(getBrazilianWhatsAppUrl(selectedArenaProfile.phone), "_blank", "noopener,noreferrer")}>Inscreva-se</button>
             ) : (
               <span className="arenaTournamentDraftBadge">Inscrições pelo organizador</span>
             )}
@@ -9674,7 +9685,7 @@ function PublicTournamentScreen({ tournament }) {
               </div>
             </div>
             <div className="publicOrganizerLinks">
-              {publicVisibility.showWhatsapp && publicOrganizer.whatsapp ? <a href={"https://wa.me/" + String(publicOrganizer.whatsapp).replace(/\D/g, "")} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" /> WhatsApp</a> : null}
+              {publicVisibility.showWhatsapp && publicOrganizer.whatsapp ? <a href={getBrazilianWhatsAppUrl(publicOrganizer.whatsapp)} target="_blank" rel="noreferrer"><MessageCircle aria-hidden="true" /> WhatsApp</a> : null}
               {publicVisibility.showWhatsappGroupLink && publicOrganizer.whatsappGroupLink ? <a href={publicOrganizer.whatsappGroupLink} target="_blank" rel="noreferrer"><Users aria-hidden="true" /> Grupo do WhatsApp</a> : null}
               {publicVisibility.showInstagram && publicOrganizer.instagramLink ? <a href={publicOrganizer.instagramLink} target="_blank" rel="noreferrer"><AtSign aria-hidden="true" /> {publicOrganizer.instagramHandle || "Instagram"}</a> : null}
               {publicVisibility.showInstagram && !publicOrganizer.instagramLink && publicOrganizer.instagramHandle ? <span><AtSign aria-hidden="true" /> {publicOrganizer.instagramHandle}</span> : null}
