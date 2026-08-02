@@ -1,0 +1,1377 @@
+.athleteDashboard {
+  --athlete-bg: #020c20;
+  --athlete-header: #081d38;
+  --athlete-sidebar: #071a33;
+  --athlete-surface: #0b2344;
+  --athlete-surface-raised: #102e57;
+  --athlete-input: #061a34;
+  --athlete-border: #204a79;
+  --athlete-border-soft: rgba(74, 137, 198, 0.28);
+  --athlete-text: #f7faff;
+  --athlete-muted: #a8bdd9;
+  --athlete-cyan: #12a8ff;
+  --athlete-blue: #2864ff;
+  --athlete-orange: #ff7a00;
+  --athlete-green: #24d184;
+  --athlete-danger: #ff5266;
+  display: grid;
+  min-height: 100vh;
+  grid-template-columns: 240px minmax(0, 1fr);
+  grid-template-rows: 80px minmax(0, 1fr);
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 78% 5%, rgba(18, 168, 255, 0.08), transparent 28rem),
+    var(--athlete-bg);
+  color: var(--athlete-text);
+  color-scheme: dark;
+  font-family: Inter, "Segoe UI", sans-serif;
+}
+
+.athleteDashboard--light {
+  --athlete-bg: #f3f7fc;
+  --athlete-header: #ffffff;
+  --athlete-sidebar: #eaf2fb;
+  --athlete-surface: #ffffff;
+  --athlete-surface-raised: #e5f0fc;
+  --athlete-input: #f5f8fc;
+  --athlete-border: #b7cbe2;
+  --athlete-border-soft: rgba(54, 105, 153, 0.24);
+  --athlete-text: #08213e;
+  --athlete-muted: #526b87;
+  --athlete-cyan: #007dcc;
+  --athlete-blue: #155ce5;
+  --athlete-orange: #e96800;
+  --athlete-green: #078a52;
+  --athlete-danger: #c9354b;
+  background:
+    radial-gradient(circle at 78% 5%, rgba(0, 125, 204, 0.10), transparent 28rem),
+    var(--athlete-bg);
+  color-scheme: light;
+}
+
+.athleteDashboard--light .athleteDashHeader {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.athleteDashboard--light .athleteDashEmptyState {
+  background: rgba(229, 240, 252, 0.68);
+}
+
+.athleteDashboard--light .athleteDashToggleRow > i {
+  background: #d7e4f2;
+}
+
+.athleteDashboard *,
+.athleteDashboard *::before,
+.athleteDashboard *::after {
+  box-sizing: border-box;
+}
+
+.athleteDashboard button,
+.athleteDashboard input,
+.athleteDashboard textarea {
+  font: inherit;
+}
+
+.athleteDashboard button {
+  cursor: pointer;
+}
+
+.athleteDashboard button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+.athleteDashHeader {
+  position: sticky;
+  z-index: 20;
+  top: 0;
+  display: flex;
+  min-width: 0;
+  padding: 0 22px;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--athlete-border);
+  background: rgba(8, 29, 56, 0.96);
+  backdrop-filter: blur(18px);
+}
+
+.athleteDashBrand {
+  display: inline-flex;
+  min-width: 0;
+  padding: 0;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--athlete-text);
+}
+
+.athleteDashBrand > img {
+  display: block;
+  width: auto;
+  max-width: 185px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.athleteDashBrand > span {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 1px solid var(--athlete-cyan);
+  border-radius: 9px;
+  background: rgba(18, 168, 255, 0.10);
+  color: var(--athlete-cyan);
+}
+
+.athleteDashBrand svg {
+  width: 20px;
+  height: 20px;
+}
+
+.athleteDashBrand strong {
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 21px;
+  font-weight: 900;
+  letter-spacing: .03em;
+}
+
+.athleteDashBrand strong span {
+  color: var(--athlete-cyan);
+}
+
+.athleteDashHeaderUser {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.athleteDashThemeToggle,
+.athleteDashPublicButton,
+.athleteDashHeaderUser .athleteDashLogout {
+  display: inline-flex;
+  min-height: 40px;
+  padding: 0 13px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 8px;
+  background: var(--athlete-input);
+  color: var(--athlete-muted);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.athleteDashThemeToggle:hover,
+.athleteDashPublicButton:hover,
+.athleteDashHeaderUser .athleteDashLogout:hover {
+  border-color: var(--athlete-cyan);
+  color: var(--athlete-cyan);
+}
+
+.athleteDashThemeToggle svg,
+.athleteDashPublicButton svg,
+.athleteDashHeaderUser .athleteDashLogout svg {
+  width: 16px;
+  height: 16px;
+}
+
+.athleteDashThemeToggle {
+  width: 40px;
+  padding: 0;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashMiniAvatar {
+  display: grid;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  overflow: hidden;
+  place-items: center;
+  border: 2px solid var(--athlete-cyan);
+  border-radius: 50%;
+  background: var(--athlete-surface-raised);
+  color: var(--athlete-text);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.athleteDashMiniAvatar img,
+.athleteDashProfilePhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.athleteDashHeaderUser > div:nth-of-type(2) {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.athleteDashHeaderUser > div:nth-of-type(2) strong {
+  overflow: hidden;
+  max-width: 170px;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.athleteDashHeaderUser > div:nth-of-type(2) span {
+  color: var(--athlete-muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .07em;
+}
+
+.athleteDashHeaderUser .athleteDashLogout {
+  width: 40px;
+  padding: 0;
+  color: var(--athlete-danger);
+}
+
+.athleteDashSidebar {
+  position: sticky;
+  top: 80px;
+  display: flex;
+  height: calc(100vh - 80px);
+  padding: 24px 16px 18px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
+  border-right: 1px solid var(--athlete-border);
+  background: var(--athlete-sidebar);
+}
+
+.athleteDashSidebar nav {
+  display: grid;
+  gap: 8px;
+}
+
+.athleteDashSidebar nav button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 50px;
+  padding: 0 13px;
+  align-items: center;
+  gap: 11px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--athlete-muted);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.athleteDashSidebar nav button::before {
+  position: absolute;
+  top: 10px;
+  bottom: 10px;
+  left: -1px;
+  width: 4px;
+  border-radius: 0 4px 4px 0;
+  background: transparent;
+  content: "";
+}
+
+.athleteDashSidebar nav button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.athleteDashSidebar nav button:hover,
+.athleteDashSidebar nav button.active {
+  border-color: var(--athlete-border);
+  background: var(--athlete-surface-raised);
+  color: var(--athlete-text);
+}
+
+.athleteDashSidebar nav button.active svg {
+  color: var(--athlete-cyan);
+}
+
+.athleteDashSidebar nav button.active::before {
+  background: var(--athlete-orange);
+}
+
+.athleteDashPrivacySeal {
+  display: flex;
+  padding: 13px;
+  align-items: flex-start;
+  gap: 10px;
+  border: 1px solid var(--athlete-border-soft);
+  border-radius: 10px;
+  background: rgba(18, 168, 255, 0.05);
+}
+
+.athleteDashPrivacySeal > svg {
+  width: 19px;
+  min-width: 19px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashPrivacySeal span {
+  display: grid;
+  gap: 4px;
+}
+
+.athleteDashPrivacySeal strong {
+  font-size: 11px;
+}
+
+.athleteDashPrivacySeal small {
+  color: var(--athlete-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.athleteDashMain {
+  width: 100%;
+  max-width: 1500px;
+  min-width: 0;
+  margin: 0 auto;
+  padding: 36px 40px 56px;
+}
+
+.athleteDashNotice,
+.athleteDashSetupBanner {
+  display: flex;
+  width: 100%;
+  margin-bottom: 18px;
+  padding: 14px 16px;
+  align-items: flex-start;
+  gap: 11px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 10px;
+  background: var(--athlete-surface);
+}
+
+.athleteDashNotice > svg,
+.athleteDashSetupBanner > svg {
+  width: 20px;
+  min-width: 20px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashNotice > div,
+.athleteDashSetupBanner > div {
+  display: grid;
+  flex: 1;
+  gap: 3px;
+}
+
+.athleteDashNotice strong,
+.athleteDashSetupBanner strong {
+  font-size: 13px;
+}
+
+.athleteDashNotice span,
+.athleteDashSetupBanner span {
+  color: var(--athlete-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.athleteDashNotice.success {
+  border-color: rgba(36, 209, 132, 0.36);
+  background: rgba(36, 209, 132, 0.07);
+}
+
+.athleteDashNotice.success > svg {
+  color: var(--athlete-green);
+}
+
+.athleteDashNotice.warning,
+.athleteDashSetupBanner {
+  border-color: rgba(255, 122, 0, 0.38);
+  background: rgba(255, 122, 0, 0.07);
+}
+
+.athleteDashNotice.warning > svg,
+.athleteDashSetupBanner > svg {
+  color: var(--athlete-orange);
+}
+
+.athleteDashNotice.error {
+  border-color: rgba(255, 82, 102, 0.38);
+  background: rgba(255, 82, 102, 0.07);
+}
+
+.athleteDashNotice.error > svg {
+  color: var(--athlete-danger);
+}
+
+.athleteDashNotice > button {
+  width: 27px;
+  height: 27px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--athlete-muted);
+  font-size: 20px;
+}
+
+.athleteDashWelcome {
+  display: flex;
+  min-height: 176px;
+  padding: 30px 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 84% 28%, rgba(18, 168, 255, 0.18), transparent 18rem),
+    linear-gradient(125deg, var(--athlete-surface-raised), var(--athlete-surface));
+}
+
+.athleteDashWelcome > div,
+.athleteDashPageTitle > div {
+  display: grid;
+  gap: 7px;
+}
+
+.athleteDashWelcome > div > span,
+.athleteDashPageTitle > div > span,
+.athleteDashSectionTitle > div > span,
+.athleteDashModal > span {
+  color: var(--athlete-cyan);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .09em;
+}
+
+.athleteDashWelcome h1,
+.athleteDashPageTitle h1 {
+  margin: 0;
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1;
+}
+
+.athleteDashWelcome p,
+.athleteDashPageTitle p {
+  max-width: 680px;
+  margin: 0;
+  color: var(--athlete-muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.athleteDashWelcome > button,
+.athleteDashPageTitle > button,
+.athleteDashTournamentCard footer button,
+.athleteDashPhotoEditor button,
+.athleteDashModal button {
+  display: inline-flex;
+  min-height: 44px;
+  padding: 0 17px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--athlete-orange);
+  border-radius: 8px;
+  background: var(--athlete-orange);
+  color: #fff;
+  box-shadow: 0 8px 22px rgba(255, 122, 0, 0.19);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.athleteDashWelcome > button svg,
+.athleteDashPageTitle > button svg,
+.athleteDashTournamentCard footer button svg,
+.athleteDashPhotoEditor button svg,
+.athleteDashModal button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.athleteDashStats {
+  display: grid;
+  margin-top: 22px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.athleteDashStats article {
+  position: relative;
+  display: grid;
+  min-height: 124px;
+  padding: 19px;
+  align-content: center;
+  gap: 5px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 11px;
+  background: var(--athlete-surface);
+}
+
+.athleteDashStats article > svg {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 21px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashStats article > span {
+  color: var(--athlete-muted);
+  font-size: 12px;
+}
+
+.athleteDashStats article > strong {
+  padding-right: 24px;
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 25px;
+}
+
+.athleteDashStats article > small {
+  color: var(--athlete-cyan);
+  font-size: 10px;
+}
+
+.athleteDashPanel {
+  margin-top: 24px;
+  padding: 24px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 13px;
+  background: var(--athlete-surface);
+}
+
+.athleteDashSectionTitle,
+.athleteDashPageTitle {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.athleteDashSectionTitle {
+  margin-bottom: 18px;
+  align-items: center;
+}
+
+.athleteDashSectionTitle > div {
+  display: grid;
+  gap: 4px;
+}
+
+.athleteDashSectionTitle h2 {
+  margin: 0;
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 24px;
+}
+
+.athleteDashSectionTitle > button {
+  display: inline-flex;
+  padding: 6px;
+  align-items: center;
+  gap: 3px;
+  border: 0;
+  background: transparent;
+  color: var(--athlete-cyan);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.athleteDashSectionTitle > button svg {
+  width: 16px;
+}
+
+.athleteDashTournamentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.athleteDashTournamentCard {
+  display: grid;
+  min-width: 0;
+  min-height: 245px;
+  padding: 20px;
+  align-content: start;
+  gap: 14px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 12px;
+  background: var(--athlete-surface);
+}
+
+.athleteDashRecent .athleteDashTournamentCard {
+  background: var(--athlete-input);
+}
+
+.athleteDashTournamentCard:hover {
+  border-color: rgba(18, 168, 255, 0.62);
+  transform: translateY(-2px);
+  transition: border-color .18s ease, transform .18s ease;
+}
+
+.athleteDashTournamentCard header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.athleteDashTournamentCard header > span {
+  overflow: hidden;
+  color: var(--athlete-cyan);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .05em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.athleteDashTournamentCard header b {
+  display: inline-flex;
+  min-height: 24px;
+  padding: 0 8px;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid rgba(36, 209, 132, 0.34);
+  border-radius: 5px;
+  background: rgba(36, 209, 132, 0.08);
+  color: var(--athlete-green);
+  font-size: 8px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.athleteDashTournamentCard header b.open {
+  border-color: rgba(255, 122, 0, 0.34);
+  background: rgba(255, 122, 0, 0.08);
+  color: var(--athlete-orange);
+}
+
+.athleteDashTournamentCard header b.pending {
+  border-color: rgba(255, 122, 0, 0.34);
+  background: rgba(255, 122, 0, 0.08);
+  color: var(--athlete-orange);
+}
+
+.athleteDashTournamentCard header b.rejected {
+  border-color: rgba(255, 82, 102, 0.34);
+  background: rgba(255, 82, 102, 0.08);
+  color: var(--athlete-danger);
+}
+
+.athleteDashTournamentCard header b.cancelled,
+.athleteDashTournamentCard header b.closed {
+  border-color: var(--athlete-border);
+  background: var(--athlete-input);
+  color: var(--athlete-muted);
+}
+
+.athleteDashTournamentCard header b svg {
+  width: 12px;
+}
+
+.athleteDashTournamentCard h3 {
+  margin: 3px 0 0;
+  color: var(--athlete-text);
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 22px;
+  line-height: 1.15;
+}
+
+.athleteDashTournamentCard > div {
+  display: grid;
+  gap: 8px;
+  color: var(--athlete-muted);
+  font-size: 11px;
+}
+
+.athleteDashTournamentCard > div span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.athleteDashTournamentCard > div svg {
+  width: 15px;
+  min-width: 15px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashTournamentClosed {
+  display: flex;
+  margin: 0;
+  align-items: flex-start;
+  gap: 7px;
+  color: var(--athlete-orange);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.athleteDashTournamentClosed svg {
+  width: 14px;
+  min-width: 14px;
+  height: 14px;
+}
+
+.athleteDashTournamentCard footer {
+  display: grid;
+  margin-top: auto;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.athleteDashTournamentCard footer button {
+  min-width: 0;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.athleteDashTournamentCard footer button.secondary,
+.athleteDashPhotoEditor button.subtle,
+.athleteDashModal button.secondary {
+  border-color: var(--athlete-border);
+  background: var(--athlete-input);
+  box-shadow: none;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashTournaments,
+.athleteDashRegistrations,
+.athleteDashProfile {
+  display: grid;
+  gap: 22px;
+}
+
+.athleteDashSearch {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  padding: 0 16px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 10px;
+  background: var(--athlete-input);
+}
+
+.athleteDashSearch > svg {
+  width: 19px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashSearch input {
+  width: 100%;
+  height: 48px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--athlete-text);
+}
+
+.athleteDashSearch input::placeholder,
+.athleteDashProfile input::placeholder,
+.athleteDashProfile textarea::placeholder,
+.athleteDashModal input::placeholder {
+  color: #7089a9;
+}
+
+.athleteDashProfileHero {
+  display: grid;
+  margin-top: 0;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 32px;
+}
+
+.athleteDashPhotoEditor {
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 10px;
+}
+
+.athleteDashPhotoEditor > input {
+  display: none;
+}
+
+.athleteDashProfilePhoto {
+  display: grid;
+  width: 142px;
+  height: 142px;
+  margin-bottom: 5px;
+  overflow: hidden;
+  place-items: center;
+  border: 3px solid var(--athlete-cyan);
+  border-radius: 50%;
+  background: var(--athlete-surface-raised);
+  box-shadow: 0 0 28px rgba(18, 168, 255, 0.18);
+  color: var(--athlete-text);
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 34px;
+  font-weight: 900;
+}
+
+.athleteDashPhotoEditor button {
+  width: 100%;
+  max-width: 165px;
+  min-height: 40px;
+}
+
+.athleteDashPhotoEditor button.subtle {
+  border: 0;
+  background: transparent;
+  color: var(--athlete-muted);
+}
+
+.athleteDashProfileFields {
+  display: grid;
+  gap: 18px;
+}
+
+.athleteDashProfileFields label,
+.athleteDashModal label {
+  position: relative;
+  display: grid;
+  gap: 7px;
+}
+
+.athleteDashProfileFields label > span,
+.athleteDashModal label > span {
+  color: var(--athlete-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .025em;
+}
+
+.athleteDashProfileFields label > span small,
+.athleteDashModal label > span small {
+  color: #7188a6;
+  font-weight: 600;
+}
+
+.athleteDashProfileFields input,
+.athleteDashProfileFields textarea,
+.athleteDashModal input {
+  width: 100%;
+  border: 1px solid var(--athlete-border);
+  border-radius: 9px;
+  outline: none;
+  background: var(--athlete-input);
+  color: var(--athlete-text);
+}
+
+.athleteDashProfileFields input,
+.athleteDashModal input {
+  min-height: 48px;
+  padding: 0 13px;
+}
+
+.athleteDashProfileFields textarea {
+  min-height: 128px;
+  padding: 13px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.athleteDashProfileFields input:focus,
+.athleteDashProfileFields textarea:focus,
+.athleteDashModal input:focus {
+  border-color: var(--athlete-cyan);
+  box-shadow: 0 0 0 3px rgba(18, 168, 255, 0.10);
+}
+
+.athleteDashProfileFields label > b {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  color: #7188a6;
+  font-size: 9px;
+}
+
+.athleteDashPrivacyPanel {
+  display: grid;
+  margin-top: 0;
+  gap: 11px;
+}
+
+.athleteDashPrivacyPanel .athleteDashSectionTitle {
+  margin-bottom: 5px;
+}
+
+.athleteDashPrivacyPanel .athleteDashSectionTitle > svg {
+  width: 28px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashToggleRow {
+  position: relative;
+  display: grid;
+  min-height: 78px;
+  padding: 13px 15px;
+  grid-template-columns: 42px minmax(0, 1fr) 46px;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--athlete-border-soft);
+  border-radius: 10px;
+  background: var(--athlete-input);
+  cursor: pointer;
+}
+
+.athleteDashToggleIcon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(18, 168, 255, 0.10);
+  color: var(--athlete-cyan);
+}
+
+.athleteDashToggleIcon svg {
+  width: 19px;
+}
+
+.athleteDashToggleRow > span:nth-child(2) {
+  display: grid;
+  gap: 4px;
+}
+
+.athleteDashToggleRow strong {
+  font-size: 13px;
+}
+
+.athleteDashToggleRow small {
+  color: var(--athlete-muted);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.athleteDashToggleRow > input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.athleteDashToggleRow > i {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 24px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 999px;
+  background: #08172d;
+  transition: .18s ease;
+}
+
+.athleteDashToggleRow > i b {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--athlete-muted);
+  transition: .18s ease;
+}
+
+.athleteDashToggleRow > input:checked + i {
+  border-color: var(--athlete-cyan);
+  background: rgba(18, 168, 255, 0.20);
+}
+
+.athleteDashToggleRow > input:checked + i b {
+  left: 23px;
+  background: var(--athlete-cyan);
+}
+
+.athleteDashRegistrationList {
+  display: grid;
+  gap: 12px;
+}
+
+.athleteDashRegistrationList > article {
+  display: grid;
+  min-height: 96px;
+  padding: 15px 18px;
+  grid-template-columns: 48px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 11px;
+  background: var(--athlete-surface);
+}
+
+.athleteDashRegistrationIcon {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid var(--athlete-border);
+  border-radius: 10px;
+  background: var(--athlete-input);
+  color: var(--athlete-cyan);
+}
+
+.athleteDashRegistrationIcon svg {
+  width: 21px;
+}
+
+.athleteDashRegistrationList article > div:nth-child(2) {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.athleteDashRegistrationList article > div:nth-child(2) strong {
+  overflow: hidden;
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 19px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.athleteDashRegistrationList article > div:nth-child(2) span,
+.athleteDashRegistrationList article > div:nth-child(2) small {
+  overflow: hidden;
+  color: var(--athlete-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.athleteDashStatus {
+  display: inline-flex;
+  min-height: 27px;
+  padding: 0 10px;
+  align-items: center;
+  border: 1px solid rgba(255, 122, 0, 0.35);
+  border-radius: 5px;
+  background: rgba(255, 122, 0, 0.08);
+  color: var(--athlete-orange);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.athleteDashStatus.confirmed {
+  border-color: rgba(36, 209, 132, 0.35);
+  background: rgba(36, 209, 132, 0.08);
+  color: var(--athlete-green);
+}
+
+.athleteDashStatus.rejected {
+  border-color: rgba(255, 82, 102, 0.35);
+  background: rgba(255, 82, 102, 0.08);
+  color: var(--athlete-danger);
+}
+
+.athleteDashStatus.cancelled {
+  border-color: var(--athlete-border);
+  background: var(--athlete-input);
+  color: var(--athlete-muted);
+}
+
+.athleteDashRegistrationList article > button {
+  display: inline-flex;
+  min-height: 36px;
+  padding: 0 11px;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 7px;
+  background: var(--athlete-input);
+  color: var(--athlete-cyan);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.athleteDashRegistrationList article > button svg {
+  width: 14px;
+}
+
+.athleteDashEmptyState {
+  display: grid;
+  min-height: 210px;
+  padding: 28px;
+  grid-column: 1 / -1;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  border: 1px dashed var(--athlete-border);
+  border-radius: 12px;
+  background: rgba(11, 35, 68, 0.52);
+  color: var(--athlete-muted);
+  text-align: center;
+}
+
+.athleteDashEmptyState svg {
+  width: 32px;
+  height: 32px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashEmptyState strong {
+  color: var(--athlete-text);
+  font-size: 14px;
+}
+
+.athleteDashEmptyState span {
+  max-width: 420px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.athleteDashModalBackdrop {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  padding: 20px;
+  place-items: center;
+  background: rgba(0, 7, 20, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.athleteDashModal {
+  display: grid;
+  width: min(100%, 510px);
+  padding: 28px;
+  gap: 13px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 14px;
+  background: var(--athlete-surface);
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.44);
+}
+
+.athleteDashModalIcon {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border: 1px solid var(--athlete-cyan);
+  border-radius: 10px;
+  background: rgba(18, 168, 255, 0.09);
+  color: var(--athlete-cyan);
+}
+
+.athleteDashModalIcon svg {
+  width: 23px;
+}
+
+.athleteDashModal h2 {
+  margin: 0;
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 27px;
+}
+
+.athleteDashModal > p {
+  margin: 0 0 6px;
+  color: var(--athlete-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.athleteDashModal > div:last-child {
+  display: flex;
+  margin-top: 8px;
+  justify-content: flex-end;
+  gap: 9px;
+}
+
+.athleteDashSpinner {
+  animation: athleteDashSpin .75s linear infinite;
+}
+
+@keyframes athleteDashSpin {
+  to { transform: rotate(360deg); }
+}
+
+.athleteDashboardEmpty {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+}
+
+.athleteDashboardEmpty > section {
+  display: grid;
+  width: min(90vw, 440px);
+  padding: 36px;
+  place-items: center;
+  gap: 10px;
+  border: 1px solid var(--athlete-border);
+  border-radius: 14px;
+  background: var(--athlete-surface);
+  text-align: center;
+}
+
+.athleteDashboardEmpty > section > svg {
+  width: 38px;
+  height: 38px;
+  color: var(--athlete-cyan);
+}
+
+.athleteDashboardEmpty h1 {
+  margin: 0;
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 28px;
+}
+
+.athleteDashboardEmpty p {
+  margin: 0;
+  color: var(--athlete-muted);
+  font-size: 13px;
+}
+
+@media (max-width: 1120px) {
+  .athleteDashStats,
+  .athleteDashTournamentGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 900px) {
+  .athleteDashboard {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 72px auto minmax(0, 1fr);
+  }
+
+  .athleteDashHeader {
+    min-height: 72px;
+  }
+
+  .athleteDashSidebar {
+    position: sticky;
+    z-index: 19;
+    top: 72px;
+    overflow-x: auto;
+    width: 100%;
+    height: auto;
+    padding: 9px 14px;
+    grid-row: 2;
+    border-right: 0;
+    border-bottom: 1px solid var(--athlete-border);
+  }
+
+  .athleteDashSidebar nav {
+    display: flex;
+    width: max-content;
+    min-width: 100%;
+  }
+
+  .athleteDashSidebar nav button {
+    width: auto;
+    min-height: 42px;
+    padding: 0 12px;
+    white-space: nowrap;
+  }
+
+  .athleteDashSidebar nav button::before,
+  .athleteDashPrivacySeal {
+    display: none;
+  }
+
+  .athleteDashMain {
+    padding: 28px 24px 48px;
+    grid-row: 3;
+  }
+}
+
+@media (max-width: 680px) {
+  .athleteDashHeader {
+    padding: 0 13px;
+  }
+
+  .athleteDashBrand > img {
+    max-width: 145px;
+    height: 36px;
+  }
+
+  .athleteDashBrand > strong,
+  .athleteDashHeaderUser > div:nth-of-type(2),
+  .athleteDashPublicButton {
+    display: none;
+  }
+
+  .athleteDashMain {
+    padding: 22px 14px 42px;
+  }
+
+  .athleteDashWelcome,
+  .athleteDashPageTitle,
+  .athleteDashSectionTitle {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .athleteDashWelcome {
+    padding: 24px 20px;
+  }
+
+  .athleteDashWelcome > button,
+  .athleteDashPageTitle > button {
+    width: 100%;
+  }
+
+  .athleteDashStats,
+  .athleteDashTournamentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .athleteDashStats article {
+    min-height: 108px;
+  }
+
+  .athleteDashPanel {
+    padding: 18px;
+  }
+
+  .athleteDashProfileHero {
+    grid-template-columns: 1fr;
+  }
+
+  .athleteDashPhotoEditor {
+    padding-bottom: 18px;
+    border-bottom: 1px solid var(--athlete-border-soft);
+  }
+
+  .athleteDashTournamentCard footer {
+    grid-template-columns: 1fr;
+  }
+
+  .athleteDashRegistrationList > article {
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .athleteDashRegistrationIcon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .athleteDashRegistrationList article > .athleteDashStatus,
+  .athleteDashRegistrationList article > button {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .athleteDashModal {
+    padding: 22px 18px;
+  }
+
+  .athleteDashModal > div:last-child {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .athleteDashModal > div:last-child button {
+    width: 100%;
+  }
+}

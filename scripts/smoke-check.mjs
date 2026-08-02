@@ -5,6 +5,9 @@ import { fileURLToPath } from "node:url";
 const root = new URL("../", import.meta.url);
 const mainSource = readFileSync(new URL("src/main.jsx", root), "utf8");
 const styleSource = readFileSync(new URL("src/style.css", root), "utf8");
+const figmaStyleSource = readFileSync(new URL("src/figma-complete.css", root), "utf8");
+const athleteDashboardSource = readFileSync(new URL("src/AthleteDashboard.jsx", root), "utf8");
+const athleteMigrationSource = readFileSync(new URL("supabase/migrations/202608020001_athlete_accounts.sql", root), "utf8");
 const installSource = readFileSync(new URL("src/InstallAppBanner.jsx", root), "utf8");
 const indexSource = readFileSync(new URL("index.html", root), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("package.json", root), "utf8"));
@@ -52,10 +55,66 @@ const requiredApplicationMarkers = [
   'dashboardTitleActions',
   'tournamentReferenceHeader',
   'tournamentTableHeader',
+  'function getUserAccountType(',
+  'ACCOUNT_TYPE_ATHLETE',
+  'ACCOUNT_TYPE_ORGANIZER_PENDING',
+  '<AthleteDashboard user={session.user}',
+  'className="accountTypeChooser"',
+  'function updateAllParticipantRegistrations(',
+  'Confirmar todos',
+  'Todos pendentes',
+  'function AthleteLinkPage(',
+  'function PublicAthletePage(',
+  'function RootApp(',
+  'formatCupGroupOption(',
+  'generateCupGroupSchedule(copy.players, copy.cupConfig || {}, config.courts)',
+  'create_athlete_link_request',
+  'get_my_athlete_link_results',
+  'list_public_tournaments_by_organizer',
+  'function enqueueTournamentSave(',
 ];
 
 for (const marker of requiredApplicationMarkers) {
   assert.ok(mainSource.includes(marker), `Fluxo essencial ausente: ${marker}`);
+}
+
+for (const marker of [
+  'supabase.auth.updateUser',
+  '.from("athlete_profiles").upsert',
+  'submit_tournament_registration',
+  'show_achievements',
+  'list_public_tournaments',
+  'THEME_STORAGE_PREFIX',
+  'Minhas inscrições',
+  'Você edita somente os seus próprios dados.',
+]) {
+  assert.ok(athleteDashboardSource.includes(marker), `Fluxo do atleta ausente: ${marker}`);
+}
+
+assert.ok(!athleteDashboardSource.includes('from("tournaments").insert'), "O atleta ainda consegue criar torneios pelo próprio painel.");
+assert.ok(!athleteDashboardSource.includes('from("tournaments").update'), "O atleta ainda consegue editar torneios pelo próprio painel.");
+
+for (const marker of [
+  'assign_account_role_on_signup',
+  'organizer_pending',
+  'athlete_profiles',
+  'athlete_link_requests',
+  'tournament_registrations',
+  'submit_tournament_registration',
+  'review_tournament_registration',
+  'reconcile_my_profile',
+  'protect_profile_access_fields',
+  'sanitize_public_tournament_data',
+  'list_public_tournaments_by_organizer',
+  'revoke select on table public.tournaments from public, anon',
+  'as restrictive for insert',
+  "public.current_account_role() = 'organizer'",
+]) {
+  assert.ok(athleteMigrationSource.includes(marker), `Proteção de banco ausente: ${marker}`);
+}
+
+for (const marker of ['accountTypeChooser', 'tournamentTabEmoji', 'matchStatusBadge', 'figmaParticipantAthlete']) {
+  assert.ok(figmaStyleSource.includes(marker), `Detalhe visual novo ausente: ${marker}`);
 }
 
 for (const marker of [
