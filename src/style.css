@@ -17404,9 +17404,20 @@ html[data-theme="dark"] {
 }
 
 /* O mesmo contrato de largura e alinhamento vale para rankings de circuitos e torneios. */
-.proDashboard.playAppShell .rankingTableScroll {
+.proDashboard.playAppShell .circuitRankingTables,
+.proDashboard.playAppShell .rankingTablePanel {
   width: 100% !important;
+  min-width: 0 !important;
   max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.proDashboard.playAppShell .rankingTableScroll {
+  display: block !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
   padding-bottom: 8px;
   overflow-x: auto !important;
   overflow-y: hidden !important;
