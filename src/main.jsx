@@ -9970,6 +9970,7 @@ return (
   <CupBracketView
     groupedBrackets={{ main: currentBrackets.main, repechage: [] }}
     data={data}
+    tournamentType={tournament.type}
     updateBracketScore={updateBracketScore}
     voiceRepeat={voiceRepeat}
     setVoiceRepeat={setVoiceRepeat}
@@ -10049,7 +10050,7 @@ return (
                   </div>
                 </>
               ) : currentBrackets.repechage?.length > 0 ? (
-                <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
+                <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} tournamentType={tournament.type} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
               ) : (
                 <p>Com 2 grupos, a Copinha segue o modelo da planilha e não possui chave de consolação.</p>
               )}
@@ -10472,7 +10473,7 @@ function buildScheduleProfileLookup(tournamentType, players, participantMeta) {
   return lookup;
 }
 
-function MatchAthlete({ name, profile = {}, outcome = "" }) {
+function MatchAthlete({ name, profile = {}, outcome = "", athleteNumber = null }) {
   const photoUrl = profile.photoUrl || profile.photo_url || profile.avatarUrl || profile.avatar_url || "";
 
   return (
@@ -10481,7 +10482,26 @@ function MatchAthlete({ name, profile = {}, outcome = "" }) {
       <span className="matchAthleteAvatar" aria-hidden="true">
         {photoUrl ? <img src={photoUrl} alt="" /> : getAthleteInitials(name)}
       </span>
-      <strong>{name}</strong>
+      <span className="matchAthleteIdentity">
+        <small>{athleteNumber ? `Atleta ${athleteNumber}` : "Dupla"}</small>
+        <strong>{name}</strong>
+      </span>
+    </div>
+  );
+}
+
+function MatchTeamRoster({ names = [], profileLookup = new Map(), outcome = "" }) {
+  return (
+    <div className="gameTeamRoster">
+      {names.map((name, athleteIndex) => (
+        <MatchAthlete
+          key={`${name}-${athleteIndex}`}
+          name={name}
+          profile={profileLookup.get(name)}
+          outcome={outcome}
+          athleteNumber={names.length > 1 ? athleteIndex + 1 : null}
+        />
+      ))}
     </div>
   );
 }
@@ -10574,15 +10594,24 @@ function ScheduleView({
                 </div>
               </div>
 
-              <div className={`gameTeams ${readOnly ? "publicGameTeams" : "gameTeamsWithInlineScores"}`}>
+              <div className={`gameTeams gameMatchup ${readOnly ? "publicGameTeams" : "editableGameMatchup"}`}>
                 <div className={`gameTeamPanel ${winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}`}>
+                  <MatchTeamRoster names={team1Names} profileLookup={profileLookup} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />
+                </div>
+
+                <div className={`matchScoreCenter ${hasPublicScore || !readOnly ? "hasScore" : "isPending"}`}>
                   {readOnly ? (
-                    team1Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />)
+                    hasPublicScore ? (
+                      <>
+                        <output className="publicScoreValue">{game.s1}</output>
+                        <span className="matchScoreSeparator" aria-hidden="true">&times;</span>
+                        <output className="publicScoreValue">{game.s2}</output>
+                      </>
+                    ) : (
+                      <span className="publicScorePending">Aguardando placar</span>
+                    )
                   ) : (
                     <>
-                      <div className="gameTeamRoster">
-                        {team1Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />)}
-                      </div>
                       <label className="inlineTeamScore">
                         <span className="srOnly">Placar de {team1Names.join(" e ")}</span>
                         <input
@@ -10595,18 +10624,7 @@ function ScheduleView({
                           onChange={(event) => updateScore(roundIndex, gameIndex, "s1", event.target.value)}
                         />
                       </label>
-                    </>
-                  )}
-                </div>
-                <span>VS</span>
-                <div className={`gameTeamPanel ${winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}`}>
-                  {readOnly ? (
-                    team2Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />)
-                  ) : (
-                    <>
-                      <div className="gameTeamRoster">
-                        {team2Names.map((name, athleteIndex) => <MatchAthlete key={`${name}-${athleteIndex}`} name={name} profile={profileLookup.get(name)} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />)}
-                      </div>
+                      <span className="matchScoreSeparator" aria-hidden="true">&times;</span>
                       <label className="inlineTeamScore">
                         <span className="srOnly">Placar de {team2Names.join(" e ")}</span>
                         <input
@@ -10622,24 +10640,11 @@ function ScheduleView({
                     </>
                   )}
                 </div>
-              </div>
 
-              {readOnly ? (
-                <div
-                  className="scoreRow publicReadOnlyScoreRow"
-                  aria-label={hasPublicScore ? `Placar: ${game.s1} a ${game.s2}` : "Placar ainda não informado"}
-                >
-                  {hasPublicScore ? (
-                    <>
-                      <output className="publicScoreValue">{game.s1}</output>
-                      <span aria-hidden="true">—</span>
-                      <output className="publicScoreValue">{game.s2}</output>
-                    </>
-                  ) : (
-                    <span className="publicScorePending">Aguardando placar</span>
-                  )}
+                <div className={`gameTeamPanel gameTeamPanelRight ${winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}`}>
+                  <MatchTeamRoster names={team2Names} profileLookup={profileLookup} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />
                 </div>
-              ) : null}
+              </div>
 
               {!readOnly && !isFinished ? (
                 <div className="voiceActions gameVoiceActions">
@@ -11047,11 +11052,14 @@ function getSafeCupPresentation(data, config) {
 function CupBracketView({
   groupedBrackets,
   data,
+  tournamentType = "",
   updateBracketScore,
   voiceRepeat = 1,
   setVoiceRepeat,
   winningScore = 4,
 }) {
+  const profileLookup = buildScheduleProfileLookup(tournamentType, data.players, data.participantMeta);
+
   return (
     <div className="figmaBracketBoard">
       <div className="figmaBracketUtilityBar">
@@ -11080,6 +11088,7 @@ function CupBracketView({
             updateBracketScore={updateBracketScore}
             voiceRepeat={voiceRepeat}
             winningScore={winningScore}
+            profileLookup={profileLookup}
           />
         )}
 
@@ -11090,6 +11099,7 @@ function CupBracketView({
             updateBracketScore={updateBracketScore}
             voiceRepeat={voiceRepeat}
             winningScore={winningScore}
+            profileLookup={profileLookup}
           />
         )}
       </div>
@@ -11103,6 +11113,7 @@ function BracketColumn({
   updateBracketScore,
   voiceRepeat = 1,
   winningScore = 4,
+  profileLookup = new Map(),
 }) {
   const isRepechage = rounds?.[0]?.games?.[0]?.phase === "repechage";
 
@@ -11160,6 +11171,8 @@ function BracketColumn({
                     : "EM ANDAMENTO";
                 const teamOne = game.team1?.join(" + ") || "Aguardando vencedor";
                 const teamTwo = game.team2?.join(" + ") || "Aguardando vencedor";
+                const teamOneNames = getScheduleAthleteNames(game.team1);
+                const teamTwoNames = getScheduleAthleteNames(game.team2);
 
                 return (
                   <article
@@ -11173,38 +11186,48 @@ function BracketColumn({
                       </strong>
                     </header>
 
-                    <div className={`figmaBracketTeam ${winnerSide === "team1" ? "is-winner" : winnerSide === "team2" ? "is-loser" : ""}`}>
-                      <span className="figmaBracketAvatar" aria-hidden="true">{blocked ? "?" : teamOne.charAt(0).toUpperCase()}</span>
-                      <strong>{teamOne}</strong>
-                      <input
-                        type="number"
-                        min="0"
-                        max={getMaxScore(winningScore)}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={game.s1}
-                        placeholder="-"
-                        aria-label={`Placar de ${teamOne}`}
-                        onChange={(event) => updateBracketScore(game.matchKey, "s1", event.target.value)}
-                        disabled={blocked}
-                      />
-                    </div>
+                    <div className="figmaBracketMatchup">
+                      <div className={`figmaBracketTeam ${winnerSide === "team1" ? "is-winner" : winnerSide === "team2" ? "is-loser" : ""}`}>
+                        <MatchTeamRoster names={teamOneNames} profileLookup={profileLookup} outcome={winnerSide === "team1" ? "winner" : winnerSide === "team2" ? "loser" : ""} />
+                      </div>
 
-                    <div className={`figmaBracketTeam ${winnerSide === "team2" ? "is-winner" : winnerSide === "team1" ? "is-loser" : ""}`}>
-                      <span className="figmaBracketAvatar" aria-hidden="true">{blocked ? "?" : teamTwo.charAt(0).toUpperCase()}</span>
-                      <strong>{teamTwo}</strong>
-                      <input
-                        type="number"
-                        min="0"
-                        max={getMaxScore(winningScore)}
-                        inputMode="numeric"
-                        pattern="[0-9]*"
-                        value={game.s2}
-                        placeholder="-"
-                        aria-label={`Placar de ${teamTwo}`}
-                        onChange={(event) => updateBracketScore(game.matchKey, "s2", event.target.value)}
-                        disabled={blocked}
-                      />
+                      <div className="figmaBracketScoreCenter">
+                        <label>
+                          <span className="srOnly">Placar de {teamOne}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max={getMaxScore(winningScore)}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={game.s1}
+                            placeholder="-"
+                            aria-label={`Placar de ${teamOne}`}
+                            onChange={(event) => updateBracketScore(game.matchKey, "s1", event.target.value)}
+                            disabled={blocked}
+                          />
+                        </label>
+                        <span aria-hidden="true">&times;</span>
+                        <label>
+                          <span className="srOnly">Placar de {teamTwo}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max={getMaxScore(winningScore)}
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            value={game.s2}
+                            placeholder="-"
+                            aria-label={`Placar de ${teamTwo}`}
+                            onChange={(event) => updateBracketScore(game.matchKey, "s2", event.target.value)}
+                            disabled={blocked}
+                          />
+                        </label>
+                      </div>
+
+                      <div className={`figmaBracketTeam ${winnerSide === "team2" ? "is-winner" : winnerSide === "team1" ? "is-loser" : ""}`}>
+                        <MatchTeamRoster names={teamTwoNames} profileLookup={profileLookup} outcome={winnerSide === "team2" ? "winner" : winnerSide === "team1" ? "loser" : ""} />
+                      </div>
                     </div>
 
                     <footer className="figmaBracketGameActions">
@@ -11446,6 +11469,7 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
   const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
 
   const publicAthletes = getRegisteredAthletesForPublic(data, config, publicAthleteIds);
+  const publicProfileLookup = buildScheduleProfileLookup(tournament.type, data.players, data.participantMeta);
 
   return (
     <div className="publicPage">
@@ -11583,7 +11607,7 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
             {!data.schedule || data.schedule.length === 0 ? (
               <p>A tabela ainda não foi gerada pelo organizador.</p>
             ) : (
-              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} readOnly />
+              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} readOnly tournamentType={tournament.type} players={data.players} participantMeta={data.participantMeta} />
             )}
           </div>
 
@@ -11593,6 +11617,7 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
                 <PublicCupBracketView
                   groupedBrackets={{ main: currentBrackets.main, repechage: [] }}
                   mainTitle={data.cupConfig?.mainBracketName || "Chave principal"}
+                  profileLookup={publicProfileLookup}
                 />
               )}
             </div>
@@ -11607,6 +11632,7 @@ function PublicTournamentScreen({ tournament, publicAthleteIds = null }) {
                     <PublicCupBracketView
                       groupedBrackets={{ main: [], repechage: currentBrackets.repechage }}
                       repechageTitle={data.cupConfig?.repechageName || "Disputa paralela"}
+                      profileLookup={publicProfileLookup}
                     />
                   )
                   : <p>Esta Copinha de 2 grupos não possui chave de consolação.</p>}
@@ -11687,6 +11713,7 @@ function PublicCupBracketView({
   groupedBrackets,
   mainTitle = "Chave principal",
   repechageTitle = "Disputa paralela",
+  profileLookup = new Map(),
 }) {
   const mainRounds = Array.isArray(groupedBrackets?.main) ? groupedBrackets.main : [];
   const repechageRounds = Array.isArray(groupedBrackets?.repechage) ? groupedBrackets.repechage : [];
@@ -11700,6 +11727,7 @@ function PublicCupBracketView({
           rounds={mainRounds}
           title={mainRounds[0]?.bracketTitle || mainTitle}
           variant="main"
+          profileLookup={profileLookup}
         />
       ) : null}
       {repechageRounds.length > 0 ? (
@@ -11707,13 +11735,14 @@ function PublicCupBracketView({
           rounds={repechageRounds}
           title={repechageRounds[0]?.bracketTitle || repechageTitle}
           variant="repechage"
+          profileLookup={profileLookup}
         />
       ) : null}
     </div>
   );
 }
 
-function PublicBracketColumn({ rounds = [], title, variant }) {
+function PublicBracketColumn({ rounds = [], title, variant, profileLookup = new Map() }) {
   if (rounds.length === 0) return null;
 
   return (
@@ -11729,9 +11758,13 @@ function PublicBracketColumn({ rounds = [], title, variant }) {
               <strong>Quadra {game.court}</strong>
 
               <div className="gameTeams publicBracketTeams">
-                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
+                <div className="gameTeamPanel">
+                  <MatchTeamRoster names={getScheduleAthleteNames(game.team1)} profileLookup={profileLookup} />
+                </div>
                 <span>x</span>
-                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
+                <div className="gameTeamPanel gameTeamPanelRight">
+                  <MatchTeamRoster names={getScheduleAthleteNames(game.team2)} profileLookup={profileLookup} />
+                </div>
               </div>
 
               <div className="publicScore publicBracketScore">
