@@ -9643,13 +9643,10 @@ function PublicTournamentPage({ publicId }) {
     if (!silent) setLoading(true);
 
     const { data, error } = await supabase
-      .from("tournaments")
-      .select("*")
-      .eq("public_id", publicId)
-      .eq("is_public", true)
-      .single();
+      .rpc("get_public_tournament", { p_public_id: publicId })
+      .maybeSingle();
 
-    if (error) {
+    if (error || !data) {
       console.error(error);
       setError("Link público não encontrado ou desativado.");
       setTournament(null);
