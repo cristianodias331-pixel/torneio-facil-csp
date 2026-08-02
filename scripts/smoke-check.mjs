@@ -87,6 +87,10 @@ assert.ok(
   mainSource.includes('document.getElementById("acesso")?.scrollIntoView({ behavior: "auto", block: "start" })'),
   "A recuperação de senha não leva o usuário diretamente ao formulário de nova senha."
 );
+assert.ok(
+  mainSource.includes('.rpc("get_public_tournament", { p_public_id: publicId })'),
+  "O link público voltou a consultar uma tabela protegida em vez da função segura."
+);
 assert.ok(mainSource.includes('navigator.serviceWorker.register("/sw.js")'), "O service worker do app não está registrado.");
 assert.ok(!mainSource.includes("@torenio360"), "O usuário do Instagram continua escrito incorretamente.");
 assert.ok(!mainSource.includes("data:image/png;base64"), "Ainda existem imagens PNG Base64 no JavaScript.");
