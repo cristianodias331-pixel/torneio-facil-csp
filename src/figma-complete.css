@@ -7522,3 +7522,539 @@ html[data-theme="light"] body .proDashboard.theme-light .figmaMatchesSection .ro
     font-size: 17px !important;
   }
 }
+
+/* =========================================================
+   PARTIDA EM LINHAS — ATLETAS AGRUPADOS POR DUPLA
+========================================================= */
+
+.proDashboard .figmaMatchesSection .gameTeams.gameMatchup {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+}
+
+.proDashboard .figmaMatchesSection .gameTeams.gameMatchup > .gameTeamPanel {
+  display: grid !important;
+  min-width: 0 !important;
+  min-height: 124px !important;
+  padding: 10px 12px !important;
+  overflow: hidden !important;
+  grid-template-columns: minmax(0, 1fr) 56px !important;
+  grid-template-areas: "roster score" !important;
+  align-items: center !important;
+  gap: 12px !important;
+  border-radius: 10px !important;
+}
+
+.proDashboard .figmaMatchesSection .gameTeams.gameMatchup > .gameTeamPanel > .gameTeamRoster {
+  grid-area: roster !important;
+}
+
+.proDashboard .figmaMatchesSection .gameTeams.gameMatchup > .gameTeamPanel > .teamScoreSlot,
+.proDashboard .figmaMatchesSection .gameTeams.gameMatchup > .gameTeamPanel > .teamScoreValue {
+  grid-area: score !important;
+}
+
+.proDashboard .figmaMatchesSection .matchVersus,
+.proDashboard .figmaBracketSection .figmaBracketVersus {
+  position: relative;
+  z-index: 2;
+  display: inline-grid !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  margin: -5px auto !important;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--t360-cyan) 55%, var(--t360-border));
+  border-radius: 999px;
+  background: var(--t360-card) !important;
+  color: var(--t360-cyan) !important;
+  font-size: 8px !important;
+  font-weight: 900 !important;
+  letter-spacing: .05em;
+  line-height: 1 !important;
+}
+
+.proDashboard .figmaMatchesSection .gameTeamRoster,
+.proDashboard .figmaBracketSection .gameTeamRoster {
+  position: relative;
+  display: grid !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0;
+  min-height: 0 !important;
+  padding: 0 !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: center;
+  justify-content: stretch !important;
+  justify-items: stretch !important;
+  overflow: visible !important;
+  text-align: left !important;
+  white-space: normal !important;
+  gap: 7px !important;
+}
+
+.proDashboard .figmaMatchesSection .schedule .gameTeams .matchTeamLabel,
+.proDashboard .figmaBracketSection .matchTeamLabel {
+  display: inline-flex !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  height: 17px !important;
+  min-height: 17px !important;
+  margin: 0 !important;
+  padding: 0 7px !important;
+  align-items: center;
+  border: 1px solid color-mix(in srgb, var(--t360-cyan) 36%, var(--t360-border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--t360-cyan) 8%, transparent);
+  color: var(--t360-cyan) !important;
+  font-size: 7px !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap !important;
+}
+
+.proDashboard .figmaMatchesSection .gameTeamRoster > .matchAthlete {
+  display: grid !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  grid-template-columns: 7px 38px minmax(0, 1fr) !important;
+  align-items: center !important;
+  justify-self: stretch !important;
+  gap: 8px !important;
+}
+
+.proDashboard .figmaMatchesSection .matchAthlete .matchOutcomeDot {
+  display: block !important;
+}
+
+.proDashboard .figmaMatchesSection .matchAthleteAvatar {
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  min-height: 38px !important;
+}
+
+.proDashboard .figmaMatchesSection .matchAthleteIdentity {
+  display: grid !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  justify-items: stretch !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+}
+
+.proDashboard .figmaMatchesSection .matchAthleteIdentity strong {
+  display: block !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+.proDashboard .figmaBracketSection .gameTeamRoster > .matchAthlete {
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-self: stretch !important;
+}
+
+.proDashboard .figmaBracketSection .matchAthleteIdentity strong {
+  max-width: 100% !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+.proDashboard .figmaMatchesSection .teamScoreSlot {
+  display: grid !important;
+  min-width: 0 !important;
+  padding: 0 !important;
+  place-items: center !important;
+  border: 0 !important;
+}
+
+.proDashboard .figmaMatchesSection .teamScoreSlot input,
+.proDashboard .figmaMatchesSection .teamScoreValue {
+  display: grid !important;
+  width: 50px !important;
+  min-width: 50px !important;
+  height: 54px !important;
+  min-height: 54px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  place-items: center;
+  border: 1px solid var(--t360-cyan) !important;
+  border-radius: 9px !important;
+  background: var(--t360-card) !important;
+  color: var(--t360-white) !important;
+  font-family: Rajdhani, Inter, sans-serif !important;
+  font-size: 24px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+}
+
+/* Chaves: o placar acompanha a dupla também nas oitavas em diante. */
+.proDashboard .figmaBracketSection .figmaBracketMatchup {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+}
+
+.proDashboard .figmaBracketSection .figmaBracketTeam {
+  display: grid !important;
+  min-height: 118px !important;
+  padding: 9px 10px !important;
+  grid-template-columns: minmax(0, 1fr) 48px !important;
+  grid-template-areas: "roster score" !important;
+  align-items: center !important;
+  gap: 9px !important;
+}
+
+.proDashboard .figmaBracketSection .figmaBracketTeam > .gameTeamRoster {
+  grid-area: roster !important;
+}
+
+.proDashboard .figmaBracketSection .figmaBracketTeamScore {
+  display: grid;
+  grid-area: score !important;
+  place-items: center;
+}
+
+.proDashboard .figmaBracketSection .figmaBracketTeamScore input {
+  width: 42px !important;
+  min-width: 42px !important;
+  height: 48px !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid #245183 !important;
+  border-radius: 8px !important;
+  outline: none;
+  background: #0a1f3b !important;
+  color: #fff !important;
+  font-family: Rajdhani, Inter, sans-serif;
+  font-size: 21px !important;
+  font-weight: 900 !important;
+  text-align: center;
+  appearance: textfield;
+}
+
+.proDashboard .figmaBracketSection .figmaBracketTeamScore input:focus {
+  border-color: var(--t360-cyan, #14a0ff) !important;
+  box-shadow: 0 0 0 2px rgba(20, 160, 255, .16);
+}
+
+.proDashboard .figmaBracketSection .figmaBracketTeamScore input:disabled {
+  border-color: #173451 !important;
+  background: #0a1930 !important;
+  color: #5e7899 !important;
+}
+
+.proDashboard .figmaBracketSection .figmaBracketGame {
+  min-height: 322px !important;
+}
+
+/* Visualização pública com a mesma hierarquia por dupla. */
+.publicPage .publicReadOnlyGame .publicGameTeams.gameMatchup,
+.publicPage .publicBracketGame .publicBracketTeams {
+  display: grid !important;
+  width: 100% !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-areas: none !important;
+  align-items: stretch !important;
+  gap: 0 !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams.gameMatchup > div.gameTeamPanel,
+.publicPage .publicBracketGame .publicBracketTeams.gameTeams > div.gameTeamPanel {
+  display: grid !important;
+  min-width: 0 !important;
+  min-height: 116px !important;
+  padding: 10px 12px !important;
+  grid-area: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  grid-template-columns: minmax(0, 1fr) 50px !important;
+  grid-template-areas: "roster score" !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams.gameMatchup > div.gameTeamPanel > .gameTeamRoster,
+.publicPage .publicBracketGame .publicBracketTeams.gameTeams > div.gameTeamPanel > .gameTeamRoster {
+  display: grid !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  grid-area: roster !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  align-content: center !important;
+  justify-content: stretch !important;
+  justify-items: stretch !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams.gameMatchup > div.gameTeamPanel > .teamScoreValue,
+.publicPage .publicBracketGame .publicBracketTeams.gameTeams > div.gameTeamPanel > .teamScoreValue {
+  grid-area: score !important;
+}
+
+.publicPage .schedule .gameTeams .matchTeamLabel,
+.publicPage .publicBracketGame .matchTeamLabel {
+  display: inline-flex !important;
+  width: max-content !important;
+  min-width: 0 !important;
+  height: 17px !important;
+  min-height: 17px !important;
+  margin: 0 !important;
+  padding: 0 7px !important;
+  align-items: center;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #eff6ff;
+  color: #0369a1 !important;
+  font-size: 7px !important;
+  font-weight: 900 !important;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  white-space: nowrap !important;
+  grid-area: auto !important;
+}
+
+.publicPage .gameTeamRoster {
+  display: grid !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  justify-content: stretch !important;
+  justify-items: stretch !important;
+}
+
+.publicPage .gameTeamRoster > .matchAthlete {
+  width: 100% !important;
+  min-width: 0 !important;
+  justify-self: stretch !important;
+}
+
+.publicPage .publicReadOnlyGame .gameTeamRoster > div.matchAthlete,
+.publicPage .publicBracketGame .gameTeamRoster > div.matchAthlete {
+  display: grid !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  grid-area: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  grid-template-columns: 36px minmax(0, 1fr) !important;
+  align-items: center !important;
+  justify-content: stretch !important;
+  justify-self: stretch !important;
+  gap: 8px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  color: inherit !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+.publicPage .publicReadOnlyGame .matchAthlete > .matchAthleteAvatar,
+.publicPage .publicBracketGame .matchAthlete > .matchAthleteAvatar {
+  display: grid !important;
+  width: 36px !important;
+  min-width: 36px !important;
+  height: 36px !important;
+  min-height: 36px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  grid-area: auto !important;
+  place-items: center !important;
+}
+
+.publicPage .publicReadOnlyGame .matchAthlete > .matchOutcomeDot,
+.publicPage .publicBracketGame .matchAthlete > .matchOutcomeDot {
+  display: none !important;
+}
+
+.publicPage .publicReadOnlyGame .gameTeamRoster > div.matchAthlete > span.matchAthleteIdentity,
+.publicPage .publicBracketGame .gameTeamRoster > div.matchAthlete > span.matchAthleteIdentity {
+  display: grid !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  grid-area: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  justify-items: stretch !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  color: inherit !important;
+  font-size: inherit !important;
+  text-align: left !important;
+  white-space: normal !important;
+}
+
+.publicPage .publicReadOnlyGame .matchAthleteIdentity > strong,
+.publicPage .publicBracketGame .matchAthleteIdentity > strong {
+  display: block !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+.publicPage .matchAthleteIdentity strong {
+  max-width: 100% !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+}
+
+.publicPage .matchAthleteIdentity {
+  display: grid !important;
+  width: 100% !important;
+  height: auto !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  grid-area: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  justify-items: stretch !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.publicPage .publicReadOnlyGame .publicGameTeams > .matchVersus,
+.publicPage .publicBracketGame .publicBracketTeams > .matchVersus {
+  position: relative;
+  z-index: 2;
+  display: inline-grid !important;
+  width: 36px !important;
+  height: 22px !important;
+  margin: -5px auto !important;
+  place-items: center;
+  border: 1px solid #bfdbfe;
+  border-radius: 999px;
+  background: #fff !important;
+  color: #0369a1 !important;
+  font-size: 8px !important;
+  font-weight: 900 !important;
+  grid-area: auto !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+}
+
+.publicPage .teamScoreValue {
+  display: grid;
+  width: 44px;
+  min-width: 44px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid #93c5fd;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.publicPage .publicBracketGame {
+  display: block !important;
+  grid-template-columns: none !important;
+  grid-template-areas: none !important;
+}
+
+.publicPage .publicBracketGame > strong {
+  display: flex !important;
+  margin-bottom: 10px !important;
+}
+
+@media (max-width: 560px) {
+  .proDashboard .figmaMatchesSection .gameTeams.gameMatchup > .gameTeamPanel {
+    min-height: 116px !important;
+    padding: 9px 10px !important;
+    grid-template-columns: minmax(0, 1fr) 46px !important;
+    gap: 8px !important;
+  }
+
+  .proDashboard .figmaMatchesSection .gameTeamRoster > .matchAthlete {
+    grid-template-columns: 6px 32px minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+
+  .proDashboard .figmaMatchesSection .matchAthleteAvatar {
+    width: 32px !important;
+    min-width: 32px !important;
+    height: 32px !important;
+    min-height: 32px !important;
+  }
+
+  .proDashboard .figmaMatchesSection .matchAthleteIdentity small {
+    font-size: 7px !important;
+  }
+
+  .proDashboard .figmaMatchesSection .matchAthleteIdentity strong {
+    font-size: 11px !important;
+  }
+
+  .proDashboard .figmaMatchesSection .teamScoreSlot input,
+  .proDashboard .figmaMatchesSection .teamScoreValue {
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    font-size: 21px !important;
+  }
+
+  .publicPage .publicReadOnlyGame .publicGameTeams > .gameTeamPanel,
+  .publicPage .publicBracketGame .publicBracketTeams > .gameTeamPanel {
+    padding: 9px 8px !important;
+    grid-template-columns: minmax(0, 1fr) 44px !important;
+    gap: 7px !important;
+  }
+}
