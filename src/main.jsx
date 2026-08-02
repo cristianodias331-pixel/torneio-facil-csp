@@ -22,6 +22,7 @@ import {
   MessageCircle,
   Moon,
   PlusCircle,
+  Search,
   Settings,
   Shapes,
   Share2,
@@ -337,6 +338,20 @@ function getCalendarDayDifference(startValue, endValue) {
   return endDay - startDay;
 }
 
+function getTournamentUiStatus(tournament, today = getBrazilTodayISO()) {
+  if (String(tournament?.status || "").toLowerCase() === "draft") return "Rascunho";
+
+  const details = tournament?.data || {};
+  const startDate = getBrazilDateISO(details.eventDate || details.eventStartDate);
+  const endDate = getBrazilDateISO(details.eventEndDate || details.eventDate || details.eventStartDate);
+  const registrationDeadline = getBrazilDateISO(details.registrationDeadline);
+
+  if (endDate && endDate < today) return "Encerrado";
+  if (startDate && startDate <= today && (!endDate || endDate >= today)) return "Em andamento";
+  if (registrationDeadline && registrationDeadline >= today) return "Inscrições abertas";
+  return "Programado";
+}
+
 function getFreeTrialDetails(profile, user) {
   if (String(profile?.status || "").toLowerCase() !== "active") return null;
 
@@ -533,6 +548,56 @@ const allowedByPlan = {
     "Copinha - grupos de 3",
   ],
 };
+
+const DEFAULT_SPORT_ID = "beach-tennis";
+const SPORT_CATALOG = Object.freeze([
+  {
+    id: DEFAULT_SPORT_ID,
+    name: "Beach Tennis",
+    icon: "🎾",
+    enabled: true,
+    description: "Modalidade ativa para criação, organização e acompanhamento completo de torneios.",
+  },
+  {
+    id: "futevolei",
+    name: "Futevôlei",
+    icon: "⚽",
+    enabled: false,
+    description: "Disponível em uma próxima etapa da plataforma.",
+  },
+  {
+    id: "volei-de-praia",
+    name: "Vôlei de Praia",
+    icon: "🏐",
+    enabled: false,
+    description: "Disponível em uma próxima etapa da plataforma.",
+  },
+  {
+    id: "padel",
+    name: "Padel",
+    icon: "🏸",
+    enabled: false,
+    description: "Planejada para uma futura expansão da plataforma.",
+  },
+  {
+    id: "tenis",
+    name: "Tênis",
+    icon: "🎾",
+    enabled: false,
+    description: "Planejada para uma futura expansão da plataforma.",
+  },
+  {
+    id: "pickleball",
+    name: "Pickleball",
+    icon: "◉",
+    enabled: false,
+    description: "Planejada para uma futura expansão da plataforma.",
+  },
+]);
+
+function getSportDefinition(sportId) {
+  return SPORT_CATALOG.find((sport) => sport.id === sportId) || SPORT_CATALOG[0];
+}
 
 const modalityConfig = {
   "Super 08": {
@@ -1516,6 +1581,18 @@ function resolveBracketGame(game, allGames, data) {
     : ["Aguardando"];
 
   return copy;
+}
+
+function shuffleParticipantsWithMeta(players, metadata) {
+  const paired = (Array.isArray(players) ? players : []).map((player, index) => ({
+    player,
+    meta: Array.isArray(metadata) ? metadata[index] : undefined,
+  }));
+  const shuffled = shuffleArray(paired);
+  return {
+    players: shuffled.map((item) => item.player),
+    metadata: shuffled.map((item) => item.meta || { payment: "pending", registration: "pending", profileLinked: false }),
+  };
 }
 
 function buildNextRound(previousGames, bracketType, roundName, keyPrefix) {
@@ -4054,6 +4131,7 @@ function Dashboard({ profile, user, onProfileChange }) {
   const [selectedArenaLoading, setSelectedArenaLoading] = useState(false);
   const [selected, setSelected] = useState(null);
   const [newName, setNewName] = useState("");
+  const [newSport, setNewSport] = useState(DEFAULT_SPORT_ID);
   const [newType, setNewType] = useState("");
 const [newGender, setNewGender] = useState("");
 const [newMultiCategoryEvent, setNewMultiCategoryEvent] = useState("nao");
@@ -4097,6 +4175,12 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     const params = new URLSearchParams(window.location.search);
     return params.get("aba") || "inicio";
   });
+  const [modalitySearch, setModalitySearch] = useState("");
+  const [modalityFilter, setModalityFilter] = useState("all");
+  const [tournamentWorkspace, setTournamentWorkspace] = useState("list");
+  const [tournamentSearch, setTournamentSearch] = useState("");
+  const [tournamentFormatFilter, setTournamentFormatFilter] = useState("all");
+  const [tournamentStatusFilter, setTournamentStatusFilter] = useState("all");
   const [colorMode, setColorMode] = useState(() => {
     try {
       const savedMode = localStorage.getItem(`torneio360:color-mode:${user.id}`);
@@ -4105,7 +4189,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       // A preferência continua funcional durante a sessão mesmo sem armazenamento local.
     }
 
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    return "dark";
   });
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -4277,8 +4361,16 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   function goToPanel(panel) {
     setSelected(null);
+    if (panel === "criar") setTournamentWorkspace("list");
     setActivePanel(panel);
     updateAppUrl({ activePanel: panel, selectedTournamentId: null });
+  }
+
+  function openTournamentCreator() {
+    setSelected(null);
+    setTournamentWorkspace("create");
+    setActivePanel("criar");
+    updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
   }
 
   function openProfileSection(nextSubtab = "editar") {
@@ -4517,15 +4609,15 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     },
     criar: {
       title: "Torneios",
-      description: "Crie um novo torneio ou continue gerenciando os já cadastrados.",
+      description: "Gerencie seus torneios de Beach Tennis e continue de onde parou.",
     },
     circuitos: {
       title: "Circuitos",
-      description: "Organize temporadas e acompanhe a classificação entre torneios.",
+      description: "Reúna torneios e acompanhe a classificação acumulada durante a temporada.",
     },
     modalidades: {
       title: "Modalidades",
-      description: "Consulte os formatos disponíveis para o seu plano.",
+      description: "Consulte as modalidades disponíveis para criação e organização dos seus torneios.",
     },
     lixeira: {
       title: "Lixeira",
@@ -4538,8 +4630,31 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   };
   const currentPanelMeta = panelMeta[activePanel] || panelMeta.inicio;
   const eventGroupKey = newName.trim().toLowerCase().replace(/\s+/g, "-") || null;
+  const filteredSportCatalog = SPORT_CATALOG.filter((sport) => {
+    const matchesSearch = sport.name.toLocaleLowerCase("pt-BR").includes(modalitySearch.trim().toLocaleLowerCase("pt-BR"));
+    const matchesFilter = modalityFilter === "all"
+      || (modalityFilter === "active" && sport.enabled)
+      || (modalityFilter === "soon" && !sport.enabled);
+    return matchesSearch && matchesFilter;
+  });
 
-  const groupedTournaments = tournaments.reduce((groups, item) => {
+  const tournamentStatusCounts = tournaments.reduce((counts, tournament) => {
+    const status = getTournamentUiStatus(tournament);
+    counts[status] = (counts[status] || 0) + 1;
+    return counts;
+  }, {});
+  const filteredTournaments = tournaments.filter((tournament) => {
+    const term = tournamentSearch.trim().toLocaleLowerCase("pt-BR");
+    const details = tournament.data || {};
+    const matchesSearch = !term || [tournament.name, details.eventName, details.gender, details.location]
+      .filter(Boolean)
+      .some((value) => String(value).toLocaleLowerCase("pt-BR").includes(term));
+    const matchesFormat = tournamentFormatFilter === "all" || tournament.type === tournamentFormatFilter;
+    const matchesStatus = tournamentStatusFilter === "all" || getTournamentUiStatus(tournament) === tournamentStatusFilter;
+    return matchesSearch && matchesFormat && matchesStatus;
+  });
+
+  const groupedTournaments = filteredTournaments.reduce((groups, item) => {
     const groupKey = item.data?.eventGroupKey || item.id;
     const groupName = item.data?.eventName || item.name;
     const existing = groups.find((group) => group.key === groupKey);
@@ -5413,8 +5528,14 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
+    const selectedSport = getSportDefinition(newSport);
+    if (!selectedSport.enabled) {
+      showNotice("warning", "Modalidade em breve", `${selectedSport.name} ainda não está disponível. Nesta etapa, crie torneios de Beach Tennis.`);
+      return;
+    }
+
     if (!newType) {
-  showNotice("warning", "Modalidade obrigatória", "Escolha a modalidade do torneio.");
+  showNotice("warning", "Formato obrigatório", "Escolha o formato do torneio de Beach Tennis.");
   return;
 }
 
@@ -5450,6 +5571,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     setSaving(true);
 
     const baseData = {
+      sport: DEFAULT_SPORT_ID,
       eventName: newName.trim(),
       eventGroupKey,
       multiCategoryEvent: isMultiCategory,
@@ -5504,6 +5626,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     setNewName("");
+    setNewSport(DEFAULT_SPORT_ID);
     setNewType("");
 setNewGender("");
 setNewMultiCategoryEvent("nao");
@@ -5528,6 +5651,7 @@ setNewPublicInfo({
   showCityState: true,
 });
     await loadTournaments();
+    setTournamentWorkspace("list");
     showNotice("success", isMultiCategory ? "Torneios criados" : "Torneio criado", isMultiCategory ? "As categorias foram criadas como torneios separados dentro do mesmo evento." : "O torneio foi criado com sucesso.");
   }
 
@@ -5633,6 +5757,7 @@ setNewPublicInfo({
     setEditTarget(tournament);
     setEditForm({
       name: tournament.name || "",
+      sport: details.sport || DEFAULT_SPORT_ID,
       type: tournament.type || "",
       eventName: details.eventName || "",
       gender: details.gender || "",
@@ -5666,6 +5791,7 @@ setNewPublicInfo({
     const isGroupedCategory = Boolean(editTarget.data?.multiCategoryEvent);
     const updatedData = {
       ...(editTarget.data || {}),
+      sport: DEFAULT_SPORT_ID,
       eventName: editForm.eventName.trim(),
       gender: editForm.gender,
       eventDate: editForm.eventDate,
@@ -5797,6 +5923,9 @@ setNewPublicInfo({
 
     return (
       <aside className="playSidebar proSidebar" aria-label="Navegação principal">
+        <button type="button" className="sidebarLogoButton" onClick={() => goToPanel("inicio")} aria-label="Ir para a visão geral">
+          <BeachLogo />
+        </button>
         <span className="sidebarSectionLabel">Menu</span>
         <nav className="sidebarNav">
           {navItems.map(({ panel, label, Icon }) => (
@@ -6005,7 +6134,18 @@ setNewPublicInfo({
               </div>
 
               <div className="formField">
-                <label>Modalidade</label>
+                <label>Modalidade esportiva</label>
+                <select value={editForm.sport || DEFAULT_SPORT_ID} onChange={(e) => updateEditForm("sport", e.target.value)}>
+                  {SPORT_CATALOG.map((sport) => (
+                    <option key={sport.id} value={sport.id} disabled={!sport.enabled}>
+                      {sport.name}{sport.enabled ? "" : " — Em breve"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="formField">
+                <label>Formato do Beach Tennis</label>
                 <select value={editForm.type} onChange={(e) => updateEditForm("type", e.target.value)}>
                   {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
                 </select>
@@ -6112,7 +6252,7 @@ setNewPublicInfo({
           {activePanel === "inicio" && (
             <>
               <section className="playTabs homeQuickActions homeQuickActionsThree" aria-label="Ações rápidas">
-                <button type="button" className="primaryQuickAction" onClick={() => goToPanel("criar")}><PlusCircle aria-hidden="true" /> Novo torneio</button>
+                <button type="button" className="primaryQuickAction" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Novo torneio</button>
                 <button type="button" onClick={() => goToPanel("circuitos")}><GitBranch aria-hidden="true" /> Circuitos</button>
                 <button type="button" onClick={() => goToPanel("modalidades")}><Shapes aria-hidden="true" /> Modalidades</button>
               </section>
@@ -6120,7 +6260,7 @@ setNewPublicInfo({
               <section className="playStatsGrid">
                 <div><strong>{tournaments.length}</strong><span>Torneios criados</span></div>
                 <div><strong>{circuits.length}</strong><span>Circuitos cadastrados</span></div>
-                <div><strong>{allowedTypes.length}</strong><span>Modalidades disponíveis</span></div>
+                <div><strong>{SPORT_CATALOG.filter((sport) => sport.enabled).length}</strong><span>Modalidade ativa</span></div>
               </section>
             </>
           )}
@@ -6240,6 +6380,16 @@ setNewPublicInfo({
 
     {activePanel === "criar" && (
     <>
+    {tournamentWorkspace === "create" ? (
+    <>
+    <div className="tournamentWorkspaceHeading">
+      <button type="button" className="secondaryBtn" onClick={() => setTournamentWorkspace("list")}>← Voltar para torneios</button>
+      <div>
+        <span>Criação de torneio</span>
+        <h2>Novo torneio de Beach Tennis</h2>
+        <p>Preencha os dados do evento. As regras e formatos existentes continuam preservados.</p>
+      </div>
+    </div>
     <section className="card playCreateCard">
   <h2>Criar novo torneio</h2>
 
@@ -6250,6 +6400,18 @@ setNewPublicInfo({
       onChange={(e) => setNewName(e.target.value)}
       placeholder="Ex: Campeão Open"
     />
+  </div>
+
+  <div className="formField">
+    <label>Modalidade esportiva</label>
+    <select value={newSport} onChange={(e) => setNewSport(e.target.value)}>
+      {SPORT_CATALOG.map((sport) => (
+        <option key={sport.id} value={sport.id} disabled={!sport.enabled}>
+          {sport.name}{sport.enabled ? "" : " — Em breve"}
+        </option>
+      ))}
+    </select>
+    <small className="fieldSupportText">Beach Tennis é a modalidade ativa nesta etapa.</small>
   </div>
 
   <div className="formField">
@@ -6417,9 +6579,9 @@ setNewPublicInfo({
   </div>
 
   <div className="formField fullField">
-    <label>Modalidade</label>
+    <label>Formato do Beach Tennis</label>
     <select value={newType} onChange={(e) => setNewType(e.target.value)}>
-      <option value="">Escolha a modalidade</option>
+      <option value="">Escolha o formato</option>
       {allowedTypes.map((type) => (
         <option key={type} value={type}>{type}</option>
       ))}
@@ -6443,18 +6605,56 @@ setNewPublicInfo({
     </select>
   </div>
 
- <button type="button" onClick={createTournament} disabled={saving}>
-  {saving ? "Salvando..." : "Criar torneio"}
-</button>
+ <div className="tournamentCreateActions">
+  <button type="button" className="secondaryBtn" onClick={() => setTournamentWorkspace("list")}>Cancelar</button>
+  <button type="button" onClick={createTournament} disabled={saving}>
+    {saving ? "Salvando..." : "Criar torneio"}
+  </button>
+ </div>
       </section>
+    </>
+    ) : (
 
-<section id="historico-torneios" className="card">
-  <h2>Histórico de torneios criados</h2>
+<section id="historico-torneios" className="card tournamentManagementCard">
+  <div className="tournamentManagementHeader">
+    <div>
+      <h2>Meus torneios</h2>
+      <p>Busque, filtre e continue a gestão dos torneios já cadastrados.</p>
+    </div>
+    <button type="button" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Criar novo torneio</button>
+  </div>
+
+  <div className="tournamentOverviewStats">
+    <div><span>Torneios criados</span><strong>{tournaments.length}</strong></div>
+    <div><span>Inscrições abertas</span><strong>{tournamentStatusCounts["Inscrições abertas"] || 0}</strong></div>
+    <div><span>Em andamento</span><strong>{tournamentStatusCounts["Em andamento"] || 0}</strong></div>
+    <div><span>Encerrados</span><strong>{tournamentStatusCounts.Encerrado || 0}</strong></div>
+  </div>
+
+  <div className="tournamentFilterBar">
+    <label className="tournamentSearchField">
+      <Search aria-hidden="true" />
+      <input value={tournamentSearch} onChange={(event) => setTournamentSearch(event.target.value)} placeholder="Buscar torneio..." />
+    </label>
+    <select value={tournamentFormatFilter} onChange={(event) => setTournamentFormatFilter(event.target.value)} aria-label="Filtrar por formato">
+      <option value="all">Todos os formatos</option>
+      {allowedTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+    </select>
+    <select value={tournamentStatusFilter} onChange={(event) => setTournamentStatusFilter(event.target.value)} aria-label="Filtrar por status">
+      <option value="all">Todos os status</option>
+      <option value="Inscrições abertas">Inscrições abertas</option>
+      <option value="Programado">Programado</option>
+      <option value="Em andamento">Em andamento</option>
+      <option value="Encerrado">Encerrado</option>
+      <option value="Rascunho">Rascunho</option>
+    </select>
+    <button type="button" className="secondaryBtn" onClick={() => { setTournamentSearch(""); setTournamentFormatFilter("all"); setTournamentStatusFilter("all"); }}>Limpar</button>
+  </div>
 
   {tournaments.length === 0 ? (
-    <p>Nenhum torneio criado ainda.</p>
-  ) : (false) ? (
-    <p></p>
+    <div className="tournamentEmptyState"><Trophy aria-hidden="true" /><h3>Nenhum torneio criado</h3><p>Crie seu primeiro torneio de Beach Tennis para começar.</p><button type="button" onClick={openTournamentCreator}>Criar torneio</button></div>
+  ) : filteredTournaments.length === 0 ? (
+    <div className="tournamentEmptyState"><Search aria-hidden="true" /><h3>Nenhum resultado encontrado</h3><p>Ajuste a busca ou limpe os filtros.</p><button type="button" className="secondaryBtn" onClick={() => { setTournamentSearch(""); setTournamentFormatFilter("all"); setTournamentStatusFilter("all"); }}>Limpar filtros</button></div>
   ) : (
     <div className="eventGroupList">
       {isolatedTournaments.length > 0 && (
@@ -6492,6 +6692,7 @@ setNewPublicInfo({
                     <div className="tournamentTitleRow">
                       <strong>{t.name}</strong>
                       <span className="tournamentTypeBadge">{t.type}</span>
+                      <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
                     </div>
 
                     <div className="tournamentMeta">
@@ -6557,6 +6758,7 @@ setNewPublicInfo({
                     <div className="tournamentTitleRow">
                       <strong>{t.name}</strong>
                       <span className="tournamentTypeBadge">{t.type}</span>
+                      <span className={`tournamentLifecycleBadge status-${getTournamentUiStatus(t).toLowerCase().replace(/\s+/g, "-")}`}>{getTournamentUiStatus(t)}</span>
                     </div>
 
                     <div className="tournamentMeta">
@@ -6584,6 +6786,7 @@ setNewPublicInfo({
     </div>
   )}
 </section>
+    )}
     </>
     )}
 
@@ -6744,79 +6947,73 @@ setNewPublicInfo({
 )}
 
 {activePanel === "modalidades" && (
-<section className="card">
-  <h2>Modalidades liberadas</h2>
-  <div className="modalitiesGrid internalModalities">
-    {allowedTypes.includes("Super 08") && (
-      <Info
-        title="Super 08"
-        text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
-      />
-    )}
-
-    {allowedTypes.includes("Super 10 Mista (Dupla Aleatória)") && (
-      <Info
-        title="Super 10 Mista Aleatória"
-        text="Formato misto com 10 participantes: 5 homens e 5 mulheres. São 5 rodadas, com 2 jogos por rodada, e em cada rodada descansam 1 homem e 1 mulher. Ao final, todos jogam 4 partidas e descansam 1 vez. O sistema monta automaticamente as duplas mistas, organiza as quadras, registra os placares e calcula rankings separados masculino e feminino. É ideal para torneios de hoje, eventos rápidos e grupos menores, mantendo equilíbrio de jogos entre todos os atletas."
-      />
-    )}
-
-    {allowedTypes.includes("Super 12 Mista (Dupla Aleatória)") && (
-      <Info
-        title="Super 12 Mista Aleatória"
-        text="Formato misto com 12 participantes: 6 homens e 6 mulheres. Primeiro, os atletas são cadastrados e sorteados. Depois, o sistema combina os participantes para formar duplas mistas em diferentes rodadas, mantendo equilíbrio entre homens e mulheres. Cada jogador participa de jogos com combinações variadas, e o desempenho é calculado individualmente. É uma boa opção para eventos sociais e competitivos com rotação de parceiros."
-      />
-    )}
-
-    {allowedTypes.includes("Super 16 Mista (Dupla Aleatória)") && (
-      <Info
-        title="Super 16 Mista Aleatória"
-        text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
-      />
-    )}
-
-    {allowedTypes.includes("Super 12 Mista (Dupla Fixa)") && (
-      <Info
-        title="Super 12 Mista Dupla Fixa"
-        text="Formato com 6 duplas já definidas antes do início do campeonato. Diferente das modalidades aleatórias, aqui os parceiros permanecem juntos do começo ao fim. O sistema gera automaticamente os confrontos entre as duplas, organiza a sequência de jogos e calcula a classificação geral pelos placares lançados. É indicado quando os atletas já se inscrevem em dupla e querem disputar como equipe fixa."
-      />
-    )}
-
-    {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
-      <Info
-        title="Super 16 Mista Dupla Fixa"
-        text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
-      />
-    )}
-
-    {allowedTypes.includes("Simples 8") && (
-      <Info
-        title="Simples 8"
-        text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo de games até definir os melhores colocados."
-      />
-    )}
-
-    {allowedTypes.includes("Copa - 12 ou 24 duplas") && (
-      <Info
-        title="Copa - 12 ou 24 duplas"
-        text="Formato de Copa para 12 ou 24 duplas, pensado para eventos mais completos. As duplas são organizadas em fase de grupos, jogam partidas classificatórias e depois avançam para as chaves finais conforme o desempenho. O sistema permite trabalhar com chave principal e repescagem, além de nomes editáveis para adaptar à regra do seu evento. É indicado para torneios com estrutura de campeonato, fases eliminatórias e premiação por colocação."
-      />
-    )}
-
-    {allowedTypes.includes("Copa - 18 duplas") && (
-      <Info
-        title="Copa - 18 duplas"
-        text="Formato de Copa com 18 duplas, dividido em 6 grupos de 3 duplas. Cada grupo joga sua fase classificatória, e o sistema calcula a classificação com base nos critérios definidos. Os melhores avançam para a chave principal; os 2 melhores gerais podem receber BYE, entrando em fase mais avançada. Também há disputa paralela para duplas específicas, como terceiros colocados, permitindo manter mais atletas em atividade. É um formato ideal para torneios grandes, com organização mais profissional e várias fases."
-      />
-    )}
-
-    {allowedTypes.includes("Copinha - grupos de 3") && (
-      <Info
-        title="Copinha - grupos de 3"
-        text="Formato configurável de 6 a 36 duplas. Cada grupo tem três duplas; 1º e 2º avançam para a Chave Principal e, a partir de 3 grupos, os 3º colocados disputam a Consolação."
-      />
-    )}
+<section className="card sportCatalogSection">
+  <div className="sportCatalogHeader">
+    <div>
+      <h2>Modalidades esportivas</h2>
+      <p>O Beach Tennis concentra todos os fluxos disponíveis nesta etapa. As demais modalidades já aparecem no catálogo para deixar clara a evolução da plataforma.</p>
+    </div>
   </div>
+
+  <div className="sportCatalogStats" aria-label="Resumo das modalidades">
+    <div><span>Total disponíveis</span><strong>{SPORT_CATALOG.length}</strong><small>modalidades no catálogo</small></div>
+    <div><span>Modalidades ativas</span><strong>1</strong><small>Beach Tennis</small></div>
+    <div><span>Torneios cadastrados</span><strong>{tournaments.length}</strong><small>todos em Beach Tennis</small></div>
+  </div>
+
+  <div className="sportCatalogToolbar">
+    <label className="sportSearchField">
+      <Search aria-hidden="true" />
+      <input value={modalitySearch} onChange={(event) => setModalitySearch(event.target.value)} placeholder="Buscar por modalidade..." />
+    </label>
+    <select value={modalityFilter} onChange={(event) => setModalityFilter(event.target.value)} aria-label="Filtrar modalidades">
+      <option value="all">Todas as modalidades</option>
+      <option value="active">Disponível agora</option>
+      <option value="soon">Em breve</option>
+    </select>
+    <button type="button" className="secondaryBtn" onClick={() => { setModalitySearch(""); setModalityFilter("all"); }}>Limpar</button>
+  </div>
+
+  {filteredSportCatalog.length ? (
+  <div className="sportCatalogGrid">
+    {filteredSportCatalog.map((sport) => {
+      const tournamentCount = sport.enabled
+        ? tournaments.filter((tournament) => (tournament.data?.sport || DEFAULT_SPORT_ID) === sport.id).length
+        : 0;
+
+      return (
+        <article className={`sportCatalogCard ${sport.enabled ? "active" : "comingSoon"}`} key={sport.id}>
+          <div className="sportCatalogCardTop">
+            <span className="sportCatalogIcon" aria-hidden="true">{sport.icon}</span>
+            <span className={`sportStatusBadge ${sport.enabled ? "active" : "comingSoon"}`}>
+              {sport.enabled ? "Ativa" : "Em breve"}
+            </span>
+          </div>
+          <h3>{sport.name}</h3>
+          <p>{sport.description}</p>
+          {sport.enabled ? (
+            <>
+              <small>{tournamentCount} torneio(s) cadastrado(s) · {allowedTypes.length} formato(s) liberado(s) no seu plano</small>
+              <button type="button" onClick={openTournamentCreator}><PlusCircle aria-hidden="true" /> Criar torneio</button>
+            </>
+          ) : (
+            <>
+              <small>A criação será habilitada quando esta modalidade estiver pronta.</small>
+              <button type="button" disabled aria-disabled="true">Indisponível</button>
+            </>
+          )}
+        </article>
+      );
+    })}
+  </div>
+  ) : (
+    <div className="sportCatalogEmpty">
+      <Search aria-hidden="true" />
+      <h3>Nenhuma modalidade encontrada</h3>
+      <p>Limpe os filtros ou faça uma nova busca.</p>
+      <button type="button" className="secondaryBtn" onClick={() => { setModalitySearch(""); setModalityFilter("all"); }}>Limpar busca</button>
+    </div>
+  )}
 </section>
 )}
 
@@ -7160,6 +7357,7 @@ function createInitialData(type, config) {
   eventDay: "",
   location: "",
   schedule: [],
+  participantMeta: { normal: [], men: [], women: [], teams: [] },
 };
 
   if (!config) {
@@ -7303,6 +7501,7 @@ function normalizeTournamentData(type, rawData) {
   const defaults = createInitialData(type, config);
   const source = isTournamentDataObject(rawData) ? rawData : {};
   const sourcePlayers = isTournamentDataObject(source.players) ? source.players : {};
+  const sourceParticipantMeta = isTournamentDataObject(source.participantMeta) ? source.participantMeta : {};
   const validWinningScore = [4, 6].includes(Number(source.winningScore));
   const validRankingCriteria = rankingCriteriaOptions.some((item) => item.value === source.rankingCriteria);
   const normalized = {
@@ -7345,6 +7544,10 @@ function normalizeTournamentData(type, rawData) {
       players: {
         teams: normalizeTeams(sourcePlayers.teams, teamCount),
       },
+      participantMeta: {
+        ...defaults.participantMeta,
+        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, teamCount),
+      },
       brackets: normalizeBrackets(source.brackets),
       groupsShuffled: Boolean(source.groupsShuffled),
     };
@@ -7357,6 +7560,11 @@ function normalizeTournamentData(type, rawData) {
         men: normalizeNameList(sourcePlayers.men, config.men, "Homem"),
         women: normalizeNameList(sourcePlayers.women, config.women, "Mulher"),
       },
+      participantMeta: {
+        ...defaults.participantMeta,
+        men: normalizeParticipantMetaList(sourceParticipantMeta.men, config.men),
+        women: normalizeParticipantMetaList(sourceParticipantMeta.women, config.women),
+      },
     };
   }
 
@@ -7366,12 +7574,20 @@ function normalizeTournamentData(type, rawData) {
       players: {
         teams: normalizeTeams(sourcePlayers.teams, config.teams),
       },
+      participantMeta: {
+        ...defaults.participantMeta,
+        teams: normalizeParticipantMetaList(sourceParticipantMeta.teams, config.teams),
+      },
     };
   }
 
   return {
     ...normalized,
     players: normalizeNameList(source.players, config.total, config.label),
+    participantMeta: {
+      ...defaults.participantMeta,
+      normal: normalizeParticipantMetaList(sourceParticipantMeta.normal, config.total),
+    },
   };
 }
 
@@ -7492,6 +7708,8 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   const [clearTableOpen, setClearTableOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
+  const [participantSearch, setParticipantSearch] = useState("");
+  const [participantFilter, setParticipantFilter] = useState("all");
 
   const [shareInfo, setShareInfo] = useState({
     public_id: tournament.public_id || null,
@@ -7575,6 +7793,17 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     () => calculateRanking(data, tournament.type, data.rankingCriteria),
     [data, tournament.type]
   );
+
+  const participantRecords = useMemo(
+    () => getTournamentParticipantRecords(tournament.type, data),
+    [data, tournament.type]
+  );
+  const participantSummary = useMemo(() => ({
+    total: participantRecords.length,
+    confirmed: participantRecords.filter((record) => record.meta.registration === "confirmed").length,
+    paid: participantRecords.filter((record) => record.meta.payment === "paid").length,
+    pending: participantRecords.filter((record) => record.meta.registration !== "confirmed" || record.meta.payment === "pending").length,
+  }), [participantRecords]);
 
   const cupGroupRankings = useMemo(
     () => isCupType(config) && (data.groupsShuffled || data.schedule?.length > 0)
@@ -7754,6 +7983,34 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     );
   }
 
+  function confirmRankingFinal() {
+    const scheduledGames = (data.schedule || []).flat();
+    const hasPendingScores = scheduledGames.some((game) => !isGameFinished(game, getWinningScore(data)));
+
+    if (!scheduledGames.length || hasPendingScores) {
+      showNotice("warning", "Resultados pendentes", "Preencha todos os placares antes de confirmar o ranking final.");
+      return;
+    }
+
+    if (isCupType(config) && mainCupPodium.length === 0) {
+      showNotice("warning", "Chave final pendente", "Finalize a chave principal antes de confirmar o ranking oficial.");
+      return;
+    }
+
+    setData((currentData) => ({ ...currentData, rankingConfirmedAt: new Date().toISOString() }));
+    showNotice("success", "Ranking final confirmado", "A classificação foi marcada como resultado oficial do organizador.");
+  }
+
+  function shareTournamentRanking() {
+    if (shareInfo.is_public && shareInfo.public_id) {
+      sharePublicLink();
+      return;
+    }
+
+    setShareOpen(true);
+    showNotice("warning", "Ative o link público", "Gere a tabela pública para compartilhar o ranking com atletas e convidados.");
+  }
+
   function updateRankingCriteria(value) {
     setData((prev) => ({ ...prev, rankingCriteria: value }));
   }
@@ -7777,6 +8034,10 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
             b: `Atleta 2 da dupla ${i + 1}`,
           };
         });
+        copy.participantMeta = {
+          ...(copy.participantMeta || {}),
+          teams: normalizeParticipantMetaList(copy.participantMeta?.teams, teamCount),
+        };
 
         copy.schedule = [];
         copy.brackets = [];
@@ -7876,16 +8137,42 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     setData(refreshGameParticipantNames(copy));
   }
 
+  function updateParticipantMeta(path, field, value) {
+    setData((currentData) => {
+      const copy = structuredClone(currentData);
+      const kind = path.kind === "team" ? "teams" : path.kind;
+      copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
+      copy.participantMeta[kind] = Array.isArray(copy.participantMeta[kind]) ? copy.participantMeta[kind] : [];
+      copy.participantMeta[kind][path.index] = {
+        payment: "pending",
+        registration: "pending",
+        profileLinked: false,
+        ...(copy.participantMeta[kind][path.index] || {}),
+        [field]: value,
+      };
+      return copy;
+    });
+  }
+
   function finishShuffle() {
     const copy = structuredClone(data);
+    copy.participantMeta = copy.participantMeta || { normal: [], men: [], women: [], teams: [] };
 
     if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
-      copy.players.men = shuffleArray(copy.players.men);
-      copy.players.women = shuffleArray(copy.players.women);
+      const shuffledMen = shuffleParticipantsWithMeta(copy.players.men, copy.participantMeta.men);
+      const shuffledWomen = shuffleParticipantsWithMeta(copy.players.women, copy.participantMeta.women);
+      copy.players.men = shuffledMen.players;
+      copy.players.women = shuffledWomen.players;
+      copy.participantMeta.men = shuffledMen.metadata;
+      copy.participantMeta.women = shuffledWomen.metadata;
     } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
-      copy.players.teams = shuffleArray(copy.players.teams);
+      const shuffledTeams = shuffleParticipantsWithMeta(copy.players.teams, copy.participantMeta.teams);
+      copy.players.teams = shuffledTeams.players;
+      copy.participantMeta.teams = shuffledTeams.metadata;
     } else {
-      copy.players = shuffleArray(copy.players);
+      const shuffledPlayers = shuffleParticipantsWithMeta(copy.players, copy.participantMeta.normal);
+      copy.players = shuffledPlayers.players;
+      copy.participantMeta.normal = shuffledPlayers.metadata;
     }
 
     copy.schedule = [];
@@ -8018,6 +8305,17 @@ function updateScore(roundIndex, gameIndex, field, value) {
   }
 
   setData(copy);
+}
+
+function updateGameDetails(roundIndex, gameIndex, field, value) {
+  setData((currentData) => {
+    const copy = structuredClone(currentData);
+    if (!copy.schedule?.[roundIndex]?.[gameIndex]) return currentData;
+    copy.schedule[roundIndex][gameIndex][field] = field === "court"
+      ? Math.max(1, Number(value) || 1)
+      : value;
+    return copy;
+  });
 }
 
 function updateBracketScore(matchKey, field, value) {
@@ -8247,8 +8545,32 @@ return (
 
         <section className="card" style={{ display: activeTournamentTab === "participantes" ? undefined : "none" }}>
           <div className="cardTitleRow">
-            <h2>Participantes</h2>
+            <div>
+              <h2>Gestão de participantes</h2>
+              <p>Acompanhe as inscrições, confirme pagamentos e mantenha os vínculos dos atletas.</p>
+            </div>
             <SavingStatusBadge />
+          </div>
+
+          <div className="participantManagementStats">
+            <div><span>Total de inscritos</span><strong>{participantSummary.total}</strong></div>
+            <div><span>Confirmados</span><strong>{participantSummary.confirmed}</strong></div>
+            <div><span>Pagamentos confirmados</span><strong>{participantSummary.paid}</strong></div>
+            <div><span>Pendências</span><strong>{participantSummary.pending}</strong></div>
+          </div>
+
+          <div className="participantManagementToolbar">
+            <label>
+              <Search aria-hidden="true" />
+              <input value={participantSearch} onChange={(event) => setParticipantSearch(event.target.value)} placeholder="Buscar participante..." />
+            </label>
+            <select value={participantFilter} onChange={(event) => setParticipantFilter(event.target.value)} aria-label="Filtrar participantes">
+              <option value="all">Todos os status</option>
+              <option value="confirmed">Confirmados</option>
+              <option value="pending">Pendentes</option>
+              <option value="linked">Perfil vinculado</option>
+            </select>
+            <button type="button" className="secondaryBtn" onClick={() => { setParticipantSearch(""); setParticipantFilter("all"); }}>Limpar</button>
           </div>
 
 
@@ -8264,6 +8586,9 @@ return (
             type={tournament.type}
             data={data}
             updatePlayer={updatePlayer}
+            updateParticipantMeta={updateParticipantMeta}
+            searchQuery={participantSearch}
+            statusFilter={participantFilter}
           />
 
           {!isCupType(config) && (
@@ -8324,8 +8649,9 @@ return (
           ) : (
             <>
              <ScheduleView
-  schedule={data.schedule}
+ schedule={data.schedule}
   updateScore={updateScore}
+  updateGameDetails={updateGameDetails}
   showGroupName={isCupType(config)}
   voiceRepeat={voiceRepeat}
   setVoiceRepeat={setVoiceRepeat}
@@ -8410,6 +8736,11 @@ return (
                 <h2>Ranking</h2>
                 <SavingStatusBadge />
               </div>
+              <div className="rankingManagementActions">
+                {data.rankingConfirmedAt ? <span className="rankingConfirmedBadge">Resultado oficial confirmado</span> : <span>Ranking em atualização</span>}
+                <button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button>
+                <button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button>
+              </div>
 
               <div className="cupRankingSplit">
                 <div className="cupRankingPanel">
@@ -8478,6 +8809,11 @@ return (
             <div className="cardTitleRow">
               <h2>Ranking</h2>
               <SavingStatusBadge />
+            </div>
+            <div className="rankingManagementActions">
+              {data.rankingConfirmedAt ? <span className="rankingConfirmedBadge">Resultado oficial confirmado</span> : <span>Ranking em atualização</span>}
+              <button type="button" className="secondaryBtn" onClick={shareTournamentRanking}><Share2 aria-hidden="true" /> Compartilhar ranking</button>
+              <button type="button" onClick={confirmRankingFinal} disabled={Boolean(data.rankingConfirmedAt)}>{data.rankingConfirmedAt ? "Ranking confirmado" : "Confirmar ranking final"}</button>
             </div>
 
             <RankingView
@@ -8571,38 +8907,99 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   );
 }
 
-function PlayerInputs({ type, data, updatePlayer }) {
+function PlayerInputs({ type, data, updatePlayer, updateParticipantMeta, searchQuery = "", statusFilter = "all" }) {
   const config = modalityConfig[type];
+  const searchTerm = searchQuery.trim().toLocaleLowerCase("pt-BR");
+
+  function getMeta(kind, index) {
+    const metaKind = kind === "team" ? "teams" : kind;
+    return data.participantMeta?.[metaKind]?.[index] || {
+      payment: "pending",
+      registration: "pending",
+      profileLinked: false,
+    };
+  }
+
+  function matchesParticipant(name, meta) {
+    const matchesSearch = !searchTerm || String(name || "").toLocaleLowerCase("pt-BR").includes(searchTerm);
+    const matchesStatus = statusFilter === "all"
+      || (statusFilter === "confirmed" && meta.registration === "confirmed")
+      || (statusFilter === "pending" && (meta.registration !== "confirmed" || meta.payment === "pending"))
+      || (statusFilter === "linked" && meta.profileLinked);
+    return matchesSearch && matchesStatus;
+  }
+
+  function renderManagementFields(path) {
+    const meta = getMeta(path.kind, path.index);
+    return (
+      <div className="participantMetaControls">
+        <label>
+          <span>Pagamento</span>
+          <select value={meta.payment || "pending"} onChange={(event) => updateParticipantMeta(path, "payment", event.target.value)}>
+            <option value="pending">Pendente</option>
+            <option value="paid">Pago</option>
+            <option value="exempt">Isento</option>
+          </select>
+        </label>
+        <label>
+          <span>Inscrição</span>
+          <select value={meta.registration || "pending"} onChange={(event) => updateParticipantMeta(path, "registration", event.target.value)}>
+            <option value="pending">Pendente</option>
+            <option value="confirmed">Confirmada</option>
+            <option value="substituted">Substituída</option>
+            <option value="incomplete">Lista incompleta</option>
+          </select>
+        </label>
+        <button
+          type="button"
+          className={`participantProfileLink ${meta.profileLinked ? "linked" : ""}`}
+          onClick={() => updateParticipantMeta(path, "profileLinked", !meta.profileLinked)}
+          aria-pressed={Boolean(meta.profileLinked)}
+        >
+          {meta.profileLinked ? "Perfil vinculado" : "Vincular perfil"}
+        </button>
+      </div>
+    );
+  }
+
+  const visibleRecords = getTournamentParticipantRecords(type, data).filter((record) => matchesParticipant(record.name, record.meta));
+  if (visibleRecords.length === 0) {
+    return <div className="participantEmptyState"><Search aria-hidden="true" /><strong>Nenhum participante encontrado</strong><span>Ajuste a busca ou o filtro selecionado.</span></div>;
+  }
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
     return (
-      <div className="twoCols">
-        <div>
+      <div className="twoCols participantManagementList">
+        <div className="participantGroupColumn">
           <h3>Homens</h3>
 
-          {data.players.men.map((name, i) => (
-            <div className="numberedInput" key={i}>
-              <span>{i + 1}</span>
-              <input
-                value={name}
-                onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)}
-              />
-            </div>
-          ))}
+          {data.players.men.map((name, i) => ({ name, i, meta: getMeta("men", i) }))
+            .filter((record) => matchesParticipant(record.name, record.meta))
+            .map(({ name, i }) => (
+              <div className="participantSlotCard" key={i}>
+                <div className="numberedInput">
+                  <span>{i + 1}</span>
+                  <input value={name} onChange={(e) => updatePlayer({ kind: "men", index: i }, e.target.value)} />
+                </div>
+                {renderManagementFields({ kind: "men", index: i })}
+              </div>
+            ))}
         </div>
 
-        <div>
+        <div className="participantGroupColumn">
           <h3>Mulheres</h3>
 
-          {data.players.women.map((name, i) => (
-            <div className="numberedInput" key={i}>
-              <span>{config.men + i + 1}</span>
-              <input
-                value={name}
-                onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)}
-              />
-            </div>
-          ))}
+          {data.players.women.map((name, i) => ({ name, i, meta: getMeta("women", i) }))
+            .filter((record) => matchesParticipant(record.name, record.meta))
+            .map(({ name, i }) => (
+              <div className="participantSlotCard" key={i}>
+                <div className="numberedInput">
+                  <span>{config.men + i + 1}</span>
+                  <input value={name} onChange={(e) => updatePlayer({ kind: "women", index: i }, e.target.value)} />
+                </div>
+                {renderManagementFields({ kind: "women", index: i })}
+              </div>
+            ))}
         </div>
       </div>
     );
@@ -8610,9 +9007,11 @@ function PlayerInputs({ type, data, updatePlayer }) {
 
   if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
     return (
-      <div className="twoCols">
-        {data.players.teams.map((team, i) => (
-          <div key={i} className="miniCard">
+      <div className="twoCols participantManagementList">
+        {data.players.teams.map((team, i) => ({ team, i, meta: getMeta("team", i) }))
+          .filter((record) => matchesParticipant(`${record.team.a} ${record.team.b}`, record.meta))
+          .map(({ team, i }) => (
+          <div key={i} className="miniCard participantSlotCard">
             <h3>Dupla {i + 1}</h3>
 
             <div className="numberedInput">
@@ -8627,6 +9026,7 @@ function PlayerInputs({ type, data, updatePlayer }) {
               value={team.b}
               onChange={(e) => updatePlayer({ kind: "team", index: i, field: "b" }, e.target.value)}
             />
+            {renderManagementFields({ kind: "team", index: i })}
           </div>
         ))}
       </div>
@@ -8634,14 +9034,16 @@ function PlayerInputs({ type, data, updatePlayer }) {
   }
 
   return (
-    <div className="twoCols">
-      {data.players.map((name, i) => (
-        <div className="numberedInput" key={i}>
-          <span>{i + 1}</span>
-          <input
-            value={name}
-            onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)}
-          />
+    <div className="twoCols participantManagementList">
+      {data.players.map((name, i) => ({ name, i, meta: getMeta("normal", i) }))
+        .filter((record) => matchesParticipant(record.name, record.meta))
+        .map(({ name, i }) => (
+        <div className="participantSlotCard" key={i}>
+          <div className="numberedInput">
+            <span>{i + 1}</span>
+            <input value={name} onChange={(e) => updatePlayer({ kind: "normal", index: i }, e.target.value)} />
+          </div>
+          {renderManagementFields({ kind: "normal", index: i })}
         </div>
       ))}
     </div>
@@ -8791,6 +9193,7 @@ function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
 function ScheduleView({
   schedule,
   updateScore = () => {},
+  updateGameDetails = () => {},
   showGroupName = false,
   voiceRepeat = 1,
   setVoiceRepeat = () => {},
@@ -8849,6 +9252,20 @@ function ScheduleView({
                   {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
                   Quadra {game.court}
                 </strong>
+                {readOnly ? (
+                  game.scheduledTime ? <span className="gameScheduledTime"><Clock3 aria-hidden="true" /> {game.scheduledTime}</span> : null
+                ) : (
+                  <div className="gameLogisticsControls">
+                    <label>
+                      <span>Quadra</span>
+                      <input type="number" min="1" value={game.court || 1} onChange={(event) => updateGameDetails(roundIndex, gameIndex, "court", event.target.value)} />
+                    </label>
+                    <label>
+                      <span>Horário</span>
+                      <input type="time" value={game.scheduledTime || ""} onChange={(event) => updateGameDetails(roundIndex, gameIndex, "scheduledTime", event.target.value)} />
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className={`gameTeams ${readOnly ? "publicGameTeams" : ""}`}>
@@ -9801,4 +10218,39 @@ if ("serviceWorker" in navigator && import.meta.env.PROD) {
       console.warn("Não foi possível registrar o atalho instalável:", error);
     });
   });
+}
+
+function normalizeParticipantMetaList(values, count) {
+  const source = Array.isArray(values) ? values : [];
+  return Array.from({ length: count }, (_, index) => {
+    const item = isTournamentDataObject(source[index]) ? source[index] : {};
+    return {
+      payment: ["pending", "paid", "exempt"].includes(item.payment) ? item.payment : "pending",
+      registration: ["pending", "confirmed", "substituted", "incomplete"].includes(item.registration) ? item.registration : "pending",
+      profileLinked: Boolean(item.profileLinked),
+    };
+  });
+}
+
+function getTournamentParticipantRecords(type, data) {
+  const config = modalityConfig[type];
+  const meta = data?.participantMeta || {};
+  if (!config || !data?.players) return [];
+
+  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+    return [
+      ...data.players.men.map((name, index) => ({ key: `men-${index}`, name, meta: meta.men?.[index] || {} })),
+      ...data.players.women.map((name, index) => ({ key: `women-${index}`, name, meta: meta.women?.[index] || {} })),
+    ];
+  }
+
+  if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
+    return data.players.teams.map((team, index) => ({
+      key: `team-${index}`,
+      name: [team.a, team.b].filter(Boolean).join(" & "),
+      meta: meta.teams?.[index] || {},
+    }));
+  }
+
+  return data.players.map((name, index) => ({ key: `normal-${index}`, name, meta: meta.normal?.[index] || {} }));
 }
