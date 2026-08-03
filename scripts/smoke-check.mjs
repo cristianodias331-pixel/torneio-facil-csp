@@ -99,7 +99,13 @@ assert.ok(mainSource.includes('function createCearenseGroups(teamCount)'), "A di
 assert.ok(mainSource.includes('function compareCearenseCampaignMetrics(first, second)'), "A comparação normalizada entre grupos está ausente.");
 assert.ok(mainSource.includes('function generateCearenseBrackets(data)'), "As chaves Principal e Paralela do Campeonato Cearense estão ausentes.");
 assert.ok(mainSource.includes('campaignTieBreakOverrides'), "O sorteio de empate absoluto entre grupos não é persistido.");
-assert.ok(mainSource.includes('Classificação automática (BYE)'), "Os BYEs do Campeonato Cearense não são identificados na chave.");
+assert.ok(mainSource.includes('className="byeBadge">BYE</strong>'), "Os BYEs do Campeonato Cearense não são identificados na chave.");
+assert.ok(!mainSource.includes('Classificação automática (BYE)'), "O texto longo de classificação automática ainda aparece no BYE.");
+assert.ok(mainSource.includes('buildCearenseEliminationRounds(qualified.main, "main", mainName, true)'), "A chave principal do Campeonato Cearense não cria a disputa de 3º lugar.");
+assert.ok(mainSource.includes('showPodium={false}'), "A classificação da fase de grupos ainda exibe troféus de pódio.");
+assert.ok(mainSource.includes('tournamentTab: "participantes"'), "Abrir um torneio não direciona para Participantes.");
+assert.ok(mainSource.includes('public_id: generatePublicId()'), "Novos torneios não recebem link público automaticamente.");
+assert.ok(mainSource.includes('className="publicArenaTabs"'), "O link público não abre o perfil com abas de Torneios e Circuitos.");
 assert.ok(mainSource.includes('navigator.serviceWorker.register("/sw.js")'), "O service worker do app não está registrado.");
 assert.ok(!mainSource.includes("@torenio360"), "O usuário do Instagram continua escrito incorretamente.");
 assert.ok(!mainSource.includes("data:image/png;base64"), "Ainda existem imagens PNG Base64 no JavaScript.");
