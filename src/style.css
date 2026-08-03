@@ -18577,18 +18577,19 @@ html[data-theme="dark"] {
   z-index: 22000;
   display: grid;
   place-items: center;
-  padding: 20px;
+  overflow-y: auto;
+  padding: 16px;
   background: rgba(2, 8, 23, 0.74);
   backdrop-filter: blur(8px);
 }
 
 .participantImportModal {
   display: grid;
-  gap: 16px;
-  width: min(940px, 100%);
-  max-height: calc(100vh - 40px);
+  gap: 11px;
+  width: min(820px, 100%);
+  max-height: calc(100dvh - 32px);
   overflow-y: auto;
-  padding: 24px;
+  padding: 18px;
   border: 1px solid var(--ui-border, #d9e2ec);
   border-radius: 24px;
   background: var(--ui-surface-raised, #ffffff);
@@ -18601,7 +18602,7 @@ html[data-theme="dark"] {
   align-items: flex-start;
   justify-content: space-between;
   gap: 18px;
-  padding-bottom: 16px;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--ui-border-soft, #e6ebf2);
 }
 
@@ -18614,9 +18615,9 @@ html[data-theme="dark"] {
 }
 
 .participantImportHeader h2 {
-  margin: 4px 0 6px;
+  margin: 3px 0 4px;
   color: var(--ui-text-strong, #09182e);
-  font-size: clamp(22px, 4vw, 30px);
+  font-size: clamp(21px, 3vw, 27px);
   letter-spacing: -0.04em;
 }
 
@@ -18648,29 +18649,29 @@ html[data-theme="dark"] {
   gap: 10px;
 }
 
-.participantImportMode button {
+.participantImportOverlay .participantImportMode > button {
   display: grid;
   gap: 5px;
-  min-height: 78px;
-  padding: 14px 16px;
-  border: 1px solid var(--ui-border, #d9e2ec);
+  min-height: 64px !important;
+  padding: 11px 14px !important;
+  border: 1px solid var(--ui-border, #d9e2ec) !important;
   border-radius: 15px;
-  background: var(--ui-surface-muted, #f1f5f9);
-  box-shadow: none;
-  color: var(--ui-text, #132033);
+  background: var(--ui-surface-muted, #f1f5f9) !important;
+  box-shadow: none !important;
+  color: var(--ui-text, #132033) !important;
   text-align: left;
 }
 
-.participantImportMode button.active {
-  border-color: var(--ui-active-accent, #c2410c);
-  background: var(--ui-active-bg, #fff4ed);
-  box-shadow: inset 4px 0 0 var(--ui-active-accent, #c2410c);
+.participantImportOverlay .participantImportMode > button.active {
+  border-color: var(--ui-active-accent, #c2410c) !important;
+  background: var(--ui-active-bg, #fff4ed) !important;
+  box-shadow: inset 4px 0 0 var(--ui-active-accent, #c2410c) !important;
 }
 
-.participantImportMode button.active.danger {
-  border-color: #dc2626;
-  background: color-mix(in srgb, #dc2626 9%, var(--ui-surface-raised, #ffffff));
-  box-shadow: inset 4px 0 0 #dc2626;
+.participantImportOverlay .participantImportMode > button.active.danger {
+  border-color: #dc2626 !important;
+  background: color-mix(in srgb, #dc2626 9%, var(--ui-surface-raised, #ffffff)) !important;
+  box-shadow: inset 4px 0 0 #dc2626 !important;
 }
 
 .participantImportMode strong {
@@ -18707,7 +18708,7 @@ html[data-theme="dark"] {
 
 .participantImportEditors textarea {
   width: 100%;
-  min-height: 158px;
+  min-height: 112px;
   resize: vertical;
   padding: 13px 14px;
   border: 1px solid var(--ui-border, #d9e2ec);
@@ -18734,7 +18735,7 @@ html[data-theme="dark"] {
 .participantImportSummary > div {
   display: grid;
   gap: 3px;
-  padding: 12px 14px;
+  padding: 8px 12px;
   border: 1px solid var(--ui-border, #d9e2ec);
   border-radius: 13px;
   background: var(--ui-surface-muted, #f1f5f9);
@@ -18742,7 +18743,7 @@ html[data-theme="dark"] {
 
 .participantImportSummary strong {
   color: var(--ui-active-accent, #c2410c);
-  font-size: 20px;
+  font-size: 18px;
 }
 
 .participantImportSummary span {
@@ -18797,9 +18798,9 @@ html[data-theme="dark"] {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
-  max-height: 260px;
+  max-height: 170px;
   overflow-y: auto;
-  padding: 14px;
+  padding: 10px 12px;
 }
 
 .participantImportPreviewGroups.multiple {
@@ -18838,7 +18839,11 @@ html[data-theme="dark"] {
   display: flex;
   justify-content: flex-end;
   gap: 9px;
-  padding-top: 2px;
+  position: sticky;
+  bottom: -18px;
+  z-index: 2;
+  padding: 10px 0 2px;
+  background: var(--ui-surface-raised, #ffffff);
 }
 
 .participantImportFooter button {
@@ -18848,6 +18853,324 @@ html[data-theme="dark"] {
 .participantImportFooter button:disabled {
   cursor: not-allowed;
   opacity: 0.48;
+}
+
+html[data-theme="dark"] .participantImportOverlay {
+  color-scheme: dark;
+  --ui-surface-raised: #18222f;
+  --ui-surface-muted: #141e2a;
+  --ui-text: #e7eef8;
+  --ui-text-strong: #f5f8fc;
+  --ui-muted: #aab6c5;
+  --ui-border: #2b3745;
+  --ui-border-soft: #222e3b;
+  --ui-active-bg: rgba(251, 146, 60, 0.12);
+  --ui-active-accent: #fb923c;
+  --ui-input: #0f1722;
+}
+
+/* O aviso de empate fica antes das tabelas e preserva contraste nos dois temas. */
+.proDashboard.playAppShell .groupsPreviewBox > .tieBreakPanel {
+  display: grid !important;
+  gap: 12px !important;
+  margin: 0 0 18px !important;
+  padding: 15px !important;
+  border: 1px solid color-mix(in srgb, #f59e0b 52%, var(--ui-border)) !important;
+  border-radius: 17px !important;
+  background: color-mix(in srgb, #f59e0b 9%, var(--ui-surface-raised)) !important;
+  color: var(--ui-text) !important;
+  box-shadow: 0 10px 26px color-mix(in srgb, #f59e0b 10%, transparent) !important;
+}
+
+.tieBreakIntro {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+}
+
+.tieBreakIntroIcon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #f59e0b 18%, var(--ui-surface-raised));
+  color: #d97706;
+}
+
+.proDashboard.theme-dark .tieBreakIntroIcon {
+  color: #fbbf24;
+}
+
+.tieBreakIntroIcon svg,
+.tieBreakItem button svg {
+  width: 19px;
+  height: 19px;
+}
+
+.tieBreakIntro p {
+  display: grid;
+  gap: 3px;
+  margin: 0;
+  color: var(--ui-text) !important;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.tieBreakIntro p strong {
+  color: var(--ui-text-strong) !important;
+  font-size: 14px;
+}
+
+.tieBreakList {
+  display: grid;
+  gap: 8px;
+}
+
+.tieBreakItem {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 11px 10px 13px;
+  border: 1px solid var(--ui-border-soft);
+  border-radius: 13px;
+  background: var(--ui-surface-raised);
+}
+
+.tieBreakItem > span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  color: var(--ui-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.tieBreakItem > span strong {
+  color: var(--ui-text-strong);
+  font-size: 12px;
+}
+
+.proDashboard.playAppShell .tieBreakItem > button {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 40px !important;
+  padding: 9px 13px !important;
+  border: 1px solid #d97706 !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #f59e0b, #ea580c) !important;
+  color: #ffffff !important;
+  box-shadow: 0 8px 18px rgba(234, 88, 12, 0.2) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.proDashboard.playAppShell .tieBreakItem > button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+/* Sorteio visual com duração fixa de cinco segundos. */
+.tieBreakDrawOverlay {
+  --draw-card: #ffffff;
+  --draw-surface: #f8fafc;
+  --draw-text: #0f172a;
+  --draw-muted: #64748b;
+  --draw-border: #dbe3ee;
+  position: fixed;
+  inset: 0;
+  z-index: 24000;
+  display: grid;
+  place-items: center;
+  overflow-y: auto;
+  padding: 18px;
+  background: rgba(2, 8, 23, 0.78);
+  backdrop-filter: blur(9px);
+}
+
+html[data-theme="dark"] .tieBreakDrawOverlay {
+  color-scheme: dark;
+  --draw-card: #18222f;
+  --draw-surface: #0f1722;
+  --draw-text: #f5f8fc;
+  --draw-muted: #aab6c5;
+  --draw-border: #334155;
+}
+
+.tieBreakDrawCard {
+  display: grid;
+  justify-items: center;
+  gap: 11px;
+  width: min(520px, 100%);
+  max-height: calc(100dvh - 36px);
+  overflow-y: auto;
+  padding: 27px;
+  border: 1px solid var(--draw-border);
+  border-radius: 24px;
+  background: var(--draw-card);
+  box-shadow: 0 32px 90px rgba(2, 8, 23, 0.5);
+  color: var(--draw-text);
+  text-align: center;
+}
+
+.tieBreakDrawIcon {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+  color: #ffffff;
+  box-shadow: 0 12px 30px rgba(249, 115, 22, 0.28);
+}
+
+.tieBreakDrawIcon svg {
+  width: 29px;
+  height: 29px;
+}
+
+.tieBreakDrawCard.drawing .tieBreakDrawIcon svg {
+  animation: tieBreakDiceShake 0.45s ease-in-out infinite alternate;
+}
+
+.tieBreakDrawEyebrow,
+.tieBreakWinnerLabel {
+  color: #d97706;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+html[data-theme="dark"] .tieBreakDrawEyebrow,
+html[data-theme="dark"] .tieBreakWinnerLabel {
+  color: #fbbf24;
+}
+
+.tieBreakDrawCard h2 {
+  margin: -3px 0 0;
+  color: var(--draw-text);
+  font-size: clamp(21px, 5vw, 29px);
+  letter-spacing: -0.035em;
+}
+
+.tieBreakDrawCountdown {
+  display: grid;
+  place-items: center;
+  width: 62px;
+  height: 62px;
+  border: 2px solid #f59e0b;
+  border-radius: 50%;
+  background: color-mix(in srgb, #f59e0b 12%, var(--draw-card));
+  color: #ea580c;
+  font-size: 29px;
+  font-weight: 950;
+}
+
+.tieBreakDrawSpotlight,
+.tieBreakWinnerName {
+  width: 100%;
+  padding: 13px 16px;
+  border: 1px solid color-mix(in srgb, #f59e0b 55%, var(--draw-border));
+  border-radius: 15px;
+  background: color-mix(in srgb, #f59e0b 10%, var(--draw-surface));
+  color: var(--draw-text);
+  font-size: clamp(16px, 4vw, 21px);
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+
+.tieBreakDrawCandidates {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+
+.tieBreakDrawCandidates span {
+  padding: 6px 9px;
+  border: 1px solid var(--draw-border);
+  border-radius: 999px;
+  background: var(--draw-surface);
+  color: var(--draw-muted);
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.tieBreakDrawProgress {
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--draw-surface);
+}
+
+.tieBreakDrawProgress span {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+  animation: tieBreakProgress 5s linear forwards;
+}
+
+.tieBreakDrawCard > p {
+  margin: 0;
+  color: var(--draw-muted);
+  font-size: 11px;
+}
+
+.tieBreakResultOrder {
+  display: grid;
+  gap: 6px;
+  width: 100%;
+}
+
+.tieBreakResultOrder span {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  padding: 9px 11px;
+  border: 1px solid var(--draw-border);
+  border-radius: 11px;
+  background: var(--draw-surface);
+  color: var(--draw-text);
+  text-align: left;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.tieBreakResultOrder b {
+  color: #d97706;
+}
+
+.tieBreakDrawCard.result > button {
+  min-width: 170px;
+  min-height: 43px;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  color: #ffffff;
+  font-weight: 900;
+}
+
+@keyframes tieBreakDiceShake {
+  from { transform: rotate(-10deg) scale(0.96); }
+  to { transform: rotate(10deg) scale(1.05); }
+}
+
+@keyframes tieBreakProgress {
+  to { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tieBreakDrawCard.drawing .tieBreakDrawIcon svg { animation: none; }
 }
 
 @media (max-width: 760px) {
@@ -18877,8 +19200,8 @@ html[data-theme="dark"] {
 
   .participantImportModal {
     width: 100%;
-    max-height: 94vh;
-    padding: 18px 14px;
+    max-height: calc(100dvh - 10px);
+    padding: 16px 13px;
     border-radius: 22px 22px 0 0;
   }
 
@@ -18897,5 +19220,17 @@ html[data-theme="dark"] {
     position: absolute;
     top: 0;
     right: 0;
+  }
+
+  .tieBreakItem {
+    grid-template-columns: 1fr;
+  }
+
+  .proDashboard.playAppShell .tieBreakItem > button {
+    width: 100% !important;
+  }
+
+  .tieBreakDrawCard {
+    padding: 22px 16px;
   }
 }

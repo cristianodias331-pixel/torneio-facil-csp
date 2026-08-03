@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { createRoot } from "react-dom/client";
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -9,6 +10,7 @@ import {
   ClipboardPaste,
   Clock3,
   Copy,
+  Dices,
   Flame,
   Gift,
   GitBranch,
@@ -8696,6 +8698,7 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
 
   const [savingStatus, setSavingStatus] = useState("Salvo");
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
+  const [tieBreakDraw, setTieBreakDraw] = useState(null);
   const [notice, setNotice] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
   const [clearTableOpen, setClearTableOpen] = useState(false);
@@ -8774,12 +8777,18 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   const firstRenderRef = useRef(true);
   const shuffleAnimationTimerRef = useRef(null);
   const shuffleCountdownTimerRef = useRef(null);
+  const tieBreakDrawTimerRef = useRef(null);
 
   function clearShuffleTimers() {
     if (shuffleAnimationTimerRef.current) clearInterval(shuffleAnimationTimerRef.current);
     if (shuffleCountdownTimerRef.current) clearInterval(shuffleCountdownTimerRef.current);
     shuffleAnimationTimerRef.current = null;
     shuffleCountdownTimerRef.current = null;
+  }
+
+  function clearTieBreakDrawTimer() {
+    if (tieBreakDrawTimerRef.current) clearInterval(tieBreakDrawTimerRef.current);
+    tieBreakDrawTimerRef.current = null;
   }
 
   const ranking = useMemo(
@@ -8815,7 +8824,10 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     latestDataRef.current = data;
   }, [data]);
 
-  useEffect(() => () => clearShuffleTimers(), []);
+  useEffect(() => () => {
+    clearShuffleTimers();
+    clearTieBreakDrawTimer();
+  }, []);
 
   useEffect(() => {
     if (firstRenderRef.current) {
@@ -9019,71 +9031,123 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     });
   }
 
-  function resolveCopinhaTie(groupId, teamIds) {
-    if (!Array.isArray(teamIds) || teamIds.length < 2) return;
+  function startTieBreakDraw({ kind, tieKey, ids, candidates, title }) {
+    if (!Array.isArray(ids) || ids.length < 2 || tieBreakDrawTimerRef.current) return;
 
-    setData((prev) => {
-      const copy = structuredClone(prev);
-      const tieBreakOverrides = {
-        ...(copy.cupConfig?.tieBreakOverrides || {}),
-        [String(groupId)]: shuffleArray([...teamIds]),
-      };
+    const order = shuffleArray([...ids]);
+    const providedCandidateNames = new Map(
+      (candidates || []).map((candidate) => [String(candidate.id), candidate.name])
+    );
+    const candidateNames = new Map(
+      ids.map((id) => [String(id), providedCandidateNames.get(String(id)) || "Participante"])
+    );
+    const orderNames = order.map((id) => candidateNames.get(String(id)) || "Participante");
+    const endsAt = Date.now() + 5000;
 
-      copy.cupConfig = {
-        ...(copy.cupConfig || {}),
-        tieBreakOverrides,
-        ...(isCearenseData(copy) ? { campaignTieBreakOverrides: {} } : {}),
-      };
-      copy.brackets = [];
-
-      return copy;
+    setTieBreakDraw({
+      phase: "drawing",
+      title,
+      seconds: 5,
+      spotlight: orderNames[0],
+      candidates: [...candidateNames.values()],
     });
 
-    showNotice("success", "Desempate sorteado", "A ordem do sorteio foi salva e as chaves finais foram atualizadas.");
+    tieBreakDrawTimerRef.current = setInterval(() => {
+      const remaining = endsAt - Date.now();
+
+      if (remaining > 0) {
+        const names = [...candidateNames.values()];
+        setTieBreakDraw((current) => current ? {
+          ...current,
+          seconds: Math.max(1, Math.ceil(remaining / 1000)),
+          spotlight: names[Math.floor(Math.random() * names.length)] || current.spotlight,
+        } : current);
+        return;
+      }
+
+      clearTieBreakDrawTimer();
+      setData((prev) => {
+        const copy = structuredClone(prev);
+        const cupConfig = copy.cupConfig || {};
+
+        if (kind === "group") {
+          copy.cupConfig = {
+            ...cupConfig,
+            tieBreakOverrides: {
+              ...(cupConfig.tieBreakOverrides || {}),
+              [String(tieKey)]: order,
+            },
+            ...(isCearenseData(copy) ? { campaignTieBreakOverrides: {} } : {}),
+          };
+        } else if (kind === "groupCampaign") {
+          copy.cupConfig = {
+            ...cupConfig,
+            groupTieBreakOverrides: {
+              ...(cupConfig.groupTieBreakOverrides || {}),
+              [tieKey]: order,
+            },
+          };
+        } else {
+          copy.cupConfig = {
+            ...cupConfig,
+            campaignTieBreakOverrides: {
+              ...(cupConfig.campaignTieBreakOverrides || {}),
+              [tieKey]: order,
+            },
+          };
+        }
+
+        copy.brackets = [];
+        return copy;
+      });
+      setTieBreakDraw({
+        phase: "result",
+        title,
+        winner: orderNames[0],
+        orderNames,
+      });
+    }, 140);
+  }
+
+  function resolveCopinhaTie(groupId, teamIds) {
+    const group = cupGroupRankings.find((item) => String(item.id) === String(groupId));
+    const candidates = (group?.rows || []).filter((row) => (
+      teamIds.some((id) => String(id) === String(row.id))
+    ));
+
+    startTieBreakDraw({
+      kind: "group",
+      tieKey: groupId,
+      ids: teamIds,
+      candidates,
+      title: `Desempate do ${group?.name || "grupo"}`,
+    });
   }
 
   function resolveCopinhaGroupTie(tieKey, groupIds) {
-    if (!Array.isArray(groupIds) || groupIds.length < 2) return;
+    const candidates = cupGroupRankings
+      .filter((group) => groupIds.some((id) => String(id) === String(group.id)))
+      .map((group) => ({ id: group.id, name: group.name }));
 
-    setData((prev) => {
-      const copy = structuredClone(prev);
-      const groupTieBreakOverrides = {
-        ...(copy.cupConfig?.groupTieBreakOverrides || {}),
-        [tieKey]: shuffleArray([...groupIds]),
-      };
-
-      copy.cupConfig = {
-        ...(copy.cupConfig || {}),
-        groupTieBreakOverrides,
-      };
-      copy.brackets = [];
-
-      return copy;
+    startTieBreakDraw({
+      kind: "groupCampaign",
+      tieKey,
+      ids: groupIds,
+      candidates,
+      title: "Sorteio da melhor campanha",
     });
-
-    showNotice("success", "Melhor grupo sorteado", "A ordem dos grupos empatados foi salva e as chaves finais foram atualizadas.");
   }
 
   function resolveCearenseCampaignTie(tieKey, teamIds) {
-    if (!Array.isArray(teamIds) || teamIds.length < 2) return;
+    const tie = cearenseCampaignTies.find((item) => item.tieKey === tieKey);
 
-    setData((prev) => {
-      const copy = structuredClone(prev);
-      const campaignTieBreakOverrides = {
-        ...(copy.cupConfig?.campaignTieBreakOverrides || {}),
-        [tieKey]: shuffleArray([...teamIds]),
-      };
-
-      copy.cupConfig = {
-        ...(copy.cupConfig || {}),
-        campaignTieBreakOverrides,
-      };
-      copy.brackets = [];
-
-      return copy;
+    startTieBreakDraw({
+      kind: "campaign",
+      tieKey,
+      ids: teamIds,
+      candidates: tie?.rows || teamIds.map((id) => ({ id, name: getCupTeamName(data, id) })),
+      title: "Desempate entre grupos",
     });
-
-    showNotice("success", "Desempate entre grupos sorteado", "A ordem sorteada foi registrada para montar as duas chaves.");
   }
 
   function refreshGameParticipantNames(nextData) {
@@ -9413,13 +9477,22 @@ return (
   <>
     <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
-    {participantImportOpen && (
+    {participantImportOpen && createPortal(
       <ParticipantImportModal
         type={tournament.type}
         data={data}
         onClose={() => setParticipantImportOpen(false)}
         onApply={importParticipants}
-      />
+      />,
+      document.body
+    )}
+
+    {tieBreakDraw && createPortal(
+      <TieBreakDrawOverlay
+        draw={tieBreakDraw}
+        onClose={() => setTieBreakDraw(null)}
+      />,
+      document.body
     )}
 
     <ConfirmClearScoresModal
@@ -9614,11 +9687,6 @@ return (
             </div>
             {cupGroupRankings.length > 0 && (
               <div className="groupsPreviewBox">
-                <h3>Classificação dos grupos</h3>
-                <CupGroupRankingView
-                  groupRankings={cupGroupRankings}
-                  rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
-                />
                 {(isCopinhaData(data) || isCearenseData(data)) && (
                   <CopinhaTieBreakPanel
                     groupRankings={cupGroupRankings}
@@ -9628,8 +9696,14 @@ return (
                     campaignTies={cearenseCampaignTies}
                     onResolveCampaignTie={resolveCearenseCampaignTie}
                     isCearense={isCearenseData(data)}
+                    drawInProgress={tieBreakDraw?.phase === "drawing"}
                   />
                 )}
+                <h3>Classificação dos grupos</h3>
+                <CupGroupRankingView
+                  groupRankings={cupGroupRankings}
+                  rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+                />
               </div>
             )}
           </section>
@@ -10782,6 +10856,43 @@ function RankingTable({ title, rows, rankingCriteria, showPodium = true, shareCo
   );
 }
 
+function TieBreakDrawOverlay({ draw, onClose }) {
+  const isDrawing = draw.phase === "drawing";
+
+  return (
+    <div className="tieBreakDrawOverlay" role="alertdialog" aria-modal="true" aria-live="polite">
+      <div className={`tieBreakDrawCard ${isDrawing ? "drawing" : "result"}`}>
+        <div className="tieBreakDrawIcon">{isDrawing ? <Dices /> : <Trophy />}</div>
+        <span className="tieBreakDrawEyebrow">{isDrawing ? "Sorteio em andamento" : "Sorteio concluído"}</span>
+        <h2>{draw.title}</h2>
+
+        {isDrawing ? (
+          <>
+            <div className="tieBreakDrawCountdown">{draw.seconds}</div>
+            <div className="tieBreakDrawSpotlight">{draw.spotlight}</div>
+            <div className="tieBreakDrawCandidates">
+              {draw.candidates.map((name, index) => <span key={`${name}-${index}`}>{name}</span>)}
+            </div>
+            <div className="tieBreakDrawProgress"><span /></div>
+            <p>Aguarde 5 segundos. A ordem está sendo definida aleatoriamente.</p>
+          </>
+        ) : (
+          <>
+            <span className="tieBreakWinnerLabel">Vencedor do sorteio</span>
+            <strong className="tieBreakWinnerName">{draw.winner}</strong>
+            <div className="tieBreakResultOrder">
+              {draw.orderNames.map((name, index) => (
+                <span key={`${name}-${index}`}><b>{index + 1}º</b>{name}</span>
+              ))}
+            </div>
+            <button type="button" onClick={onClose}>Entendi</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function CopinhaTieBreakPanel({
   groupRankings,
   onResolveTie,
@@ -10790,74 +10901,85 @@ function CopinhaTieBreakPanel({
   campaignTies = [],
   onResolveCampaignTie,
   isCearense = false,
+  drawInProgress = false,
 }) {
   const tiedGroups = (groupRankings || []).filter((group) => group.unresolvedTieIds?.length > 1);
 
   if (!tiedGroups.length && !groupCampaignTies.length && !campaignTies.length) return null;
 
   return (
-    <div className="infoBox">
-      <p>
-        <strong>Desempate por sorteio necessário.</strong>{" "}
-        {isCearense
-          ? "As duplas abaixo permaneceram iguais em vitórias, saldo e Total de Games. O organizador deve registrar o sorteio antes de gerar as chaves."
-          : "Há três duplas empatadas após vitórias, saldo e confronto direto."}
-      </p>
-      {tiedGroups.map((group) => {
-        const tiedRows = group.rows.filter((row) => group.unresolvedTieIds.includes(row.id));
+    <div className="infoBox tieBreakPanel">
+      <div className="tieBreakIntro">
+        <span className="tieBreakIntroIcon"><Dices /></span>
+        <p>
+          <strong>Desempate por sorteio necessário</strong>
+          {isCearense
+            ? "As duplas abaixo permaneceram iguais em vitórias, saldo e Total de Games. Faça o sorteio antes de gerar as chaves."
+            : "Há duplas empatadas após todos os critérios de classificação. Faça o sorteio antes de continuar."}
+        </p>
+      </div>
 
-        return (
-          <div className="actions" key={group.id}>
-            <span>{group.name}: {tiedRows.map((row) => row.name).join(" · ")}</span>
-            <button
-              type="button"
-              onClick={() => onResolveTie(group.id, group.unresolvedTieIds)}
-            >
-              Sortear ordem do grupo
-            </button>
-          </div>
-        );
-      })}
+      <div className="tieBreakList">
+        {tiedGroups.map((group) => {
+          const tiedRows = group.rows.filter((row) => group.unresolvedTieIds.includes(row.id));
 
-      {groupCampaignTies.map((tie) => {
-        const groups = groupRankings.filter((group) => tie.groupIds.includes(group.id));
+          return (
+            <div className="tieBreakItem" key={group.id}>
+              <span><strong>{group.name}</strong>{tiedRows.map((row) => row.name).join(" · ")}</span>
+              <button
+                type="button"
+                disabled={drawInProgress}
+                onClick={() => onResolveTie(group.id, group.unresolvedTieIds)}
+              >
+                <Dices /> Sortear em 5 segundos
+              </button>
+            </div>
+          );
+        })}
 
-        return (
-          <div className="actions" key={`campaign-${tie.tieKey}`}>
-            <span>Melhor campanha empatada: {groups.map((group) => group.name).join(" · ")}</span>
-            <button
-              type="button"
-              onClick={() => onResolveGroupTie?.(tie.tieKey, tie.groupIds)}
-            >
-              Sortear melhor grupo
-            </button>
-          </div>
-        );
-      })}
+        {groupCampaignTies.map((tie) => {
+          const groups = groupRankings.filter((group) => tie.groupIds.includes(group.id));
 
-      {campaignTies.map((tie) => {
-        const scopeLabel = {
-          campeoes: "Campeões de grupo",
-          segundos: "Segundos colocados",
-          paralela: "Disputa Paralela",
-        }[tie.scope] || "Campanhas entre grupos";
+          return (
+            <div className="tieBreakItem" key={`campaign-${tie.tieKey}`}>
+              <span><strong>Melhor campanha empatada</strong>{groups.map((group) => group.name).join(" · ")}</span>
+              <button
+                type="button"
+                disabled={drawInProgress}
+                onClick={() => onResolveGroupTie?.(tie.tieKey, tie.groupIds)}
+              >
+                <Dices /> Sortear em 5 segundos
+              </button>
+            </div>
+          );
+        })}
 
-        return (
-          <div className="actions" key={tie.tieKey}>
-            <span>
-              {scopeLabel}: {tie.rows.map((row) => (
-                `${row.name} (${((row.w / Math.max(1, row.played)) * 100).toFixed(2)}% vit.; saldo médio ${(row.bal / Math.max(1, row.played)).toFixed(2)}; média de games ${(row.pts / Math.max(1, row.played)).toFixed(2)})`
-              )).join(" · ")}
-            </span>
-            <button
-              type="button"
-              onClick={() => onResolveCampaignTie?.(tie.tieKey, tie.teamIds)}
-            >
-              Registrar sorteio da ordem
-            </button>
-          </div>
-        );
-      })}
+        {campaignTies.map((tie) => {
+          const scopeLabel = {
+            campeoes: "Campeões de grupo",
+            segundos: "Segundos colocados",
+            paralela: "Disputa Paralela",
+          }[tie.scope] || "Campanhas entre grupos";
+
+          return (
+            <div className="tieBreakItem" key={tie.tieKey}>
+              <span>
+                <strong>{scopeLabel}</strong>
+                {tie.rows.map((row) => (
+                  `${row.name} (${((row.w / Math.max(1, row.played)) * 100).toFixed(2)}% vit.; saldo médio ${(row.bal / Math.max(1, row.played)).toFixed(2)}; média de games ${(row.pts / Math.max(1, row.played)).toFixed(2)})`
+                )).join(" · ")}
+              </span>
+              <button
+                type="button"
+                disabled={drawInProgress}
+                onClick={() => onResolveCampaignTie?.(tie.tieKey, tie.teamIds)}
+              >
+                <Dices /> Sortear em 5 segundos
+              </button>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
