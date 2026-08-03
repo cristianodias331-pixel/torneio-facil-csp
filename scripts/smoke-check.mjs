@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { super12IndividualTemplate } from "../src/super12Schedule.mjs";
 
 const root = new URL("../", import.meta.url);
 const mainSource = readFileSync(new URL("src/main.jsx", root), "utf8");
@@ -38,6 +39,7 @@ for (const marker of requiredApplicationMarkers) {
 const expectedModalityLabels = [
   "Super 6 (dupla fixa)",
   "Super 8",
+  "Super 12",
   "Super 8 (dupla fixa)",
   "Super 10 mista",
   "Super 12 mista",
@@ -57,6 +59,7 @@ const premiumModalities = mainSource.slice(
 const premiumOrder = [
   '"Super 12 Mista (Dupla Fixa)"',
   '"Super 08"',
+  '"Super 12"',
   '"Super 16 Mista (Dupla Fixa)"',
   '"Super 10 Mista (Dupla Aleatória)"',
   '"Super 12 Mista (Dupla Aleatória)"',
@@ -66,6 +69,45 @@ const premiumOrder = [
 const premiumPositions = premiumOrder.map((type) => premiumModalities.indexOf(type));
 assert.ok(premiumPositions.every((position) => position >= 0), "A lista Premium perdeu uma modalidade obrigatória.");
 assert.deepEqual([...premiumPositions].sort((a, b) => a - b), premiumPositions, "A ordem das modalidades está incorreta.");
+
+assert.equal(super12IndividualTemplate.length, 11, "O Super 12 deve possuir 11 rodadas.");
+const super12Partners = new Map();
+const super12Opponents = new Map();
+const super12PairKey = (first, second) => [first, second].sort((a, b) => a - b).join("-");
+
+for (const round of super12IndividualTemplate) {
+  assert.equal(round.length, 3, "Cada rodada do Super 12 deve usar 3 quadras.");
+  assert.deepEqual(
+    round.flat(2).sort((a, b) => a - b),
+    Array.from({ length: 12 }, (_, index) => index + 1),
+    "Todos os 12 participantes devem jogar exatamente uma vez por rodada."
+  );
+
+  for (const [firstTeam, secondTeam] of round) {
+    for (const team of [firstTeam, secondTeam]) {
+      const key = super12PairKey(...team);
+      super12Partners.set(key, (super12Partners.get(key) || 0) + 1);
+    }
+
+    for (const first of firstTeam) {
+      for (const second of secondTeam) {
+        const key = super12PairKey(first, second);
+        super12Opponents.set(key, (super12Opponents.get(key) || 0) + 1);
+      }
+    }
+  }
+}
+
+for (let first = 1; first <= 12; first += 1) {
+  for (let second = first + 1; second <= 12; second += 1) {
+    const key = super12PairKey(first, second);
+    assert.equal(super12Partners.get(key), 1, `A parceria ${key} deve acontecer uma vez.`);
+    assert.equal(super12Opponents.get(key), 2, `O confronto ${key} deve acontecer duas vezes.`);
+  }
+}
+
+assert.ok(mainSource.includes('type: "super12"'), "A modalidade Super 12 individual não está cadastrada.");
+assert.ok(mainSource.includes('config.type === "super12"'), "A geração da tabela fixa do Super 12 está ausente.");
 
 assert.ok(indexSource.includes('src/main.jsx'), "A entrada React não está ligada ao index.html.");
 assert.ok(indexSource.includes('torneio360-favicon-96.png'), "O novo favicon do Torneio360 não está configurado.");

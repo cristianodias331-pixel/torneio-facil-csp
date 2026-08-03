@@ -38,6 +38,7 @@ import {
   Users,
 } from "lucide-react";
 import InstallAppBanner from "./InstallAppBanner.jsx";
+import { super12IndividualTemplate } from "./super12Schedule.mjs";
 import "./style.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
@@ -809,6 +810,7 @@ function normalizeScoreInput(value, winningScore = 4) {
 
 const modalityDisplayNames = {
   "Super 08": "Super 8",
+  "Super 12": "Super 12",
   "Super 10 Mista (Dupla Aleatória)": "Super 10 mista",
   "Super 12 Mista (Dupla Aleatória)": "Super 12 mista",
   "Super 16 Mista (Dupla Aleatória)": "Super 16 mista",
@@ -828,6 +830,7 @@ function normalizeCircuitStatus(status) {
 const allowedByPlan = {
   basic: [
     "Super 08",
+    "Super 12",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
@@ -835,6 +838,7 @@ const allowedByPlan = {
   pro: [
     "Super 12 Mista (Dupla Fixa)",
     "Super 08",
+    "Super 12",
     "Super 16 Mista (Dupla Fixa)",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
@@ -843,6 +847,7 @@ const allowedByPlan = {
   premium: [
     "Super 12 Mista (Dupla Fixa)",
     "Super 08",
+    "Super 12",
     "Super 16 Mista (Dupla Fixa)",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
@@ -862,6 +867,13 @@ const modalityConfig = {
     total: 8,
     label: "Participante",
     courts: 2,
+  },
+
+  "Super 12": {
+    type: "super12",
+    total: 12,
+    label: "Participante",
+    courts: 3,
   },
 
   "Super 10 Mista (Dupla Aleatória)": {
@@ -4511,7 +4523,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 6, Super 8, Super 10 mista, Super 12 mista, Super 16 mista, Simples 8, Copas ou Campeonato Cearense conforme a realidade do evento.
+                Selecione Super 6, Super 8, Super 12, modalidades mistas, Simples 8, Copas ou Campeonato Cearense conforme a realidade do evento.
               </p>
             </div>
 
@@ -4585,9 +4597,10 @@ function Login({
               title="Basic"
               tag="Entrada"
               price="R$ 19,90"
-              text="Para começar com torneios mistos e Super 8."
+              text="Para começar com torneios individuais e mistos."
               items={[
                 "Super 8",
+                "Super 12",
                 "Super 10 mista",
                 "Super 12 mista",
                 "Super 16 mista",
@@ -4605,6 +4618,7 @@ function Login({
               items={[
                 "Super 6 (dupla fixa)",
                 "Super 8",
+                "Super 12",
                 "Super 8 (dupla fixa)",
                 "Super 10 mista",
                 "Super 12 mista",
@@ -4621,6 +4635,7 @@ function Login({
               items={[
                 "Super 6 (dupla fixa)",
                 "Super 8",
+                "Super 12",
                 "Super 8 (dupla fixa)",
                 "Super 10 mista",
                 "Super 12 mista",
@@ -4656,6 +4671,11 @@ function Login({
             />
 
             <Info
+              title="Super 12"
+              text="Formato individual com 12 participantes escolhidos livremente pelo organizador, sem exigência de gênero. São 11 rodadas em 3 quadras, sem descanso: cada atleta forma dupla uma vez com cada um dos outros participantes e enfrenta cada adversário exatamente duas vezes. Todos aparecem juntos em um único ranking geral."
+            />
+
+            <Info
               title="Super 8 (dupla fixa)"
               text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, total de games e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
@@ -4672,7 +4692,7 @@ function Login({
 
             <Info
               title="Super 16 mista"
-              text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
+              text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12 mista, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
             />
 
             <Info
@@ -7979,6 +7999,13 @@ setNewPublicInfo({
       />
     )}
 
+    {allowedTypes.includes("Super 12") && (
+      <Info
+        title="Super 12"
+        text="Formato individual com 12 participantes definidos livremente pelo organizador, sem exigência de gênero. São 11 rodadas em 3 quadras, sem descanso. Cada atleta joga uma vez com cada parceiro, enfrenta cada adversário duas vezes e participa de um único ranking geral."
+      />
+    )}
+
     {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
       <Info
         title="Super 8 (dupla fixa)"
@@ -8003,7 +8030,7 @@ setNewPublicInfo({
     {allowedTypes.includes("Super 16 Mista (Dupla Aleatória)") && (
       <Info
         title="Super 16 mista"
-        text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
+        text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12 mista, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
       />
     )}
 
@@ -10473,6 +10500,10 @@ function generateSchedule(type, players) {
 
   if (config.type === "super8") {
     return optimizeCourts(buildFromPairTemplate(super8Template, players));
+  }
+
+  if (config.type === "super12") {
+    return optimizeCourts(buildFromPairTemplate(super12IndividualTemplate, players));
   }
 
   if (config.type === "mixed10") {
