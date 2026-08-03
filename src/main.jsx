@@ -6,6 +6,7 @@ import {
   Camera,
   CalendarDays,
   ChevronDown,
+  ClipboardPaste,
   Clock3,
   Copy,
   Flame,
@@ -30,6 +31,7 @@ import {
   Target,
   Trash2,
   Trophy,
+  Undo2,
   UserRound,
   Users,
 } from "lucide-react";
@@ -8697,6 +8699,8 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   const [notice, setNotice] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
   const [clearTableOpen, setClearTableOpen] = useState(false);
+  const [participantImportOpen, setParticipantImportOpen] = useState(false);
+  const [participantImportBackup, setParticipantImportBackup] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -8985,6 +8989,7 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   }
 
   function updateCupConfig(field, value) {
+    setParticipantImportBackup(null);
     setData((prev) => {
       const copy = structuredClone(prev);
 
@@ -9122,7 +9127,32 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     if (path.kind === "women") copy.players.women[path.index] = value;
     if (path.kind === "team") copy.players.teams[path.index][path.field] = value;
 
+    setParticipantImportBackup(null);
     setData(refreshGameParticipantNames(copy));
+  }
+
+  function importParticipants(nextPlayers, summary) {
+    const copy = structuredClone(data);
+
+    setParticipantImportBackup(structuredClone(data.players));
+    copy.players = structuredClone(nextPlayers);
+    setData(refreshGameParticipantNames(copy));
+    setParticipantImportOpen(false);
+    showNotice(
+      "success",
+      "Lista importada",
+      `${summary.imported} nome${summary.imported === 1 ? "" : "s"} preenchido${summary.imported === 1 ? "" : "s"}. ${summary.preserved} nome${summary.preserved === 1 ? "" : "s"} já editado${summary.preserved === 1 ? " foi preservado" : "s foram preservados"}.`
+    );
+  }
+
+  function undoParticipantImport() {
+    if (!participantImportBackup) return;
+
+    const copy = structuredClone(data);
+    copy.players = structuredClone(participantImportBackup);
+    setParticipantImportBackup(null);
+    setData(refreshGameParticipantNames(copy));
+    showNotice("success", "Importação desfeita", "A lista de participantes voltou ao estado anterior.");
   }
 
   function finishShuffle() {
@@ -9383,6 +9413,15 @@ return (
   <>
     <NoticeModal notice={notice} onClose={() => setNotice(null)} />
 
+    {participantImportOpen && (
+      <ParticipantImportModal
+        type={tournament.type}
+        data={data}
+        onClose={() => setParticipantImportOpen(false)}
+        onApply={importParticipants}
+      />
+    )}
+
     <ConfirmClearScoresModal
       open={clearScoresOpen}
       onCancel={() => setClearScoresOpen(false)}
@@ -9529,6 +9568,24 @@ return (
               updateCupConfig={updateCupConfig}
             />
           )}
+
+          <div className="participantImportBar">
+            <div>
+              <strong><ClipboardPaste aria-hidden="true" /> Preencher vários participantes</strong>
+              <p>Cole uma lista do WhatsApp ou de outro lugar e confira as vagas antes de aplicar.</p>
+            </div>
+
+            <div className="participantImportActions">
+              {participantImportBackup && (
+                <button type="button" className="secondaryBtn" onClick={undoParticipantImport}>
+                  <Undo2 aria-hidden="true" /> Desfazer importação
+                </button>
+              )}
+              <button type="button" onClick={() => setParticipantImportOpen(true)}>
+                <ClipboardPaste aria-hidden="true" /> Colar lista
+              </button>
+            </div>
+          </div>
 
           <PlayerInputs
             type={tournament.type}
@@ -9852,6 +9909,360 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function isMixedParticipantConfig(config) {
+  return config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16";
+}
+
+function isTeamParticipantConfig(config) {
+  return config.type === "fixed12" || config.type === "fixed16" || isCupType(config);
+}
+
+function prepareParticipantLine(value) {
+  let line = String(value || "")
+    .normalize("NFKC")
+    .replace(/[^\p{L}\p{M}\p{N}\s+&/'’.\-:()[\]{}]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const withoutPrefix = line
+      .replace(/^\s*(?:(?:dupla|participante|atleta|jogador|homem|mulher)\s*\p{N}{1,3}\s*[.)\-:]\s*|\p{N}{1,3}\s*[.)\-:]\s*|[-–—•*▪◦]+\s*)/iu, "")
+      .trim();
+
+    if (withoutPrefix === line) break;
+    line = withoutPrefix;
+  }
+
+  return line;
+}
+
+function sanitizeParticipantName(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/\([^)]*\)|\[[^\]]*\]|\{[^}]*\}/g, " ")
+    .replace(/[^\p{L}\p{M}\s'’.]/gu, " ")
+    .replace(/\s+/g, " ")
+    .replace(/^[.'’]+|[.'’]+$/g, "")
+    .trim();
+}
+
+function parseParticipantList(value, { splitTeams = false } = {}) {
+  const names = [];
+  let ignored = 0;
+
+  String(value || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .forEach((rawLine) => {
+      const preparedLine = prepareParticipantLine(rawLine);
+      const parts = splitTeams
+        ? preparedLine.split(/\s*(?:\+|&|\/|\s+-\s+|\s+[xX]\s+|\s+[eE]\s+)\s*/u)
+        : [preparedLine];
+      const cleanedNames = parts.map(sanitizeParticipantName).filter(Boolean);
+
+      if (!cleanedNames.length) {
+        ignored += 1;
+        return;
+      }
+
+      names.push(...cleanedNames);
+    });
+
+  return { names, ignored };
+}
+
+function normalizeParticipantPlaceholder(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLocaleLowerCase("pt-BR");
+}
+
+function isAutomaticParticipantName(value, expectedValue) {
+  const normalized = normalizeParticipantPlaceholder(value);
+  const expected = normalizeParticipantPlaceholder(expectedValue);
+
+  if (!normalized || normalized === expected) return true;
+
+  return /^(?:atleta [12](?: da dupla \d+)?|participante \d+|jogador \d+|homem \d+|mulher \d+)$/u.test(normalized);
+}
+
+function countDuplicateParticipantNames(names) {
+  const occurrences = new Map();
+
+  names.forEach((name) => {
+    const key = name.normalize("NFKC").toLocaleLowerCase("pt-BR");
+    occurrences.set(key, (occurrences.get(key) || 0) + 1);
+  });
+
+  return [...occurrences.values()].filter((count) => count > 1).reduce((total, count) => total + count - 1, 0);
+}
+
+function fillParticipantSlots(currentValues, incomingNames, expectedName, replaceAll) {
+  const nextValues = [...currentValues];
+  const automaticIndexes = currentValues
+    .map((value, index) => isAutomaticParticipantName(value, expectedName(index)) ? index : null)
+    .filter((index) => index !== null);
+  const targetIndexes = replaceAll ? currentValues.map((_, index) => index) : automaticIndexes;
+  const imported = Math.min(incomingNames.length, targetIndexes.length);
+
+  targetIndexes.forEach((targetIndex, incomingIndex) => {
+    nextValues[targetIndex] = incomingIndex < incomingNames.length
+      ? incomingNames[incomingIndex]
+      : expectedName(targetIndex);
+  });
+
+  return {
+    nextValues,
+    imported,
+    preserved: replaceAll ? 0 : currentValues.length - automaticIndexes.length,
+    vacancies: targetIndexes.length - imported,
+    overflow: Math.max(0, incomingNames.length - targetIndexes.length),
+  };
+}
+
+function buildParticipantImportPreview(config, data, drafts, mode) {
+  const replaceAll = mode === "replace";
+
+  if (isMixedParticipantConfig(config)) {
+    const menList = parseParticipantList(drafts.men);
+    const womenList = parseParticipantList(drafts.women);
+    const menResult = fillParticipantSlots(
+      data.players.men,
+      menList.names,
+      (index) => `Homem ${index + 1}`,
+      replaceAll
+    );
+    const womenResult = fillParticipantSlots(
+      data.players.women,
+      womenList.names,
+      (index) => `Mulher ${index + 1}`,
+      replaceAll
+    );
+    const incomingNames = [...menList.names, ...womenList.names];
+
+    return {
+      nextPlayers: {
+        men: menResult.nextValues,
+        women: womenResult.nextValues,
+      },
+      imported: menResult.imported + womenResult.imported,
+      preserved: menResult.preserved + womenResult.preserved,
+      vacancies: menResult.vacancies + womenResult.vacancies,
+      overflow: menResult.overflow + womenResult.overflow,
+      ignored: menList.ignored + womenList.ignored,
+      duplicates: countDuplicateParticipantNames(incomingNames),
+      oddTeamList: false,
+      groups: [
+        { label: "Homens", values: menResult.nextValues },
+        { label: "Mulheres", values: womenResult.nextValues },
+      ],
+    };
+  }
+
+  if (isTeamParticipantConfig(config)) {
+    const parsed = parseParticipantList(drafts.general, { splitTeams: true });
+    const currentValues = data.players.teams.flatMap((team) => [team.a, team.b]);
+    const result = fillParticipantSlots(
+      currentValues,
+      parsed.names,
+      (index) => `Atleta ${(index % 2) + 1} da dupla ${Math.floor(index / 2) + 1}`,
+      replaceAll
+    );
+    const nextTeams = data.players.teams.map((_, teamIndex) => ({
+      a: result.nextValues[teamIndex * 2],
+      b: result.nextValues[(teamIndex * 2) + 1],
+    }));
+
+    return {
+      nextPlayers: { teams: nextTeams },
+      imported: result.imported,
+      preserved: result.preserved,
+      vacancies: result.vacancies,
+      overflow: result.overflow,
+      ignored: parsed.ignored,
+      duplicates: countDuplicateParticipantNames(parsed.names),
+      oddTeamList: parsed.names.length % 2 !== 0,
+      groups: [{
+        label: "Duplas",
+        values: nextTeams.map((team) => `${team.a} + ${team.b}`),
+      }],
+    };
+  }
+
+  const parsed = parseParticipantList(drafts.general);
+  const result = fillParticipantSlots(
+    data.players,
+    parsed.names,
+    (index) => `${config.label} ${index + 1}`,
+    replaceAll
+  );
+
+  return {
+    nextPlayers: result.nextValues,
+    imported: result.imported,
+    preserved: result.preserved,
+    vacancies: result.vacancies,
+    overflow: result.overflow,
+    ignored: parsed.ignored,
+    duplicates: countDuplicateParticipantNames(parsed.names),
+    oddTeamList: false,
+    groups: [{ label: "Participantes", values: result.nextValues }],
+  };
+}
+
+function ParticipantImportModal({ type, data, onClose, onApply }) {
+  const config = modalityConfig[type];
+  const isMixed = isMixedParticipantConfig(config);
+  const isTeams = isTeamParticipantConfig(config);
+  const [drafts, setDrafts] = useState({ general: "", men: "", women: "" });
+  const [mode, setMode] = useState("available");
+  const [replaceConfirmed, setReplaceConfirmed] = useState(false);
+  const preview = useMemo(
+    () => buildParticipantImportPreview(config, data, drafts, mode),
+    [config, data, drafts, mode]
+  );
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+
+    function closeOnEscape(event) {
+      if (event.key === "Escape") onClose();
+    }
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
+  }, [onClose]);
+
+  function updateDraft(field, value) {
+    setDrafts((current) => ({ ...current, [field]: value }));
+    setReplaceConfirmed(false);
+  }
+
+  function chooseMode(nextMode) {
+    setMode(nextMode);
+    setReplaceConfirmed(false);
+  }
+
+  function handleApply() {
+    if (!preview.imported) return;
+
+    if (mode === "replace" && !replaceConfirmed) {
+      setReplaceConfirmed(true);
+      return;
+    }
+
+    onApply(preview.nextPlayers, preview);
+  }
+
+  return (
+    <div className="participantImportOverlay" role="dialog" aria-modal="true" aria-labelledby="participant-import-title">
+      <div className="participantImportModal">
+        <div className="participantImportHeader">
+          <div>
+            <span>Participantes</span>
+            <h2 id="participant-import-title">Colar lista de nomes</h2>
+            <p>Numeração, marcadores, emojis, barras e hífens serão retirados automaticamente.</p>
+          </div>
+          <button type="button" className="participantImportClose" onClick={onClose} aria-label="Fechar importação">×</button>
+        </div>
+
+        <div className="participantImportMode" aria-label="Modo da importação">
+          <button type="button" className={mode === "available" ? "active" : ""} onClick={() => chooseMode("available")}>
+            <strong>Preencher vagas ainda não editadas</strong>
+            <small>Recomendado — preserva todos os nomes digitados.</small>
+          </button>
+          <button type="button" className={mode === "replace" ? "active danger" : ""} onClick={() => chooseMode("replace")}>
+            <strong>Substituir todos os participantes</strong>
+            <small>Apaga os nomes atuais e exige confirmação.</small>
+          </button>
+        </div>
+
+        <div className={`participantImportEditors ${isMixed ? "mixed" : ""}`}>
+          {isMixed ? (
+            <>
+              <label>
+                <span>Lista de homens</span>
+                <textarea
+                  value={drafts.men}
+                  onChange={(event) => updateDraft("men", event.target.value)}
+                  placeholder={"1. João\n2. Marcos\n3. André"}
+                />
+              </label>
+              <label>
+                <span>Lista de mulheres</span>
+                <textarea
+                  value={drafts.women}
+                  onChange={(event) => updateDraft("women", event.target.value)}
+                  placeholder={"1. Ana\n2. Carla\n3. Beatriz"}
+                />
+              </label>
+            </>
+          ) : (
+            <label>
+              <span>{isTeams ? "Duplas ou nomes, um por linha" : "Um participante por linha"}</span>
+              <textarea
+                value={drafts.general}
+                onChange={(event) => updateDraft("general", event.target.value)}
+                placeholder={isTeams
+                  ? "1. Ana + Carla\n2. Beatriz + Fernanda\nou um atleta por linha"
+                  : "1. Ana\n2. Beatriz\n3. Carla"}
+              />
+            </label>
+          )}
+        </div>
+
+        <div className="participantImportSummary" aria-live="polite">
+          <div><strong>{preview.imported}</strong><span>nomes a preencher</span></div>
+          <div><strong>{preview.preserved}</strong><span>nomes preservados</span></div>
+          <div><strong>{preview.vacancies}</strong><span>vagas automáticas restantes</span></div>
+        </div>
+
+        {(preview.overflow > 0 || preview.duplicates > 0 || preview.ignored > 0 || preview.oddTeamList || replaceConfirmed) && (
+          <div className="participantImportWarnings">
+            {preview.overflow > 0 && <p><strong>Atenção:</strong> {preview.overflow} nome{preview.overflow === 1 ? " não cabe" : "s não cabem"} nas vagas disponíveis.</p>}
+            {preview.duplicates > 0 && <p><strong>Confira:</strong> a lista contém {preview.duplicates} nome{preview.duplicates === 1 ? " repetido" : "s repetidos"}.</p>}
+            {preview.ignored > 0 && <p>{preview.ignored} linha{preview.ignored === 1 ? " foi ignorada" : "s foram ignoradas"} porque não continha um nome válido.</p>}
+            {preview.oddTeamList && <p><strong>Dupla incompleta:</strong> há um número ímpar de nomes; a última vaga continuará com o nome automático.</p>}
+            {replaceConfirmed && <p><strong>Confirmação final:</strong> todos os nomes atuais serão substituídos pela lista abaixo.</p>}
+          </div>
+        )}
+
+        <div className="participantImportPreview">
+          <div className="participantImportPreviewTitle">
+            <strong>Prévia antes de aplicar</strong>
+            <small>É assim que os participantes ficarão.</small>
+          </div>
+          <div className={`participantImportPreviewGroups ${preview.groups.length > 1 ? "multiple" : ""}`}>
+            {preview.groups.map((group) => (
+              <section key={group.label}>
+                <h3>{group.label}</h3>
+                <ol>
+                  {group.values.map((value, index) => <li key={`${group.label}-${index}`}>{value}</li>)}
+                </ol>
+              </section>
+            ))}
+          </div>
+        </div>
+
+        <div className="participantImportFooter">
+          <button type="button" className="secondaryBtn" onClick={onClose}>Cancelar</button>
+          <button type="button" onClick={handleApply} disabled={!preview.imported}>
+            {mode === "replace" && replaceConfirmed ? "Sim, substituir todos" : mode === "replace" ? "Revisar substituição" : "Aplicar lista"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
