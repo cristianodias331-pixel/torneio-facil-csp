@@ -107,32 +107,32 @@ async function logout() {
 const rankingCriteriaOptions = [
   {
     value: "wins_points_balance",
-    label: "Vitórias > Pontos > Saldo de games",
+    label: "Vitórias > Total de Games > Saldo de games",
     order: ["w", "pts", "bal"],
   },
   {
     value: "wins_balance_points",
-    label: "Vitórias > Saldo de games > Pontos",
+    label: "Vitórias > Saldo de games > Total de Games",
     order: ["w", "bal", "pts"],
   },
   {
     value: "points_wins_balance",
-    label: "Pontos > Vitórias > Saldo de games",
+    label: "Total de Games > Vitórias > Saldo de games",
     order: ["pts", "w", "bal"],
   },
   {
     value: "points_balance_wins",
-    label: "Pontos > Saldo de games > Vitórias",
+    label: "Total de Games > Saldo de games > Vitórias",
     order: ["pts", "bal", "w"],
   },
   {
     value: "balance_wins_points",
-    label: "Saldo de games > Vitórias > Pontos",
+    label: "Saldo de games > Vitórias > Total de Games",
     order: ["bal", "w", "pts"],
   },
   {
     value: "balance_points_wins",
-    label: "Saldo de games > Pontos > Vitórias",
+    label: "Saldo de games > Total de Games > Vitórias",
     order: ["bal", "pts", "w"],
   },
 ];
@@ -258,7 +258,7 @@ function getRankingCriteria(value) {
 }
 
 function getRankingColumnLabel(key) {
-  return { w: "Vitórias", pts: "Pontos", bal: "Saldo de games" }[key] || key;
+  return { w: "Vitórias", pts: "Total de Games", bal: "Saldo de games" }[key] || key;
 }
 
 function formatDateBR(value) {
@@ -3758,7 +3758,7 @@ function Login({
             <div className="featureCard">
               <span>📊</span>
               <h3>Ranking configurável</h3>
-              <p>Escolha a ordem dos critérios entre vitórias, pontos e saldo de games.</p>
+              <p>Escolha a ordem dos critérios entre vitórias, total de games e saldo de games.</p>
             </div>
 
             <div className="featureCard">
@@ -3858,12 +3858,12 @@ function Login({
 
             <Info
               title="Super 8"
-              text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
+              text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, total de games e saldo de games."
             />
 
             <Info
               title="Super 8 (dupla fixa)"
-              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
+              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, total de games e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
@@ -3883,7 +3883,7 @@ function Login({
 
             <Info
               title="Simples 8 (1 contra 1 por jogo)"
-              text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo de games até definir os melhores colocados."
+              text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, total de games e saldo de games até definir os melhores colocados."
             />
 
             <Info
@@ -7004,7 +7004,7 @@ setNewPublicInfo({
                           <div className="circuitRankingRow" key={row.name}>
                             <span>{index + 1}º</span>
                             <b>{row.name}</b>
-                            <em>{row.pts} pts</em>
+                            <em>Total de Games: {row.pts}</em>
                             <small>{row.w} vit. · saldo {row.bal} · {row.played} jogo(s)</small>
                           </div>
                         ))}
@@ -7063,14 +7063,14 @@ setNewPublicInfo({
     {allowedTypes.includes("Super 08") && (
       <Info
         title="Super 8"
-        text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, pontos e saldo de games."
+        text="Formato individual com 8 participantes, ideal para torneios rápidos. Cada atleta joga com parceiros diferentes ao longo das rodadas, evitando que uma dupla fixa determine todo o resultado. O sistema monta os confrontos automaticamente, organiza as quadras, registra os placares e calcula o ranking individual. No final, vence quem tiver melhor desempenho geral conforme os critérios definidos, como vitórias, total de games e saldo de games."
       />
     )}
 
     {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
       <Info
         title="Super 8 (dupla fixa)"
-        text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, pontos e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
+        text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, total de games e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
       />
     )}
 
@@ -7098,7 +7098,7 @@ setNewPublicInfo({
     {allowedTypes.includes("Simples 8") && (
       <Info
         title="Simples 8 (1 contra 1 por jogo)"
-        text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, pontos e saldo de games até definir os melhores colocados."
+        text="Formato individual com 8 jogadores, sem formação de duplas. Cada atleta compete por conta própria, e o sistema monta a tabela de jogos automaticamente. É ideal para torneios de simples, desafios internos ou eventos menores. Os placares alimentam um ranking geral individual, permitindo acompanhar vitórias, total de games e saldo de games até definir os melhores colocados."
       />
     )}
 
