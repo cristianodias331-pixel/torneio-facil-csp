@@ -16225,6 +16225,530 @@ html[data-theme="dark"] {
 }
 
 /* =========================================================
+   RANKINGS COMPARTILHÁVEIS E CONSISTÊNCIA DE TEMAS
+   ========================================================= */
+
+.rankingShareButton {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  min-height: 38px !important;
+  padding: 8px 12px !important;
+  border: 1px solid color-mix(in srgb, #06b6d4 48%, var(--ui-border, #cbd5e1)) !important;
+  border-radius: 11px !important;
+  background: linear-gradient(135deg, #1d4ed8, #06b6d4) !important;
+  box-shadow: 0 8px 18px rgba(29, 78, 216, 0.18) !important;
+  color: #ffffff !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  white-space: nowrap !important;
+}
+
+.rankingShareButton:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  filter: brightness(1.05);
+}
+
+.rankingShareButton:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.rankingShareButton svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
+.rankingTableHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.rankingTableHeading h3 {
+  margin: 0 !important;
+}
+
+.proDashboard.playAppShell .circuitRankingHeader {
+  grid-template-columns: minmax(0, 1fr) auto minmax(250px, 320px) !important;
+  align-items: end !important;
+}
+
+.proDashboard.playAppShell .rankingTablePanel {
+  padding: 15px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 17px !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+  box-shadow: var(--ui-shadow-soft) !important;
+}
+
+.proDashboard.playAppShell .rankingTableHeading h3,
+.proDashboard.playAppShell .rankingTablePanel h3 {
+  color: var(--ui-text-strong) !important;
+  text-shadow: none !important;
+}
+
+.proDashboard.playAppShell .rankingTable {
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 13px !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+  overflow: hidden;
+}
+
+.proDashboard.playAppShell .rankingTable thead,
+.proDashboard.playAppShell .rankingTable th {
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard.playAppShell .rankingTable td {
+  border-color: var(--ui-border-soft) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+}
+
+.proDashboard.playAppShell .groupsPreviewBox {
+  padding: 17px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-radius: 19px !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text) !important;
+}
+
+.proDashboard.playAppShell .groupsPreviewBox > h3 {
+  color: var(--ui-text-strong) !important;
+}
+
+/* Pódio especial somente para modalidades de Copa. */
+.proDashboard .cupRankingPanel,
+.publicPage .cupRankingPanel {
+  padding: 16px !important;
+  border: 1px solid var(--ui-border, #d9e2ec) !important;
+  border-radius: 20px !important;
+  background: var(--ui-surface-raised, #ffffff) !important;
+  color: var(--ui-text, #132033) !important;
+  box-shadow: var(--ui-shadow-soft, 0 10px 26px rgba(8, 26, 73, 0.08)) !important;
+}
+
+.proDashboard .cupRankingPanel > h3,
+.publicPage .cupRankingPanel > h3 {
+  display: none !important;
+}
+
+.cupPodiumBox,
+.cupPodiumBox.mainPodiumBox,
+.cupRankingPanel:first-child .cupPodiumBox,
+.cupPodiumBox.parallelPodiumBox {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  min-height: 430px;
+  margin: 0 !important;
+  padding: 20px 18px 0 !important;
+  border: 1px solid rgba(250, 204, 21, 0.44) !important;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(251, 191, 36, 0.24), transparent 31%),
+    radial-gradient(circle at 0 100%, rgba(34, 211, 238, 0.24), transparent 35%),
+    linear-gradient(145deg, #40188d 0%, #20206c 52%, #071b4b 100%) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 20px 40px rgba(15, 23, 42, 0.18) !important;
+  color: #ffffff !important;
+}
+
+.cupPodiumBox.parallelPodiumBox {
+  border-color: rgba(103, 232, 249, 0.38) !important;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(103, 232, 249, 0.22), transparent 32%),
+    radial-gradient(circle at 100% 100%, rgba(99, 102, 241, 0.28), transparent 38%),
+    linear-gradient(145deg, #172554 0%, #25336f 50%, #312e81 100%) !important;
+}
+
+.cupPodiumBox::before,
+.cupPodiumBox::after {
+  position: absolute;
+  z-index: -1;
+  width: 180px;
+  height: 180px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+  content: "";
+}
+
+.cupPodiumBox::before { top: 70px; left: -90px; }
+.cupPodiumBox::after { right: -80px; bottom: 80px; }
+
+.cupPodiumHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.cupPodiumHeading > div {
+  min-width: 0;
+}
+
+.cupPodiumHeading span {
+  color: #fde68a !important;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.parallelPodiumBox .cupPodiumHeading span {
+  color: #a5f3fc !important;
+}
+
+.cupPodiumHeading h3,
+.cupPodiumBox.mainPodiumBox .cupPodiumHeading h3,
+.cupPodiumBox.parallelPodiumBox .cupPodiumHeading h3 {
+  margin: 4px 0 0 !important;
+  color: #ffffff !important;
+  font-size: clamp(20px, 3vw, 28px) !important;
+  line-height: 1.05;
+  text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+}
+
+.cupPodiumGrid {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  align-items: end !important;
+  gap: 9px !important;
+  min-height: 335px;
+  margin-top: 14px;
+}
+
+.cupPodiumItem,
+.cupPodiumBox.mainPodiumBox .cupPodiumItem,
+.cupRankingPanel:first-child .cupPodiumItem,
+.cupPodiumBox.parallelPodiumBox .cupPodiumItem {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: end;
+  min-width: 0;
+  height: auto;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  text-align: center;
+}
+
+.cupPodiumCrown {
+  display: block;
+  height: 29px;
+  color: #facc15 !important;
+  font-size: 27px !important;
+  line-height: 1;
+  text-shadow: 0 4px 12px rgba(250, 204, 21, 0.36);
+}
+
+.cupPodiumAvatar {
+  display: grid;
+  place-items: center;
+  width: 70px;
+  height: 70px;
+  margin-bottom: 8px;
+  border: 4px solid rgba(255, 255, 255, 0.82);
+  border-radius: 50%;
+  background: linear-gradient(145deg, #fb923c, #facc15);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.3);
+  color: #4c1d95 !important;
+  font-size: 20px;
+  font-weight: 950;
+}
+
+.cupPodiumPlace1 .cupPodiumAvatar {
+  width: 86px;
+  height: 86px;
+  border-color: #fde68a;
+  background: linear-gradient(145deg, #fef08a, #f59e0b);
+}
+
+.cupPodiumPlace2 .cupPodiumAvatar {
+  background: linear-gradient(145deg, #f8fafc, #94a3b8);
+  color: #1e293b !important;
+}
+
+.cupPodiumPlace3 .cupPodiumAvatar {
+  background: linear-gradient(145deg, #fdba74, #c2410c);
+  color: #fff7ed !important;
+}
+
+.cupPodiumItem > strong {
+  min-height: 32px;
+  margin: 0 2px 5px !important;
+  color: #fef3c7 !important;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.cupPodiumName {
+  display: -webkit-box;
+  min-height: 45px;
+  margin: 0 3px 8px;
+  overflow: hidden;
+  color: #ffffff !important;
+  font-size: 12px;
+  font-weight: 900 !important;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.cupPodiumStep {
+  display: grid;
+  place-items: start center;
+  width: 100%;
+  min-height: 82px;
+  padding-top: 14px;
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(145deg, #f59e0b, #facc15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55), 0 -8px 22px rgba(245, 158, 11, 0.18);
+  color: #ffffff !important;
+  font-size: 38px !important;
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 3px 0 rgba(120, 53, 15, 0.24);
+}
+
+.cupPodiumPlace1 .cupPodiumStep { min-height: 126px; padding-top: 18px; }
+.cupPodiumPlace2 .cupPodiumStep { min-height: 95px; background: linear-gradient(145deg, #f8fafc, #94a3b8); color: #475569 !important; text-shadow: none; }
+.cupPodiumPlace3 .cupPodiumStep { min-height: 76px; background: linear-gradient(145deg, #fb923c, #c2410c); }
+
+/* Eventos com várias categorias e chamada de jogos respeitam o tema ativo. */
+.proDashboard.playAppShell .eventGroupCard {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-raised) !important;
+  color: var(--ui-text) !important;
+  box-shadow: var(--ui-shadow-soft) !important;
+}
+
+.proDashboard.playAppShell .eventGroupHeader {
+  border-bottom-color: var(--ui-border-soft) !important;
+}
+
+.proDashboard.playAppShell .eventGroupHeader strong,
+.proDashboard.playAppShell .eventGroupCard .tournamentTitleRow strong {
+  color: var(--ui-text-strong) !important;
+}
+
+.proDashboard.playAppShell .eventGroupHeader span {
+  border-color: color-mix(in srgb, var(--brand-blue) 35%, var(--ui-border)) !important;
+  background: color-mix(in srgb, var(--brand-blue) 11%, var(--ui-surface-muted)) !important;
+  color: var(--brand-blue) !important;
+}
+
+.proDashboard.playAppShell .eventGroupCard .tournamentItem {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text) !important;
+}
+
+.proDashboard.playAppShell .eventGroupCard .tournamentMeta,
+.proDashboard.playAppShell .eventGroupCard .tournamentMeta span {
+  color: var(--ui-muted) !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .voiceRepeatBox,
+.proDashboard .tournamentWorkspaceContent .schedule > .voiceRepeatBox {
+  border: 1px solid var(--ui-border) !important;
+  background: var(--ui-surface-muted) !important;
+  color: var(--ui-text-strong) !important;
+  box-shadow: none !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .voiceRepeatBox span {
+  color: var(--ui-text-strong) !important;
+  text-shadow: none !important;
+}
+
+.proDashboard .tournamentWorkspaceContent .voiceRepeatBox select {
+  border-color: var(--ui-border) !important;
+  background: var(--ui-input) !important;
+  color: var(--ui-text-strong) !important;
+}
+
+/* O logotipo do link público mantém proporção e leitura também no celular. */
+.publicPage .publicBrandRow .torneio360Logo,
+.publicPage .publicBrandRow .beachLogo {
+  width: clamp(150px, 19vw, 210px) !important;
+  height: 78px !important;
+  flex: 0 0 auto !important;
+  overflow: visible !important;
+  transform: none !important;
+}
+
+.publicPage .publicBrandRow .torneio360Logo img {
+  object-fit: contain !important;
+  filter: drop-shadow(0 7px 12px rgba(0, 0, 0, 0.24)) !important;
+}
+
+.publicCircuitIdentityCard {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+}
+
+.publicCircuitIdentityCard > img,
+.publicCircuitIdentityCard > span {
+  display: grid;
+  place-items: center;
+  width: 76px;
+  height: 76px;
+  border: 4px solid #dbeafe;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 900;
+  object-fit: cover;
+}
+
+.publicCircuitIdentityCard small,
+.publicCircuitRankingCard .cardTitleRow small {
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.publicCircuitIdentityCard h2,
+.publicCircuitIdentityCard p,
+.publicCircuitRankingCard h2 {
+  margin: 3px 0;
+}
+
+.publicCircuitIdentityCard p,
+.publicCircuitEmptyRanking {
+  color: #64748b;
+}
+
+.publicCircuitRankingTables {
+  align-items: start;
+}
+
+.publicCircuitEmptyRanking {
+  padding: 28px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  text-align: center;
+}
+
+.publicPage .rankingTablePanel {
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #d9e2ec;
+  border-radius: 17px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(8, 26, 73, 0.06);
+}
+
+.publicPage .rankingTableHeading h3 {
+  color: #0f172a !important;
+}
+
+.publicPage .rankingTableScroll {
+  border: 1px solid #d9e2ec;
+  background: #ffffff;
+  scrollbar-color: #2563eb #e2e8f0;
+}
+
+.publicPage .rankingTable th {
+  background: #0f1c31 !important;
+  color: #ffffff !important;
+}
+
+.publicPage .rankingTable td {
+  border-color: #e2e8f0 !important;
+  background: #ffffff !important;
+  color: #172033 !important;
+}
+
+.publicPage .groupsPreviewBox {
+  padding: 16px;
+  border: 1px solid #d9e2ec;
+  border-radius: 20px;
+  background: #f6f8fc;
+}
+
+@media (max-width: 1100px) {
+  .proDashboard.playAppShell .circuitRankingHeader {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .proDashboard.playAppShell .circuitRankingHeader label {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .rankingTableHeading,
+  .cupPodiumHeading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .rankingShareButton {
+    width: 100% !important;
+  }
+
+  .proDashboard.playAppShell .circuitRankingHeader {
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+  }
+
+  .cupPodiumBox,
+  .cupPodiumBox.mainPodiumBox,
+  .cupPodiumBox.parallelPodiumBox {
+    min-height: 395px;
+    padding: 16px 10px 0 !important;
+  }
+
+  .cupPodiumGrid {
+    gap: 5px !important;
+    min-height: 290px;
+  }
+
+  .cupPodiumAvatar { width: 52px; height: 52px; border-width: 3px; font-size: 15px; }
+  .cupPodiumPlace1 .cupPodiumAvatar { width: 64px; height: 64px; }
+  .cupPodiumItem > strong { min-height: 28px; font-size: 9px; }
+  .cupPodiumName { min-height: 48px; font-size: 10px; }
+  .cupPodiumStep { min-height: 67px; font-size: 30px !important; }
+  .cupPodiumPlace1 .cupPodiumStep { min-height: 100px; }
+  .cupPodiumPlace2 .cupPodiumStep { min-height: 82px; }
+  .cupPodiumPlace3 .cupPodiumStep { min-height: 60px; }
+
+  .publicPage .publicBrandRow .torneio360Logo,
+  .publicPage .publicBrandRow .beachLogo {
+    width: 128px !important;
+    height: 54px !important;
+  }
+
+  .publicCircuitIdentityCard {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .publicCircuitIdentityCard .rankingShareButton {
+    grid-column: 1 / -1;
+  }
+}
+
+/* =========================================================
    CONTRASTE ENTRE TEMAS E CIRCUITOS — AGOSTO 2026
    Camada final: somente apresentação e interação visual.
    ========================================================= */

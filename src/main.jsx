@@ -80,6 +80,219 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 });
 const TORNEIO360_LOGO = "/torneio360-logo.png";
 const TORNEIO360_LOGO_BLUE = "/torneio360-logo-blue.png";
+
+function loadShareImage(source) {
+  return new Promise((resolve) => {
+    if (!source) {
+      resolve(null);
+      return;
+    }
+
+    const image = new Image();
+    image.crossOrigin = "anonymous";
+    image.onload = () => resolve(image);
+    image.onerror = () => resolve(null);
+    image.src = source;
+  });
+}
+
+function drawRoundedRect(context, x, y, width, height, radius, fillStyle, strokeStyle = null) {
+  context.beginPath();
+  context.roundRect(x, y, width, height, Math.min(radius, width / 2, height / 2));
+  context.fillStyle = fillStyle;
+  context.fill();
+  if (strokeStyle) {
+    context.strokeStyle = strokeStyle;
+    context.lineWidth = 2;
+    context.stroke();
+  }
+}
+
+function truncateCanvasText(context, value, maxWidth) {
+  const text = String(value || "Sem nome");
+  if (context.measureText(text).width <= maxWidth) return text;
+
+  let shortened = text;
+  while (shortened.length > 1 && context.measureText(`${shortened}…`).width > maxWidth) {
+    shortened = shortened.slice(0, -1);
+  }
+  return `${shortened}…`;
+}
+
+async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUrl, groups = [] }) {
+  const normalizedGroups = groups
+    .map((group) => ({
+      title: group?.title || "Ranking",
+      rows: Array.isArray(group?.rows) ? group.rows : [],
+    }))
+    .filter((group) => group.rows.length > 0);
+  const totalRows = normalizedGroups.reduce((total, group) => total + group.rows.length, 0);
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = Math.max(1350, 570 + (normalizedGroups.length * 100) + (totalRows * 64));
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Não foi possível preparar a imagem do ranking.");
+
+  const background = context.createLinearGradient(0, 0, canvas.width, canvas.height);
+  background.addColorStop(0, "#07163e");
+  background.addColorStop(0.52, "#192574");
+  background.addColorStop(1, "#5b21b6");
+  context.fillStyle = background;
+  context.fillRect(0, 0, canvas.width, canvas.height);
+
+  context.globalAlpha = 0.16;
+  context.fillStyle = "#22d3ee";
+  context.beginPath();
+  context.arc(950, 120, 270, 0, Math.PI * 2);
+  context.fill();
+  context.fillStyle = "#fbbf24";
+  context.beginPath();
+  context.arc(75, canvas.height - 50, 260, 0, Math.PI * 2);
+  context.fill();
+  context.globalAlpha = 1;
+
+  const [logo, arenaPhoto] = await Promise.all([
+    loadShareImage(TORNEIO360_LOGO),
+    loadShareImage(arenaPhotoUrl),
+  ]);
+
+  if (logo) {
+    const logoWidth = 330;
+    const logoHeight = logoWidth * (logo.height / logo.width);
+    context.drawImage(logo, 62, 34, logoWidth, logoHeight);
+  } else {
+    context.fillStyle = "#ffffff";
+    context.font = "900 48px Arial";
+    context.fillText("TORNEIO360", 62, 118);
+  }
+
+  const photoX = 862;
+  const photoY = 116;
+  const photoRadius = 76;
+  context.save();
+  context.beginPath();
+  context.arc(photoX, photoY, photoRadius, 0, Math.PI * 2);
+  context.clip();
+  if (arenaPhoto) {
+    const scale = Math.max((photoRadius * 2) / arenaPhoto.width, (photoRadius * 2) / arenaPhoto.height);
+    const width = arenaPhoto.width * scale;
+    const height = arenaPhoto.height * scale;
+    context.drawImage(arenaPhoto, photoX - width / 2, photoY - height / 2, width, height);
+  } else {
+    const avatarGradient = context.createLinearGradient(photoX - photoRadius, photoY - photoRadius, photoX + photoRadius, photoY + photoRadius);
+    avatarGradient.addColorStop(0, "#2563eb");
+    avatarGradient.addColorStop(1, "#06b6d4");
+    context.fillStyle = avatarGradient;
+    context.fillRect(photoX - photoRadius, photoY - photoRadius, photoRadius * 2, photoRadius * 2);
+    context.fillStyle = "#ffffff";
+    context.font = "900 46px Arial";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(String(arenaName || "A").slice(0, 2).toUpperCase(), photoX, photoY + 2);
+  }
+  context.restore();
+  context.strokeStyle = "#fbbf24";
+  context.lineWidth = 8;
+  context.beginPath();
+  context.arc(photoX, photoY, photoRadius + 3, 0, Math.PI * 2);
+  context.stroke();
+
+  context.textAlign = "right";
+  context.textBaseline = "alphabetic";
+  context.fillStyle = "#ffffff";
+  context.font = "900 24px Arial";
+  context.fillText(truncateCanvasText(context, arenaName || "Arena Torneio360", 360), 770, 104);
+  context.fillStyle = "#bae6fd";
+  context.font = "700 17px Arial";
+  context.fillText("ORGANIZAÇÃO", 770, 134);
+
+  drawRoundedRect(context, 52, 222, 976, 168, 32, "rgba(7, 18, 57, 0.78)", "rgba(255, 255, 255, 0.18)");
+  context.textAlign = "left";
+  context.fillStyle = "#fbbf24";
+  context.font = "900 18px Arial";
+  context.fillText("RANKING OFICIAL", 88, 268);
+  context.fillStyle = "#ffffff";
+  context.font = "900 42px Arial";
+  context.fillText(truncateCanvasText(context, title || "Ranking", 850), 88, 323);
+  context.fillStyle = "#cbd5e1";
+  context.font = "700 22px Arial";
+  context.fillText(truncateCanvasText(context, subtitle || "Torneio360", 850), 88, 360);
+
+  let y = 432;
+  normalizedGroups.forEach((group) => {
+    const panelHeight = 84 + (group.rows.length * 64);
+    drawRoundedRect(context, 52, y, 976, panelHeight, 28, "rgba(255, 255, 255, 0.96)", "rgba(255, 255, 255, 0.35)");
+    context.fillStyle = "#111b3f";
+    context.font = "900 25px Arial";
+    context.textAlign = "left";
+    context.fillText(group.title, 84, y + 45);
+    y += 72;
+
+    group.rows.forEach((row, index) => {
+      const rowFill = index === 0
+        ? "#fff4c2"
+        : index === 1
+          ? "#eef2f7"
+          : index === 2
+            ? "#ffeadb"
+            : index % 2 === 0 ? "#f6f8fc" : "#ffffff";
+      drawRoundedRect(context, 72, y, 936, 52, 15, rowFill);
+      const medalColor = index === 0 ? "#d97706" : index === 1 ? "#64748b" : index === 2 ? "#c2410c" : "#334155";
+      context.fillStyle = medalColor;
+      context.font = `900 ${index < 3 ? 23 : 20}px Arial`;
+      context.textAlign = "center";
+      context.fillText(`${index + 1}º`, 112, y + 34);
+      context.fillStyle = "#111827";
+      context.font = "800 20px Arial";
+      context.textAlign = "left";
+      context.fillText(truncateCanvasText(context, row.name, 510), 154, y + 34);
+
+      const stats = [];
+      if (row.w !== undefined) stats.push(`${Number(row.w || 0)} vit.`);
+      if (row.pts !== undefined) stats.push(`${Number(row.pts || 0)} games`);
+      if (row.bal !== undefined) stats.push(`saldo ${Number(row.bal || 0)}`);
+      context.fillStyle = "#475569";
+      context.font = "700 16px Arial";
+      context.textAlign = "right";
+      context.fillText(truncateCanvasText(context, stats.join("  •  "), 300), 982, y + 33);
+      y += 64;
+    });
+    y += 28;
+  });
+
+  context.fillStyle = "rgba(255, 255, 255, 0.76)";
+  context.font = "700 17px Arial";
+  context.textAlign = "center";
+  context.fillText("Gerado pelo Torneio360 • torneio360.com", canvas.width / 2, canvas.height - 38);
+
+  const blob = await new Promise((resolve, reject) => {
+    canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Não foi possível gerar a imagem.")), "image/png", 0.96);
+  });
+  const safeName = String(title || "ranking").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
+  return new File([blob], `${safeName || "ranking"}-torneio360.png`, { type: "image/png" });
+}
+
+async function shareRankingImage(config) {
+  const file = await createRankingShareFile(config);
+  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    await navigator.share({
+      title: config.title || "Ranking Torneio360",
+      text: `${config.title || "Ranking"} — ${config.arenaName || "Torneio360"}`,
+      files: [file],
+    });
+    return "shared";
+  }
+
+  const url = URL.createObjectURL(file);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = file.name;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  return "downloaded";
+}
 const TORNEIO360_TAGLINE = "Gestão inteligente de torneios";
 
 async function logout() {
@@ -183,7 +396,7 @@ function getPublicTournamentDirectoryItem(tournament) {
   };
 }
 
-function getPublicCircuitDirectoryItem(circuit) {
+function getPublicCircuitDirectoryItem(circuit, rankingGroups = [], rankingCriteria = defaultRankingCriteria) {
   return {
     id: circuit?.id,
     name: circuit?.name || "Circuito",
@@ -191,6 +404,20 @@ function getPublicCircuitDirectoryItem(circuit) {
     end_date: circuit?.end_date || circuit?.endDate || "",
     status: normalizeCircuitStatus(circuit?.status),
     tournament_ids: circuit?.tournament_ids || circuit?.tournamentIds || [],
+    ranking_criteria: rankingCriteria,
+    ranking_groups: rankingGroups.map((group) => ({
+      key: group.key,
+      title: group.title,
+      rows: (group.rows || []).map((row) => ({
+        id: row.id,
+        name: row.name,
+        pts: Number(row.pts || 0),
+        w: Number(row.w || 0),
+        bal: Number(row.bal || 0),
+        played: Number(row.played || 0),
+        tournaments: Number(row.tournaments || 0),
+      })),
+    })),
   };
 }
 
@@ -3260,18 +3487,90 @@ function Info({ title, text }) {
   );
 }
 
-function CupPodiumView({ podium, title = "Principal", variant = "main" }) {
+function RankingShareButton({ config, compact = false }) {
+  const [status, setStatus] = useState("idle");
+
+  if (!config?.groups?.some((group) => group?.rows?.length)) return null;
+
+  async function handleShare() {
+    if (status === "loading") return;
+    setStatus("loading");
+
+    try {
+      const result = await shareRankingImage(config);
+      setStatus(result);
+      setTimeout(() => setStatus("idle"), 2400);
+    } catch (error) {
+      if (error?.name === "AbortError") {
+        setStatus("idle");
+        return;
+      }
+      console.error("Erro ao compartilhar ranking:", error);
+      setStatus("error");
+      setTimeout(() => setStatus("idle"), 2800);
+    }
+  }
+
+  const label = status === "loading"
+    ? "Preparando imagem…"
+    : status === "downloaded"
+      ? "Imagem baixada"
+      : status === "shared"
+        ? "Compartilhado"
+        : status === "error"
+          ? "Tentar novamente"
+          : compact ? "Compartilhar" : "Compartilhar ranking";
+
+  return (
+    <button type="button" className="rankingShareButton" onClick={handleShare} disabled={status === "loading"}>
+      <Share2 aria-hidden="true" /> {label}
+    </button>
+  );
+}
+
+function getPodiumInitials(name) {
+  return String(name || "T360")
+    .replace(/\s*\+\s*/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+}
+
+function CupPodiumView({ podium, title = "Principal", variant = "main", shareContext = null }) {
   if (!podium || podium.length === 0) return null;
+
+  const podiumPlaces = podium.slice(0, 3).map((item, index) => ({ ...item, place: index + 1 }));
+  const displayOrder = [podiumPlaces[1], podiumPlaces[0], podiumPlaces[2]].filter(Boolean);
+  const shareConfig = shareContext ? {
+    ...shareContext,
+    title: `${shareContext.title || title} — ${title}`,
+    groups: [{
+      title: `Pódio da ${title}`,
+      rows: podiumPlaces.map((item) => ({ name: item.name })),
+    }],
+  } : null;
 
   return (
     <div className={`cupPodiumBox ${variant === "parallel" ? "parallelPodiumBox" : "mainPodiumBox"}`}>
-      <h3>Pódio da {title}</h3>
+      <div className="cupPodiumHeading">
+        <div>
+          <span>Pódio oficial</span>
+          <h3>{title}</h3>
+        </div>
+        <RankingShareButton config={shareConfig} compact />
+      </div>
 
       <div className="cupPodiumGrid">
-        {podium.map((item) => (
-          <div className="cupPodiumItem" key={item.position}>
+        {displayOrder.map((item) => (
+          <div className={`cupPodiumItem cupPodiumPlace${item.place}`} key={`${item.position}-${item.name}`}>
+            <span className="cupPodiumCrown" aria-hidden="true">{item.place === 1 ? "♛" : ""}</span>
+            <span className="cupPodiumAvatar">{getPodiumInitials(item.name)}</span>
             <strong>{item.position}</strong>
-            <span>{item.name}</span>
+            <span className="cupPodiumName">{item.name}</span>
+            <span className="cupPodiumStep" aria-hidden="true">{item.place}</span>
           </div>
         ))}
       </div>
@@ -4903,9 +5202,14 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
+    const maximumScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    if (pending.top > maximumScroll + 2) return;
+
     const scrollToSavedPosition = () => {
       if (pendingScrollRestoreRef.current?.token !== pending.token) return;
       window.scrollTo({ top: pending.top, left: 0, behavior: "auto" });
+      pendingScrollRestoreRef.current = null;
+      scrollRestoreTimersRef.current = [];
     };
 
     if (typeof window.requestAnimationFrame === "function") {
@@ -4924,13 +5228,10 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     pendingScrollRestoreRef.current = {
       top,
       token,
-      expiresAt: Date.now() + 5000,
+      expiresAt: Date.now() + 3000,
     };
 
-    [0, 160, 500, 1100, 2200, 4200].forEach((delay) => {
-      const timer = setTimeout(applyPendingScrollRestore, delay);
-      scrollRestoreTimersRef.current.push(timer);
-    });
+    scrollRestoreTimersRef.current = [setTimeout(applyPendingScrollRestore, 120)];
   }
 
   function applySavedAppState(state, { restoreRoute = false } = {}) {
@@ -5823,7 +6124,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       is_public: true,
     }));
     const tournamentDirectory = normalizedTournaments.map(getPublicTournamentDirectoryItem);
-    const circuitDirectory = (nextCircuits || []).map(getPublicCircuitDirectoryItem);
+    const circuitDirectory = (nextCircuits || []).map((circuit) => getPublicCircuitDirectoryItem(
+      circuit,
+      getCircuitRanking(circuit, circuitRankingCriteria),
+      circuitRankingCriteria
+    ));
     const currentOrganizer = buildTournamentPublicInfo().organizer;
 
     const updatedTournaments = await Promise.all(normalizedTournaments.map(async (item) => {
@@ -7580,6 +7885,15 @@ setNewPublicInfo({
                 <div className="circuitRankingBox">
                   <div className="circuitRankingHeader">
                     <strong>Ranking do circuito</strong>
+                    <RankingShareButton
+                      config={{
+                        title: circuit.name,
+                        subtitle: "Ranking do circuito",
+                        arenaName: organizerProfile.arenaName || organizerProfile.organizerName || "Arena Torneio360",
+                        arenaPhotoUrl: organizerProfile.photoUrl || "",
+                        groups: circuitRankingGroups,
+                      }}
+                    />
                     <label>
                       <span>Critério de desempate</span>
                       <select value={circuitRankingCriteria} onChange={(e) => setCircuitRankingCriteria(e.target.value)}>
@@ -9049,6 +9363,13 @@ function clearTable() {
 }
 
 const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
+const rankingOrganizer = data.publicInfo?.organizer || {};
+const tournamentRankingShareContext = {
+  title: tournament.name,
+  subtitle: getModalityDisplayName(tournament.type),
+  arenaName: rankingOrganizer.arenaName || rankingOrganizer.organizerName || "Arena Torneio360",
+  arenaPhotoUrl: rankingOrganizer.photoUrl || "",
+};
 
   function SavingStatusBadge() {
     return (
@@ -9367,7 +9688,7 @@ return (
                 <div className="cupRankingPanel">
                   <h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>
                   {mainCupPodium.length > 0 ? (
-                    <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} />
+                    <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} shareContext={tournamentRankingShareContext} />
                   ) : (
                     <p>Finalize a chave principal para ver o ranking da chave principal.</p>
                   )}
@@ -9383,6 +9704,7 @@ return (
                         podium={consolationCupPodium}
                         title={data.cupConfig?.repechageName || "Consolação"}
                         variant="parallel"
+                        shareContext={tournamentRankingShareContext}
                       />
                     ) : (
                       <p>Finalize a consolação para ver o pódio.</p>
@@ -9395,6 +9717,7 @@ return (
                       }))}
                       title={data.cupConfig?.repechageName || "Disputa Paralela"}
                       variant="parallel"
+                      shareContext={tournamentRankingShareContext}
                     />
                   ) : (
                     <p>Gere ou finalize a disputa paralela para ver o ranking separado.</p>
@@ -9436,6 +9759,7 @@ return (
               ranking={ranking}
               type={tournament.type}
               rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
+              shareContext={tournamentRankingShareContext}
             />
           </section>
         )}
@@ -9965,7 +10289,7 @@ function podium(i) {
   return i + 1;
 }
 
-function RankingView({ ranking, type, rankingCriteria }) {
+function RankingView({ ranking, type, rankingCriteria, shareContext = null }) {
   const config = modalityConfig[type];
 
   if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
@@ -9979,11 +10303,13 @@ function RankingView({ ranking, type, rankingCriteria }) {
           title="Ranking Masculino"
           rows={men}
           rankingCriteria={rankingCriteria}
+          shareConfig={shareContext ? { ...shareContext, groups: [{ title: "Ranking Masculino", rows: men }] } : null}
         />
         <RankingTable
           title="Ranking Feminino"
           rows={women}
           rankingCriteria={rankingCriteria}
+          shareConfig={shareContext ? { ...shareContext, groups: [{ title: "Ranking Feminino", rows: women }] } : null}
         />
       </div>
     );
@@ -9994,16 +10320,20 @@ function RankingView({ ranking, type, rankingCriteria }) {
       title="Ranking Geral"
       rows={ranking}
       rankingCriteria={rankingCriteria}
+      shareConfig={shareContext ? { ...shareContext, groups: [{ title: "Ranking Geral", rows: ranking }] } : null}
     />
   );
 }
 
-function RankingTable({ title, rows, rankingCriteria, showPodium = true }) {
+function RankingTable({ title, rows, rankingCriteria, showPodium = true, shareConfig = null }) {
   const criteria = getRankingCriteria(rankingCriteria);
 
   return (
     <div className="rankingTablePanel">
-      <h3>{title}</h3>
+      <div className="rankingTableHeading">
+        <h3>{title}</h3>
+        <RankingShareButton config={shareConfig} compact />
+      </div>
 
       <p className="rankingScrollHint" aria-hidden="true">Deslize a tabela para ver todos os dados →</p>
       <div
@@ -10361,6 +10691,7 @@ function PublicTournamentPage({ publicId }) {
   const [tournaments, setTournaments] = useState([]);
   const [circuits, setCircuits] = useState([]);
   const [selectedTournament, setSelectedTournament] = useState(null);
+  const [selectedCircuit, setSelectedCircuit] = useState(null);
   const [activeArenaTab, setActiveArenaTab] = useState("tournaments");
   const [activeStatusTab, setActiveStatusTab] = useState("active");
   const [openingPublicId, setOpeningPublicId] = useState(null);
@@ -10408,6 +10739,18 @@ function PublicTournamentPage({ publicId }) {
       const circuitSnapshot = Array.isArray(publicTournament.data?.publicArenaCircuits)
         ? publicTournament.data.publicArenaCircuits
         : [];
+      const circuitSnapshotById = new Map(circuitSnapshot.map((item) => [String(item.id), item]));
+      const publicCircuits = circuitsResult.error
+        ? circuitSnapshot
+        : (circuitsResult.data || []).map((item) => {
+          const snapshot = circuitSnapshotById.get(String(item.id)) || {};
+          return {
+            ...snapshot,
+            ...item,
+            ranking_criteria: snapshot.ranking_criteria || item.ranking_criteria || defaultRankingCriteria,
+            ranking_groups: snapshot.ranking_groups || item.ranking_groups || [],
+          };
+        });
 
       if (tournamentsResult.error) {
         console.warn("A listagem pública completa de torneios não está disponível; exibindo o torneio do link.", tournamentsResult.error);
@@ -10419,10 +10762,14 @@ function PublicTournamentPage({ publicId }) {
 
       setAnchorTournament(visibleAnchor);
       setTournaments(uniqueTournaments);
-      setCircuits(circuitsResult.error ? circuitSnapshot : (circuitsResult.data || []));
+      setCircuits(publicCircuits);
       setSelectedTournament((current) => {
         if (!current) return null;
         return uniqueTournaments.find((item) => item.id === current.id) || current;
+      });
+      setSelectedCircuit((current) => {
+        if (!current) return null;
+        return publicCircuits.find((item) => String(item.id) === String(current.id)) || current;
       });
       setError(null);
     }
@@ -10497,6 +10844,15 @@ function PublicTournamentPage({ publicId }) {
 
   const anchorData = normalizeTournamentData(anchorTournament.type, anchorTournament.data);
   const publicOrganizer = anchorData.publicInfo?.organizer || {};
+  if (selectedCircuit) {
+    return (
+      <PublicCircuitScreen
+        circuit={selectedCircuit}
+        organizer={publicOrganizer}
+        onBackToArena={() => setSelectedCircuit(null)}
+      />
+    );
+  }
   const activeItems = activeArenaTab === "tournaments"
     ? tournaments.filter((item) => !isPublicItemFinished(item, "tournament"))
     : circuits.filter((item) => !isPublicItemFinished(item, "circuit"));
@@ -10596,8 +10952,96 @@ function PublicTournamentPage({ publicId }) {
                     <span>{(item.tournament_ids || item.tournamentIds || []).length} torneio(s)</span>
                   </p>
                 </div>
+                <button type="button" onClick={() => setSelectedCircuit(item)}>Ver ranking</button>
               </article>
             ))
+          )}
+        </section>
+      </main>
+    </div>
+  );
+}
+
+function PublicCircuitScreen({ circuit, organizer = {}, onBackToArena }) {
+  const rankingGroups = Array.isArray(circuit?.ranking_groups)
+    ? circuit.ranking_groups.filter((group) => Array.isArray(group?.rows) && group.rows.length > 0)
+    : [];
+  const arenaName = organizer.arenaName || "Arena Torneio360";
+  const shareConfig = {
+    title: circuit?.name || "Ranking do circuito",
+    subtitle: "Ranking do circuito",
+    arenaName,
+    arenaPhotoUrl: organizer.photoUrl || "",
+    groups: rankingGroups,
+  };
+
+  return (
+    <div className="publicPage publicCircuitPage">
+      <header className="publicHeader publicHeaderWithLogo publicCircuitHeader">
+        <div className="publicBrandRow">
+          <BeachLogo />
+          <div className="brandTaglineOnly"><span>{TORNEIO360_TAGLINE}</span></div>
+        </div>
+
+        <div className="publicTitleBlock">
+          <span>Ranking público do circuito</span>
+          <h1>{circuit?.name || "Circuito"}</h1>
+          <p>
+            {circuit?.start_date || circuit?.startDate ? formatDateBR(circuit.start_date || circuit.startDate) : "Data inicial não informada"}
+            {circuit?.end_date || circuit?.endDate ? ` até ${formatDateBR(circuit.end_date || circuit.endDate)}` : ""}
+          </p>
+        </div>
+
+        <div className="publicTournamentHeaderActions">
+          <button type="button" onClick={onBackToArena}>← Voltar ao perfil da arena</button>
+          <div className="publicBadge">Somente visualização</div>
+        </div>
+      </header>
+
+      <main className="publicContent publicCircuitContent">
+        <section className="card publicCircuitIdentityCard">
+          {organizer.photoUrl ? (
+            <img src={organizer.photoUrl} alt={`Foto de ${arenaName}`} />
+          ) : (
+            <span>{arenaName.slice(0, 2).toUpperCase()}</span>
+          )}
+          <div>
+            <small>Organização</small>
+            <h2>{arenaName}</h2>
+            <p>{(circuit?.tournament_ids || circuit?.tournamentIds || []).length} torneio(s) neste circuito</p>
+          </div>
+          <RankingShareButton config={shareConfig} />
+        </section>
+
+        <section className="card publicCircuitRankingCard">
+          <div className="cardTitleRow">
+            <div>
+              <small>Classificação acumulada</small>
+              <h2>Ranking do circuito</h2>
+            </div>
+          </div>
+
+          {rankingGroups.length === 0 ? (
+            <div className="publicCircuitEmptyRanking">
+              O ranking aparecerá aqui assim que houver placares válidos nos torneios do circuito.
+            </div>
+          ) : rankingGroups.length === 1 ? (
+            <RankingTable
+              title={rankingGroups[0].title}
+              rows={rankingGroups[0].rows}
+              rankingCriteria={circuit.ranking_criteria || defaultRankingCriteria}
+            />
+          ) : (
+            <div className="twoCols publicCircuitRankingTables">
+              {rankingGroups.map((group) => (
+                <RankingTable
+                  key={group.key || group.title}
+                  title={group.title}
+                  rows={group.rows}
+                  rankingCriteria={circuit.ranking_criteria || defaultRankingCriteria}
+                />
+              ))}
+            </div>
           )}
         </section>
       </main>
@@ -10682,6 +11126,12 @@ function PublicTournamentScreen({ tournament, onBackToArena = null }) {
     : [];
 
   const { currentBrackets, parallelRanking, mainCupPodium, consolationCupPodium } = getSafeCupPresentation(data, config);
+  const publicRankingShareContext = {
+    title: tournament.name,
+    subtitle: getModalityDisplayName(tournament.type),
+    arenaName: publicOrganizer.arenaName || publicOrganizer.organizerName || "Arena Torneio360",
+    arenaPhotoUrl: publicOrganizer.photoUrl || "",
+  };
 
   const publicAthletes = getRegisteredAthletesForPublic(data, config);
 
@@ -10864,7 +11314,7 @@ function PublicTournamentScreen({ tournament, onBackToArena = null }) {
             <div className="cupRankingSplit">
               <div className="cupRankingPanel">
                 <h3>{data.cupConfig?.mainBracketName || "Chave Principal"}</h3>
-                {mainCupPodium.length > 0 ? <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} /> : <p>Finalize a chave principal para ver o ranking.</p>}
+                {mainCupPodium.length > 0 ? <CupPodiumView podium={mainCupPodium} title={data.cupConfig?.mainBracketName || "Principal"} shareContext={publicRankingShareContext} /> : <p>Finalize a chave principal para ver o ranking.</p>}
               </div>
               <div className="cupRankingPanel">
                 <h3>{data.cupConfig?.repechageName || "Disputa Paralela"}</h3>
@@ -10872,15 +11322,23 @@ function PublicTournamentScreen({ tournament, onBackToArena = null }) {
                   ? (data.cupConfig?.teamCount === 6
                     ? <p>Com 2 grupos, não há consolação neste formato.</p>
                     : consolationCupPodium.length > 0
-                    ? <CupPodiumView podium={consolationCupPodium} title={data.cupConfig?.repechageName || "Consolação"} variant="parallel" />
+                    ? <CupPodiumView podium={consolationCupPodium} title={data.cupConfig?.repechageName || "Consolação"} variant="parallel" shareContext={publicRankingShareContext} />
                     : <p>A consolação ainda não foi finalizada.</p>)
                   : (parallelRanking.length > 0
-                    ? <RankingTable title="Classificação" rows={parallelRanking} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+                    ? <CupPodiumView
+                        podium={parallelRanking.slice(0, 3).map((item, index) => ({
+                          position: index === 0 ? "🏆 Campeão" : index === 1 ? "🥈 Vice" : "🥉 3º lugar",
+                          name: item.name,
+                        }))}
+                        title={data.cupConfig?.repechageName || "Disputa Paralela"}
+                        variant="parallel"
+                        shareContext={publicRankingShareContext}
+                      />
                     : <p>A disputa paralela ainda não tem ranking.</p>)}
               </div>
             </div>
           ) : (
-            <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} />
+            <RankingView ranking={ranking} type={tournament.type} rankingCriteria={data.rankingCriteria || defaultRankingCriteria} shareContext={publicRankingShareContext} />
           )}
         </section>
 
