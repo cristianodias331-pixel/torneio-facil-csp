@@ -43,6 +43,7 @@ const expectedModalityLabels = [
   "Super 12 mista",
   "Super 16 mista",
   "Simples 8 (1 contra 1 por jogo)",
+  "Campeonato Cearense",
 ];
 
 for (const label of expectedModalityLabels) {
@@ -93,6 +94,12 @@ assert.ok(
 );
 assert.ok(mainSource.includes('pts: "Total de Games"'), "A coluna de games ainda usa a nomenclatura antiga.");
 assert.ok(!/\bpontos\b/i.test(mainSource), "A nomenclatura Pontos ainda aparece na interface.");
+assert.ok(mainSource.includes('allowedTeamCounts: Array.from({ length: 29 }, (_, index) => index + 4)'), "O Campeonato Cearense não aceita todas as quantidades de 4 a 32 duplas.");
+assert.ok(mainSource.includes('function createCearenseGroups(teamCount)'), "A distribuição própria de grupos do Campeonato Cearense está ausente.");
+assert.ok(mainSource.includes('function compareCearenseCampaignMetrics(first, second)'), "A comparação normalizada entre grupos está ausente.");
+assert.ok(mainSource.includes('function generateCearenseBrackets(data)'), "As chaves Principal e Paralela do Campeonato Cearense estão ausentes.");
+assert.ok(mainSource.includes('campaignTieBreakOverrides'), "O sorteio de empate absoluto entre grupos não é persistido.");
+assert.ok(mainSource.includes('Classificação automática (BYE)'), "Os BYEs do Campeonato Cearense não são identificados na chave.");
 assert.ok(mainSource.includes('navigator.serviceWorker.register("/sw.js")'), "O service worker do app não está registrado.");
 assert.ok(!mainSource.includes("@torenio360"), "O usuário do Instagram continua escrito incorretamente.");
 assert.ok(!mainSource.includes("data:image/png;base64"), "Ainda existem imagens PNG Base64 no JavaScript.");

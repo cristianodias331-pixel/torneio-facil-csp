@@ -580,6 +580,7 @@ const allowedByPlan = {
     "Copa - 18 duplas",
     "Copa - 21 duplas",
     "Copinha - grupos de 3",
+    "Campeonato Cearense",
   ],
 };
 
@@ -674,6 +675,16 @@ const modalityConfig = {
     defaultRepechageName: "Consolação",
     courts: 4,
   },
+
+  "Campeonato Cearense": {
+    type: "cearense",
+    cupMode: "cearense",
+    allowedTeamCounts: Array.from({ length: 29 }, (_, index) => index + 4),
+    defaultTeams: 4,
+    defaultMainBracketName: "Eliminatória Principal",
+    defaultRepechageName: "Disputa Paralela",
+    courts: 6,
+  },
 };
 
 function getWinningScore(data) {
@@ -706,7 +717,7 @@ function isGameFinished(game, winningScore = 4) {
 }
 
 function isCupType(config) {
-  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha";
+  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha" || config?.type === "cearense";
 }
 
 const super8Template = [
@@ -876,7 +887,39 @@ function getGroupLetter(index) {
   return String.fromCharCode(65 + index);
 }
 
-function createCupGroups(teamCount) {
+function createCearenseGroups(teamCount) {
+  const safeTeamCount = Math.max(4, Math.min(32, Number(teamCount) || 4));
+  const groupSizes = [];
+
+  if (safeTeamCount <= 5) {
+    groupSizes.push(safeTeamCount);
+  } else {
+    const groupCount = Math.floor(safeTeamCount / 3);
+    const groupsWithFour = safeTeamCount % 3;
+
+    for (let index = 0; index < groupCount; index += 1) {
+      groupSizes.push(index < groupsWithFour ? 4 : 3);
+    }
+  }
+
+  let nextTeamId = 0;
+
+  return groupSizes.map((size, index) => {
+    const teamIds = Array.from({ length: size }, () => nextTeamId++);
+
+    return {
+      id: index,
+      name: `Grupo ${getGroupLetter(index)}`,
+      teamIds,
+    };
+  });
+}
+
+function createCupGroups(teamCount, format = "") {
+  if (format === "cearense") {
+    return createCearenseGroups(teamCount);
+  }
+
   const groups = [];
 
   for (let i = 0; i < teamCount / 3; i++) {
@@ -890,9 +933,71 @@ function createCupGroups(teamCount) {
   return groups;
 }
 
+function createRoundRobinPairings(teamIds) {
+  const rotation = [...teamIds];
+
+  if (rotation.length % 2 === 1) rotation.push(null);
+
+  const rounds = [];
+
+  for (let roundIndex = 0; roundIndex < rotation.length - 1; roundIndex += 1) {
+    const pairs = [];
+
+    for (let index = 0; index < rotation.length / 2; index += 1) {
+      const first = rotation[index];
+      const second = rotation[rotation.length - 1 - index];
+
+      if (first !== null && second !== null) pairs.push([first, second]);
+    }
+
+    rounds.push(pairs);
+    rotation.splice(1, 0, rotation.pop());
+  }
+
+  return rounds;
+}
+
+function generateCearenseGroupSchedule(players, cupConfig) {
+  const teamCount = cupConfig.teamCount || 4;
+  const groups = createCearenseGroups(teamCount);
+  const teamNames = players.teams.map((team) => getTeamName(team));
+  const groupRounds = groups.map((group) => createRoundRobinPairings(group.teamIds));
+  const roundCount = Math.max(...groupRounds.map((rounds) => rounds.length));
+  const rounds = Array.from({ length: roundCount }, () => []);
+
+  groupRounds.forEach((scheduledRounds, groupIndex) => {
+    scheduledRounds.forEach((pairs, roundIndex) => {
+      pairs.forEach(([id1, id2]) => {
+        rounds[roundIndex].push({
+          phase: "groups",
+          groupId: groups[groupIndex].id,
+          groupName: groups[groupIndex].name,
+          team1: [teamNames[id1]],
+          ids1: [id1],
+          team2: [teamNames[id2]],
+          ids2: [id2],
+          s1: "",
+          s2: "",
+        });
+      });
+    });
+  });
+
+  return rounds.map((round) => round.map((game, index) => ({
+    ...game,
+    court: index + 1,
+  })));
+}
+
 function generateCupGroupSchedule(players, cupConfig) {
   const teamCount = cupConfig.teamCount || 12;
-  const groups = createCupGroups(teamCount);
+  const format = cupConfig.format || cupConfig.cupMode || "";
+
+  if (format === "cearense") {
+    return generateCearenseGroupSchedule(players, cupConfig);
+  }
+
+  const groups = createCupGroups(teamCount, format);
   const teamNames = players.teams.map((t) => getTeamName(t));
 
   const roundTemplates = [
@@ -939,13 +1044,18 @@ function isCopinhaData(data) {
   return getCupFormat(data) === "copinha";
 }
 
+function isCearenseData(data) {
+  return getCupFormat(data) === "cearense";
+}
+
 function resetCopinhaTieBreaks(data) {
-  if (!isCopinhaData(data)) return data;
+  if (!isCopinhaData(data) && !isCearenseData(data)) return data;
 
   data.cupConfig = {
     ...(data.cupConfig || {}),
     tieBreakOverrides: {},
     groupTieBreakOverrides: {},
+    campaignTieBreakOverrides: {},
   };
 
   return data;
@@ -1046,14 +1156,67 @@ function rankCopinhaGroupRows(rows, groupGames, winningScore, storedTieOrder) {
   return { rows: rankedRows, unresolvedTieIds };
 }
 
+function rankCearenseGroupRows(rows, groupGames, winningScore, criteria, storedTieOrder) {
+  const baseRows = [...rows].sort((a, b) => {
+    for (const key of criteria.order) {
+      const diff = b[key] - a[key];
+      if (diff !== 0) return diff;
+    }
+
+    return a.name.localeCompare(b.name);
+  });
+  const expectedGameCount = (rows.length * (rows.length - 1)) / 2;
+  const allGroupGamesFinished = groupGames.length === expectedGameCount && groupGames.every((game) => (
+    getScoreWinnerSide(game, winningScore) !== null
+  ));
+
+  if (!allGroupGamesFinished) {
+    return { rows: baseRows, unresolvedTieIds: [] };
+  }
+
+  const rankedRows = [];
+  const unresolvedTieIds = [];
+
+  for (let start = 0; start < baseRows.length;) {
+    let end = start + 1;
+
+    while (
+      end < baseRows.length &&
+      baseRows[end].w === baseRows[start].w &&
+      baseRows[end].bal === baseRows[start].bal &&
+      baseRows[end].pts === baseRows[start].pts
+    ) {
+      end += 1;
+    }
+
+    const tiedRows = baseRows.slice(start, end);
+    const manualOrder = getCopinhaManualTieOrder(tiedRows, storedTieOrder);
+
+    if (tiedRows.length === 1) {
+      rankedRows.push(tiedRows[0]);
+    } else if (manualOrder) {
+      rankedRows.push(...[...tiedRows].sort((a, b) => manualOrder.indexOf(a.id) - manualOrder.indexOf(b.id)));
+    } else {
+      unresolvedTieIds.push(...tiedRows.map((row) => row.id));
+      rankedRows.push(...tiedRows);
+    }
+
+    start = end;
+  }
+
+  return { rows: rankedRows, unresolvedTieIds };
+}
+
 function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCriteria) {
   const cupConfig = data.cupConfig || {};
   const teamCount = cupConfig.teamCount || 12;
-  const groups = createCupGroups(teamCount);
+  const format = getCupFormat(data);
+  const groups = createCupGroups(teamCount, format);
   const teamNames = data.players.teams.map((t) => getTeamName(t));
   const criteria = getRankingCriteria(rankingCriteriaValue);
   const winningScore = getWinningScore(data);
   const isCopinha = isCopinhaData(data);
+  const isCearense = isCearenseData(data);
   const tieBreakOverrides = cupConfig.tieBreakOverrides || {};
 
   const groupRankings = groups.map((group) => {
@@ -1120,6 +1283,23 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
       };
     }
 
+    if (isCearense) {
+      const ranked = rankCearenseGroupRows(
+        rows,
+        groupGames,
+        winningScore,
+        criteria,
+        tieBreakOverrides[String(group.id)]
+      );
+
+      return {
+        ...group,
+        rows: ranked.rows,
+        unresolvedTieIds: ranked.unresolvedTieIds,
+        rankingMode: "cearense",
+      };
+    }
+
     rows.sort((a, b) => {
       for (const key of criteria.order) {
         const diff = b[key] - a[key];
@@ -1138,6 +1318,125 @@ function calculateCupGroupRankings(data, rankingCriteriaValue = defaultRankingCr
   });
 
   return groupRankings;
+}
+
+function compareCearenseCampaignMetrics(first, second) {
+  const firstPlayed = Math.max(1, Number(first.played) || 0);
+  const secondPlayed = Math.max(1, Number(second.played) || 0);
+
+  for (const key of ["w", "bal", "pts"]) {
+    const difference = Number(second[key] || 0) * firstPlayed - Number(first[key] || 0) * secondPlayed;
+    if (difference !== 0) return difference;
+  }
+
+  return 0;
+}
+
+function haveSameCearenseCampaign(first, second) {
+  const firstPlayed = Math.max(1, Number(first.played) || 0);
+  const secondPlayed = Math.max(1, Number(second.played) || 0);
+
+  return ["w", "bal", "pts"].every((key) => (
+    Number(first[key] || 0) * secondPlayed === Number(second[key] || 0) * firstPlayed
+  ));
+}
+
+function greatestCommonDivisor(first, second) {
+  let a = Math.abs(Number(first) || 0);
+  let b = Math.abs(Number(second) || 0);
+
+  while (b !== 0) {
+    [a, b] = [b, a % b];
+  }
+
+  return a || 1;
+}
+
+function getReducedRatio(value, divisor) {
+  const safeDivisor = Math.max(1, Number(divisor) || 0);
+  const commonDivisor = greatestCommonDivisor(value, safeDivisor);
+  return `${Number(value || 0) / commonDivisor}/${safeDivisor / commonDivisor}`;
+}
+
+function getCearenseCampaignTieKey(scope, row) {
+  return `${scope}:${getReducedRatio(row.w, row.played)}:${getReducedRatio(row.bal, row.played)}:${getReducedRatio(row.pts, row.played)}`;
+}
+
+function rankCearenseCampaignEntries(entries, storedOverrides, scope) {
+  const baseEntries = [...entries].sort((a, b) => {
+    const comparison = compareCearenseCampaignMetrics(a, b);
+    if (comparison !== 0) return comparison;
+    if (a.groupId === b.groupId) return a.groupPosition - b.groupPosition;
+    return a.name.localeCompare(b.name);
+  });
+  const rankedEntries = [];
+  const unresolvedTies = [];
+
+  for (let start = 0; start < baseEntries.length;) {
+    let end = start + 1;
+
+    while (end < baseEntries.length && haveSameCearenseCampaign(baseEntries[start], baseEntries[end])) {
+      end += 1;
+    }
+
+    const tiedEntries = baseEntries.slice(start, end);
+    const distinctGroups = new Set(tiedEntries.map((entry) => entry.groupId));
+
+    if (tiedEntries.length === 1 || distinctGroups.size === 1) {
+      rankedEntries.push(...tiedEntries);
+    } else {
+      const tieKey = getCearenseCampaignTieKey(scope, tiedEntries[0]);
+      const manualOrder = getCopinhaManualTieOrder(tiedEntries, storedOverrides[tieKey]);
+
+      if (manualOrder) {
+        rankedEntries.push(...[...tiedEntries].sort((a, b) => manualOrder.indexOf(a.id) - manualOrder.indexOf(b.id)));
+      } else {
+        unresolvedTies.push({
+          tieKey,
+          scope,
+          teamIds: tiedEntries.map((entry) => entry.id),
+          rows: tiedEntries,
+        });
+        rankedEntries.push(...tiedEntries);
+      }
+    }
+
+    start = end;
+  }
+
+  return { rows: rankedEntries, unresolvedTies };
+}
+
+function getCearenseQualified(data) {
+  const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
+  const storedOverrides = data.cupConfig?.campaignTieBreakOverrides || {};
+  const champions = [];
+  const runnersUp = [];
+  const parallel = [];
+
+  groupRankings.forEach((group) => {
+    group.rows.forEach((row, index) => {
+      const entry = { ...row, groupPosition: index + 1 };
+
+      if (index === 0) champions.push(entry);
+      else if (index === 1) runnersUp.push(entry);
+      else parallel.push(entry);
+    });
+  });
+
+  const rankedChampions = rankCearenseCampaignEntries(champions, storedOverrides, "campeoes");
+  const rankedRunnersUp = rankCearenseCampaignEntries(runnersUp, storedOverrides, "segundos");
+  const rankedParallel = rankCearenseCampaignEntries(parallel, storedOverrides, "paralela");
+
+  return {
+    main: [...rankedChampions.rows, ...rankedRunnersUp.rows],
+    repechage: rankedParallel.rows,
+    unresolvedCampaignTies: [
+      ...rankedChampions.unresolvedTies,
+      ...rankedRunnersUp.unresolvedTies,
+      ...rankedParallel.unresolvedTies,
+    ],
+  };
 }
 
 function sortRowsByPointsBalanceWins(a, b) {
@@ -1322,6 +1621,10 @@ function getCopinhaQualified(data) {
 function getCupQualified(data) {
   const format = getCupFormat(data);
   const teamCount = data.cupConfig?.teamCount || 12;
+
+  if (format === "cearense") {
+    return getCearenseQualified(data);
+  }
 
   if (format === "copinha") {
     return getCopinhaQualified(data);
@@ -1513,6 +1816,11 @@ function getGameWinnerId(game, data = null) {
   const winningScore = getWinningScore(data);
   const winnerSide = getScoreWinnerSide(game, winningScore);
 
+  if (game.isBye) {
+    if (game.ids1?.length && !game.ids2?.length) return game.ids1[0];
+    if (game.ids2?.length && !game.ids1?.length) return game.ids2[0];
+  }
+
   if (!game.ids1?.length || !game.ids2?.length) return null;
   if (!winnerSide) return null;
 
@@ -1558,11 +1866,11 @@ function resolveBracketGame(game, allGames, data) {
 
   copy.team1 = copy.ids1?.length
     ? [getCupTeamName(data, copy.ids1[0])]
-    : ["Aguardando"];
+    : [copy.isBye ? "BYE" : "Aguardando"];
 
   copy.team2 = copy.ids2?.length
     ? [getCupTeamName(data, copy.ids2[0])]
-    : ["Aguardando"];
+    : [copy.isBye ? "BYE" : "Aguardando"];
 
   return copy;
 }
@@ -1623,6 +1931,16 @@ function getLargestPowerOfTwo(value) {
   return power;
 }
 
+function getNextPowerOfTwo(value) {
+  let power = 1;
+
+  while (power < value) {
+    power *= 2;
+  }
+
+  return power;
+}
+
 function getBracketSeedOrder(size) {
   let order = [1, 2];
 
@@ -1639,6 +1957,7 @@ function getEliminationRoundName(teamCount) {
   if (teamCount === 4) return "Semifinal";
   if (teamCount === 8) return "Quartas de final";
   if (teamCount === 16) return "Oitavas de final";
+  if (teamCount === 32) return "Fase de 32";
   return `Rodada de ${teamCount}`;
 }
 
@@ -1984,6 +2303,120 @@ function buildCopinhaEliminationRounds(entries, bracketType, bracketTitle, inclu
   return rounds;
 }
 
+function avoidSameGroupOpeningMatches(slots) {
+  const arranged = [...slots];
+
+  for (let index = 0; index < arranged.length; index += 2) {
+    const first = arranged[index];
+    const second = arranged[index + 1];
+
+    if (!first || !second || first.groupId !== second.groupId) continue;
+
+    let swapIndex = -1;
+
+    for (let candidateIndex = 0; candidateIndex < arranged.length; candidateIndex += 1) {
+      if (candidateIndex === index || candidateIndex === index + 1) continue;
+      const candidate = arranged[candidateIndex];
+      if (!candidate || candidate.groupId === first.groupId) continue;
+      const preserveMainSeedType = first.groupPosition <= 2 || second.groupPosition <= 2;
+      if (preserveMainSeedType && candidate.groupPosition !== second.groupPosition) continue;
+
+      const candidatePairIndex = candidateIndex % 2 === 0 ? candidateIndex + 1 : candidateIndex - 1;
+      const candidateOpponent = arranged[candidatePairIndex];
+
+      if (!candidateOpponent || candidateOpponent.groupId !== second.groupId) {
+        swapIndex = candidateIndex;
+        break;
+      }
+    }
+
+    if (swapIndex >= 0) {
+      [arranged[index + 1], arranged[swapIndex]] = [arranged[swapIndex], arranged[index + 1]];
+    }
+  }
+
+  return arranged;
+}
+
+function buildCearenseEliminationRounds(entries, bracketType, bracketTitle) {
+  if (!Array.isArray(entries) || entries.length < 2) return [];
+
+  const bracketSize = getNextPowerOfTwo(entries.length);
+  const seedOrder = getBracketSeedOrder(bracketSize);
+  const seededSlots = avoidSameGroupOpeningMatches(
+    seedOrder.map((seed) => entries[seed - 1] || null)
+  );
+  const openingRoundName = getEliminationRoundName(bracketSize);
+  const openingGames = [];
+
+  for (let index = 0; index < seededSlots.length; index += 2) {
+    const entry1 = seededSlots[index];
+    const entry2 = seededSlots[index + 1];
+
+    openingGames.push({
+      ...createCopinhaBracketGame({
+        bracketType,
+        roundName: openingRoundName,
+        matchKey: `${bracketType}_r${bracketSize}_${openingGames.length + 1}`,
+        entry1,
+        entry2,
+        court: openingGames.length + 1,
+      }),
+      isBye: Boolean(entry1) !== Boolean(entry2),
+    });
+  }
+
+  const rounds = [{
+    title: openingRoundName,
+    bracketTitle,
+    games: openingGames,
+  }];
+  let currentGames = openingGames;
+  let currentTeamCount = bracketSize;
+
+  while (currentGames.length > 1) {
+    const nextTeamCount = currentTeamCount / 2;
+    const nextRoundName = getEliminationRoundName(nextTeamCount);
+    const nextGames = buildNextRound(
+      currentGames,
+      bracketType,
+      nextRoundName,
+      `r${nextTeamCount}`
+    );
+
+    rounds.push({
+      title: nextRoundName,
+      bracketTitle,
+      games: nextGames,
+    });
+    currentGames = nextGames;
+    currentTeamCount = nextTeamCount;
+  }
+
+  return rounds;
+}
+
+function generateCearenseBrackets(data) {
+  const qualified = getCearenseQualified(data);
+  const cupConfig = data.cupConfig || {};
+  const mainName = cupConfig.mainBracketName || "Eliminatória Principal";
+  const repechageName = cupConfig.repechageName || "Disputa Paralela";
+  const mainRounds = buildCearenseEliminationRounds(qualified.main, "main", mainName);
+  const repechageRounds = buildCearenseEliminationRounds(qualified.repechage, "repechage", repechageName);
+  const allGames = [...mainRounds, ...repechageRounds].flatMap((round) => round.games);
+
+  return {
+    main: mainRounds.map((round) => ({
+      ...round,
+      games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+    })),
+    repechage: repechageRounds.map((round) => ({
+      ...round,
+      games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+    })),
+  };
+}
+
 function generateCopinhaBrackets(data) {
   const qualified = getCopinhaQualified(data);
   const cupConfig = data.cupConfig || {};
@@ -2012,6 +2445,10 @@ function generateCopinhaBrackets(data) {
 }
 
 function generateCupBrackets(data) {
+  if (isCearenseData(data)) {
+    return generateCearenseBrackets(data);
+  }
+
   if (isCopinhaData(data)) {
     return generateCopinhaBrackets(data);
   }
@@ -3718,7 +4155,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 6, Super 8, Super 10 mista, Super 12 mista, Super 16 mista, Simples 8 ou Copas conforme a realidade do evento.
+                Selecione Super 6, Super 8, Super 10 mista, Super 12 mista, Super 16 mista, Simples 8, Copas ou Campeonato Cearense conforme a realidade do evento.
               </p>
             </div>
 
@@ -3837,6 +4274,7 @@ function Login({
                 "Copa - 18 duplas",
                 "Copa - 21 duplas",
                 "Copinha - grupos de 3",
+                "Campeonato Cearense",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -3899,6 +4337,11 @@ function Login({
             <Info
               title="Copinha - grupos de 3"
               text="Formato flexível para 6 a 36 duplas. As equipes são sorteadas em grupos de três e todas fazem duas partidas. Os primeiros e segundos colocados seguem para a chave principal; a partir de 3 grupos, os terceiros disputam a Consolação. Os empates respeitam vitórias, saldo, confronto direto e, se necessário, sorteio da organização."
+            />
+
+            <Info
+              title="Campeonato Cearense"
+              text="Formato para 4 a 32 duplas, com fase de grupos, Eliminatória Principal para os dois primeiros de cada grupo e Disputa Paralela para os demais. As comparações entre grupos usam percentual de vitórias, saldo médio e média de games para equilibrar grupos de tamanhos diferentes."
             />
           </div>
         </section>
@@ -7122,6 +7565,12 @@ setNewPublicInfo({
         text="Formato configurável de 6 a 36 duplas. Cada grupo tem três duplas; 1º e 2º avançam para a Chave Principal e, a partir de 3 grupos, os 3º colocados disputam a Consolação."
       />
     )}
+    {allowedTypes.includes("Campeonato Cearense") && (
+      <Info
+        title="Campeonato Cearense"
+        text="Formato de 4 a 32 duplas. Os dois primeiros de cada grupo seguem para a Eliminatória Principal e os demais para a Disputa Paralela. Entre grupos, a ordem é equilibrada por percentual de vitórias, saldo médio e média de games por partida."
+      />
+    )}
   </div>
 </section>
 )}
@@ -7487,6 +7936,7 @@ function createInitialData(type, config) {
         repechageName: config.defaultRepechageName,
         tieBreakOverrides: {},
         groupTieBreakOverrides: {},
+        campaignTieBreakOverrides: {},
       },
       players: {
         teams: Array.from({ length: config.defaultTeams }, (_, i) => ({
@@ -7629,6 +8079,9 @@ function normalizeTournamentData(type, rawData) {
           : {},
         groupTieBreakOverrides: isTournamentDataObject(sourceCupConfig.groupTieBreakOverrides)
           ? sourceCupConfig.groupTieBreakOverrides
+          : {},
+        campaignTieBreakOverrides: isTournamentDataObject(sourceCupConfig.campaignTieBreakOverrides)
+          ? sourceCupConfig.campaignTieBreakOverrides
           : {},
       },
       players: {
@@ -7879,6 +8332,16 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     [data, config.type]
   );
 
+  const cearenseCampaignTies = useMemo(() => {
+    if (!isCearenseData(data) || !data.schedule?.length) return [];
+    if (!data.schedule.flat().every((game) => isGameFinished(game, getWinningScore(data)))) return [];
+
+    const groupRankings = calculateCupGroupRankings(data, data.rankingCriteria);
+    if (groupRankings.some((group) => group.unresolvedTieIds?.length > 1)) return [];
+
+    return getCearenseQualified(data).unresolvedCampaignTies;
+  }, [data, config.type]);
+
   useEffect(() => {
     latestDataRef.current = data;
   }, [data]);
@@ -8044,7 +8507,16 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   }
 
   function updateRankingCriteria(value) {
-    setData((prev) => ({ ...prev, rankingCriteria: value }));
+    setData((prev) => {
+      const copy = { ...prev, rankingCriteria: value };
+
+      if (isCearenseData(copy)) {
+        copy.brackets = [];
+        resetCopinhaTieBreaks(copy);
+      }
+
+      return copy;
+    });
   }
 
   function updateCupConfig(field, value) {
@@ -8090,6 +8562,7 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
       copy.cupConfig = {
         ...(copy.cupConfig || {}),
         tieBreakOverrides,
+        ...(isCearenseData(copy) ? { campaignTieBreakOverrides: {} } : {}),
       };
       copy.brackets = [];
 
@@ -8119,6 +8592,28 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     });
 
     showNotice("success", "Melhor grupo sorteado", "A ordem dos grupos empatados foi salva e as chaves finais foram atualizadas.");
+  }
+
+  function resolveCearenseCampaignTie(tieKey, teamIds) {
+    if (!Array.isArray(teamIds) || teamIds.length < 2) return;
+
+    setData((prev) => {
+      const copy = structuredClone(prev);
+      const campaignTieBreakOverrides = {
+        ...(copy.cupConfig?.campaignTieBreakOverrides || {}),
+        [tieKey]: shuffleArray([...teamIds]),
+      };
+
+      copy.cupConfig = {
+        ...(copy.cupConfig || {}),
+        campaignTieBreakOverrides,
+      };
+      copy.brackets = [];
+
+      return copy;
+    });
+
+    showNotice("success", "Desempate entre grupos sorteado", "A ordem sorteada foi registrada para montar as duas chaves.");
   }
 
   function refreshGameParticipantNames(nextData) {
@@ -8234,7 +8729,13 @@ function generate() {
 
     setActiveTournamentTab("partidas");
     setActiveMatchesTab("grupos");
-    showNotice("success", "Rodadas e jogos criados", "A fase de grupos da Copa foi montada com sucesso.");
+    showNotice(
+      "success",
+      "Rodadas e jogos criados",
+      isCearenseData(data)
+        ? "A fase de grupos do Campeonato Cearense foi montada com sucesso."
+        : "A fase de grupos da Copa foi montada com sucesso."
+    );
     return;
   }
 
@@ -8283,6 +8784,22 @@ function generateBrackets() {
         "warning",
         "Desempate pendente",
         "Realize o sorteio de desempate indicado na aba Grupos antes de gerar as chaves."
+      );
+      setActiveTournamentTab("grupos");
+      return;
+    }
+  }
+
+  if (isCearenseData(data)) {
+    const hasUnresolvedGroupTie = calculateCupGroupRankings(data, data.rankingCriteria)
+      .some((group) => group.unresolvedTieIds?.length > 1);
+    const hasUnresolvedCampaignTie = getCearenseQualified(data).unresolvedCampaignTies.length > 0;
+
+    if (hasUnresolvedGroupTie || hasUnresolvedCampaignTie) {
+      showNotice(
+        "warning",
+        "Desempate pendente",
+        "Registre os sorteios de desempate indicados na aba Grupos antes de gerar as chaves."
       );
       setActiveTournamentTab("grupos");
       return;
@@ -8581,12 +9098,15 @@ return (
                   groupRankings={cupGroupRankings}
                   rankingCriteria={data.rankingCriteria || defaultRankingCriteria}
                 />
-                {isCopinhaData(data) && (
+                {(isCopinhaData(data) || isCearenseData(data)) && (
                   <CopinhaTieBreakPanel
                     groupRankings={cupGroupRankings}
                     onResolveTie={resolveCopinhaTie}
                     groupCampaignTies={copinhaGroupCampaignTies}
                     onResolveGroupTie={resolveCopinhaGroupTie}
+                    campaignTies={cearenseCampaignTies}
+                    onResolveCampaignTie={resolveCearenseCampaignTie}
+                    isCearense={isCearenseData(data)}
                   />
                 )}
               </div>
@@ -8787,6 +9307,7 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   const isCup18 = config.type === "cup18";
   const isCup21 = config.type === "cup21";
   const isCopinha = config.type === "copinha";
+  const isCearense = config.type === "cearense";
 
   return (
     <div className="cupConfigBox">
@@ -8814,18 +9335,26 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
         </div>
 
         <div>
-          <label>{isCopinha ? "Nome da consolação" : isCup18 || isCup21 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
+          <label>{isCopinha ? "Nome da consolação" : isCearense || isCup18 || isCup21 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
           <input
             value={cupConfig.repechageName || config.defaultRepechageName}
             onChange={(e) => updateCupConfig("repechageName", e.target.value)}
-            placeholder={isCopinha ? "Consolação" : isCup18 || isCup21 ? "Disputa Paralela" : "Repescagem"}
+            placeholder={isCopinha ? "Consolação" : isCearense || isCup18 || isCup21 ? "Disputa Paralela" : "Repescagem"}
           />
         </div>
       </div>
 
       {showInfo && (
         <div className="infoBox">
-          {isCup18 ? (
+          {isCearense ? (
+          <>
+            <p><strong>Formato:</strong> de 4 a 32 duplas, distribuídas em grupos de 3 ou 4. Com 4 ou 5 duplas, há um grupo único.</p>
+            <p><strong>Dentro de cada grupo:</strong> classificação pelo critério escolhido entre Vitórias, Saldo e Total de Games.</p>
+            <p><strong>Entre grupos:</strong> percentual de vitórias, saldo médio por partida e média de games vencidos por partida.</p>
+            <p><strong>Eliminatória Principal:</strong> 1º e 2º de cada grupo; campeões recebem as melhores sementes e os primeiros BYEs.</p>
+            <p><strong>Disputa Paralela:</strong> todas as duplas abaixo do 2º lugar, em chave independente.</p>
+          </>
+        ) : isCup18 ? (
           <>
             <p><strong>Formato:</strong> 18 duplas divididas em 6 grupos de 3.</p>
             <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
@@ -9374,14 +9903,22 @@ function CopinhaTieBreakPanel({
   onResolveTie,
   groupCampaignTies = [],
   onResolveGroupTie,
+  campaignTies = [],
+  onResolveCampaignTie,
+  isCearense = false,
 }) {
   const tiedGroups = (groupRankings || []).filter((group) => group.unresolvedTieIds?.length > 1);
 
-  if (!tiedGroups.length && !groupCampaignTies.length) return null;
+  if (!tiedGroups.length && !groupCampaignTies.length && !campaignTies.length) return null;
 
   return (
     <div className="infoBox">
-      <p><strong>Desempate por sorteio necessário.</strong> Há três duplas empatadas após vitórias, saldo e confronto direto.</p>
+      <p>
+        <strong>Desempate por sorteio necessário.</strong>{" "}
+        {isCearense
+          ? "As duplas abaixo permaneceram iguais em vitórias, saldo e Total de Games. O organizador deve registrar o sorteio antes de gerar as chaves."
+          : "Há três duplas empatadas após vitórias, saldo e confronto direto."}
+      </p>
       {tiedGroups.map((group) => {
         const tiedRows = group.rows.filter((row) => group.unresolvedTieIds.includes(row.id));
 
@@ -9409,6 +9946,30 @@ function CopinhaTieBreakPanel({
               onClick={() => onResolveGroupTie?.(tie.tieKey, tie.groupIds)}
             >
               Sortear melhor grupo
+            </button>
+          </div>
+        );
+      })}
+
+      {campaignTies.map((tie) => {
+        const scopeLabel = {
+          campeoes: "Campeões de grupo",
+          segundos: "Segundos colocados",
+          paralela: "Disputa Paralela",
+        }[tie.scope] || "Campanhas entre grupos";
+
+        return (
+          <div className="actions" key={tie.tieKey}>
+            <span>
+              {scopeLabel}: {tie.rows.map((row) => (
+                `${row.name} (${((row.w / Math.max(1, row.played)) * 100).toFixed(2)}% vit.; saldo médio ${(row.bal / Math.max(1, row.played)).toFixed(2)}; média de games ${(row.pts / Math.max(1, row.played)).toFixed(2)})`
+              )).join(" · ")}
+            </span>
+            <button
+              type="button"
+              onClick={() => onResolveCampaignTie?.(tie.tieKey, tie.teamIds)}
+            >
+              Registrar sorteio da ordem
             </button>
           </div>
         );
@@ -9563,13 +10124,14 @@ function BracketColumn({
 
           {round.games.map((game) => {
             const blocked =
+              game.isBye ||
               !game.ids1?.length ||
               !game.ids2?.length ||
               game.team1?.[0] === "Aguardando" ||
               game.team2?.[0] === "Aguardando";
 
             const winnerSide = getScoreWinnerSide(game, winningScore);
-            const isFinished = winnerSide !== null;
+            const isFinished = winnerSide !== null || game.isBye;
 
             return (
               <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
@@ -9583,6 +10145,9 @@ function BracketColumn({
                   <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
                 </div>
 
+                {game.isBye ? (
+                  <div className="infoBox"><strong>Classificação automática (BYE)</strong></div>
+                ) : (
                 <div className="scoreRow">
                   <input
   type="number"
@@ -9608,6 +10173,7 @@ function BracketColumn({
   disabled={blocked}
 />
                 </div>
+                )}
 
                 <div className="voiceActions gameVoiceActions">
                   <button
