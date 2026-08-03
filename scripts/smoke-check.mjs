@@ -39,13 +39,13 @@ for (const marker of requiredApplicationMarkers) {
 const expectedModalityLabels = [
   "Super 6 (dupla fixa)",
   "Super 8",
-  "Super 12",
   "Super 8 (dupla fixa)",
+  "Super 12",
   "Super 10 mista",
   "Super 12 mista",
   "Super 16 mista",
   "Simples 8 (1 contra 1 por jogo)",
-  "Campeonato Cearense",
+  "Torneio modelo Campeonato Cearense",
 ];
 
 for (const label of expectedModalityLabels) {
@@ -59,8 +59,8 @@ const premiumModalities = mainSource.slice(
 const premiumOrder = [
   '"Super 12 Mista (Dupla Fixa)"',
   '"Super 08"',
-  '"Super 12"',
   '"Super 16 Mista (Dupla Fixa)"',
+  '"Super 12"',
   '"Super 10 Mista (Dupla Aleatória)"',
   '"Super 12 Mista (Dupla Aleatória)"',
   '"Super 16 Mista (Dupla Aleatória)"',
@@ -69,6 +69,10 @@ const premiumOrder = [
 const premiumPositions = premiumOrder.map((type) => premiumModalities.indexOf(type));
 assert.ok(premiumPositions.every((position) => position >= 0), "A lista Premium perdeu uma modalidade obrigatória.");
 assert.deepEqual([...premiumPositions].sort((a, b) => a - b), premiumPositions, "A ordem das modalidades está incorreta.");
+
+for (const removedType of ["Copa - 12 ou 24 duplas", "Copa - 21 duplas", "Copinha - grupos de 3"]) {
+  assert.ok(!premiumModalities.includes(`"${removedType}"`), `A modalidade removida ainda pode ser criada: ${removedType}`);
+}
 
 assert.equal(super12IndividualTemplate.length, 11, "O Super 12 deve possuir 11 rodadas.");
 const super12Partners = new Map();

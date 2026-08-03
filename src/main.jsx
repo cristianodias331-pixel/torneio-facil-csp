@@ -817,6 +817,7 @@ const modalityDisplayNames = {
   "Super 12 Mista (Dupla Fixa)": "Super 6 (dupla fixa)",
   "Super 16 Mista (Dupla Fixa)": "Super 8 (dupla fixa)",
   "Simples 8": "Simples 8 (1 contra 1 por jogo)",
+  "Campeonato Cearense": "Torneio modelo Campeonato Cearense",
 };
 
 function getModalityDisplayName(type) {
@@ -838,8 +839,8 @@ const allowedByPlan = {
   pro: [
     "Super 12 Mista (Dupla Fixa)",
     "Super 08",
-    "Super 12",
     "Super 16 Mista (Dupla Fixa)",
+    "Super 12",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
@@ -847,16 +848,13 @@ const allowedByPlan = {
   premium: [
     "Super 12 Mista (Dupla Fixa)",
     "Super 08",
-    "Super 12",
     "Super 16 Mista (Dupla Fixa)",
+    "Super 12",
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
     "Simples 8",
-    "Copa - 12 ou 24 duplas",
     "Copa - 18 duplas",
-    "Copa - 21 duplas",
-    "Copinha - grupos de 3",
     "Campeonato Cearense",
   ],
 };
@@ -4523,7 +4521,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 6, Super 8, Super 12, modalidades mistas, Simples 8, Copas ou Campeonato Cearense conforme a realidade do evento.
+                Selecione Super 6, Super 8, Super 12, modalidades mistas, Simples 8, Copa 18 ou Torneio modelo Campeonato Cearense conforme a realidade do evento.
               </p>
             </div>
 
@@ -4581,7 +4579,7 @@ function Login({
             <div className="featureCard">
               <span>🏆</span>
               <h3>Copa Premium</h3>
-              <p>Formatos de Copa com 12, 18 ou 24 duplas, grupos, chaves finais e disputa paralela.</p>
+              <p>Formato de Copa com 18 duplas, grupos, chaves finais e disputa paralela.</p>
             </div>
           </div>
         </section>
@@ -4618,8 +4616,8 @@ function Login({
               items={[
                 "Super 6 (dupla fixa)",
                 "Super 8",
-                "Super 12",
                 "Super 8 (dupla fixa)",
+                "Super 12",
                 "Super 10 mista",
                 "Super 12 mista",
                 "Super 16 mista",
@@ -4635,17 +4633,14 @@ function Login({
               items={[
                 "Super 6 (dupla fixa)",
                 "Super 8",
-                "Super 12",
                 "Super 8 (dupla fixa)",
+                "Super 12",
                 "Super 10 mista",
                 "Super 12 mista",
                 "Super 16 mista",
                 "Simples 8 (1 contra 1 por jogo)",
-                "Copa - 12 ou 24 duplas",
                 "Copa - 18 duplas",
-                "Copa - 21 duplas",
-                "Copinha - grupos de 3",
-                "Campeonato Cearense",
+                "Torneio modelo Campeonato Cearense",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -4671,13 +4666,13 @@ function Login({
             />
 
             <Info
-              title="Super 12"
-              text="Formato individual com 12 participantes escolhidos livremente pelo organizador, sem exigência de gênero. São 11 rodadas em 3 quadras, sem descanso: cada atleta forma dupla uma vez com cada um dos outros participantes e enfrenta cada adversário exatamente duas vezes. Todos aparecem juntos em um único ranking geral."
+              title="Super 8 (dupla fixa)"
+              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, total de games e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
             />
 
             <Info
-              title="Super 8 (dupla fixa)"
-              text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, total de games e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
+              title="Super 12"
+              text="Formato individual com 12 participantes escolhidos livremente pelo organizador, sem exigência de gênero. São 11 rodadas em 3 quadras, sem descanso: cada atleta forma dupla uma vez com cada um dos outros participantes e enfrenta cada adversário exatamente duas vezes. Todos aparecem juntos em um único ranking geral."
             />
 
             <Info
@@ -4701,22 +4696,12 @@ function Login({
             />
 
             <Info
-              title="Copa - 12 ou 24 duplas"
-              text="Formato de Copa para 12 ou 24 duplas, pensado para eventos mais completos. As duplas são organizadas em fase de grupos, jogam partidas classificatórias e depois avançam para as chaves finais conforme o desempenho. O sistema permite trabalhar com chave principal e repescagem, além de nomes editáveis para adaptar à regra do seu evento. É indicado para torneios com estrutura de campeonato, fases eliminatórias e premiação por colocação."
-            />
-
-            <Info
               title="Copa - 18 duplas"
               text="Formato de Copa com 18 duplas, dividido em 6 grupos de 3 duplas. Cada grupo joga sua fase classificatória, e o sistema calcula a classificação com base nos critérios definidos. Os melhores avançam para a chave principal; os 2 melhores gerais podem receber BYE, entrando em fase mais avançada. Também há disputa paralela para duplas específicas, como terceiros colocados, permitindo manter mais atletas em atividade. É um formato ideal para torneios grandes, com organização mais profissional e várias fases."
             />
 
             <Info
-              title="Copinha - grupos de 3"
-              text="Formato flexível para 6 a 36 duplas. As equipes são sorteadas em grupos de três e todas fazem duas partidas. Os primeiros e segundos colocados seguem para a chave principal; a partir de 3 grupos, os terceiros disputam a Consolação. Os empates respeitam vitórias, saldo, confronto direto e, se necessário, sorteio da organização."
-            />
-
-            <Info
-              title="Campeonato Cearense"
+              title="Torneio modelo Campeonato Cearense"
               text="Formato para 4 a 32 duplas, com fase de grupos, Eliminatória Principal para os dois primeiros de cada grupo e Disputa Paralela para os demais. As comparações entre grupos usam percentual de vitórias, saldo médio e média de games para equilibrar grupos de tamanhos diferentes."
             />
           </div>
@@ -7159,6 +7144,9 @@ setNewPublicInfo({
               <div className="formField">
                 <label>Modalidade</label>
                 <select value={editForm.type} onChange={(e) => updateEditForm("type", e.target.value)}>
+                  {!allowedTypes.includes(editForm.type) && (
+                    <option value={editForm.type}>{getModalityDisplayName(editForm.type)} (modalidade legada)</option>
+                  )}
                   {allowedTypes.map((type) => <option key={type} value={type}>{getModalityDisplayName(type)}</option>)}
                 </select>
               </div>
@@ -7999,17 +7987,17 @@ setNewPublicInfo({
       />
     )}
 
-    {allowedTypes.includes("Super 12") && (
-      <Info
-        title="Super 12"
-        text="Formato individual com 12 participantes definidos livremente pelo organizador, sem exigência de gênero. São 11 rodadas em 3 quadras, sem descanso. Cada atleta joga uma vez com cada parceiro, enfrenta cada adversário duas vezes e participa de um único ranking geral."
-      />
-    )}
-
     {allowedTypes.includes("Super 16 Mista (Dupla Fixa)") && (
       <Info
         title="Super 8 (dupla fixa)"
         text="Formato com 8 duplas fixas, indicado para torneios maiores em que cada equipe permanece igual durante toda a competição. O sistema organiza os jogos entre as duplas, distribui as rodadas e registra os resultados. A classificação é por dupla, não individual. Conforme os placares são preenchidos, o ranking geral é atualizado com vitórias, total de games e saldo de games, ajudando o organizador a acompanhar quem está avançando melhor."
+      />
+    )}
+
+    {allowedTypes.includes("Super 12") && (
+      <Info
+        title="Super 12"
+        text="Formato individual com 12 participantes definidos livremente pelo organizador, sem exigência de gênero. São 11 rodadas em 3 quadras, sem descanso. Cada atleta joga uma vez com cada parceiro, enfrenta cada adversário duas vezes e participa de um único ranking geral."
       />
     )}
 
@@ -8041,13 +8029,6 @@ setNewPublicInfo({
       />
     )}
 
-    {allowedTypes.includes("Copa - 12 ou 24 duplas") && (
-      <Info
-        title="Copa - 12 ou 24 duplas"
-        text="Formato de Copa para 12 ou 24 duplas, pensado para eventos mais completos. As duplas são organizadas em fase de grupos, jogam partidas classificatórias e depois avançam para as chaves finais conforme o desempenho. O sistema permite trabalhar com chave principal e repescagem, além de nomes editáveis para adaptar à regra do seu evento. É indicado para torneios com estrutura de campeonato, fases eliminatórias e premiação por colocação."
-      />
-    )}
-
     {allowedTypes.includes("Copa - 18 duplas") && (
       <Info
         title="Copa - 18 duplas"
@@ -8055,15 +8036,9 @@ setNewPublicInfo({
       />
     )}
 
-    {allowedTypes.includes("Copinha - grupos de 3") && (
-      <Info
-        title="Copinha - grupos de 3"
-        text="Formato configurável de 6 a 36 duplas. Cada grupo tem três duplas; 1º e 2º avançam para a Chave Principal e, a partir de 3 grupos, os 3º colocados disputam a Consolação."
-      />
-    )}
     {allowedTypes.includes("Campeonato Cearense") && (
       <Info
-        title="Campeonato Cearense"
+        title="Torneio modelo Campeonato Cearense"
         text="Formato de 4 a 32 duplas. Os dois primeiros de cada grupo seguem para a Eliminatória Principal e os demais para a Disputa Paralela. Entre grupos, a ordem é equilibrada por percentual de vitórias, saldo médio e média de games por partida."
       />
     )}
