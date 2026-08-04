@@ -10,6 +10,9 @@ const installSource = readFileSync(new URL("src/InstallAppBanner.jsx", root), "u
 const indexSource = readFileSync(new URL("index.html", root), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("package.json", root), "utf8"));
 const manifest = JSON.parse(readFileSync(new URL("public/manifest.webmanifest", root), "utf8"));
+const publicArenaMigrationUrl = new URL("supabase/migrations/202608030001_public_arena_platform.sql", root);
+assert.ok(existsSync(fileURLToPath(publicArenaMigrationUrl)), "A migração segura da plataforma pública está ausente.");
+const publicArenaMigration = readFileSync(publicArenaMigrationUrl, "utf8");
 
 const requiredApplicationMarkers = [
   "supabase.auth.signInWithPassword",
@@ -18,7 +21,10 @@ const requiredApplicationMarkers = [
   'function Dashboard(',
   'function TournamentScreen(',
   'function PublicTournamentPage(',
+  'function PublicPlatformHome(',
+  'function PublicArenaPage(',
   'function calculateRanking(',
+  'function calculateCircuitTournamentRanking(',
   'function generateCupBrackets(',
   '.from("profiles")',
   '.from("tournaments")',
@@ -138,6 +144,13 @@ assert.ok(
   mainSource.includes('.rpc("get_public_tournament", { p_public_id: publicId })'),
   "O link público voltou a consultar uma tabela protegida em vez da função segura."
 );
+assert.ok(
+  mainSource.includes('.rpc("get_public_arena_bundle",'),
+  "O perfil público não consulta o pacote seguro e atualizado da arena."
+);
+assert.ok(mainSource.includes('title="Ranking do dia"'), "O ranking do torneio não usa o título Ranking do dia.");
+assert.ok(mainSource.includes('<h2>Ranking geral acumulado</h2>'), "O ranking público do circuito não usa o título acumulado correto.");
+assert.ok(mainSource.includes('className="publicCircuitName"'), "O nome do circuito não recebe destaque no ranking público.");
 assert.ok(mainSource.includes('pts: "Total de Games"'), "A coluna de games ainda usa a nomenclatura antiga.");
 assert.ok(!/\bpontos\b/i.test(mainSource), "A nomenclatura Pontos ainda aparece na interface.");
 assert.ok(mainSource.includes('allowedTeamCounts: Array.from({ length: 29 }, (_, index) => index + 4)'), "O Campeonato Cearense não aceita todas as quantidades de 4 a 32 duplas.");
@@ -158,8 +171,12 @@ assert.ok(!mainSource.includes("data:image/png;base64"), "Ainda existem imagens 
 assert.ok(mainSource.includes("function ConfirmCircuitDeleteModal"), "A exclusão do circuito não possui confirmação própria.");
 assert.ok(!mainSource.includes('window.confirm("Excluir este circuito?'), "A exclusão do circuito ainda usa a confirmação simples do navegador.");
 assert.ok(mainSource.includes('const [circuitEditForm, setCircuitEditForm]'), "A edição do circuito não abre em um formulário separado.");
-assert.ok(mainSource.includes('<option value="active">Em andamento</option>'), "O status Em andamento não está disponível para circuitos.");
-assert.ok(mainSource.includes('<option value="closed">Encerrado</option>'), "O status Encerrado não está disponível para circuitos.");
+assert.ok(mainSource.includes("function getAutomaticEventStatus"), "O status de torneios e circuitos não é calculado automaticamente pelas datas.");
+assert.ok(
+  mainSource.includes('return String(endDate) < getBrazilTodayISO() ? "finished" : "active"')
+    && publicArenaMigration.includes("then 'finished'"),
+  "O status automático não respeita os valores permitidos pelo banco de produção."
+);
 assert.ok(mainSource.includes('<ChevronDown />'), "O circuito não usa a seta para abrir e fechar.");
 assert.ok(styleSource.includes("CONTRASTE ENTRE TEMAS E CIRCUITOS"), "A camada final de contraste dos temas está ausente.");
 assert.ok(styleSource.includes(".gameWaiting .gameTeams > div"), "Os jogadores sem placar continuam sem correção de contraste.");
@@ -200,6 +217,112 @@ assert.ok(mainSource.includes("function getPlanRegularizationWhatsAppUrl"), "A r
 assert.ok(mainSource.includes("window.location.assign(regularizationUrl)"), "O acesso vencido não direciona o usuário para o WhatsApp.");
 assert.ok(mainSource.includes("Regularizar pelo WhatsApp"), "A tela de acesso vencido não possui alternativa manual para abrir o WhatsApp.");
 assert.ok(styleSource.includes("CONTATOS PÚBLICOS, TESTE GRÁTIS E ACESSO VENCIDO"), "Os novos destaques públicos estão sem estilos.");
+
+assert.ok(
+  mainSource.includes("const circuitPersistence = await persistCircuitRankings(")
+    && mainSource.includes("persistedTournament.id"),
+  "O placar pode ser marcado como salvo antes de atualizar o ranking dos circuitos."
+);
+assert.ok(
+  mainSource.includes("const rankingHistorySaved = await saveCircuitHistoryToSupabase("),
+  "O salvamento do circuito ainda ignora falhas no histórico do ranking."
+);
+assert.ok(
+  mainSource.includes("if (Number(row.played || 0) <= 0) return;"),
+  "Participantes sem jogo válido ainda podem entrar no ranking do circuito."
+);
+assert.ok(
+  mainSource.includes("const games = [...(data.schedule || []).flat(), ...bracketGames];"),
+  "O ranking do circuito não soma a fase de grupos e o mata-mata das Copas."
+);
+assert.ok(
+  publicArenaMigration.includes("selected_tournament.value = history.tournament_id::text"),
+  "O ranking público ainda pode somar um torneio removido do circuito."
+);
+assert.ok(
+  publicArenaMigration.includes("create table if not exists public.circuit_ranking_history")
+    && publicArenaMigration.includes("primary key (user_id, circuit_id, tournament_id, group_key, player_key)"),
+  "A persistência do ranking acumulado não cria sua tabela de histórico no Supabase."
+);
+assert.ok(
+  publicArenaMigration.includes("circuit_ranking_history_owner_update")
+    && publicArenaMigration.includes("user_id = auth.uid()"),
+  "O histórico do ranking do circuito não está protegido por organizador."
+);
+assert.ok(
+  publicArenaMigration.includes("where circuit.ranking_criteria_mode = 'automatic'"),
+  "Circuitos automáticos antigos não recebem o critério do torneio vinculado."
+);
+assert.ok(
+  publicArenaMigration.includes("coalesce(linked_tournament.data ->> 'deletedAt', '') = ''"),
+  "O ranking público ainda pode somar torneios enviados à lixeira."
+);
+assert.ok(
+  publicArenaMigration.includes("as restrictive")
+    && publicArenaMigration.includes("lower(coalesce(status, '')) = 'active'")
+    && publicArenaMigration.includes("auth.jwt() -> 'app_metadata' ->> 'role'"),
+  "Visitantes ou contas sem acesso ainda podem alterar o perfil da arena."
+);
+assert.ok(
+  publicArenaMigration.includes("profiles_no_direct_insert_guard")
+    && publicArenaMigration.includes("with check (false)"),
+  "Um visitante autenticado ainda pode criar um perfil diretamente pelo cliente."
+);
+assert.ok(
+  mainSource.includes('["athlete", "visitor", "spectator"].includes(sessionRole)'),
+  "Uma conta visitante ainda pode abrir o painel administrativo."
+);
+assert.ok(
+  mainSource.includes("organizer={organizer}"),
+  "O torneio público ainda usa somente a cópia antiga dos dados da arena."
+);
+assert.ok(
+  mainSource.includes('className="circuitIdentityHint"'),
+  "O circuito não orienta sobre a identidade dos participantes pelo nome."
+);
+assert.ok(
+  publicArenaMigration.includes("'athlete', 'visitor', 'spectator', 'organizer_pending'"),
+  "Contas visitantes ou ainda pendentes podem aparecer no diretório público."
+);
+assert.ok(
+  mainSource.includes('.rpc("set_tournament_order", {')
+    && mainSource.includes("sortTournamentsByStoredOrder"),
+  "A ordem escolhida ao arrastar os torneios não é persistida e recarregada."
+);
+assert.ok(
+  publicArenaMigration.includes("create or replace function public.set_tournament_order"),
+  "A ordenação dos torneios não possui uma operação transacional segura."
+);
+assert.ok(
+  mainSource.includes('dragOverTournamentId === t.id')
+    && styleSource.includes('content: "Solte aqui"'),
+  "O arraste não apresenta um destino visual claro para o organizador."
+);
+assert.ok(
+  styleSource.includes("Ordenação persistente dos cartões de torneio")
+    && styleSource.includes(".proDashboard.playAppShell .moveLineBtn span"),
+  "A alça de três traços não recebeu o novo contraste visual."
+);
+assert.ok(
+  mainSource.includes("const saveQueueRef = useRef(Promise.resolve(true))")
+    && mainSource.includes("queueTournamentSave(latestDataRef.current"),
+  "As gravações do torneio podem terminar fora de ordem e sobrescrever dados mais novos."
+);
+assert.ok(
+  mainSource.includes("saveTournamentDraft(userId, tournament.id, data)")
+    && mainSource.includes("readTournamentDraft(userId, tournament)"),
+  "Placares e confrontos ainda não possuem backup local durante uma falha de conexão."
+);
+assert.ok(
+  mainSource.includes("Salvando antes de sair...")
+    && mainSource.includes("A tela foi mantida aberta para proteger placares, confrontos e rankings"),
+  "O torneio pode ser fechado antes de concluir o último salvamento."
+);
+assert.ok(
+  publicArenaMigration.includes("jsonb_set(")
+    && publicArenaMigration.includes("'{displayOrder}'"),
+  "A reordenação pode substituir o objeto do torneio em vez de preservar placares e confrontos."
+);
 
 for (const logoPath of ["public/torneio360-logo.png", "public/torneio360-logo-blue.png"]) {
   assert.ok(existsSync(fileURLToPath(new URL(logoPath, root))), `Asset obrigatório ausente: ${logoPath}`);
