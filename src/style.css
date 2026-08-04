@@ -16224,6 +16224,517 @@ html[data-theme="dark"] {
   }
 }
 
+/* Ordenação persistente dos cartões de torneio */
+.proDashboard.playAppShell .tournamentItem {
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease !important;
+}
+
+.proDashboard.playAppShell .moveLineBtn {
+  overflow: visible !important;
+  border: 1px solid rgba(234, 88, 12, 0.38) !important;
+  border-radius: 10px !important;
+  background: #fff2e8 !important;
+  box-shadow: 0 5px 14px rgba(234, 88, 12, 0.13) !important;
+}
+
+.proDashboard.playAppShell .moveLineBtn span {
+  width: 18px !important;
+  height: 3px !important;
+  margin: 1.5px 0 !important;
+  border-radius: 999px !important;
+  background: #ea580c !important;
+}
+
+.proDashboard.playAppShell .moveLineBtn:hover,
+.proDashboard.playAppShell .moveLineBtn:focus-visible {
+  border-color: #f97316 !important;
+  background: #ffdfca !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2), 0 8px 18px rgba(234, 88, 12, 0.18) !important;
+  transform: translateY(-1px) !important;
+}
+
+.proDashboard.playAppShell .tournamentItem.dragMode:not(.dragging) {
+  border-style: dashed !important;
+  border-color: rgba(37, 99, 235, 0.46) !important;
+}
+
+.proDashboard.playAppShell .tournamentItem.dragMode .moveLineBtn::after {
+  content: "↔";
+  position: absolute;
+  top: 50%;
+  right: 38px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 24px;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  border-radius: 999px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  box-shadow: 0 5px 12px rgba(29, 78, 216, 0.12);
+  font-size: 15px;
+  line-height: 1;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.proDashboard.playAppShell .tournamentItem.dropTarget {
+  z-index: 2;
+  border-style: solid !important;
+  border-color: #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15), 0 18px 36px rgba(37, 99, 235, 0.18) !important;
+  transform: translateX(8px) scale(1.01) !important;
+}
+
+.proDashboard.playAppShell .tournamentItem.dropTarget::after {
+  content: "Solte aqui";
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 4;
+  padding: 6px 9px;
+  border-radius: 999px;
+  color: #ffffff;
+  background: #2563eb;
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.24);
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+
+html[data-theme="dark"] .proDashboard.playAppShell .moveLineBtn,
+.proDashboard.playAppShell.theme-dark .moveLineBtn {
+  border-color: rgba(251, 146, 60, 0.54) !important;
+  background: #2f2119 !important;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24) !important;
+}
+
+html[data-theme="dark"] .proDashboard.playAppShell .moveLineBtn span,
+.proDashboard.playAppShell.theme-dark .moveLineBtn span {
+  background: #fb923c !important;
+}
+
+html[data-theme="dark"] .proDashboard.playAppShell .tournamentItem.dragMode .moveLineBtn::after,
+.proDashboard.playAppShell.theme-dark .tournamentItem.dragMode .moveLineBtn::after {
+  border-color: rgba(96, 165, 250, 0.5);
+  color: #bfdbfe;
+  background: #14243c;
+}
+
+@media (max-width: 680px) {
+  .proDashboard.playAppShell .tournamentItem.dropTarget {
+    transform: translateX(4px) !important;
+  }
+}
+
+/* PLATAFORMA PÚBLICA, PERFIS REAIS E CAPAS DE EVENTOS */
+.srOnly {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.publicPlatformHome {
+  min-height: 100vh;
+  color: #eff6ff;
+  background:
+    radial-gradient(circle at 12% 2%, rgba(22, 163, 255, 0.24), transparent 32rem),
+    radial-gradient(circle at 88% 24%, rgba(255, 106, 31, 0.18), transparent 30rem),
+    #071425;
+  overflow-x: clip;
+}
+
+.publicPlatformTopbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 76px;
+  padding: 10px clamp(18px, 5vw, 72px);
+  border-bottom: 1px solid rgba(255, 115, 39, 0.72);
+  background: rgba(7, 20, 37, 0.92);
+  backdrop-filter: blur(18px);
+}
+
+.publicPlatformActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.publicPlatformActions a,
+.publicPlatformActions button,
+.publicPlatformHeroButton,
+.publicOrganizerCallout button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid rgba(104, 184, 255, 0.32);
+  border-radius: 14px;
+  color: #f8fbff;
+  background: rgba(255, 255, 255, 0.06);
+  font-weight: 800;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.publicPlatformActions button,
+.publicPlatformHeroButton,
+.publicOrganizerCallout button {
+  border-color: transparent;
+  background: linear-gradient(135deg, #1768df, #05bcd4);
+  box-shadow: 0 12px 30px rgba(0, 145, 210, 0.22);
+}
+
+.publicPlatformMain {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 42px 0 70px;
+}
+
+.publicPlatformHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.55fr);
+  align-items: center;
+  gap: clamp(30px, 7vw, 88px);
+  min-height: 390px;
+  padding: clamp(28px, 5vw, 64px);
+  border: 1px solid rgba(112, 168, 221, 0.24);
+  border-radius: 32px;
+  background: linear-gradient(145deg, rgba(16, 39, 66, 0.96), rgba(8, 24, 44, 0.9));
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.24);
+}
+
+.publicPlatformEyebrow,
+.publicDirectoryHeading > span,
+.publicOrganizerCallout > div > span,
+.publicPlatformSupport > div > span {
+  color: #ff9b45;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.publicPlatformHero h1 {
+  max-width: 760px;
+  margin: 14px 0 18px;
+  color: #fff;
+  font-size: clamp(2.2rem, 5.3vw, 4.6rem);
+  line-height: 0.98;
+}
+
+.publicPlatformHero p {
+  max-width: 720px;
+  margin: 0 0 28px;
+  color: #b8c9dd;
+  font-size: clamp(1rem, 1.7vw, 1.2rem);
+  line-height: 1.65;
+}
+
+.publicPlatformHeroMark {
+  display: grid;
+  place-items: center;
+  min-height: 245px;
+  padding: 26px;
+  border: 1px solid rgba(75, 183, 255, 0.3);
+  border-radius: 28px;
+  text-align: center;
+  background: linear-gradient(145deg, rgba(31, 108, 229, 0.22), rgba(5, 188, 212, 0.08));
+}
+
+.publicPlatformHeroMark svg { width: 58px; height: 58px; color: #ffad31; }
+.publicPlatformHeroMark strong { color: #fff; font-size: 3.2rem; line-height: 1; }
+.publicPlatformHeroMark span { color: #b9cce0; font-weight: 700; }
+
+.publicArenaDirectorySection {
+  margin-top: 34px;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid rgba(112, 168, 221, 0.2);
+  border-radius: 30px;
+  background: rgba(13, 31, 52, 0.9);
+}
+
+.publicDirectoryHeading { max-width: 760px; }
+.publicDirectoryHeading h2 { margin: 8px 0; color: #fff; font-size: clamp(1.8rem, 3vw, 2.7rem); }
+.publicDirectoryHeading p { margin: 0; color: #aebfd2; line-height: 1.55; }
+
+.publicArenaSearch {
+  position: relative;
+  display: block;
+  max-width: 760px;
+  margin: 28px auto;
+}
+
+.publicArenaSearch input {
+  width: 100%;
+  min-height: 58px;
+  padding: 0 58px 0 20px;
+  border: 1px solid rgba(139, 184, 226, 0.34);
+  border-radius: 18px;
+  color: #f7fbff;
+  background: #081525;
+  font-size: 1rem;
+}
+
+.publicArenaSearch > span:last-child {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+}
+
+.publicArenaDirectoryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.publicArenaDirectoryCard {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid rgba(128, 175, 216, 0.24);
+  border-radius: 22px;
+  background: linear-gradient(155deg, #13263c, #0c1a2c);
+}
+
+.publicArenaDirectoryPhoto {
+  width: 96px;
+  height: 96px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  border: 4px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2374e9, #08b9cf);
+}
+
+.publicArenaDirectoryPhoto img { width: 100%; height: 100%; object-fit: cover; }
+.publicArenaDirectoryPhoto span { display: grid; width: 100%; height: 100%; place-items: center; color: #fff; font-size: 1.65rem; font-weight: 900; }
+.publicArenaDirectoryInfo small { color: #62cdf0; font-weight: 900; text-transform: uppercase; }
+.publicArenaDirectoryInfo h3 { margin: 8px 0; color: #fff; font-size: 1.2rem; }
+.publicArenaDirectoryInfo p { display: flex; gap: 7px; align-items: center; margin: 0 0 20px; color: #aabdd1; }
+.publicArenaDirectoryInfo svg { width: 16px; flex: 0 0 auto; }
+.publicArenaDirectoryCard > button { min-height: 46px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(135deg, #1768df, #05bcd4); font-weight: 900; cursor: pointer; }
+.publicDirectoryState { padding: 36px; border: 1px dashed rgba(126, 173, 217, 0.3); border-radius: 18px; color: #b9c9da; text-align: center; }
+.publicDirectoryError { color: #ffc4b5; }
+
+.publicOrganizerCallout,
+.publicPlatformSupport {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  margin-top: 30px;
+  padding: clamp(24px, 4vw, 42px);
+  border: 1px solid rgba(255, 140, 58, 0.32);
+  border-radius: 26px;
+  background: linear-gradient(135deg, rgba(255, 112, 38, 0.14), rgba(18, 50, 82, 0.8));
+}
+
+.publicOrganizerCallout h2,
+.publicPlatformSupport h2 { margin: 8px 0; color: #fff; }
+.publicOrganizerCallout p { max-width: 760px; margin: 0; color: #b6c7da; line-height: 1.55; }
+
+.publicBackToPlatform,
+.publicOrganizerAccess {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid rgba(126, 173, 217, 0.34);
+  border-radius: 12px;
+  color: #f7fbff;
+  background: rgba(7, 20, 37, 0.62);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.publicArenaRealPage .publicBrandRow {
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.publicArenaEventCardWithCover {
+  display: grid !important;
+  grid-template-columns: 190px minmax(0, 1fr) auto !important;
+  align-items: stretch !important;
+  overflow: hidden;
+  padding: 0 !important;
+}
+
+.publicArenaEventCover {
+  min-height: 155px;
+  overflow: hidden;
+  background: linear-gradient(135deg, #155fc8, #05abc5);
+}
+
+.publicArenaEventCover img { width: 100%; height: 100%; object-fit: cover; }
+.publicArenaEventCover > span { display: grid; width: 100%; height: 100%; place-items: center; color: #fff; }
+.publicArenaEventCover svg { width: 42px; height: 42px; }
+.publicArenaEventBody { min-width: 0; padding: 22px; }
+.publicArenaEventCardWithCover > button { align-self: center; margin-right: 20px; }
+
+.publicTournamentCover {
+  width: 100%;
+  max-height: 430px;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 22px;
+  background: #0b1a2a;
+}
+
+.publicTournamentCover img { display: block; width: 100%; max-height: 430px; object-fit: cover; }
+
+.profileAlwaysPublicBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  border: 1px solid rgba(39, 190, 126, 0.35);
+  border-radius: 14px;
+  background: rgba(39, 190, 126, 0.1);
+}
+
+.profileAlwaysPublicBadge > span { color: #2fce8d; }
+.profileAlwaysPublicBadge div { display: grid; gap: 2px; }
+.profileAlwaysPublicBadge small { opacity: 0.75; }
+
+.tournamentCoverField {
+  display: grid;
+  gap: 12px;
+}
+
+.tournamentCoverIntro {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tournamentCoverIntro > div { display: grid; gap: 5px; }
+.tournamentCoverIntro strong { display: inline-flex; align-items: center; gap: 8px; }
+.tournamentCoverIntro svg { width: 18px; }
+.tournamentCoverIntro span { color: var(--muted, #74849a); font-size: 0.88rem; }
+
+.tournamentCoverDropzone {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  overflow: hidden;
+  border: 2px dashed rgba(74, 144, 226, 0.44);
+  border-radius: 20px;
+  background: rgba(30, 103, 194, 0.06);
+  cursor: pointer;
+}
+
+.tournamentCoverDropzone input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.tournamentCoverDropzone img { width: 100%; height: 230px; object-fit: cover; }
+.tournamentCoverDropzone > span { display: inline-flex; align-items: center; gap: 9px; padding: 20px; font-weight: 900; }
+.profileTournamentCover { width: 118px; min-height: 100px; align-self: stretch; border-radius: 14px; object-fit: cover; }
+
+.automaticStatusField {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid rgba(63, 138, 222, 0.25);
+  border-radius: 12px;
+  font-weight: 900;
+  background: rgba(53, 123, 205, 0.08);
+}
+
+.circuitCriteriaCard {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto minmax(280px, 1fr);
+  align-items: center;
+  gap: 18px;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(65, 140, 224, 0.25);
+  border-radius: 18px;
+  background: rgba(44, 116, 201, 0.06);
+}
+
+.circuitCriteriaCard p { margin: 5px 0 0; color: var(--muted, #74849a); }
+.circuitCriteriaCard select { min-width: 0; width: 100%; }
+.circuitAutomaticToggle { display: inline-flex; align-items: center; gap: 9px; font-weight: 800; cursor: pointer; }
+.circuitAutomaticToggle input { width: 20px; height: 20px; }
+.circuitCriteriaWarning { grid-column: 1 / -1; padding: 10px 12px; border-radius: 10px; color: #9a5200; background: #fff1d2; }
+.circuitIdentityHint {
+  grid-column: 1 / -1;
+  padding-top: 10px;
+  border-top: 1px solid rgba(104, 145, 190, 0.2);
+  color: var(--muted, #74849a);
+  font-size: 0.78rem;
+  font-weight: 750;
+  line-height: 1.45;
+}
+.circuitCriteriaCardModal { margin: 18px 0 0; }
+.blockedBrowseButton { width: 100%; margin-top: 12px; }
+.circuitRankingIdentity { display: grid; gap: 3px; min-width: 0; }
+.circuitRankingIdentity > span,
+.publicCircuitName { color: #ff8738 !important; font-size: 0.8rem; font-weight: 950; letter-spacing: 0.08em; text-transform: uppercase; }
+.circuitRankingIdentity > strong { font-size: clamp(1.05rem, 2vw, 1.35rem); }
+
+@media (max-width: 920px) {
+  .publicArenaDirectoryGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .publicPlatformHero { grid-template-columns: 1fr; }
+  .publicPlatformHeroMark { min-height: 190px; }
+  .circuitCriteriaCard { grid-template-columns: 1fr; }
+  .circuitCriteriaWarning { grid-column: auto; }
+  .publicArenaEventCardWithCover { grid-template-columns: 145px minmax(0, 1fr) !important; }
+  .publicArenaEventCardWithCover > button { grid-column: 1 / -1; width: auto; margin: 0 18px 18px; }
+}
+
+@media (max-width: 680px) {
+  .publicPlatformTopbar { position: relative; align-items: flex-start; padding: 10px 14px; }
+  .publicPlatformTopbar .brandTaglineOnly { display: none; }
+  .publicPlatformActions { align-items: stretch; flex-direction: column; width: min(185px, 52vw); gap: 7px; }
+  .publicPlatformActions a,
+  .publicPlatformActions button { min-height: 40px; padding: 0 10px; font-size: 0.78rem; text-align: center; }
+  .publicPlatformMain { width: min(100% - 20px, 1180px); padding: 14px 0 48px; }
+  .publicPlatformHero,
+  .publicArenaDirectorySection,
+  .publicOrganizerCallout,
+  .publicPlatformSupport { padding: 20px 16px; border-radius: 22px; }
+  .publicPlatformHero { min-height: 0; }
+  .publicPlatformHero h1 { font-size: clamp(2rem, 11vw, 3rem); }
+  .publicPlatformHeroMark { display: none; }
+  .publicArenaDirectoryGrid { grid-template-columns: 1fr; }
+  .publicArenaDirectoryCard { grid-template-columns: 74px minmax(0, 1fr); grid-template-rows: auto auto; gap: 14px; }
+  .publicArenaDirectoryPhoto { grid-row: 1 / 3; width: 74px; height: 74px; margin: 0; }
+  .publicArenaDirectoryCard > button { grid-column: 1 / -1; }
+  .publicOrganizerCallout,
+  .publicPlatformSupport { align-items: stretch; flex-direction: column; }
+  .publicArenaRealPage .publicBrandRow { flex-wrap: wrap; }
+  .publicArenaRealPage .publicBrandRow .beachLogo { order: -1; width: 100%; }
+  .publicBackToPlatform,
+  .publicOrganizerAccess { flex: 1; min-width: 0; }
+  .publicArenaEventCardWithCover { display: flex !important; flex-direction: column; }
+  .publicArenaEventCover { width: 100%; height: 178px; }
+  .publicArenaEventCardWithCover > button { width: calc(100% - 32px); margin: 0 16px 16px; min-height: 48px; }
+  .tournamentCoverIntro { align-items: flex-start; flex-direction: column; }
+  .tournamentCoverDropzone { min-height: 150px; }
+  .tournamentCoverDropzone img { height: 190px; }
+  .profileTournamentPost { align-items: stretch !important; flex-direction: column !important; }
+  .profileTournamentCover { width: 100%; height: 170px; min-height: 0; }
+  .circuitCriteriaCard { padding: 15px; }
+}
+
 /* =========================================================
    RANKINGS COMPARTILHÁVEIS E CONSISTÊNCIA DE TEMAS
    ========================================================= */
