@@ -17260,6 +17260,243 @@ html[data-theme="dark"] .proDashboard.playAppShell .tournamentItem.dragMode .mov
 }
 
 /* =========================================================
+   PERFIS E TORNEIOS PÚBLICOS — COMPOSIÇÃO FINAL NO CELULAR
+   Mantém logo, títulos e ações em áreas próprias para que nenhum
+   botão cubra o nome da arena ou do torneio.
+   ========================================================= */
+@media (max-width: 760px) {
+  .publicPage .publicHeader,
+  .publicPage .publicHeaderWithLogo,
+  .publicPage .publicArenaHeader {
+    position: static !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: max(14px, env(safe-area-inset-top)) 14px 16px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+  }
+
+  .publicPage .publicHeaderWithLogo {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-areas:
+      "brand"
+      "title"
+      "actions" !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .publicPage .publicHeaderWithLogo .publicBrandRow {
+    grid-area: brand !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 48px !important;
+  }
+
+  .publicPage .publicBrandRow .brandTaglineOnly {
+    display: none !important;
+  }
+
+  .publicPage .publicBrandRow .beachLogo,
+  .publicPage .publicBrandRow .torneio360Logo {
+    display: block !important;
+    width: 96px !important;
+    max-width: 96px !important;
+    height: 48px !important;
+    flex: 0 0 96px !important;
+    justify-self: center !important;
+    overflow: hidden !important;
+    transform: none !important;
+  }
+
+  .publicPage .publicBrandRow .beachLogo img,
+  .publicPage .publicBrandRow .torneio360Logo img {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
+  .publicPage .publicHeaderWithLogo .publicTitleBlock {
+    grid-area: title !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    text-align: left !important;
+  }
+
+  .publicPage .publicTitleBlock h1,
+  .publicPage .publicTitleBlock p {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .publicPage .publicTitleBlock h1 {
+    margin: 4px 0 6px !important;
+    font-size: clamp(21px, 7vw, 29px) !important;
+    line-height: 1.08 !important;
+  }
+
+  .publicPage .publicTitleBlock p {
+    margin: 0 !important;
+    font-size: 11.5px !important;
+    line-height: 1.45 !important;
+  }
+
+  .publicPage .publicTournamentHeaderActions {
+    grid-area: actions !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    justify-items: stretch !important;
+    gap: 8px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .publicPage .publicTournamentHeaderActions > button,
+  .publicPage .publicTournamentHeaderActions > .publicBadge {
+    position: static !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+    white-space: normal !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+    box-sizing: border-box !important;
+  }
+
+  .publicPage .publicTournamentHeaderActions > .publicBadge {
+    grid-area: auto !important;
+    justify-self: stretch !important;
+  }
+
+  .publicPage .publicArenaHeader {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px !important;
+  }
+
+  .publicPage .publicArenaHeader > .publicBrandRow {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .publicArenaRealPage .publicArenaHeader > .publicBrandRow {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 96px minmax(0, 1fr) !important;
+    grid-template-areas: "back logo access" !important;
+    align-items: center !important;
+    gap: 7px !important;
+  }
+
+  .publicArenaRealPage .publicBrandRow .publicBackToPlatform {
+    grid-area: back !important;
+  }
+
+  .publicArenaRealPage .publicBrandRow .beachLogo,
+  .publicArenaRealPage .publicBrandRow .torneio360Logo {
+    grid-area: logo !important;
+  }
+
+  .publicArenaRealPage .publicBrandRow .publicOrganizerAccess {
+    grid-area: access !important;
+  }
+
+  .publicArenaRealPage .publicBackToPlatform,
+  .publicArenaRealPage .publicOrganizerAccess {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 42px !important;
+    padding: 6px 7px !important;
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+    white-space: normal !important;
+    text-align: center !important;
+  }
+
+  .publicPage .publicArenaIdentity {
+    display: grid !important;
+    grid-template-columns: 64px minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .publicPage .publicArenaIdentity > img,
+  .publicPage .publicArenaIdentity > .publicArenaInitials {
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px !important;
+    border-width: 3px !important;
+    border-radius: 18px !important;
+  }
+
+  .publicPage .publicArenaIdentity > div {
+    min-width: 0 !important;
+  }
+
+  .publicPage .publicArenaIdentity h1,
+  .publicPage .publicArenaIdentity p {
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .publicPage .publicArenaIdentity h1 {
+    margin: 3px 0 5px !important;
+    font-size: clamp(21px, 6.5vw, 27px) !important;
+    line-height: 1.08 !important;
+  }
+
+  .publicPage .publicArenaIdentity p {
+    margin: 2px 0 !important;
+    font-size: 11px !important;
+    line-height: 1.35 !important;
+  }
+
+  .publicPage .publicArenaContacts {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .publicPage .publicArenaTabs button,
+  .publicPage .publicArenaStatusTabs button {
+    min-width: 0 !important;
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+    white-space: normal !important;
+  }
+
+  .publicPage .publicArenaEventCard,
+  .publicPage .publicArenaEventCardWithCover {
+    min-width: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .publicPage .publicArenaEventCard h2,
+  .publicPage .publicArenaEventCard p,
+  .publicPage .publicArenaEventBody {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    overflow-wrap: anywhere !important;
+  }
+}
+
+/* =========================================================
    CONTRASTE ENTRE TEMAS E CIRCUITOS — AGOSTO 2026
    Camada final: somente apresentação e interação visual.
    ========================================================= */
@@ -19239,7 +19476,7 @@ html[data-theme="dark"] .proDashboard.playAppShell .tournamentItem.dragMode .mov
 
 .participantImportSummary {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 9px;
 }
 

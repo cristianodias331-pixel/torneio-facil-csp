@@ -306,6 +306,31 @@ assert.ok(
   "A alça de três traços não recebeu o novo contraste visual."
 );
 assert.ok(
+  mainSource.includes('preparedLine.split(/\\s*(?:\\+|&|\\/|-|\\s+[xX]\\s+|\\s+[eE]\\s+)\\s*/u)')
+    && mainSource.includes("Espaços dentro do nome continuam sendo nome e sobrenome."),
+  "A importação de duplas não reconhece todos os separadores sem preservar nomes compostos."
+);
+const fixedPairSeparator = /\s*(?:\+|&|\/|-|\s+[xX]\s+|\s+[eE]\s+)\s*/u;
+[
+  ["Ana + Carla", ["Ana", "Carla"]],
+  ["Ana / Carla", ["Ana", "Carla"]],
+  ["Ana - Carla", ["Ana", "Carla"]],
+  ["Ana e Carla", ["Ana", "Carla"]],
+  ["Ana & Carla", ["Ana", "Carla"]],
+  ["Ana Maria da Silva", ["Ana Maria da Silva"]],
+].forEach(([line, expected]) => {
+  assert.deepEqual(
+    line.split(fixedPairSeparator),
+    expected,
+    `A importação interpretou incorretamente a linha: ${line}`
+  );
+});
+assert.ok(
+  styleSource.includes("PERFIS E TORNEIOS PÚBLICOS — COMPOSIÇÃO FINAL NO CELULAR")
+    && styleSource.includes('grid-template-areas: "back logo access"'),
+  "O cabeçalho público móvel não separa navegação, logo e acesso do organizador."
+);
+assert.ok(
   mainSource.includes("const saveQueueRef = useRef(Promise.resolve(true))")
     && mainSource.includes("queueTournamentSave(latestDataRef.current"),
   "As gravações do torneio podem terminar fora de ordem e sobrescrever dados mais novos."

@@ -10669,6 +10669,7 @@ function isTeamParticipantConfig(config) {
 function prepareParticipantLine(value) {
   let line = String(value || "")
     .normalize("NFKC")
+    .replace(/[–—]/g, "-")
     .replace(/[^\p{L}\p{M}\p{N}\s+&/'’.\-:()[\]{}]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -10698,6 +10699,7 @@ function sanitizeParticipantName(value) {
 function parseParticipantList(value, { splitTeams = false } = {}) {
   const names = [];
   let ignored = 0;
+  let recognizedTeams = 0;
 
   String(value || "")
     .split(/\r?\n/)
@@ -10706,7 +10708,7 @@ function parseParticipantList(value, { splitTeams = false } = {}) {
     .forEach((rawLine) => {
       const preparedLine = prepareParticipantLine(rawLine);
       const parts = splitTeams
-        ? preparedLine.split(/\s*(?:\+|&|\/|\s+-\s+|\s+[xX]\s+|\s+[eE]\s+)\s*/u)
+        ? preparedLine.split(/\s*(?:\+|&|\/|-|\s+[xX]\s+|\s+[eE]\s+)\s*/u)
         : [preparedLine];
       const cleanedNames = parts.map(sanitizeParticipantName).filter(Boolean);
 
@@ -10715,10 +10717,11 @@ function parseParticipantList(value, { splitTeams = false } = {}) {
         return;
       }
 
+      if (splitTeams && cleanedNames.length === 2) recognizedTeams += 1;
       names.push(...cleanedNames);
     });
 
-  return { names, ignored };
+  return { names, ignored, recognizedTeams };
 }
 
 function normalizeParticipantPlaceholder(value) {
@@ -10834,6 +10837,7 @@ function buildParticipantImportPreview(config, data, drafts, mode) {
       ignored: parsed.ignored,
       duplicates: countDuplicateParticipantNames(parsed.names),
       oddTeamList: parsed.names.length % 2 !== 0,
+      recognizedTeams: parsed.recognizedTeams,
       groups: [{
         label: "Duplas",
         values: nextTeams.map((team) => `${team.a} + ${team.b}`),
@@ -10858,6 +10862,7 @@ function buildParticipantImportPreview(config, data, drafts, mode) {
     ignored: parsed.ignored,
     duplicates: countDuplicateParticipantNames(parsed.names),
     oddTeamList: false,
+    recognizedTeams: 0,
     groups: [{ label: "Participantes", values: result.nextValues }],
   };
 }
@@ -10918,7 +10923,11 @@ function ParticipantImportModal({ type, data, onClose, onApply }) {
           <div>
             <span>Participantes</span>
             <h2 id="participant-import-title">Colar lista de nomes</h2>
-            <p>Numeração, marcadores, emojis, barras e hífens serão retirados automaticamente.</p>
+            <p>
+              {isTeams
+                ? "Uma dupla por linha. Separe os dois nomes por +, /, -, e ou &. Espaços dentro do nome continuam sendo nome e sobrenome."
+                : "Numeração, marcadores e emojis serão retirados automaticamente."}
+            </p>
           </div>
           <button type="button" className="participantImportClose" onClick={onClose} aria-label="Fechar importação">×</button>
         </div>
@@ -10961,7 +10970,7 @@ function ParticipantImportModal({ type, data, onClose, onApply }) {
                 value={drafts.general}
                 onChange={(event) => updateDraft("general", event.target.value)}
                 placeholder={isTeams
-                  ? "1. Ana + Carla\n2. Beatriz + Fernanda\nou um atleta por linha"
+                  ? "Ana + Carla\nBeatriz / Fernanda\nJoão e Marcos\nPaulo-Sérgio\n\nSem separador: João da Silva"
                   : "1. Ana\n2. Beatriz\n3. Carla"}
               />
             </label>
@@ -10972,6 +10981,7 @@ function ParticipantImportModal({ type, data, onClose, onApply }) {
           <div><strong>{preview.imported}</strong><span>nomes a preencher</span></div>
           <div><strong>{preview.preserved}</strong><span>nomes preservados</span></div>
           <div><strong>{preview.vacancies}</strong><span>vagas automáticas restantes</span></div>
+          {isTeams ? <div><strong>{preview.recognizedTeams}</strong><span>duplas reconhecidas por linha</span></div> : null}
         </div>
 
         {(preview.overflow > 0 || preview.duplicates > 0 || preview.ignored > 0 || preview.oddTeamList || replaceConfirmed) && (
