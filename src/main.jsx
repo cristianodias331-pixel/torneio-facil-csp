@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import InstallAppBanner from "./InstallAppBanner.jsx";
 import { super12IndividualTemplate } from "./super12Schedule.mjs";
+import { super20MixedTemplate } from "./super20MixedSchedule.mjs";
 import "./style.css";
 
 const SUPABASE_URL = "https://dttutybojealkvuywszt.supabase.co";
@@ -941,6 +942,7 @@ const modalityDisplayNames = {
   "Super 10 Mista (Dupla Aleatória)": "Super 10 mista",
   "Super 12 Mista (Dupla Aleatória)": "Super 12 mista",
   "Super 16 Mista (Dupla Aleatória)": "Super 16 mista",
+  "Super 20 Mista (Dupla Aleatória)": "Super 20 mista",
   "Super 12 Mista (Dupla Fixa)": "Super 6 (dupla fixa)",
   "Super 16 Mista (Dupla Fixa)": "Super 8 (dupla fixa)",
   "Simples 8": "Simples 8 (1 contra 1 por jogo)",
@@ -962,6 +964,7 @@ const allowedByPlan = {
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
+    "Super 20 Mista (Dupla Aleatória)",
   ],
   pro: [
     "Super 12 Mista (Dupla Fixa)",
@@ -971,6 +974,7 @@ const allowedByPlan = {
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
+    "Super 20 Mista (Dupla Aleatória)",
   ],
   premium: [
     "Super 12 Mista (Dupla Fixa)",
@@ -980,6 +984,7 @@ const allowedByPlan = {
     "Super 10 Mista (Dupla Aleatória)",
     "Super 12 Mista (Dupla Aleatória)",
     "Super 16 Mista (Dupla Aleatória)",
+    "Super 20 Mista (Dupla Aleatória)",
     "Simples 8",
     "Copa - 18 duplas",
     "Campeonato Cearense",
@@ -1020,6 +1025,13 @@ const modalityConfig = {
     men: 8,
     women: 8,
     courts: 4,
+  },
+
+  "Super 20 Mista (Dupla Aleatória)": {
+    type: "mixed20",
+    men: 10,
+    women: 10,
+    courts: 5,
   },
 
   "Super 12 Mista (Dupla Fixa)": {
@@ -1127,6 +1139,13 @@ function isGameFinished(game, winningScore = 4) {
 
 function isCupType(config) {
   return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha" || config?.type === "cearense";
+}
+
+function isMixedType(config) {
+  return config?.type === "mixed10"
+    || config?.type === "mixed12"
+    || config?.type === "mixed16"
+    || config?.type === "mixed20";
 }
 
 const super8Template = [
@@ -4917,6 +4936,7 @@ function Login({
                 "Super 10 mista",
                 "Super 12 mista",
                 "Super 16 mista",
+                "Super 20 mista",
                 "Gerencie apenas 1 campeonato por vez",
                 "Sorteio automático",
               ]}
@@ -4936,6 +4956,7 @@ function Login({
                 "Super 10 mista",
                 "Super 12 mista",
                 "Super 16 mista",
+                "Super 20 mista",
                 "Gerencie vários campeonatos ao mesmo tempo",
               ]}
             />
@@ -4953,6 +4974,7 @@ function Login({
                 "Super 10 mista",
                 "Super 12 mista",
                 "Super 16 mista",
+                "Super 20 mista",
                 "Simples 8 (1 contra 1 por jogo)",
                 "Copa - 18 duplas",
                 "Torneio modelo Campeonato Cearense",
@@ -5003,6 +5025,11 @@ function Login({
             <Info
               title="Super 16 mista"
               text="Formato misto com 16 participantes: 8 homens e 8 mulheres. Funciona como uma versão maior do Super 12 mista, com mais atletas, mais jogos e maior movimentação de quadras. O sistema monta as duplas mistas de forma organizada, distribui as partidas e permite preencher os placares rodada por rodada. O ranking é individual, ou seja, cada atleta pontua pelo próprio desempenho, mesmo jogando com parceiros diferentes durante o torneio."
+            />
+
+            <Info
+              title="Super 20 mista"
+              text="Formato misto com 20 participantes: 10 homens e 10 mulheres. São 10 rodadas em 5 quadras. Cada homem forma dupla exatamente uma vez com cada mulher, e vice-versa, em uma tabela matemática fixa que reduz ao máximo a repetição de adversários. O desempenho é individual, com rankings masculino e feminino."
             />
 
             <Info
@@ -6330,7 +6357,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         return;
       }
       const config = modalityConfig[tournament.type];
-      const separated = config?.type === "mixed10" || config?.type === "mixed12" || config?.type === "mixed16";
+      const separated = isMixedType(config);
       const teamRanking = isCupType(config) || config?.type === "fixed12" || config?.type === "fixed16";
       const nameOccurrences = new Map();
 
@@ -8654,6 +8681,13 @@ setNewPublicInfo({
       />
     )}
 
+    {allowedTypes.includes("Super 20 Mista (Dupla Aleatória)") && (
+      <Info
+        title="Super 20 mista"
+        text="Formato misto com 20 participantes: 10 homens e 10 mulheres. São 10 rodadas em 5 quadras. Cada homem forma dupla exatamente uma vez com cada mulher, e vice-versa. A tabela é fixa, reduz a repetição de adversários e mantém rankings individuais masculino e feminino."
+      />
+    )}
+
     {allowedTypes.includes("Simples 8") && (
       <Info
         title="Simples 8 (1 contra 1 por jogo)"
@@ -9007,7 +9041,7 @@ function createInitialData(type, config) {
     return { ...base, players: [] };
   }
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     return {
       ...base,
       players: {
@@ -9195,7 +9229,7 @@ function normalizeTournamentData(type, rawData) {
     };
   }
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     return {
       ...normalized,
       players: {
@@ -9236,7 +9270,7 @@ function needsTournamentDataRepair(type, rawData) {
       || !Array.isArray(rawData.brackets);
   }
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     return !Array.isArray(players.men)
       || !Array.isArray(players.women)
       || players.men.length !== config.men
@@ -9253,7 +9287,7 @@ function needsTournamentDataRepair(type, rawData) {
 function getShuffleNames(data, config) {
   if (!data?.players) return [];
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     return [...data.players.men, ...data.players.women];
   }
 
@@ -9866,7 +9900,7 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     function getTeamNames(ids = []) {
       if (!ids.length) return ["Aguardando"];
 
-      if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+      if (isMixedType(config)) {
         const allPlayers = [...(nextData.players?.men || []), ...(nextData.players?.women || [])];
         return ids.map((id) => allPlayers[id] || "");
       }
@@ -9934,7 +9968,7 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   function finishShuffle() {
     const copy = structuredClone(data);
 
-    if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+    if (isMixedType(config)) {
       copy.players.men = shuffleArray(copy.players.men);
       copy.players.women = shuffleArray(copy.players.women);
     } else if (config.type === "fixed12" || config.type === "fixed16" || isCupType(config)) {
@@ -10691,7 +10725,7 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
 }
 
 function isMixedParticipantConfig(config) {
-  return config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16";
+  return isMixedType(config);
 }
 
 function isTeamParticipantConfig(config) {
@@ -11057,7 +11091,7 @@ function ParticipantImportModal({ type, data, onClose, onApply }) {
 function PlayerInputs({ type, data, updatePlayer }) {
   const config = modalityConfig[type];
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     return (
       <div className="twoCols">
         <div>
@@ -11202,6 +11236,10 @@ function generateSchedule(type, players) {
 
   if (config.type === "mixed16") {
     return optimizeCourts(buildFromMixedTemplate(super16MixedTemplate, players));
+  }
+
+  if (config.type === "mixed20") {
+    return optimizeCourts(buildFromMixedTemplate(super20MixedTemplate, players));
   }
 
   if (config.type === "fixed12") {
@@ -11428,7 +11466,7 @@ function calculateRanking(data, type, rankingCriteriaValue = defaultRankingCrite
 
   let names = [];
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     names = [...data.players.men, ...data.players.women];
   } else if (config.type === "fixed12" || config.type === "fixed16") {
     names = data.players.teams.map((t) => `${t.a} + ${t.b}`);
@@ -11565,7 +11603,7 @@ function buildPublicCircuitRankingGroups(circuit, tournaments = []) {
         tournament.type,
         tournament.data?.rankingCriteria || defaultRankingCriteria
       );
-      const separated = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16";
+      const separated = isMixedType(config);
       const teamRanking = isCupType(config) || config.type === "fixed12" || config.type === "fixed16";
 
       rows.forEach((row) => {
@@ -11625,7 +11663,7 @@ function podium(i) {
 function RankingView({ ranking, type, rankingCriteria, shareContext = null }) {
   const config = modalityConfig[type];
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     const menLimit = config.men;
     const men = ranking.filter((p) => p.id < menLimit);
     const women = ranking.filter((p) => p.id >= menLimit);
@@ -12652,7 +12690,7 @@ function PublicCircuitScreen({ circuit, tournaments = [], organizer = {}, onBack
 function getRegisteredAthletesForPublic(data, config) {
   if (!data?.players) return [];
 
-  if (config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16") {
+  if (isMixedType(config)) {
     return [
       {
         title: "Masculino",

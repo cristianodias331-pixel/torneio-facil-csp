@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { super12IndividualTemplate } from "../src/super12Schedule.mjs";
+import { super20MixedTemplate } from "../src/super20MixedSchedule.mjs";
 
 const root = new URL("../", import.meta.url);
 const mainSource = readFileSync(new URL("src/main.jsx", root), "utf8");
@@ -51,6 +52,7 @@ const expectedModalityLabels = [
   "Super 10 mista",
   "Super 12 mista",
   "Super 16 mista",
+  "Super 20 mista",
   "Simples 8 (1 contra 1 por jogo)",
   "Torneio modelo Campeonato Cearense",
 ];
@@ -71,6 +73,7 @@ const premiumOrder = [
   '"Super 10 Mista (Dupla Aleatória)"',
   '"Super 12 Mista (Dupla Aleatória)"',
   '"Super 16 Mista (Dupla Aleatória)"',
+  '"Super 20 Mista (Dupla Aleatória)"',
   '"Simples 8"',
 ];
 const premiumPositions = premiumOrder.map((type) => premiumModalities.indexOf(type));
@@ -119,6 +122,48 @@ for (let first = 1; first <= 12; first += 1) {
 
 assert.ok(mainSource.includes('type: "super12"'), "A modalidade Super 12 individual não está cadastrada.");
 assert.ok(mainSource.includes('config.type === "super12"'), "A geração da tabela fixa do Super 12 está ausente.");
+
+assert.equal(super20MixedTemplate.length, 10, "O Super 20 mista deve possuir 10 rodadas.");
+const super20Partners = new Set();
+const super20Opponents = new Map();
+
+for (const round of super20MixedTemplate) {
+  assert.equal(round.length, 5, "Cada rodada do Super 20 mista deve usar 5 quadras.");
+  assert.deepEqual(
+    round.flat().sort((a, b) => a - b),
+    Array.from({ length: 20 }, (_, index) => index + 1),
+    "Todos os 20 participantes devem jogar exatamente uma vez por rodada."
+  );
+
+  for (const [firstMan, firstWoman, secondMan, secondWoman] of round) {
+    assert.ok(firstMan <= 10 && secondMan <= 10, "Cada dupla deve possuir um homem.");
+    assert.ok(firstWoman > 10 && secondWoman > 10, "Cada dupla deve possuir uma mulher.");
+
+    for (const [man, woman] of [[firstMan, firstWoman], [secondMan, secondWoman]]) {
+      const partnership = `${man}-${woman}`;
+      assert.ok(!super20Partners.has(partnership), `A parceria ${partnership} não pode se repetir.`);
+      super20Partners.add(partnership);
+    }
+
+    for (const [first, second] of [
+      [firstMan, secondMan],
+      [firstWoman, secondWoman],
+      [firstMan, secondWoman],
+      [secondMan, firstWoman],
+    ]) {
+      const opponentKey = super12PairKey(first, second);
+      super20Opponents.set(opponentKey, (super20Opponents.get(opponentKey) || 0) + 1);
+    }
+  }
+}
+
+assert.equal(super20Partners.size, 100, "Cada homem deve formar dupla uma vez com cada mulher.");
+assert.ok(
+  [...super20Opponents.values()].every((count) => count <= 2),
+  "Nenhum adversário deve ser repetido mais de duas vezes no Super 20 mista."
+);
+assert.ok(mainSource.includes('type: "mixed20"'), "A modalidade Super 20 mista não está cadastrada.");
+assert.ok(mainSource.includes('config.type === "mixed20"'), "A tabela fixa do Super 20 mista não está ligada ao gerador.");
 
 assert.ok(indexSource.includes('src/main.jsx'), "A entrada React não está ligada ao index.html.");
 assert.ok(indexSource.includes('torneio360-favicon-96.png'), "O novo favicon do Torneio360 não está configurado.");
