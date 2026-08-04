@@ -6225,6 +6225,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
     const isEditing = Boolean(form.id);
 
+    if (!isEditing && !ensureArenaProfileReadyForPublication()) return;
+
     const rowPayload = {
       user_id: user.id,
       name: form.name.trim(),
@@ -6706,6 +6708,21 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     };
   }
 
+  function ensureArenaProfileReadyForPublication() {
+    const arenaName = String(organizerProfile.arenaName || profile.arena_name || "").trim();
+    const organizerName = String(organizerProfile.organizerName || profile.name || "").trim();
+
+    if (arenaName && organizerName) return true;
+
+    showNotice(
+      "warning",
+      "Complete o perfil da arena",
+      "Informe o nome da arena e o nome do responsável antes de criar um evento público."
+    );
+    openProfileSection("editar");
+    return false;
+  }
+
   async function syncPublicArenaDirectory(nextTournaments = tournaments, nextCircuits = circuits) {
     const activeTournaments = (nextTournaments || []).filter((item) => !item.data?.deletedAt);
     if (!activeTournaments.length) return [];
@@ -7063,6 +7080,8 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }, []);
 
   async function createTournament() {
+    if (!ensureArenaProfileReadyForPublication()) return;
+
     if (!newName.trim()) {
       showNotice("warning", "Nome obrigatório", "Digite um nome para este torneio.");
       return;
@@ -8836,7 +8855,7 @@ setNewPublicInfo({
           <span aria-hidden="true">●</span>
           <div>
             <strong>Perfil público da arena</strong>
-            <small>Seus torneios e circuitos aparecem automaticamente para os visitantes.</small>
+            <small>Com o nome da arena e do responsável preenchidos, seus eventos aparecem automaticamente para os visitantes.</small>
           </div>
         </div>
       </div>
