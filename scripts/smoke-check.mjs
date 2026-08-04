@@ -332,9 +332,16 @@ assert.ok(
 );
 assert.ok(
   mainSource.includes("function isRegistrationDeadlineOpen(deadline)")
-    && mainSource.includes("function isCircuitRegistrationOpen(circuit, tournaments = [])")
-    && mainSource.includes("<PublicRegistrationStatus open={registrationOpen}"),
-  "Os cartões públicos não informam corretamente se a inscrição está aberta ou encerrada."
+    && (mainSource.match(/<PublicRegistrationStatus open=\{registrationOpen\}/g) || []).length === 2
+    && !mainSource.includes("isCircuitRegistrationOpen")
+    && (mainSource.match(/className=\{`publicCircuitStatus \$\{circuitStatus\}`\}/g) || []).length === 2,
+  "Torneios devem mostrar inscrições; circuitos devem mostrar somente andamento ou encerramento."
+);
+assert.ok(
+  styleSource.includes(".proDashboard .circuitStatus-closed")
+    && styleSource.includes(".publicCircuitStatus.closed")
+    && styleSource.includes("#f97316"),
+  "O status encerrado dos circuitos não recebeu a identificação laranja."
 );
 assert.ok(
   mainSource.includes("Quero me inscrever em")

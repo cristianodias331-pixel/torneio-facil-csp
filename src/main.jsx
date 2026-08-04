@@ -446,17 +446,6 @@ function isRegistrationDeadlineOpen(deadline) {
   return Boolean(deadline) && String(deadline) >= getBrazilTodayISO();
 }
 
-function isCircuitRegistrationOpen(circuit, tournaments = []) {
-  const tournamentIds = new Set(
-    (circuit?.tournament_ids || circuit?.tournamentIds || []).map((id) => String(id))
-  );
-
-  return tournaments.some((tournament) => (
-    tournamentIds.has(String(tournament?.id))
-    && isRegistrationDeadlineOpen(getTournamentRegistrationDeadline(tournament))
-  ));
-}
-
 function PublicRegistrationStatus({ open, whatsapp, eventName }) {
   if (!open) {
     return <span className="publicRegistrationStatus closed">Inscrições encerradas</span>;
@@ -12269,14 +12258,14 @@ function PublicArenaPage({ arenaId = null, publicId = null }) {
               </article>
             );
           }) : visibleItems.map((item) => {
-            const registrationOpen = isCircuitRegistrationOpen(item, tournaments);
+            const circuitStatus = normalizeCircuitStatus(getAutomaticEventStatus(item.end_date || item.endDate));
             return (
               <article className="card publicArenaEventCard publicArenaCircuitCard" key={item.id}>
                 <div className="publicArenaEventIcon"><GitBranch aria-hidden="true" /></div>
                 <div>
                   <small>Circuito</small><h2>{item.name}</h2>
+                  <span className={`publicCircuitStatus ${circuitStatus}`}>{circuitStatus === "closed" ? "Encerrado" : "Em andamento"}</span>
                   <p>{item.start_date ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(item.start_date)} até {formatDateBR(item.end_date)}</span> : null}<span>{(item.tournament_ids || []).length} torneio(s)</span></p>
-                  <PublicRegistrationStatus open={registrationOpen} whatsapp={organizer.whatsapp} eventName={item.name} />
                 </div>
                 <button type="button" onClick={() => setSelectedCircuit(item)}>Ver circuito</button>
               </article>
@@ -12547,18 +12536,18 @@ function PublicTournamentPage({ publicId }) {
             })
           ) : (
             visibleItems.map((item) => {
-              const registrationOpen = isCircuitRegistrationOpen(item, tournaments);
+              const circuitStatus = normalizeCircuitStatus(getAutomaticEventStatus(item.end_date || item.endDate));
               return (
                 <article className="card publicArenaEventCard publicArenaCircuitCard" key={item.id}>
                   <div className="publicArenaEventIcon"><GitBranch aria-hidden="true" /></div>
                   <div>
                     <small>Circuito</small>
                     <h2>{item.name}</h2>
+                    <span className={`publicCircuitStatus ${circuitStatus}`}>{circuitStatus === "closed" ? "Encerrado" : "Em andamento"}</span>
                     <p>
                       {item.start_date || item.startDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(item.start_date || item.startDate)}</span> : null}
                       <span>{(item.tournament_ids || item.tournamentIds || []).length} torneio(s)</span>
                     </p>
-                    <PublicRegistrationStatus open={registrationOpen} whatsapp={publicOrganizer.whatsapp} eventName={item.name} />
                   </div>
                   <button type="button" onClick={() => setSelectedCircuit(item)}>Ver ranking</button>
                 </article>

@@ -17848,13 +17848,13 @@ html[data-theme="dark"] .proDashboard.playAppShell .tournamentItem.dragMode .mov
 }
 
 .proDashboard .circuitStatus-closed {
-  border-color: color-mix(in srgb, #16a34a 42%, var(--ui-border)) !important;
-  background: color-mix(in srgb, #16a34a 14%, var(--ui-surface-raised)) !important;
-  color: #15803d !important;
+  border-color: color-mix(in srgb, #f97316 48%, var(--ui-border)) !important;
+  background: color-mix(in srgb, #f97316 15%, var(--ui-surface-raised)) !important;
+  color: #c2410c !important;
 }
 
 .proDashboard.theme-dark .circuitStatus-closed {
-  color: #86efac !important;
+  color: #fdba74 !important;
 }
 
 .proDashboard .circuitItemMain p {
@@ -20041,6 +20041,32 @@ a.publicRegistrationStatus.open:hover {
   border-color: #f97316;
   background: #ffedd5;
   color: #9a3412;
+}
+
+.publicCircuitStatus {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  margin: 1px 0 9px;
+  padding: 5px 10px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.publicCircuitStatus.active {
+  border-color: #8b5cf6;
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.publicCircuitStatus.closed {
+  border-color: #f97316;
+  background: #ffedd5;
+  color: #c2410c;
 }
 
 @media (max-width: 760px) {
