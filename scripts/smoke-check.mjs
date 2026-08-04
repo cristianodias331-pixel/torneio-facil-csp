@@ -25,6 +25,7 @@ const requiredApplicationMarkers = [
   'function PublicArenaPage(',
   'function calculateRanking(',
   'function calculateCircuitTournamentRanking(',
+  'function buildPublicCircuitRankingGroups(',
   'function generateCupBrackets(',
   '.from("profiles")',
   '.from("tournaments")',
@@ -150,6 +151,7 @@ assert.ok(
 );
 assert.ok(mainSource.includes('title="Ranking do dia"'), "O ranking do torneio não usa o título Ranking do dia.");
 assert.ok(mainSource.includes('<h2>Ranking geral acumulado</h2>'), "O ranking público do circuito não usa o título acumulado correto.");
+assert.ok(mainSource.includes('tournaments={tournaments}'), "O ranking público do circuito não recebe os torneios para cálculo imediato.");
 assert.ok(mainSource.includes('className="publicCircuitName"'), "O nome do circuito não recebe destaque no ranking público.");
 assert.ok(mainSource.includes('pts: "Total de Games"'), "A coluna de games ainda usa a nomenclatura antiga.");
 assert.ok(!/\bpontos\b/i.test(mainSource), "A nomenclatura Pontos ainda aparece na interface.");

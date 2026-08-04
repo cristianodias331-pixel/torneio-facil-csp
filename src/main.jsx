@@ -11499,6 +11499,80 @@ function calculateCircuitTournamentRanking(data, type, rankingCriteriaValue = de
     });
 }
 
+function buildPublicCircuitRankingGroups(circuit, tournaments = []) {
+  const selectedIds = new Set(
+    (circuit?.tournament_ids || circuit?.tournamentIds || []).map((id) => String(id))
+  );
+  const groups = {
+    geral: { key: "geral", title: "Ranking geral acumulado", rows: new Map() },
+    masculino: { key: "masculino", title: "Ranking Masculino", rows: new Map() },
+    feminino: { key: "feminino", title: "Ranking Feminino", rows: new Map() },
+  };
+
+  tournaments
+    .filter((tournament) => (
+      selectedIds.has(String(tournament.id))
+      && !tournament.data?.deletedAt
+    ))
+    .forEach((tournament) => {
+      const config = modalityConfig[tournament.type];
+      if (!config) return;
+
+      const rows = calculateCircuitTournamentRanking(
+        tournament.data || {},
+        tournament.type,
+        tournament.data?.rankingCriteria || defaultRankingCriteria
+      );
+      const separated = config.type === "mixed10" || config.type === "mixed12" || config.type === "mixed16";
+      const teamRanking = isCupType(config) || config.type === "fixed12" || config.type === "fixed16";
+
+      rows.forEach((row) => {
+        if (Number(row.played || 0) <= 0) return;
+
+        const groupKey = separated ? (row.id < config.men ? "masculino" : "feminino") : "geral";
+        const name = String(row.name || "Sem nome").trim() || "Sem nome";
+        const normalizedParts = name
+          .split(teamRanking ? /\s+\+\s+/ : /$^/)
+          .map((part) => part.trim().replace(/\s+/g, " ").toLocaleLowerCase("pt-BR"))
+          .filter(Boolean);
+        const playerKey = teamRanking && normalizedParts.length > 1
+          ? normalizedParts.sort((first, second) => first.localeCompare(second, "pt-BR")).join(" + ")
+          : normalizedParts[0] || "sem nome";
+        const current = groups[groupKey].rows.get(playerKey) || {
+          id: `${groupKey}:${playerKey}`,
+          name,
+          pts: 0,
+          w: 0,
+          bal: 0,
+          played: 0,
+          tournaments: 0,
+        };
+
+        groups[groupKey].rows.set(playerKey, {
+          ...current,
+          pts: current.pts + Number(row.pts || 0),
+          w: current.w + Number(row.w || 0),
+          bal: current.bal + Number(row.bal || 0),
+          played: current.played + Number(row.played || 0),
+          tournaments: current.tournaments + 1,
+        });
+      });
+    });
+
+  const criteria = getRankingCriteria(circuit?.ranking_criteria || defaultRankingCriteria);
+  const sortRows = (rows) => Array.from(rows.values()).sort((first, second) => {
+    for (const key of criteria.order) {
+      const difference = Number(second[key] || 0) - Number(first[key] || 0);
+      if (difference !== 0) return difference;
+    }
+    return first.name.localeCompare(second.name, "pt-BR");
+  });
+
+  return [groups.masculino, groups.feminino, groups.geral]
+    .map((group) => ({ ...group, rows: sortRows(group.rows) }))
+    .filter((group) => group.rows.length > 0);
+}
+
 function podium(i) {
   if (i === 0) return "🏆";
   if (i === 1) return "🥈";
@@ -12058,7 +12132,14 @@ function PublicArenaPage({ arenaId = null, publicId = null }) {
   }
 
   if (selectedCircuit) {
-    return <PublicCircuitScreen circuit={selectedCircuit} organizer={organizer} onBackToArena={() => setSelectedCircuit(null)} />;
+    return (
+      <PublicCircuitScreen
+        circuit={selectedCircuit}
+        tournaments={tournaments}
+        organizer={organizer}
+        onBackToArena={() => setSelectedCircuit(null)}
+      />
+    );
   }
 
   const activeItems = activeArenaTab === "tournaments"
@@ -12425,10 +12506,12 @@ function PublicTournamentPage({ publicId }) {
   );
 }
 
-function PublicCircuitScreen({ circuit, organizer = {}, onBackToArena }) {
-  const rankingGroups = Array.isArray(circuit?.ranking_groups)
+function PublicCircuitScreen({ circuit, tournaments = [], organizer = {}, onBackToArena }) {
+  const liveRankingGroups = buildPublicCircuitRankingGroups(circuit, tournaments);
+  const storedRankingGroups = Array.isArray(circuit?.ranking_groups)
     ? circuit.ranking_groups.filter((group) => Array.isArray(group?.rows) && group.rows.length > 0)
     : [];
+  const rankingGroups = liveRankingGroups.length > 0 ? liveRankingGroups : storedRankingGroups;
   const arenaName = organizer.arenaName || "Arena Torneio360";
   const shareConfig = {
     title: circuit?.name || "Ranking do circuito",
