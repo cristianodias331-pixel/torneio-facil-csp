@@ -14,6 +14,9 @@ const manifest = JSON.parse(readFileSync(new URL("public/manifest.webmanifest", 
 const publicArenaMigrationUrl = new URL("supabase/migrations/202608030001_public_arena_platform.sql", root);
 assert.ok(existsSync(fileURLToPath(publicArenaMigrationUrl)), "A migração segura da plataforma pública está ausente.");
 const publicArenaMigration = readFileSync(publicArenaMigrationUrl, "utf8");
+const arenaDirectoryRulesMigrationUrl = new URL("supabase/migrations/202608040001_arena_directory_access_rules.sql", root);
+assert.ok(existsSync(fileURLToPath(arenaDirectoryRulesMigrationUrl)), "A migração das regras do diretório de arenas está ausente.");
+const arenaDirectoryRulesMigration = readFileSync(arenaDirectoryRulesMigrationUrl, "utf8");
 
 const requiredApplicationMarkers = [
   "supabase.auth.signInWithPassword",
@@ -43,6 +46,23 @@ const requiredApplicationMarkers = [
 for (const marker of requiredApplicationMarkers) {
   assert.ok(mainSource.includes(marker), `Fluxo essencial ausente: ${marker}`);
 }
+
+assert.ok(
+  mainSource.includes("ensureArenaProfileReadyForPublication")
+    && mainSource.includes("Informe o nome da arena e o nome do responsável"),
+  "A criação de eventos não exige o perfil público mínimo da arena."
+);
+assert.ok(
+  arenaDirectoryRulesMigration.includes("private.promote_confirmed_organizer")
+    && arenaDirectoryRulesMigration.includes("private.provision_profile_from_auth_user")
+    && arenaDirectoryRulesMigration.includes("public.t360_arena_directory_visible")
+    && arenaDirectoryRulesMigration.includes("profile.arena_name")
+    && arenaDirectoryRulesMigration.includes("profile.name")
+    && arenaDirectoryRulesMigration.includes("account.email_confirmed_at")
+    && arenaDirectoryRulesMigration.includes("event_end_value::date")
+    && arenaDirectoryRulesMigration.includes("circuit.end_date"),
+  "A migração perdeu critérios essenciais de ativação, teste ou visibilidade pública."
+);
 
 const expectedModalityLabels = [
   "Super 6 (dupla fixa)",
