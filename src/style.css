@@ -20251,3 +20251,498 @@ a.publicRegistrationStatus.open:hover {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* =========================================================
+   QUADRAS PERSONALIZADAS — AGOSTO 2026
+   O número interno permanece estável; estes elementos alteram
+   somente o nome exibido e a alocação visual de cada jogo.
+   ========================================================= */
+
+.courtNameBadge,
+button.courtNameBadge {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  min-height: 30px !important;
+  margin: 0 !important;
+  padding: 6px 12px !important;
+  border: 1px solid #86a9df !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #eff6ff 0%, #dbeafe 100%) !important;
+  color: #1d4ed8 !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  line-height: 1.1 !important;
+  letter-spacing: .025em !important;
+  text-transform: uppercase !important;
+  text-align: center !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .72), 0 5px 13px rgba(37, 99, 235, .10) !important;
+}
+
+button.courtNameBadgeEditable {
+  cursor: pointer !important;
+  transition: transform .16s ease, border-color .16s ease, background .16s ease, box-shadow .16s ease !important;
+}
+
+button.courtNameBadgeEditable:hover,
+button.courtNameBadgeEditable:focus-visible {
+  transform: translateY(-1px) !important;
+  border-color: #3b82f6 !important;
+  background: linear-gradient(180deg, #ffffff 0%, #dbeafe 100%) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, .14), 0 8px 18px rgba(37, 99, 235, .16) !important;
+  outline: none !important;
+}
+
+.courtNameBadge svg {
+  flex: 0 0 auto !important;
+  width: 13px !important;
+  height: 13px !important;
+  stroke-width: 3 !important;
+}
+
+.gameTopLine > .courtNameBadge {
+  grid-area: top !important;
+  justify-self: start !important;
+  align-self: center !important;
+}
+
+.gameGroupLabel {
+  display: inline-flex !important;
+  align-items: center !important;
+  width: fit-content !important;
+  max-width: 100% !important;
+  min-height: 27px !important;
+  padding: 5px 9px !important;
+  border: 1px solid var(--ui-border, #cbd5e1) !important;
+  border-radius: 999px !important;
+  background: var(--ui-surface-muted, #f1f5f9) !important;
+  color: var(--ui-text, #334155) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+}
+
+.proDashboard.theme-dark .courtNameBadge,
+.proDashboard.theme-dark button.courtNameBadge,
+html[data-theme="dark"] .courtEditorOverlay .courtNameBadge {
+  border-color: #44618d !important;
+  background: linear-gradient(180deg, #1b2a42 0%, #152238 100%) !important;
+  color: #72a7ff !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05), 0 6px 16px rgba(0, 0, 0, .20) !important;
+}
+
+.proDashboard.theme-dark button.courtNameBadgeEditable:hover,
+.proDashboard.theme-dark button.courtNameBadgeEditable:focus-visible {
+  border-color: #76a4ff !important;
+  background: linear-gradient(180deg, #223553 0%, #192942 100%) !important;
+  box-shadow: 0 0 0 3px rgba(118, 164, 255, .13), 0 8px 20px rgba(0, 0, 0, .28) !important;
+}
+
+.courtConfigPanel {
+  display: grid !important;
+  gap: 16px !important;
+  margin: 18px 0 !important;
+  padding: 18px !important;
+  border: 1px solid var(--ui-border, #d8e1ec) !important;
+  border-radius: 20px !important;
+  background:
+    radial-gradient(circle at 100% 0, color-mix(in srgb, var(--brand-blue, #2563eb) 8%, transparent), transparent 34%),
+    var(--ui-surface-muted, #f8fafc) !important;
+  color: var(--ui-text, #132033) !important;
+  box-shadow: var(--ui-shadow-soft, 0 8px 24px rgba(15, 23, 42, .06)) !important;
+}
+
+.courtConfigHeader {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+.courtConfigHeader > div {
+  min-width: 0 !important;
+}
+
+.courtConfigEyebrow {
+  display: block !important;
+  margin-bottom: 4px !important;
+  color: var(--ui-active-accent, #c2410c) !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+}
+
+.courtConfigHeader h3 {
+  margin: 0 !important;
+  color: var(--ui-text-strong, #09182e) !important;
+  font-size: 19px !important;
+  line-height: 1.2 !important;
+}
+
+.courtConfigHeader p {
+  max-width: 680px !important;
+  margin: 5px 0 0 !important;
+  color: var(--ui-muted, #64748b) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+button.courtConfigReset {
+  flex: 0 0 auto !important;
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  border: 1px solid var(--ui-border, #cbd5e1) !important;
+  border-radius: 11px !important;
+  background: var(--ui-surface-raised, #ffffff) !important;
+  color: var(--ui-text, #334155) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+
+.courtConfigGrid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.courtConfigField {
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+  padding: 10px !important;
+  border: 1px solid var(--ui-border-soft, #e2e8f0) !important;
+  border-radius: 14px !important;
+  background: var(--ui-surface-raised, #ffffff) !important;
+}
+
+.courtConfigField > span {
+  color: var(--ui-muted, #64748b) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  letter-spacing: .04em !important;
+  text-transform: uppercase !important;
+}
+
+.courtConfigField input {
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 38px !important;
+  margin: 0 !important;
+  padding: 8px 10px !important;
+  border-color: var(--ui-border, #cbd5e1) !important;
+  border-radius: 10px !important;
+  background: var(--ui-input, #f8fafc) !important;
+  color: var(--ui-text-strong, #0f172a) !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+}
+
+.courtConfigExample {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  flex-wrap: wrap !important;
+  padding-top: 2px !important;
+}
+
+.courtConfigExample > span {
+  color: var(--ui-muted, #64748b) !important;
+  font-size: 10px !important;
+  font-weight: 850 !important;
+}
+
+.courtConfigExample > strong {
+  padding: 5px 9px !important;
+  border: 1px solid color-mix(in srgb, var(--brand-blue, #2563eb) 28%, var(--ui-border, #cbd5e1)) !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--brand-blue, #2563eb) 9%, var(--ui-surface-raised, #fff)) !important;
+  color: var(--brand-blue, #2563eb) !important;
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  text-transform: uppercase !important;
+}
+
+.courtEditorOverlay {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 30000 !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 20px !important;
+  background: rgba(3, 10, 24, .72) !important;
+  backdrop-filter: blur(10px) !important;
+  --court-modal-surface: #ffffff;
+  --court-modal-soft: #f3f7fc;
+  --court-modal-text: #0b1830;
+  --court-modal-muted: #607086;
+  --court-modal-border: #d7e1ed;
+}
+
+.courtEditorSheet {
+  width: min(560px, 100%) !important;
+  max-height: min(720px, calc(100vh - 40px)) !important;
+  overflow-y: auto !important;
+  padding: 22px !important;
+  border: 1px solid var(--court-modal-border) !important;
+  border-radius: 26px !important;
+  background: var(--court-modal-surface) !important;
+  color: var(--court-modal-text) !important;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, .38) !important;
+}
+
+.courtEditorHandle {
+  display: none !important;
+}
+
+.courtEditorHeader {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 16px !important;
+}
+
+.courtEditorHeader > div {
+  min-width: 0 !important;
+}
+
+.courtEditorHeader span {
+  color: #2563eb !important;
+  font-size: 10px !important;
+  font-weight: 950 !important;
+  letter-spacing: .1em !important;
+  text-transform: uppercase !important;
+}
+
+.courtEditorHeader h2 {
+  margin: 4px 0 5px !important;
+  color: var(--court-modal-text) !important;
+  font-size: 23px !important;
+  line-height: 1.15 !important;
+}
+
+.courtEditorHeader p {
+  margin: 0 !important;
+  color: var(--court-modal-muted) !important;
+  font-size: 12px !important;
+  line-height: 1.45 !important;
+}
+
+button.courtEditorClose {
+  display: grid !important;
+  place-items: center !important;
+  flex: 0 0 36px !important;
+  width: 36px !important;
+  height: 36px !important;
+  padding: 0 !important;
+  border: 1px solid var(--court-modal-border) !important;
+  border-radius: 12px !important;
+  background: var(--court-modal-soft) !important;
+  color: var(--court-modal-text) !important;
+  font-size: 22px !important;
+  box-shadow: none !important;
+}
+
+.courtEditorCurrent {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 18px 0 12px !important;
+  padding: 11px 12px !important;
+  border: 1px solid var(--court-modal-border) !important;
+  border-radius: 15px !important;
+  background: var(--court-modal-soft) !important;
+}
+
+.courtEditorCurrent small {
+  color: var(--court-modal-muted) !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+}
+
+.courtEditorOptions {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 9px !important;
+}
+
+button.courtEditorOption {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: 50px !important;
+  padding: 10px 12px !important;
+  border: 1px solid var(--court-modal-border) !important;
+  border-radius: 14px !important;
+  background: var(--court-modal-surface) !important;
+  color: var(--court-modal-text) !important;
+  text-align: left !important;
+  box-shadow: none !important;
+}
+
+button.courtEditorOption:hover:not(:disabled) {
+  transform: translateY(-1px) !important;
+  border-color: #60a5fa !important;
+  background: var(--court-modal-soft) !important;
+}
+
+button.courtEditorOption.current {
+  border-color: #60a5fa !important;
+  background: rgba(59, 130, 246, .10) !important;
+  opacity: 1 !important;
+}
+
+.courtEditorOption > span {
+  min-width: 0 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+  overflow-wrap: anywhere !important;
+}
+
+.courtEditorOption > small {
+  flex: 0 0 auto !important;
+  color: var(--court-modal-muted) !important;
+  font-size: 9px !important;
+  font-weight: 850 !important;
+}
+
+.courtEditorCustom {
+  display: grid !important;
+  gap: 7px !important;
+  margin-top: 14px !important;
+}
+
+.courtEditorCustom > label {
+  color: var(--court-modal-text) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.courtEditorCustom > div {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 8px !important;
+}
+
+.courtEditorCustom input {
+  min-width: 0 !important;
+  height: 44px !important;
+  margin: 0 !important;
+  border-color: var(--court-modal-border) !important;
+  border-radius: 12px !important;
+  background: var(--court-modal-soft) !important;
+  color: var(--court-modal-text) !important;
+}
+
+.courtEditorCustom button {
+  min-width: 94px !important;
+  min-height: 44px !important;
+  padding: 9px 14px !important;
+  border-radius: 12px !important;
+}
+
+button.courtEditorRestore {
+  width: 100% !important;
+  min-height: 42px !important;
+  margin-top: 12px !important;
+  padding: 9px 12px !important;
+  border: 1px solid var(--court-modal-border) !important;
+  border-radius: 12px !important;
+  background: transparent !important;
+  color: var(--court-modal-muted) !important;
+  font-size: 11px !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .courtEditorOverlay {
+  --court-modal-surface: #17212e;
+  --court-modal-soft: #111a25;
+  --court-modal-text: #f2f6fc;
+  --court-modal-muted: #aab7c8;
+  --court-modal-border: #334155;
+}
+
+html[data-theme="dark"] .courtEditorHeader span {
+  color: #7aa7ff !important;
+}
+
+@media (max-width: 640px) {
+  .gameTopLine > .courtNameBadge,
+  .gameTopLine > button.courtNameBadge {
+    justify-self: center !important;
+  }
+
+  .courtConfigPanel {
+    margin: 14px 0 !important;
+    padding: 14px !important;
+    border-radius: 17px !important;
+  }
+
+  .courtConfigHeader {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  button.courtConfigReset {
+    justify-self: start !important;
+  }
+
+  .courtConfigGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .courtEditorOverlay {
+    place-items: end center !important;
+    padding: 0 !important;
+  }
+
+  .courtEditorSheet {
+    width: 100% !important;
+    max-height: min(84vh, 720px) !important;
+    padding: 10px 14px calc(16px + env(safe-area-inset-bottom)) !important;
+    border-width: 1px 0 0 !important;
+    border-radius: 24px 24px 0 0 !important;
+  }
+
+  .courtEditorHandle {
+    display: block !important;
+    width: 42px !important;
+    height: 4px !important;
+    margin: 0 auto 12px !important;
+    border-radius: 999px !important;
+    background: var(--court-modal-border) !important;
+  }
+
+  .courtEditorHeader h2 {
+    font-size: 20px !important;
+  }
+
+  .courtEditorOptions {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .courtConfigGrid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .courtEditorCustom > div {
+    grid-template-columns: 1fr !important;
+  }
+
+  .courtEditorCustom button {
+    width: 100% !important;
+  }
+}

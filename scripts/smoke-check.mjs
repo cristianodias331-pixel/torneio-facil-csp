@@ -165,6 +165,18 @@ assert.ok(
 assert.ok(mainSource.includes('type: "mixed20"'), "A modalidade Super 20 mista não está cadastrada.");
 assert.ok(mainSource.includes('config.type === "mixed20"'), "A tabela fixa do Super 20 mista não está ligada ao gerador.");
 
+assert.ok(mainSource.includes("function normalizeCourtLabels"), "Os nomes personalizados das quadras não são normalizados.");
+assert.ok(mainSource.includes("function getGameCourtLabel"), "A exibição das quadras não possui uma fonte única e segura.");
+assert.ok(mainSource.includes('courtLabels: createDefaultCourtLabels'), "Novos torneios não recebem os nomes padrão das quadras.");
+assert.ok(mainSource.includes("function CourtConfigPanel"), "A configuração prévia das quadras está ausente.");
+assert.ok(mainSource.includes("function CourtAssignmentModal"), "A troca rápida de quadra durante os jogos está ausente.");
+assert.ok(mainSource.includes("courtLabelOverride"), "A quadra escolhida para um jogo não é persistida.");
+assert.ok(mainSource.includes('willSwap ? "Quadras trocadas"'), "A troca de quadras ocupadas na mesma rodada não está protegida.");
+assert.ok(mainSource.includes("getGameCourtLabel(game, courtLabels)"), "A chamada por voz não usa o nome visível da quadra.");
+assert.ok(styleSource.includes("QUADRAS PERSONALIZADAS — AGOSTO 2026"), "O acabamento visual das quadras personalizadas está ausente.");
+assert.ok(styleSource.includes(".courtNameBadge"), "O selo visual da quadra está ausente.");
+assert.ok(styleSource.includes(".courtEditorSheet"), "O editor responsivo de quadras está sem estilo.");
+
 assert.ok(indexSource.includes('src/main.jsx'), "A entrada React não está ligada ao index.html.");
 assert.ok(indexSource.includes('torneio360-favicon-96.png'), "O novo favicon do Torneio360 não está configurado.");
 assert.ok(indexSource.includes('manifest.webmanifest'), "O manifesto instalável não está ligado ao site.");

@@ -923,6 +923,50 @@ function getMaxScore(winningScore = 4) {
   return Number(winningScore) === 6 ? 7 : 4;
 }
 
+function normalizeCourtLabelValue(value) {
+  return String(value || "")
+    .normalize("NFKC")
+    .replace(/[\u0000-\u001f\u007f]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 32);
+}
+
+function createDefaultCourtLabels(count = 1) {
+  return Array.from(
+    { length: Math.max(1, Number(count) || 1) },
+    (_, index) => `Quadra ${index + 1}`
+  );
+}
+
+function normalizeCourtLabels(values, count = 1) {
+  const source = Array.isArray(values) ? values : [];
+  const defaults = createDefaultCourtLabels(count);
+
+  return defaults.map((fallback, index) => normalizeCourtLabelValue(source[index]) || fallback);
+}
+
+function getGameCourtLabel(game, courtLabels = []) {
+  const override = normalizeCourtLabelValue(game?.courtLabelOverride);
+  if (override) return override;
+
+  const courtIndex = Math.max(0, Number(game?.court || 1) - 1);
+  return normalizeCourtLabelValue(courtLabels[courtIndex]) || `Quadra ${courtIndex + 1}`;
+}
+
+function applyCourtLabelToGame(game, label, courtLabels = []) {
+  const normalizedLabel = normalizeCourtLabelValue(label);
+  const courtIndex = Math.max(0, Number(game?.court || 1) - 1);
+  const defaultLabel = normalizeCourtLabelValue(courtLabels[courtIndex]) || `Quadra ${courtIndex + 1}`;
+
+  if (!normalizedLabel || normalizedLabel.localeCompare(defaultLabel, "pt-BR", { sensitivity: "accent" }) === 0) {
+    delete game.courtLabelOverride;
+    return;
+  }
+
+  game.courtLabelOverride = normalizedLabel;
+}
+
 function normalizeScoreInput(value, winningScore = 4) {
   if (value === "") return "";
 
@@ -3164,6 +3208,9 @@ function rebuildCupBracketGames(currentData, existingScores = {}) {
     ...game,
     s1: existingScores[game.matchKey]?.s1 ?? game.s1 ?? "",
     s2: existingScores[game.matchKey]?.s2 ?? game.s2 ?? "",
+    ...(existingScores[game.matchKey]?.courtLabelOverride
+      ? { courtLabelOverride: existingScores[game.matchKey].courtLabelOverride }
+      : {}),
   }));
 
   // Resolve novamente depois de reaplicar os placares. Assim, o vencedor de
@@ -3179,6 +3226,7 @@ function syncCupBracketScores(currentData) {
     existingScores[game.matchKey] = {
       s1: game.s1,
       s2: game.s2,
+      courtLabelOverride: game.courtLabelOverride,
     };
   });
 
@@ -3396,20 +3444,22 @@ function getGameSpeechText(game, options = {}) {
     includeIntro = true,
     includeGroup = true,
     includeClosing = true,
+    courtLabels = [],
   } = options;
 
   const groupText = includeGroup && game.groupName ? `${game.groupName}. ` : "";
   const roundText = roundLabel ? `${roundLabel}. ` : "";
   const team1 = formatTeamForSpeech(game.team1);
   const team2 = formatTeamForSpeech(game.team2);
+  const courtLabel = getGameCourtLabel(game, courtLabels);
 
   return [
     includeIntro ? "Atenção atletas." : "",
     roundText,
     groupText,
-    `Quadra ${game.court}.`,
+    `${courtLabel}.`,
     `${team1} contra ${team2}.`,
-    includeClosing ? `Compareçam à quadra ${game.court}. Boa partida.` : "",
+    includeClosing ? `Compareçam à ${courtLabel}. Boa partida.` : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -3436,6 +3486,7 @@ function speakRound(round, roundIndex, options = {}) {
     titlePrefix = "Rodada",
     includeGroup = true,
     repeat = 1,
+    courtLabels = [],
   } = options;
 
   const roundLabel = `${titlePrefix} ${roundIndex + 1}`;
@@ -3446,6 +3497,7 @@ function speakRound(round, roundIndex, options = {}) {
         includeIntro: false,
         includeClosing: false,
         includeGroup,
+        courtLabels,
       });
 
       return repeatText(gameText, repeat);
@@ -3457,7 +3509,7 @@ function speakRound(round, roundIndex, options = {}) {
   );
 }
 
-function speakBracketRound(round, repeat = 1) {
+function speakBracketRound(round, repeat = 1, courtLabels = []) {
   const title = round.bracketTitle
     ? `${round.title} da chave ${round.bracketTitle}`
     : round.title;
@@ -3468,6 +3520,7 @@ function speakBracketRound(round, repeat = 1) {
         includeIntro: false,
         includeClosing: false,
         includeGroup: false,
+        courtLabels,
       });
 
       return repeatText(gameText, repeat);
@@ -9035,6 +9088,7 @@ function createInitialData(type, config) {
   eventDay: "",
   location: "",
   schedule: [],
+  courtLabels: createDefaultCourtLabels(config?.courts || 1),
 };
 
   if (!config) {
@@ -9141,6 +9195,9 @@ function normalizeGame(game, index) {
   return {
     ...source,
     court: Number.isFinite(court) && court > 0 ? court : index + 1,
+    ...(normalizeCourtLabelValue(source.courtLabelOverride)
+      ? { courtLabelOverride: normalizeCourtLabelValue(source.courtLabelOverride) }
+      : {}),
     team1: normalizeGameNames(source.team1),
     team2: normalizeGameNames(source.team2),
     ids1: normalizeGameIds(source.ids1),
@@ -9181,12 +9238,20 @@ function normalizeTournamentData(type, rawData) {
   const sourcePlayers = isTournamentDataObject(source.players) ? source.players : {};
   const validWinningScore = [4, 6].includes(Number(source.winningScore));
   const validRankingCriteria = rankingCriteriaOptions.some((item) => item.value === source.rankingCriteria);
+  const usedCourtNumbers = [
+    ...(Array.isArray(source.schedule) ? source.schedule.flat() : []),
+    ...(Array.isArray(source.brackets) ? source.brackets : []),
+  ]
+    .map((game) => Number(game?.court))
+    .filter((court) => Number.isFinite(court) && court > 0);
+  const courtCount = Math.max(config.courts || 1, source.courtLabels?.length || 0, ...usedCourtNumbers, 1);
   const normalized = {
     ...defaults,
     ...source,
     rankingCriteria: validRankingCriteria ? source.rankingCriteria : defaults.rankingCriteria,
     winningScore: validWinningScore ? Number(source.winningScore) : defaults.winningScore,
     schedule: normalizeSchedule(source.schedule),
+    courtLabels: normalizeCourtLabels(source.courtLabels, courtCount),
   };
 
   if (isCupType(config)) {
@@ -9379,6 +9444,7 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
   const [clearTableOpen, setClearTableOpen] = useState(false);
   const [participantImportOpen, setParticipantImportOpen] = useState(false);
   const [participantImportBackup, setParticipantImportBackup] = useState(null);
+  const [courtEditor, setCourtEditor] = useState(null);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareLoading, setShareLoading] = useState(false);
 
@@ -9941,6 +10007,98 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     setData(refreshGameParticipantNames(copy));
   }
 
+  function updateDefaultCourtLabel(index, value) {
+    setData((prev) => {
+      const copy = structuredClone(prev);
+      copy.courtLabels = normalizeCourtLabels(copy.courtLabels, Math.max(config.courts || 1, index + 1));
+      copy.courtLabels[index] = String(value || "").slice(0, 32);
+      return copy;
+    });
+  }
+
+  function commitDefaultCourtLabels() {
+    setData((prev) => ({
+      ...prev,
+      courtLabels: normalizeCourtLabels(prev.courtLabels, config.courts || 1),
+    }));
+  }
+
+  function resetDefaultCourtLabels() {
+    setData((prev) => {
+      const copy = structuredClone(prev);
+      copy.courtLabels = createDefaultCourtLabels(Math.max(config.courts || 1, prev.courtLabels?.length || 0));
+      copy.schedule = (copy.schedule || []).map((round) => round.map((game) => {
+        const nextGame = { ...game };
+        delete nextGame.courtLabelOverride;
+        return nextGame;
+      }));
+      copy.brackets = (copy.brackets || []).map((game) => {
+        const nextGame = { ...game };
+        delete nextGame.courtLabelOverride;
+        return nextGame;
+      });
+      return copy;
+    });
+    showNotice("success", "Quadras restauradas", "Os nomes visíveis voltaram ao padrão desta modalidade.");
+  }
+
+  function getCourtAssignmentContext(source, editor) {
+    if (!editor) return { game: null, peers: [] };
+
+    if (editor.scope === "schedule") {
+      const peers = source.schedule?.[editor.roundIndex] || [];
+      return { game: peers[editor.gameIndex] || null, peers };
+    }
+
+    const game = (source.brackets || []).find((item) => item.matchKey === editor.matchKey) || null;
+    const peers = game
+      ? (source.brackets || []).filter((item) => item.phase === game.phase && item.roundName === game.roundName)
+      : [];
+    return { game, peers };
+  }
+
+  function applyGameCourtAssignment(label) {
+    const nextLabel = normalizeCourtLabelValue(label);
+    if (!courtEditor || !nextLabel) return;
+
+    const currentLabels = normalizeCourtLabels(data.courtLabels, config.courts || 1);
+    const currentContext = getCourtAssignmentContext(data, courtEditor);
+    const willSwap = currentContext.peers.some((item) => (
+      item !== currentContext.game
+      && getGameCourtLabel(item, currentLabels).localeCompare(nextLabel, "pt-BR", { sensitivity: "base" }) === 0
+    ));
+
+    setData((prev) => {
+      const copy = structuredClone(prev);
+      const courtLabels = normalizeCourtLabels(copy.courtLabels, config.courts || 1);
+      const { game, peers } = getCourtAssignmentContext(copy, courtEditor);
+      if (!game) return prev;
+
+      const previousLabel = getGameCourtLabel(game, courtLabels);
+      const occupiedGame = peers.find((item) => (
+        item !== game
+        && getGameCourtLabel(item, courtLabels).localeCompare(nextLabel, "pt-BR", { sensitivity: "base" }) === 0
+      ));
+
+      applyCourtLabelToGame(game, nextLabel, courtLabels);
+
+      if (occupiedGame) {
+        applyCourtLabelToGame(occupiedGame, previousLabel, courtLabels);
+      }
+
+      return copy;
+    });
+
+    setCourtEditor(null);
+    showNotice(
+      "success",
+      willSwap ? "Quadras trocadas" : "Quadra alterada",
+      willSwap
+        ? "Os dois jogos trocaram de quadra sem criar duplicidade nesta rodada."
+        : `O jogo agora aparece em ${nextLabel}.`
+    );
+  }
+
   function importParticipants(nextPlayers, summary) {
     const copy = structuredClone(data);
 
@@ -10163,6 +10321,7 @@ copy.brackets = copy.brackets.map((game) =>
       existingScores[game.matchKey] = {
         s1: game.s1,
         s2: game.s2,
+        courtLabelOverride: game.courtLabelOverride,
       };
     });
 
@@ -10210,6 +10369,11 @@ const tournamentRankingShareContext = {
   arenaName: rankingOrganizer.arenaName || rankingOrganizer.organizerName || "Arena Torneio360",
   arenaPhotoUrl: rankingOrganizer.photoUrl || "",
 };
+const courtEditorContext = getCourtAssignmentContext(data, courtEditor);
+const courtEditorGame = courtEditorContext.game;
+const courtEditorUsedLabels = courtEditorContext.peers
+  .filter((game) => game !== courtEditorGame)
+  .map((game) => getGameCourtLabel(game, data.courtLabels || []));
 
   function SavingStatusBadge() {
     return (
@@ -10229,6 +10393,18 @@ return (
         data={data}
         onClose={() => setParticipantImportOpen(false)}
         onApply={importParticipants}
+      />,
+      document.body
+    )}
+
+    {courtEditor && courtEditorGame && createPortal(
+      <CourtAssignmentModal
+        editor={{ ...courtEditor, game: courtEditorGame }}
+        courtLabels={normalizeCourtLabels(data.courtLabels, config.courts || 1)}
+        currentLabel={getGameCourtLabel(courtEditorGame, data.courtLabels || [])}
+        usedLabels={courtEditorUsedLabels}
+        onSelect={applyGameCourtAssignment}
+        onClose={() => setCourtEditor(null)}
       />,
       document.body
     )}
@@ -10379,6 +10555,13 @@ return (
             />
           )}
 
+          <CourtConfigPanel
+            courtLabels={data.courtLabels || createDefaultCourtLabels(config.courts || 1)}
+            onChange={updateDefaultCourtLabel}
+            onBlur={commitDefaultCourtLabels}
+            onReset={resetDefaultCourtLabels}
+          />
+
           <div className="participantImportBar">
             <div>
               <strong><ClipboardPaste aria-hidden="true" /> Preencher vários participantes</strong>
@@ -10471,6 +10654,8 @@ return (
   voiceRepeat={voiceRepeat}
   setVoiceRepeat={setVoiceRepeat}
   winningScore={getWinningScore(data)}
+  courtLabels={data.courtLabels || []}
+  onEditCourt={setCourtEditor}
 />
 
               <div className="actions">
@@ -10540,6 +10725,7 @@ return (
     voiceRepeat={voiceRepeat}
     setVoiceRepeat={setVoiceRepeat}
     winningScore={getWinningScore(data)}
+    onEditCourt={setCourtEditor}
   />
 
 </>
@@ -10610,7 +10796,7 @@ return (
                   </div>
                 </>
               ) : currentBrackets.repechage?.length > 0 ? (
-                <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} />
+                <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} onEditCourt={setCourtEditor} />
               ) : (
                 <p>Com 2 grupos, a Copinha segue o modelo da planilha e não possui chave de consolação.</p>
               )}
@@ -11313,6 +11499,140 @@ function VoiceRepeatSelector({ voiceRepeat, setVoiceRepeat }) {
   );
 }
 
+function CourtBadge({ label, editable = false, onClick = null }) {
+  const content = (
+    <>
+      <span>{label}</span>
+      {editable ? <ChevronDown aria-hidden="true" /> : null}
+    </>
+  );
+
+  if (editable) {
+    return (
+      <button
+        type="button"
+        className="courtNameBadge courtNameBadgeEditable"
+        onClick={onClick}
+        title="Alterar a quadra deste jogo"
+        aria-label={`${label}. Toque para alterar a quadra deste jogo.`}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return <strong className="courtNameBadge">{content}</strong>;
+}
+
+function CourtConfigPanel({ courtLabels, onChange, onBlur, onReset }) {
+  return (
+    <section className="courtConfigPanel" aria-labelledby="court-config-title">
+      <div className="courtConfigHeader">
+        <div>
+          <span className="courtConfigEyebrow">Organização das partidas</span>
+          <h3 id="court-config-title">Quadras do torneio</h3>
+          <p>Defina o nome que aparecerá nos jogos. A lógica interna da tabela permanece igual.</p>
+        </div>
+        <button type="button" className="courtConfigReset" onClick={onReset}>Restaurar padrão</button>
+      </div>
+
+      <div className="courtConfigGrid">
+        {courtLabels.map((label, index) => (
+          <label className="courtConfigField" key={index}>
+            <span>Posição {index + 1}</span>
+            <input
+              value={label}
+              maxLength={32}
+              placeholder={`Quadra ${index + 1}`}
+              onChange={(event) => onChange(index, event.target.value)}
+              onBlur={onBlur}
+            />
+          </label>
+        ))}
+      </div>
+
+      <div className="courtConfigExample">
+        <span>Exemplo:</span>
+        <strong>Quadra 1</strong>
+        <strong>Quadra 2</strong>
+        <strong>Quadra 4</strong>
+        <strong>Central</strong>
+      </div>
+    </section>
+  );
+}
+
+function CourtAssignmentModal({ editor, courtLabels, currentLabel, usedLabels, onSelect, onClose }) {
+  const [customLabel, setCustomLabel] = useState("");
+  const normalizedCurrent = normalizeCourtLabelValue(currentLabel);
+
+  return (
+    <div className="courtEditorOverlay" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <section className="courtEditorSheet" role="dialog" aria-modal="true" aria-labelledby="court-editor-title">
+        <div className="courtEditorHandle" aria-hidden="true" />
+        <div className="courtEditorHeader">
+          <div>
+            <span>Alteração rápida</span>
+            <h2 id="court-editor-title">Escolha a quadra do jogo</h2>
+            <p>Se a quadra já estiver ocupada nesta rodada, os jogos trocarão de posição automaticamente.</p>
+          </div>
+          <button type="button" className="courtEditorClose" onClick={onClose} aria-label="Fechar">×</button>
+        </div>
+
+        <div className="courtEditorCurrent">
+          <small>Quadra atual</small>
+          <CourtBadge label={normalizedCurrent || "Quadra"} />
+        </div>
+
+        <div className="courtEditorOptions">
+          {courtLabels.map((label, index) => {
+            const normalized = normalizeCourtLabelValue(label) || `Quadra ${index + 1}`;
+            const isCurrent = normalized.localeCompare(normalizedCurrent, "pt-BR", { sensitivity: "base" }) === 0;
+            const isUsed = usedLabels.some((usedLabel) => usedLabel.localeCompare(normalized, "pt-BR", { sensitivity: "base" }) === 0);
+
+            return (
+              <button
+                type="button"
+                className={`courtEditorOption ${isCurrent ? "current" : ""}`}
+                key={`${index}-${normalized}`}
+                disabled={isCurrent}
+                onClick={() => onSelect(normalized)}
+              >
+                <span>{normalized}</span>
+                <small>{isCurrent ? "Atual" : isUsed ? "Em uso · trocar" : "Livre"}</small>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="courtEditorCustom">
+          <label htmlFor="custom-court-label">Outro nome ou número</label>
+          <div>
+            <input
+              id="custom-court-label"
+              value={customLabel}
+              maxLength={32}
+              placeholder="Ex: Quadra 5 ou Central"
+              onChange={(event) => setCustomLabel(event.target.value)}
+            />
+            <button type="button" disabled={!normalizeCourtLabelValue(customLabel)} onClick={() => onSelect(customLabel)}>Aplicar</button>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="courtEditorRestore"
+          onClick={() => onSelect(courtLabels[Math.max(0, Number(editor?.game?.court || 1) - 1)] || `Quadra ${editor?.game?.court || 1}`)}
+        >
+          Restaurar quadra padrão deste jogo
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function ScheduleView({
   schedule,
   updateScore = () => {},
@@ -11321,6 +11641,8 @@ function ScheduleView({
   setVoiceRepeat = () => {},
   winningScore = 4,
   readOnly = false,
+  courtLabels = [],
+  onEditCourt = null,
 }) {
   return (
     <div className={`schedule ${readOnly ? "readOnlySchedule publicSchedule" : ""}`}>
@@ -11345,6 +11667,7 @@ function ScheduleView({
                     speakRound(round, roundIndex, {
                       includeGroup: showGroupName,
                       repeat: voiceRepeat,
+                      courtLabels,
                     })
                   }
                 >
@@ -11370,10 +11693,12 @@ function ScheduleView({
             return (
             <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"} ${readOnly ? "publicReadOnlyGame" : ""}`} key={gameIndex}>
               <div className={`gameTopLine ${readOnly ? "publicGameTopLine" : ""}`}>
-                <strong>
-                  {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                  Quadra {game.court}
-                </strong>
+                {showGroupName && game.groupName ? <span className="gameGroupLabel">{game.groupName}</span> : null}
+                <CourtBadge
+                  label={getGameCourtLabel(game, courtLabels)}
+                  editable={!readOnly && Boolean(onEditCourt)}
+                  onClick={() => onEditCourt?.({ scope: "schedule", roundIndex, gameIndex, game })}
+                />
               </div>
 
               <div className={`gameTeams ${readOnly ? "publicGameTeams" : ""}`}>
@@ -11437,6 +11762,7 @@ function ScheduleView({
                         roundLabel: `Rodada ${roundIndex + 1}`,
                         includeGroup: showGroupName,
                         repeat: voiceRepeat,
+                        courtLabels,
                       })
                     }
                   >
@@ -11947,6 +12273,7 @@ function CupBracketView({
   voiceRepeat = 1,
   setVoiceRepeat,
   winningScore = 4,
+  onEditCourt = null,
 }) {
   return (
     <div>
@@ -11963,6 +12290,8 @@ function CupBracketView({
             updateBracketScore={updateBracketScore}
             voiceRepeat={voiceRepeat}
             winningScore={winningScore}
+            courtLabels={data.courtLabels || []}
+            onEditCourt={onEditCourt}
           />
         )}
 
@@ -11973,6 +12302,8 @@ function CupBracketView({
             updateBracketScore={updateBracketScore}
             voiceRepeat={voiceRepeat}
             winningScore={winningScore}
+            courtLabels={data.courtLabels || []}
+            onEditCourt={onEditCourt}
           />
         )}
       </div>
@@ -11986,6 +12317,8 @@ function BracketColumn({
   updateBracketScore,
   voiceRepeat = 1,
   winningScore = 4,
+  courtLabels = [],
+  onEditCourt = null,
 }) {
   return (
     <div className={`bracketColumn ${rounds?.[0]?.games?.[0]?.phase === "repechage" ? "repechageBracket" : "mainBracket"}`}>
@@ -12000,7 +12333,7 @@ function BracketColumn({
               <button
                 type="button"
                 className="voiceBtn"
-                onClick={() => speakBracketRound(round, voiceRepeat)}
+                onClick={() => speakBracketRound(round, voiceRepeat, courtLabels)}
               >
                 🔊 Chamar fase
               </button>
@@ -12029,7 +12362,11 @@ function BracketColumn({
             return (
               <div className={`gameCard ${game.isBye ? "byeGameCard" : ""} ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
                 <div className="gameTopLine">
-                  <strong>Quadra {game.court}</strong>
+                  <CourtBadge
+                    label={getGameCourtLabel(game, courtLabels)}
+                    editable={Boolean(onEditCourt) && !game.isBye}
+                    onClick={() => onEditCourt?.({ scope: "bracket", matchKey: game.matchKey, game })}
+                  />
                 </div>
 
                 {game.isBye ? (
@@ -12921,7 +13258,7 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
             {!data.schedule || data.schedule.length === 0 ? (
               <p>A tabela ainda não foi gerada pelo organizador.</p>
             ) : (
-              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} readOnly />
+              <ScheduleView schedule={data.schedule} showGroupName={isCup} winningScore={getWinningScore(data)} courtLabels={data.courtLabels || []} readOnly />
             )}
           </div>
 
@@ -12931,6 +13268,7 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
                 <PublicCupBracketView
                   groupedBrackets={{ main: currentBrackets.main, repechage: [] }}
                   mainTitle={data.cupConfig?.mainBracketName || "Chave principal"}
+                  courtLabels={data.courtLabels || []}
                 />
               )}
             </div>
@@ -12945,6 +13283,7 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
                     <PublicCupBracketView
                       groupedBrackets={{ main: [], repechage: currentBrackets.repechage }}
                       repechageTitle={data.cupConfig?.repechageName || "Disputa paralela"}
+                      courtLabels={data.courtLabels || []}
                     />
                   )
                   : <p>Esta Copinha de 2 grupos não possui chave de consolação.</p>}
@@ -12994,7 +13333,7 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
   );
 }
 
-function PublicScheduleView({ schedule, showGroupName = false }) {
+function PublicScheduleView({ schedule, showGroupName = false, courtLabels = [] }) {
   return (
     <div className="schedule">
       {schedule.map((round, roundIndex) => (
@@ -13003,10 +13342,8 @@ function PublicScheduleView({ schedule, showGroupName = false }) {
 
           {round.map((game, gameIndex) => (
             <div className="gameCard" key={gameIndex}>
-              <strong>
-                {showGroupName && game.groupName ? `${game.groupName} · ` : ""}
-                Quadra {game.court}
-              </strong>
+              {showGroupName && game.groupName ? <span className="gameGroupLabel">{game.groupName}</span> : null}
+              <CourtBadge label={getGameCourtLabel(game, courtLabels)} />
 
               <div className="gameTeams">
                 <div>{game.team1.join(" + ")}</div>
@@ -13033,6 +13370,7 @@ function PublicCupBracketView({
   groupedBrackets,
   mainTitle = "Chave principal",
   repechageTitle = "Disputa paralela",
+  courtLabels = [],
 }) {
   const mainRounds = Array.isArray(groupedBrackets?.main) ? groupedBrackets.main : [];
   const repechageRounds = Array.isArray(groupedBrackets?.repechage) ? groupedBrackets.repechage : [];
@@ -13046,6 +13384,7 @@ function PublicCupBracketView({
           rounds={mainRounds}
           title={mainRounds[0]?.bracketTitle || mainTitle}
           variant="main"
+          courtLabels={courtLabels}
         />
       ) : null}
       {repechageRounds.length > 0 ? (
@@ -13053,13 +13392,14 @@ function PublicCupBracketView({
           rounds={repechageRounds}
           title={repechageRounds[0]?.bracketTitle || repechageTitle}
           variant="repechage"
+          courtLabels={courtLabels}
         />
       ) : null}
     </div>
   );
 }
 
-function PublicBracketColumn({ rounds = [], title, variant }) {
+function PublicBracketColumn({ rounds = [], title, variant, courtLabels = [] }) {
   if (rounds.length === 0) return null;
 
   return (
@@ -13072,7 +13412,7 @@ function PublicBracketColumn({ rounds = [], title, variant }) {
 
           {round.games.map((game) => (
             <div className="gameCard publicBracketGame" key={game.matchKey}>
-              <strong>Quadra {game.court}</strong>
+              <CourtBadge label={getGameCourtLabel(game, courtLabels)} />
 
               <div className="gameTeams publicBracketTeams">
                 <div>{game.team1?.join(" + ") || "Aguardando"}</div>
