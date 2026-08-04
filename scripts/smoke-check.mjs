@@ -417,6 +417,16 @@ assert.ok(
   "O perfil público ainda pode comprimir o nome da arena no celular."
 );
 assert.ok(
+  styleSource.includes("grid-template-columns: minmax(410px, 0.8fr) minmax(0, 1.2fr) !important;")
+    && styleSource.includes("padding: 18px clamp(28px, 5vw, 84px) !important;"),
+  "O cabeçalho do perfil público ainda ocupa altura excessiva no notebook."
+);
+assert.ok(
+  styleSource.includes("grid-template-columns: minmax(240px, 0.58fr) minmax(0, 1.42fr) minmax(190px, auto) !important;")
+    && styleSource.includes(".publicHeaderWithLogo:not(.publicArenaHeader)"),
+  "O cabeçalho público do torneio ainda está desorganizado no notebook."
+);
+assert.ok(
   mainSource.includes("const saveQueueRef = useRef(Promise.resolve(true))")
     && mainSource.includes("queueTournamentSave(latestDataRef.current"),
   "As gravações do torneio podem terminar fora de ordem e sobrescrever dados mais novos."
