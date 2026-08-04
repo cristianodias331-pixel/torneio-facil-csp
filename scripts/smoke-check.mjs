@@ -331,6 +331,24 @@ assert.ok(
   "O cabeçalho público móvel não separa navegação, logo e acesso do organizador."
 );
 assert.ok(
+  mainSource.includes("function isRegistrationDeadlineOpen(deadline)")
+    && mainSource.includes("function isCircuitRegistrationOpen(circuit, tournaments = [])")
+    && mainSource.includes("<PublicRegistrationStatus open={registrationOpen}"),
+  "Os cartões públicos não informam corretamente se a inscrição está aberta ou encerrada."
+);
+assert.ok(
+  mainSource.includes("Quero me inscrever em")
+    && mainSource.includes("registrationDeadline: details.registrationDeadline || \"\"")
+    && styleSource.includes("PERFIL PÚBLICO DA ARENA — INSCRIÇÕES E MOBILE FINAL"),
+  "A inscrição pública não preserva a data limite ou não encaminha ao WhatsApp da arena."
+);
+assert.ok(
+  styleSource.includes(".publicPage.publicArenaPage .publicArenaHeader")
+    && styleSource.includes("grid-template-columns: minmax(0, 1fr) !important;")
+    && styleSource.includes("overflow-wrap: break-word !important;"),
+  "O perfil público ainda pode comprimir o nome da arena no celular."
+);
+assert.ok(
   mainSource.includes("const saveQueueRef = useRef(Promise.resolve(true))")
     && mainSource.includes("queueTournamentSave(latestDataRef.current"),
   "As gravações do torneio podem terminar fora de ordem e sobrescrever dados mais novos."

@@ -435,6 +435,47 @@ function isPublicItemFinished(item, kind = "tournament") {
   return getAutomaticEventStatus(endDate) === "finished";
 }
 
+function getTournamentRegistrationDeadline(tournament) {
+  return tournament?.data?.registrationDeadline
+    || tournament?.registrationDeadline
+    || tournament?.registration_deadline
+    || "";
+}
+
+function isRegistrationDeadlineOpen(deadline) {
+  return Boolean(deadline) && String(deadline) >= getBrazilTodayISO();
+}
+
+function isCircuitRegistrationOpen(circuit, tournaments = []) {
+  const tournamentIds = new Set(
+    (circuit?.tournament_ids || circuit?.tournamentIds || []).map((id) => String(id))
+  );
+
+  return tournaments.some((tournament) => (
+    tournamentIds.has(String(tournament?.id))
+    && isRegistrationDeadlineOpen(getTournamentRegistrationDeadline(tournament))
+  ));
+}
+
+function PublicRegistrationStatus({ open, whatsapp, eventName }) {
+  if (!open) {
+    return <span className="publicRegistrationStatus closed">Inscrições encerradas</span>;
+  }
+
+  const message = `Olá! Quero me inscrever em ${eventName || "um evento"} pelo Torneio360.`;
+  const whatsappUrl = getBrazilianWhatsAppUrl(whatsapp, message);
+
+  if (!whatsappUrl) {
+    return <span className="publicRegistrationStatus open unavailable" title="WhatsApp não cadastrado pela arena">Inscreva-se</span>;
+  }
+
+  return (
+    <a className="publicRegistrationStatus open" href={whatsappUrl} target="_blank" rel="noreferrer">
+      <MessageCircle aria-hidden="true" /> Inscreva-se
+    </a>
+  );
+}
+
 function getPublicTournamentDirectoryItem(tournament) {
   const details = tournament?.data || {};
 
@@ -450,6 +491,7 @@ function getPublicTournamentDirectoryItem(tournament) {
       location: details.location || "",
       gender: details.gender || "",
       coverImageUrl: details.coverImageUrl || "",
+      registrationDeadline: details.registrationDeadline || "",
     },
     directoryEntry: true,
   };
@@ -807,7 +849,7 @@ function isValidEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function getBrazilianWhatsAppUrl(value) {
+function getBrazilianWhatsAppUrl(value, message = "") {
   const digits = String(value || "").replace(/\D/g, "");
   if (!digits) return "";
 
@@ -815,7 +857,8 @@ function getBrazilianWhatsAppUrl(value) {
     ? digits
     : `55${digits}`;
 
-  return `https://wa.me/${numberWithCountryCode}`;
+  const url = `https://wa.me/${numberWithCountryCode}`;
+  return message ? `${url}?text=${encodeURIComponent(message)}` : url;
 }
 
 function getPlanRegularizationWhatsAppUrl(profile, user) {
@@ -12207,6 +12250,7 @@ function PublicArenaPage({ arenaId = null, publicId = null }) {
           ) : activeArenaTab === "tournaments" ? visibleItems.map((item) => {
             const details = item.data || {};
             const coverImage = details.coverImageUrl || organizer.photoUrl;
+            const registrationOpen = isRegistrationDeadlineOpen(getTournamentRegistrationDeadline(item));
             return (
               <article className="card publicArenaEventCard publicArenaEventCardWithCover" key={item.id}>
                 <div className="publicArenaEventCover">
@@ -12219,20 +12263,25 @@ function PublicArenaPage({ arenaId = null, publicId = null }) {
                     {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}{details.eventEndDate && details.eventEndDate !== details.eventDate ? ` até ${formatDateBR(details.eventEndDate)}` : ""}</span> : null}
                     {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
                   </p>
+                  <PublicRegistrationStatus open={registrationOpen} whatsapp={organizer.whatsapp} eventName={item.name} />
                 </div>
                 <button type="button" onClick={() => setSelectedTournament(item)}>Ver torneio</button>
               </article>
             );
-          }) : visibleItems.map((item) => (
-            <article className="card publicArenaEventCard publicArenaCircuitCard" key={item.id}>
-              <div className="publicArenaEventIcon"><GitBranch aria-hidden="true" /></div>
-              <div>
-                <small>Circuito</small><h2>{item.name}</h2>
-                <p>{item.start_date ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(item.start_date)} até {formatDateBR(item.end_date)}</span> : null}<span>{(item.tournament_ids || []).length} torneio(s)</span></p>
-              </div>
-              <button type="button" onClick={() => setSelectedCircuit(item)}>Ver circuito</button>
-            </article>
-          ))}
+          }) : visibleItems.map((item) => {
+            const registrationOpen = isCircuitRegistrationOpen(item, tournaments);
+            return (
+              <article className="card publicArenaEventCard publicArenaCircuitCard" key={item.id}>
+                <div className="publicArenaEventIcon"><GitBranch aria-hidden="true" /></div>
+                <div>
+                  <small>Circuito</small><h2>{item.name}</h2>
+                  <p>{item.start_date ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(item.start_date)} até {formatDateBR(item.end_date)}</span> : null}<span>{(item.tournament_ids || []).length} torneio(s)</span></p>
+                  <PublicRegistrationStatus open={registrationOpen} whatsapp={organizer.whatsapp} eventName={item.name} />
+                </div>
+                <button type="button" onClick={() => setSelectedCircuit(item)}>Ver circuito</button>
+              </article>
+            );
+          })}
         </section>
       </main>
     </div>
@@ -12477,6 +12526,7 @@ function PublicTournamentPage({ publicId }) {
           ) : activeArenaTab === "tournaments" ? (
             visibleItems.map((item) => {
               const details = item.data || {};
+              const registrationOpen = isRegistrationDeadlineOpen(getTournamentRegistrationDeadline(item));
               return (
                 <article className="card publicArenaEventCard" key={item.id}>
                   <div className="publicArenaEventIcon"><Trophy aria-hidden="true" /></div>
@@ -12487,6 +12537,7 @@ function PublicTournamentPage({ publicId }) {
                       {details.eventDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(details.eventDate)}</span> : null}
                       {details.location ? <span><MapPin aria-hidden="true" /> {details.location}</span> : null}
                     </p>
+                    <PublicRegistrationStatus open={registrationOpen} whatsapp={publicOrganizer.whatsapp} eventName={item.name} />
                   </div>
                   <button type="button" onClick={() => openPublicTournament(item)} disabled={openingPublicId === item.public_id}>
                     {openingPublicId === item.public_id ? "Abrindo..." : "Ver torneio"}
@@ -12495,20 +12546,24 @@ function PublicTournamentPage({ publicId }) {
               );
             })
           ) : (
-            visibleItems.map((item) => (
-              <article className="card publicArenaEventCard publicArenaCircuitCard" key={item.id}>
-                <div className="publicArenaEventIcon"><GitBranch aria-hidden="true" /></div>
-                <div>
-                  <small>Circuito</small>
-                  <h2>{item.name}</h2>
-                  <p>
-                    {item.start_date || item.startDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(item.start_date || item.startDate)}</span> : null}
-                    <span>{(item.tournament_ids || item.tournamentIds || []).length} torneio(s)</span>
-                  </p>
-                </div>
-                <button type="button" onClick={() => setSelectedCircuit(item)}>Ver ranking</button>
-              </article>
-            ))
+            visibleItems.map((item) => {
+              const registrationOpen = isCircuitRegistrationOpen(item, tournaments);
+              return (
+                <article className="card publicArenaEventCard publicArenaCircuitCard" key={item.id}>
+                  <div className="publicArenaEventIcon"><GitBranch aria-hidden="true" /></div>
+                  <div>
+                    <small>Circuito</small>
+                    <h2>{item.name}</h2>
+                    <p>
+                      {item.start_date || item.startDate ? <span><CalendarDays aria-hidden="true" /> {formatDateBR(item.start_date || item.startDate)}</span> : null}
+                      <span>{(item.tournament_ids || item.tournamentIds || []).length} torneio(s)</span>
+                    </p>
+                    <PublicRegistrationStatus open={registrationOpen} whatsapp={publicOrganizer.whatsapp} eventName={item.name} />
+                  </div>
+                  <button type="button" onClick={() => setSelectedCircuit(item)}>Ver ranking</button>
+                </article>
+              );
+            })
           )}
         </section>
       </main>
