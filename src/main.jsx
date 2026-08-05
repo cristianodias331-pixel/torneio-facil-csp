@@ -168,7 +168,8 @@ function truncateCanvasText(context, value, maxWidth) {
   return `${shortened}…`;
 }
 
-async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUrl, groups = [] }) {
+async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUrl, rankingCriteria, groups = [] }) {
+  const criteria = getRankingCriteria(rankingCriteria);
   const normalizedGroups = groups
     .map((group) => ({
       title: group?.title || "Ranking",
@@ -266,6 +267,9 @@ async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUr
   context.fillStyle = "#cbd5e1";
   context.font = "700 22px Arial";
   context.fillText(truncateCanvasText(context, subtitle || "Torneio360", 850), 88, 360);
+  context.fillStyle = "#bae6fd";
+  context.font = "700 16px Arial";
+  context.fillText(truncateCanvasText(context, `Critério: ${criteria.label}`, 850), 88, 382);
 
   let y = 432;
   normalizedGroups.forEach((group) => {
@@ -296,10 +300,14 @@ async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUr
       context.textAlign = "left";
       context.fillText(truncateCanvasText(context, row.name, 510), 154, y + 34);
 
-      const stats = [];
-      if (row.w !== undefined) stats.push(`${Number(row.w || 0)} vit.`);
-      if (row.pts !== undefined) stats.push(`${Number(row.pts || 0)} games`);
-      if (row.bal !== undefined) stats.push(`saldo ${Number(row.bal || 0)}`);
+      const metricText = {
+        w: `${Number(row.w || 0)} vit.`,
+        pts: `${Number(row.pts || 0)} games`,
+        bal: `saldo ${Number(row.bal || 0)}`,
+      };
+      const stats = criteria.order
+        .filter((key) => row[key] !== undefined)
+        .map((key) => metricText[key]);
       context.fillStyle = "#475569";
       context.font = "700 16px Arial";
       context.textAlign = "right";
@@ -323,6 +331,17 @@ async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUr
 
 async function shareRankingImage(config) {
   const file = await createRankingShareFile(config);
+  const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
+
+  if (!isMobileDevice && navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": file })]);
+      return "copied";
+    } catch (error) {
+      console.warn("Não foi possível copiar a imagem diretamente; usando o compartilhamento disponível.", error);
+    }
+  }
+
   if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
     await navigator.share({
       title: config.title || "Ranking Torneio360",
@@ -3731,13 +3750,15 @@ function RankingShareButton({ config, compact = false }) {
 
   const label = status === "loading"
     ? "Preparando imagem…"
+    : status === "copied"
+      ? "Imagem copiada"
     : status === "downloaded"
       ? "Imagem baixada"
       : status === "shared"
         ? "Compartilhado"
         : status === "error"
           ? "Tentar novamente"
-          : compact ? "Compartilhar" : "Compartilhar ranking";
+          : "Compartilhar ranking";
 
   return (
     <button type="button" className="rankingShareButton" onClick={handleShare} disabled={status === "loading"}>
@@ -5495,7 +5516,7 @@ const [newLocation, setNewLocation] = useState("");
 const [newCoverImageUrl, setNewCoverImageUrl] = useState("");
 const [coverImageLoading, setCoverImageLoading] = useState(false);
 const [newWinningScore, setNewWinningScore] = useState(4);
-const [newRankingCriteria, setNewRankingCriteria] = useState(defaultRankingCriteria);
+const [newRankingCriteria, setNewRankingCriteria] = useState("");
 const [newPublicInfo, setNewPublicInfo] = useState({
   showArenaName: true,
   showOrganizerName: true,
@@ -7092,6 +7113,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   return;
 }
 
+    if (!rankingCriteriaOptions.some((option) => option.value === newRankingCriteria)) {
+      showNotice("warning", "Critério obrigatório", "Escolha a ordem dos critérios do ranking antes de criar o torneio.");
+      return;
+    }
+
     if (!allowedTypes.includes(newType)) {
       showNotice("warning", "Modalidade não liberada", "Seu plano não permite essa modalidade.");
       return;
@@ -7149,7 +7175,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       publicInfo: buildTournamentPublicInfo(),
       coverImageUrl: newCoverImageUrl,
       winningScore: Number(newWinningScore) || 4,
-      rankingCriteria: newRankingCriteria || defaultRankingCriteria,
+      rankingCriteria: newRankingCriteria,
       publishedOnProfile: true,
       publishedAt: new Date().toISOString(),
     };
@@ -7214,7 +7240,7 @@ setNewDay("");
 setNewLocation("");
 setNewCoverImageUrl("");
 setNewWinningScore(4);
-setNewRankingCriteria(defaultRankingCriteria);
+setNewRankingCriteria("");
 setNewPublicInfo({
   showArenaName: true,
   showOrganizerName: true,
@@ -8312,8 +8338,9 @@ setNewPublicInfo({
   </div>
 
   <div className="formField fullField">
-    <label>Critério do ranking</label>
-    <select value={newRankingCriteria} onChange={(e) => setNewRankingCriteria(e.target.value)}>
+    <label>Critério do ranking <span aria-hidden="true">*</span></label>
+    <select value={newRankingCriteria} onChange={(e) => setNewRankingCriteria(e.target.value)} required aria-required="true">
+      <option value="">Escolha a ordem dos critérios</option>
       {rankingCriteriaOptions.map((option) => (
         <option key={option.value} value={option.value}>{option.label}</option>
       ))}
@@ -8626,6 +8653,7 @@ setNewPublicInfo({
                         subtitle: "Ranking geral acumulado",
                         arenaName: organizerProfile.arenaName || organizerProfile.organizerName || "Arena Torneio360",
                         arenaPhotoUrl: organizerProfile.photoUrl || "",
+                        rankingCriteria: effectiveCircuitCriteria,
                         groups: circuitRankingGroups,
                       }}
                     />
@@ -10438,6 +10466,7 @@ const tournamentRankingShareContext = {
   subtitle: getModalityDisplayName(tournament.type),
   arenaName: rankingOrganizer.arenaName || rankingOrganizer.organizerName || "Arena Torneio360",
   arenaPhotoUrl: rankingOrganizer.photoUrl || "",
+  rankingCriteria: data.rankingCriteria || defaultRankingCriteria,
 };
 const courtEditorContext = getCourtAssignmentContext(data, courtEditor);
 const courtEditorGame = courtEditorContext.game;
@@ -12145,12 +12174,13 @@ function RankingView({ ranking, type, rankingCriteria, shareContext = null }) {
 
 function RankingTable({ title, rows, rankingCriteria, showPodium = true, shareConfig = null }) {
   const criteria = getRankingCriteria(rankingCriteria);
+  const effectiveShareConfig = shareConfig ? { ...shareConfig, rankingCriteria: criteria.value } : null;
 
   return (
     <div className="rankingTablePanel">
       <div className="rankingTableHeading">
         <h3>{title}</h3>
-        <RankingShareButton config={shareConfig} compact />
+        <RankingShareButton config={effectiveShareConfig} compact />
       </div>
 
       <p className="rankingScrollHint" aria-hidden="true">Deslize a tabela para ver todos os dados →</p>
@@ -13068,6 +13098,7 @@ function PublicCircuitScreen({ circuit, tournaments = [], organizer = {}, onBack
     subtitle: "Ranking geral acumulado",
     arenaName,
     arenaPhotoUrl: organizer.photoUrl || "",
+    rankingCriteria: circuit?.ranking_criteria || defaultRankingCriteria,
     groups: rankingGroups,
   };
 
@@ -13230,6 +13261,7 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
     subtitle: getModalityDisplayName(tournament.type),
     arenaName: publicOrganizer.arenaName || publicOrganizer.organizerName || "Arena Torneio360",
     arenaPhotoUrl: publicOrganizer.photoUrl || "",
+    rankingCriteria: data.rankingCriteria || defaultRankingCriteria,
   };
 
   const publicAthletes = getRegisteredAthletesForPublic(data, config);
