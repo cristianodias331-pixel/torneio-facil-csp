@@ -329,18 +329,21 @@ async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUr
   return new File([blob], `${safeName || "ranking"}-torneio360.png`, { type: "image/png" });
 }
 
+async function copyRankingImageToClipboard(file) {
+  if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") return false;
+
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": file })]);
+    return true;
+  } catch (error) {
+    console.warn("Não foi possível preparar a imagem na área de transferência.", error);
+    return false;
+  }
+}
+
 async function shareRankingImage(config) {
   const file = await createRankingShareFile(config);
-  const isMobileDevice = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "");
-
-  if (!isMobileDevice && navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
-    try {
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": file })]);
-      return "copied";
-    } catch (error) {
-      console.warn("Não foi possível copiar a imagem diretamente; usando o compartilhamento disponível.", error);
-    }
-  }
+  let imageCopied = await copyRankingImageToClipboard(file);
 
   if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
     await navigator.share({
@@ -348,8 +351,11 @@ async function shareRankingImage(config) {
       text: `${config.title || "Ranking"} — ${config.arenaName || "Torneio360"}`,
       files: [file],
     });
-    return "shared";
+    imageCopied = (await copyRankingImageToClipboard(file)) || imageCopied;
+    return imageCopied ? "sharedCopied" : "shared";
   }
+
+  if (imageCopied) return "copied";
 
   const url = URL.createObjectURL(file);
   const link = document.createElement("a");
@@ -3750,6 +3756,8 @@ function RankingShareButton({ config, compact = false }) {
 
   const label = status === "loading"
     ? "Preparando imagem…"
+    : status === "sharedCopied"
+      ? "Compartilhado e copiado"
     : status === "copied"
       ? "Imagem copiada"
     : status === "downloaded"
