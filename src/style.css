@@ -22020,3 +22020,451 @@ html[data-theme="dark"] .proDashboard.playAppShell button.mobileTournamentSwitch
   background: #162334 !important;
   background-image: none !important;
 }
+
+/* =========================================================
+   DENSIDADE VISUAL PROFISSIONAL — AGOSTO 2026
+   Escala de 8 px, mais conteúdo útil por tela e alvos de toque
+   preservados. Esta camada altera somente apresentação.
+   ========================================================= */
+.publicPage.publicArenaPage .publicArenaContent {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  padding-top: 16px !important;
+  padding-bottom: 48px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaContacts,
+.publicPage.publicArenaPage .publicArenaEventGrid,
+.publicPage.publicArenaPage .publicArenaEmpty {
+  grid-column: 1 / -1 !important;
+}
+
+.publicPage.publicArenaPage .publicArenaContacts {
+  gap: 16px !important;
+  padding: 14px 16px !important;
+  border-radius: 16px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaContacts h2 {
+  font-size: 17px !important;
+  line-height: 1.2 !important;
+}
+
+.publicPage.publicArenaPage .publicArenaContacts p {
+  margin-top: 4px !important;
+  font-size: 11.5px !important;
+  line-height: 1.35 !important;
+}
+
+.publicPage.publicArenaPage .publicOrganizerLinks {
+  gap: 6px !important;
+}
+
+.publicPage.publicArenaPage .publicOrganizerLinks a {
+  min-height: 34px !important;
+  padding: 6px 10px !important;
+  border-radius: 999px !important;
+  font-size: 10.5px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaTabs,
+.publicPage.publicArenaPage .publicArenaStatusTabs {
+  gap: 5px !important;
+  padding: 4px !important;
+  border-radius: 13px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaTabs button,
+.publicPage.publicArenaPage .publicArenaStatusTabs button {
+  min-height: 38px !important;
+  padding: 7px 10px !important;
+  border-radius: 10px !important;
+  font-size: 11px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaTabs button svg {
+  width: 15px !important;
+  height: 15px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaStatusTabs button span {
+  min-width: 20px !important;
+  height: 20px !important;
+  padding: 0 5px !important;
+  font-size: 9px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventGrid {
+  gap: 10px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventCard {
+  gap: 11px !important;
+  min-height: 0 !important;
+  padding: 13px 14px !important;
+  border-radius: 16px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventCardWithCover {
+  grid-template-columns: 150px minmax(0, 1fr) auto !important;
+  padding: 0 !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventCover {
+  min-height: 128px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventBody {
+  padding: 14px 16px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventCardWithCover > button {
+  min-height: 40px !important;
+  margin-right: 14px !important;
+  padding: 9px 14px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventIcon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventCard small {
+  font-size: 9px !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventCard h2 {
+  margin: 2px 0 5px !important;
+  font-size: 16px !important;
+  line-height: 1.18 !important;
+}
+
+.publicPage.publicArenaPage .publicArenaEventCard p {
+  gap: 5px 11px !important;
+  font-size: 10.5px !important;
+}
+
+.publicPage.publicArenaPage .publicRegistrationStatus {
+  min-height: 30px !important;
+  margin-top: 7px !important;
+  padding: 5px 10px !important;
+  font-size: 10.5px !important;
+}
+
+.publicPage.publicArenaPage .publicCircuitStatus {
+  min-height: 24px !important;
+  margin-bottom: 6px !important;
+  padding: 4px 8px !important;
+  font-size: 9px !important;
+}
+
+@media (min-width: 980px) {
+  .publicPage.publicArenaPage .publicArenaHeader {
+    grid-template-columns: minmax(350px, 0.78fr) minmax(0, 1.22fr) !important;
+    gap: clamp(20px, 3vw, 40px) !important;
+    padding: 11px clamp(24px, 4vw, 58px) !important;
+  }
+
+  .publicArenaRealPage .publicArenaHeader > .publicBrandRow {
+    grid-template-columns: auto 104px auto !important;
+    gap: 10px !important;
+  }
+
+  .publicPage.publicArenaPage .publicBrandRow .beachLogo,
+  .publicPage.publicArenaPage .publicBrandRow .torneio360Logo {
+    width: 104px !important;
+    max-width: 104px !important;
+    height: 48px !important;
+    flex-basis: 104px !important;
+  }
+
+  .publicArenaRealPage .publicBackToPlatform,
+  .publicArenaRealPage .publicOrganizerAccess {
+    min-height: 36px !important;
+    padding: 7px 11px !important;
+    border-radius: 10px !important;
+    font-size: 9.5px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity {
+    gap: 11px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity > img,
+  .publicPage.publicArenaPage .publicArenaIdentity > .publicArenaInitials {
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    flex-basis: 58px !important;
+    border-width: 3px !important;
+    border-radius: 16px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity small {
+    font-size: 8px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity h1 {
+    margin: 1px 0 3px !important;
+    font-size: clamp(23px, 2.5vw, 31px) !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity p {
+    margin: 1px 0 !important;
+    font-size: 10.5px !important;
+  }
+}
+
+@media (min-width: 901px) {
+  .proDashboard .playContent {
+    padding-top: 22px !important;
+    padding-bottom: 44px !important;
+  }
+
+  .proDashboard .playTitleBlock {
+    gap: 14px !important;
+    margin-bottom: 18px !important;
+  }
+
+  .proDashboard .playTitleBlock h1 {
+    font-size: clamp(27px, 2.2vw, 31px) !important;
+  }
+
+  .proDashboard .playStatsGrid {
+    gap: 12px !important;
+  }
+
+  .proDashboard .playStatsGrid > div {
+    min-height: 92px !important;
+    padding: 14px 16px !important;
+    border-radius: 16px !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent > .appPage > header {
+    margin-bottom: 12px !important;
+    padding: 15px 17px !important;
+    border-radius: 16px !important;
+  }
+
+  .proDashboard .tournamentWorkspaceTabsShell {
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .proDashboard .openTournamentTab {
+    min-height: 38px !important;
+  }
+
+  .proDashboard .openTournamentTabMain {
+    padding-top: 8px !important;
+    padding-bottom: 9px !important;
+  }
+
+  .proDashboard .tournamentTabsScrollButton,
+  .proDashboard .allOpenTournamentsButton,
+  .proDashboard .addOpenTournamentButton {
+    min-height: 36px !important;
+    height: 36px !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .publicPage.publicArenaPage .publicArenaHeader {
+    gap: 10px !important;
+    padding: max(10px, env(safe-area-inset-top)) 10px 12px !important;
+  }
+
+  .publicArenaRealPage .publicArenaHeader > .publicBrandRow {
+    grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr) !important;
+    gap: 5px !important;
+  }
+
+  .publicArenaRealPage .publicBrandRow .beachLogo,
+  .publicArenaRealPage .publicBrandRow .torneio360Logo {
+    width: 76px !important;
+    max-width: 76px !important;
+    height: 40px !important;
+    flex-basis: 76px !important;
+  }
+
+  .publicArenaRealPage .publicBackToPlatform,
+  .publicArenaRealPage .publicOrganizerAccess {
+    min-height: 38px !important;
+    padding: 5px !important;
+    border-radius: 10px !important;
+    font-size: 8.5px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity {
+    grid-template-columns: 52px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity > img,
+  .publicPage.publicArenaPage .publicArenaIdentity > .publicArenaInitials {
+    width: 52px !important;
+    height: 52px !important;
+    min-width: 52px !important;
+    flex-basis: 52px !important;
+    border-radius: 14px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity h1 {
+    margin: 1px 0 3px !important;
+    font-size: clamp(19px, 6.5vw, 24px) !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaIdentity p {
+    font-size: 9.5px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaContent {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 8px !important;
+    width: min(100% - 14px, 1180px) !important;
+    padding-top: 9px !important;
+    padding-bottom: 64px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaContacts,
+  .publicPage.publicArenaPage .publicArenaTabs,
+  .publicPage.publicArenaPage .publicArenaStatusTabs,
+  .publicPage.publicArenaPage .publicArenaEventGrid,
+  .publicPage.publicArenaPage .publicArenaEmpty {
+    grid-column: 1 !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaContacts {
+    gap: 9px !important;
+    padding: 11px 12px !important;
+    border-radius: 14px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaContacts h2 {
+    font-size: 15px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaContacts p {
+    font-size: 10px !important;
+  }
+
+  .publicPage.publicArenaPage .publicOrganizerLinks {
+    display: flex !important;
+    grid-template-columns: none !important;
+    flex-wrap: nowrap !important;
+    gap: 6px !important;
+    overflow-x: auto !important;
+    overscroll-behavior-inline: contain !important;
+    scrollbar-width: none !important;
+  }
+
+  .publicPage.publicArenaPage .publicOrganizerLinks::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  .publicPage.publicArenaPage .publicOrganizerLinks a {
+    width: auto !important;
+    min-width: max-content !important;
+    min-height: 36px !important;
+    flex: 0 0 auto !important;
+    padding: 7px 10px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaTabs,
+  .publicPage.publicArenaPage .publicArenaStatusTabs {
+    padding: 3px !important;
+    border-radius: 12px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaTabs button,
+  .publicPage.publicArenaPage .publicArenaStatusTabs button {
+    min-height: 42px !important;
+    padding: 7px 6px !important;
+    font-size: 10.5px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaEventCard,
+  .publicPage.publicArenaPage .publicArenaEventCardWithCover {
+    grid-template-columns: 56px minmax(0, 1fr) !important;
+    gap: 9px !important;
+    padding: 10px !important;
+    border-radius: 14px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaEventCardWithCover .publicArenaEventCover {
+    width: 56px !important;
+    height: 56px !important;
+    min-height: 56px !important;
+    border-radius: 12px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaEventBody {
+    padding: 0 !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaEventIcon {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaEventCard h2 {
+    font-size: 14px !important;
+  }
+
+  .publicPage.publicArenaPage .publicArenaEventCard > button,
+  .publicPage.publicArenaPage .publicArenaEventCardWithCover > button {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-height: 42px !important;
+    margin: 0 !important;
+    padding: 8px 12px !important;
+  }
+
+  .publicPage.publicArenaPage .publicRegistrationStatus {
+    width: fit-content !important;
+    min-height: 32px !important;
+    margin-top: 6px !important;
+  }
+
+  .proDashboard .playTopbar.proTopbar {
+    height: 64px !important;
+    min-height: 64px !important;
+  }
+
+  .proDashboard .proTopbar .playTopBrand {
+    height: 54px !important;
+  }
+
+  .proDashboard .proTopbar .playTopBrand .torneio360Logo {
+    width: 94px !important;
+    min-width: 94px !important;
+    max-width: 94px !important;
+    height: 42px !important;
+  }
+
+  .proDashboard .playMain {
+    padding-top: 64px !important;
+  }
+
+  .proDashboard .tournamentWorkspaceTabsShell {
+    top: 64px !important;
+    padding: 6px 10px !important;
+  }
+
+  .proDashboard .mobileTournamentSwitcherButton {
+    min-height: 44px !important;
+  }
+
+  .proDashboard .playContent {
+    padding-top: 16px !important;
+  }
+
+  .proDashboard .tournamentWorkspaceContent > .appPage > header {
+    margin-bottom: 10px !important;
+    padding: 13px !important;
+    border-radius: 15px !important;
+  }
+}

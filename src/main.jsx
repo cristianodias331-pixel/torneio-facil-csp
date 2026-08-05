@@ -614,13 +614,25 @@ const DEFAULT_TOURNAMENT_NAVIGATION = Object.freeze({
 });
 const TOURNAMENT_TAB_COLORS = Object.freeze([
   "#2563eb",
-  "#7c3aed",
-  "#0891b2",
   "#ea580c",
-  "#db2777",
   "#0f766e",
-  "#9333ea",
+  "#db2777",
+  "#16a34a",
   "#ca8a04",
+  "#0891b2",
+  "#dc2626",
+  "#4f46e5",
+  "#65a30d",
+  "#e11d48",
+  "#0284c7",
+  "#b45309",
+  "#059669",
+  "#7c3aed",
+  "#c026d3",
+  "#0e7490",
+  "#d97706",
+  "#be123c",
+  "#4338ca",
 ]);
 
 function getOpenTournamentsStorageKey(userId) {
@@ -671,7 +683,10 @@ function saveOpenTournamentNavigation(userId, navigation) {
   }
 }
 
-function getTournamentTabColor(tournamentId) {
+function getTournamentTabColor(tournamentId, position = null) {
+  if (Number.isInteger(position) && position >= 0) {
+    return TOURNAMENT_TAB_COLORS[position % TOURNAMENT_TAB_COLORS.length];
+  }
   const value = String(tournamentId || "torneio");
   let hash = 0;
   for (let index = 0; index < value.length; index += 1) {
@@ -5795,14 +5810,14 @@ function TournamentWorkspaceTabs({
 
           <div className="openTournamentTabsViewport" ref={tabsViewportRef}>
             <div className="openTournamentTabsTrack">
-              {openTournaments.map((tournament) => {
+              {openTournaments.map((tournament, tournamentIndex) => {
                 const isActive = tournament.id === activeTournamentId;
                 return (
                   <div
                     key={tournament.id}
                     ref={isActive ? activeTabRef : null}
                     className={`openTournamentTab ${isActive ? "active" : ""}`}
-                    style={{ "--tournament-tab-color": getTournamentTabColor(tournament.id) }}
+                    style={{ "--tournament-tab-color": getTournamentTabColor(tournament.id, tournamentIndex) }}
                   >
                     <button
                       type="button"
@@ -5850,7 +5865,12 @@ function TournamentWorkspaceTabs({
         <button type="button" className="mobileTournamentSwitcherButton" onClick={() => setManagerOpen(true)}>
           <span
             className="mobileTournamentSwitcherColor"
-            style={{ "--tournament-tab-color": getTournamentTabColor(activeTournamentId) }}
+            style={{
+              "--tournament-tab-color": getTournamentTabColor(
+                activeTournamentId,
+                Math.max(0, openTournaments.findIndex((tournament) => tournament.id === activeTournamentId))
+              ),
+            }}
             aria-hidden="true"
           />
           <span className="mobileTournamentSwitcherCopy">
@@ -5894,11 +5914,18 @@ function TournamentWorkspaceTabs({
                 const isOpen = openTournamentIds.includes(tournament.id);
                 const isActive = tournament.id === activeTournamentId;
                 const isBusy = tournament.id === busyTournamentId;
+                const openIndex = openTournamentIds.indexOf(tournament.id);
+                const tournamentIndex = Math.max(0, tournaments.findIndex((item) => item.id === tournament.id));
                 return (
                   <article
                     key={tournament.id}
                     className={`tournamentTabsModalItem ${isActive ? "active" : ""}`}
-                    style={{ "--tournament-tab-color": getTournamentTabColor(tournament.id) }}
+                    style={{
+                      "--tournament-tab-color": getTournamentTabColor(
+                        tournament.id,
+                        openIndex >= 0 ? openIndex : tournamentIndex
+                      ),
+                    }}
                   >
                     <span className="tournamentTabsModalItemColor" aria-hidden="true" />
                     <div className="tournamentTabsModalItemCopy">
