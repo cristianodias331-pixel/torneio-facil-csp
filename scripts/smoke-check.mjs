@@ -236,6 +236,29 @@ assert.ok(mainSource.includes('tournaments={tournaments}'), "O ranking público 
 assert.ok(mainSource.includes('className="publicCircuitName"'), "O nome do circuito não recebe destaque no ranking público.");
 assert.ok(mainSource.includes('pts: "Total de Games"'), "A coluna de games ainda usa a nomenclatura antiga.");
 assert.ok(!/\bpontos\b/i.test(mainSource), "A nomenclatura Pontos ainda aparece na interface.");
+assert.ok(
+  mainSource.includes("const stats = criteria.order")
+    && mainSource.includes("`Critério: ${criteria.label}`"),
+  "A imagem compartilhada não respeita nem identifica a ordem de critérios do ranking."
+);
+assert.ok(
+  mainSource.includes('rankingCriteria: effectiveCircuitCriteria')
+    && mainSource.includes('rankingCriteria: circuit?.ranking_criteria || defaultRankingCriteria'),
+  "O compartilhamento do ranking do circuito não recebe seu critério efetivo."
+);
+assert.ok(
+  mainSource.includes('navigator.clipboard.write([new ClipboardItem({ "image/png": file })])')
+    && mainSource.includes('return "copied"'),
+  "O compartilhamento no notebook não copia a imagem PNG diretamente."
+);
+assert.ok(mainSource.includes(': "Compartilhar ranking";'), "O botão compacto não identifica que compartilha o ranking.");
+assert.ok(
+  mainSource.includes('const [newRankingCriteria, setNewRankingCriteria] = useState("");')
+    && mainSource.includes('showNotice("warning", "Critério obrigatório"')
+    && mainSource.includes('<option value="">Escolha a ordem dos critérios</option>')
+    && mainSource.includes('rankingCriteria: newRankingCriteria,'),
+  "A criação do torneio ainda permite salvar sem escolher explicitamente o critério do ranking."
+);
 assert.ok(mainSource.includes('allowedTeamCounts: Array.from({ length: 29 }, (_, index) => index + 4)'), "O Campeonato Cearense não aceita todas as quantidades de 4 a 32 duplas.");
 assert.ok(mainSource.includes('function createCearenseGroups(teamCount)'), "A distribuição própria de grupos do Campeonato Cearense está ausente.");
 assert.ok(mainSource.includes('function compareCearenseCampaignMetrics(first, second)'), "A comparação normalizada entre grupos está ausente.");
