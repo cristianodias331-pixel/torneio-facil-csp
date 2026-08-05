@@ -11,6 +11,7 @@ import {
   Clock3,
   Copy,
   Dices,
+  Download,
   Flame,
   Gift,
   GitBranch,
@@ -25,6 +26,7 @@ import {
   MessageCircle,
   Moon,
   PlusCircle,
+  Printer,
   Settings,
   Shapes,
   Share2,
@@ -36,6 +38,7 @@ import {
   Undo2,
   UserRound,
   Users,
+  X,
 } from "lucide-react";
 import InstallAppBanner from "./InstallAppBanner.jsx";
 import { super12IndividualTemplate } from "./super12Schedule.mjs";
@@ -333,7 +336,9 @@ async function copyRankingImageToClipboard(file) {
   if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") return false;
 
   try {
-    await navigator.clipboard.write([new ClipboardItem({ "image/png": file })]);
+    if (ClipboardItem.supports && !ClipboardItem.supports("image/png")) return false;
+    const pngBlob = new Blob([await file.arrayBuffer()], { type: "image/png" });
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": pngBlob })]);
     return true;
   } catch (error) {
     console.warn("Não foi possível preparar a imagem na área de transferência.", error);
@@ -341,22 +346,7 @@ async function copyRankingImageToClipboard(file) {
   }
 }
 
-async function shareRankingImage(config) {
-  const file = await createRankingShareFile(config);
-  let imageCopied = await copyRankingImageToClipboard(file);
-
-  if (navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-    await navigator.share({
-      title: config.title || "Ranking Torneio360",
-      text: `${config.title || "Ranking"} — ${config.arenaName || "Torneio360"}`,
-      files: [file],
-    });
-    imageCopied = (await copyRankingImageToClipboard(file)) || imageCopied;
-    return imageCopied ? "sharedCopied" : "shared";
-  }
-
-  if (imageCopied) return "copied";
-
+function downloadRankingFile(file) {
   const url = URL.createObjectURL(file);
   const link = document.createElement("a");
   link.href = url;
@@ -365,7 +355,63 @@ async function shareRankingImage(config) {
   link.click();
   link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  return "downloaded";
+}
+
+function printRankingFile(file) {
+  const printWindow = window.open("", "_blank", "width=920,height=860");
+  if (!printWindow) return false;
+
+  printWindow.opener = null;
+  const url = URL.createObjectURL(file);
+  const style = printWindow.document.createElement("style");
+  style.textContent = `
+    @page { size: A4 portrait; margin: 10mm; }
+    html, body { margin: 0; min-height: 100%; background: #fff; }
+    body { display: grid; place-items: start center; }
+    img { display: block; width: 100%; height: auto; max-width: 190mm; }
+    @media print { img { break-inside: avoid; } }
+  `;
+  const image = printWindow.document.createElement("img");
+  image.alt = "Ranking Torneio360";
+  image.src = url;
+  image.addEventListener("load", () => {
+    printWindow.focus();
+    printWindow.print();
+  }, { once: true });
+  printWindow.addEventListener("afterprint", () => {
+    URL.revokeObjectURL(url);
+    printWindow.close();
+  }, { once: true });
+  printWindow.document.title = "Ranking Torneio360";
+  printWindow.document.head.appendChild(style);
+  printWindow.document.body.appendChild(image);
+  return true;
+}
+
+function isMobileShareDevice() {
+  return /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")
+    || (navigator.maxTouchPoints > 1 && window.matchMedia?.("(max-width: 900px)").matches);
+}
+
+async function shareRankingImage(config) {
+  const file = await createRankingShareFile(config);
+
+  if (isMobileShareDevice() && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
+    await navigator.share({
+      title: config.title || "Ranking Torneio360",
+      text: `${config.title || "Ranking"} — ${config.arenaName || "Torneio360"}`,
+      files: [file],
+    });
+    return { status: "shared", file: null };
+  }
+
+  if (isMobileShareDevice()) {
+    downloadRankingFile(file);
+    return { status: "downloaded", file: null };
+  }
+
+  const imageCopied = await copyRankingImageToClipboard(file);
+  return { status: imageCopied ? "copied" : "copyError", file };
 }
 const TORNEIO360_TAGLINE = "Gestão inteligente de torneios";
 
@@ -3732,8 +3778,26 @@ function Info({ title, text }) {
 
 function RankingShareButton({ config, compact = false }) {
   const [status, setStatus] = useState("idle");
+  const [exportFile, setExportFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState("");
+
+  useEffect(() => {
+    if (!exportFile) {
+      setPreviewUrl("");
+      return undefined;
+    }
+
+    const url = URL.createObjectURL(exportFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [exportFile]);
 
   if (!config?.groups?.some((group) => group?.rows?.length)) return null;
+
+  function closeExportDialog() {
+    setExportFile(null);
+    setStatus("idle");
+  }
 
   async function handleShare() {
     if (status === "loading") return;
@@ -3741,8 +3805,12 @@ function RankingShareButton({ config, compact = false }) {
 
     try {
       const result = await shareRankingImage(config);
-      setStatus(result);
-      setTimeout(() => setStatus("idle"), 2400);
+      setStatus(result.status);
+      if (result.file) {
+        setExportFile(result.file);
+      } else {
+        setTimeout(() => setStatus("idle"), 2400);
+      }
     } catch (error) {
       if (error?.name === "AbortError") {
         setStatus("idle");
@@ -3756,10 +3824,10 @@ function RankingShareButton({ config, compact = false }) {
 
   const label = status === "loading"
     ? "Preparando imagem…"
-    : status === "sharedCopied"
-      ? "Compartilhado e copiado"
     : status === "copied"
       ? "Imagem copiada"
+    : status === "copyError"
+      ? "Opções de exportação"
     : status === "downloaded"
       ? "Imagem baixada"
       : status === "shared"
@@ -3769,9 +3837,67 @@ function RankingShareButton({ config, compact = false }) {
           : "Compartilhar ranking";
 
   return (
-    <button type="button" className="rankingShareButton" onClick={handleShare} disabled={status === "loading"}>
-      <Share2 aria-hidden="true" /> {label}
-    </button>
+    <>
+      <button type="button" className="rankingShareButton" onClick={handleShare} disabled={status === "loading"}>
+        <Share2 aria-hidden="true" /> {label}
+      </button>
+
+      {exportFile && createPortal(
+        <div className="rankingExportOverlay" role="presentation" onMouseDown={closeExportDialog}>
+          <section
+            className="rankingExportDialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Opções para o ranking"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <header>
+              <div>
+                <span>Ranking preparado</span>
+                <h2>{config.title || "Ranking Torneio360"}</h2>
+              </div>
+              <button type="button" className="rankingExportClose" onClick={closeExportDialog} aria-label="Fechar">
+                <X aria-hidden="true" />
+              </button>
+            </header>
+
+            {previewUrl ? <img className="rankingExportPreview" src={previewUrl} alt="Prévia da imagem do ranking" /> : null}
+
+            <div className={`rankingExportNotice ${status === "copyError" || status === "error" ? "warning" : "success"}`}>
+              {status === "copyError"
+                ? "O navegador não liberou a cópia automática. Você ainda pode baixar o PNG ou imprimir."
+                : status === "downloaded"
+                  ? "PNG baixado. A imagem também continua disponível para imprimir."
+                  : status === "error"
+                    ? "A impressão foi bloqueada pelo navegador. Tente novamente ou baixe o PNG."
+                    : "Imagem copiada. Agora use Ctrl+V para colar diretamente no WhatsApp."}
+            </div>
+
+            <div className="rankingExportActions">
+              <button
+                type="button"
+                onClick={() => {
+                  if (!printRankingFile(exportFile)) setStatus("error");
+                }}
+              >
+                <Printer aria-hidden="true" /> Imprimir / salvar PDF
+              </button>
+              <button
+                type="button"
+                className="secondary"
+                onClick={() => {
+                  downloadRankingFile(exportFile);
+                  setStatus("downloaded");
+                }}
+              >
+                <Download aria-hidden="true" /> Baixar PNG
+              </button>
+            </div>
+          </section>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 

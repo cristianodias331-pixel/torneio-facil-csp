@@ -248,10 +248,17 @@ assert.ok(
 );
 assert.ok(
   mainSource.includes('async function copyRankingImageToClipboard(file)')
-    && mainSource.includes('let imageCopied = await copyRankingImageToClipboard(file);')
-    && mainSource.includes('await navigator.share({')
-    && mainSource.includes('imageCopied = (await copyRankingImageToClipboard(file)) || imageCopied;'),
-  "A janela nativa não é preservada junto da preparação da imagem para copiar."
+    && mainSource.includes('new Blob([await file.arrayBuffer()], { type: "image/png" })')
+    && mainSource.includes('if (isMobileShareDevice() && navigator.share')
+    && mainSource.includes('const imageCopied = await copyRankingImageToClipboard(file);'),
+  "O compartilhamento não separa a janela móvel da cópia PNG direta no notebook."
+);
+assert.ok(
+  mainSource.includes('className="rankingExportDialog"')
+    && mainSource.includes('Imprimir / salvar PDF')
+    && mainSource.includes('Baixar PNG')
+    && styleSource.includes('.rankingExportOverlay'),
+  "O notebook não apresenta as opções de impressão e download após copiar o ranking."
 );
 assert.ok(mainSource.includes(': "Compartilhar ranking";'), "O botão compacto não identifica que compartilha o ranking.");
 assert.ok(
