@@ -247,9 +247,11 @@ assert.ok(
   "O compartilhamento do ranking do circuito não recebe seu critério efetivo."
 );
 assert.ok(
-  mainSource.includes('navigator.clipboard.write([new ClipboardItem({ "image/png": file })])')
-    && mainSource.includes('return "copied"'),
-  "O compartilhamento no notebook não copia a imagem PNG diretamente."
+  mainSource.includes('async function copyRankingImageToClipboard(file)')
+    && mainSource.includes('let imageCopied = await copyRankingImageToClipboard(file);')
+    && mainSource.includes('await navigator.share({')
+    && mainSource.includes('imageCopied = (await copyRankingImageToClipboard(file)) || imageCopied;'),
+  "A janela nativa não é preservada junto da preparação da imagem para copiar."
 );
 assert.ok(mainSource.includes(': "Compartilhar ranking";'), "O botão compacto não identifica que compartilha o ranking.");
 assert.ok(
