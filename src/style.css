@@ -21205,6 +21205,624 @@ html[data-theme="dark"] .courtEditorNumberInput > strong {
   }
 }
 
+/* =========================================================
+   CENTRAL DE TORNEIOS ABERTOS
+   Abas locais e persistentes, sem alterar dados do torneio.
+   ========================================================= */
+.tournamentWorkspaceTabsShell {
+  position: sticky;
+  top: 52px;
+  z-index: 82;
+  min-width: 0;
+  padding: 9px clamp(14px, 2.4vw, 32px);
+  border-bottom: 1px solid #d8e3f2;
+  background: rgba(246, 249, 254, 0.96);
+  box-shadow: 0 7px 20px rgba(15, 23, 42, 0.06);
+  backdrop-filter: blur(14px);
+}
+
+.desktopTournamentTabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+.openTournamentTabsViewport {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #a9bbd2 transparent;
+}
+
+.openTournamentTabsViewport::-webkit-scrollbar { height: 5px; }
+.openTournamentTabsViewport::-webkit-scrollbar-track { background: transparent; }
+.openTournamentTabsViewport::-webkit-scrollbar-thumb { background: #a9bbd2; border-radius: 999px; }
+
+.openTournamentTabsTrack {
+  display: flex;
+  align-items: stretch;
+  gap: 7px;
+  width: max-content;
+  min-width: 100%;
+  padding: 2px 1px 5px;
+}
+
+.openTournamentTab {
+  --tournament-tab-color: #2563eb;
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  width: clamp(154px, 15vw, 224px);
+  min-width: 154px;
+  min-height: 42px;
+  overflow: hidden;
+  border: 1px solid #d6e0ed;
+  border-radius: 13px 13px 6px 6px;
+  background: #fff;
+  box-shadow: 0 3px 8px rgba(15, 23, 42, 0.04);
+  transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
+}
+
+.openTournamentTab::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--tournament-tab-color);
+  opacity: 0.72;
+}
+
+.openTournamentTab:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--tournament-tab-color) 45%, #d6e0ed);
+}
+
+.openTournamentTab.active {
+  border-color: color-mix(in srgb, var(--tournament-tab-color) 58%, #fff);
+  background: color-mix(in srgb, var(--tournament-tab-color) 8%, #fff);
+  box-shadow: 0 7px 17px color-mix(in srgb, var(--tournament-tab-color) 18%, transparent);
+}
+
+.openTournamentTab.active::after { height: 5px; opacity: 1; }
+
+.openTournamentTabMain,
+.openTournamentTabClose,
+.tournamentTabsScrollButton,
+.allOpenTournamentsButton,
+.addOpenTournamentButton,
+.mobileTournamentSwitcherButton {
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.openTournamentTabMain {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  padding: 10px 6px 11px 11px !important;
+  color: #26364c !important;
+  background: transparent !important;
+  text-align: left !important;
+}
+
+.openTournamentTab.active .openTournamentTabMain { color: #0b1729 !important; }
+
+.openTournamentTabDot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 8px;
+  border-radius: 50%;
+  background: var(--tournament-tab-color);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--tournament-tab-color) 15%, transparent);
+}
+
+.openTournamentTabName {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11.5px;
+  font-weight: 850;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.openTournamentTabClose {
+  display: grid !important;
+  width: 31px !important;
+  min-width: 31px !important;
+  padding: 0 !important;
+  place-items: center !important;
+  color: #8291a6 !important;
+  background: transparent !important;
+}
+
+.openTournamentTabClose:hover {
+  color: #b42318 !important;
+  background: rgba(180, 35, 24, 0.08) !important;
+}
+
+.openTournamentTabClose svg { width: 14px; height: 14px; }
+
+.tournamentTabsScrollButton {
+  display: grid !important;
+  width: 34px !important;
+  min-width: 34px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  place-items: center !important;
+  border: 1px solid #d7e1ef !important;
+  border-radius: 11px !important;
+  color: #47617f !important;
+  background: #fff !important;
+}
+
+.tournamentTabsScrollButton:hover { color: #1553d8 !important; border-color: #a9c2f4 !important; }
+.tournamentTabsScrollButton svg { width: 17px; height: 17px; }
+
+.allOpenTournamentsButton,
+.addOpenTournamentButton {
+  display: inline-flex !important;
+  min-height: 40px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  padding: 9px 12px !important;
+  border-radius: 12px !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  white-space: nowrap !important;
+}
+
+.allOpenTournamentsButton {
+  color: #25364d !important;
+  border: 1px solid #d7e1ef !important;
+  background: #fff !important;
+}
+
+.allOpenTournamentsButton span {
+  display: inline-grid;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  place-items: center;
+  border-radius: 999px;
+  color: #1553d8;
+  background: #e7efff;
+}
+
+.addOpenTournamentButton {
+  color: #fff !important;
+  background: linear-gradient(135deg, #1553d8, #0aaed0) !important;
+  box-shadow: 0 8px 18px rgba(21, 83, 216, 0.2) !important;
+}
+
+.addOpenTournamentButton svg { width: 16px; height: 16px; }
+.mobileTournamentSwitcherButton { display: none !important; }
+
+.tournamentTabsModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30000;
+  display: grid;
+  padding: 22px;
+  place-items: center;
+  background: rgba(4, 12, 28, 0.68);
+  backdrop-filter: blur(8px);
+}
+
+.tournamentTabsModal {
+  width: min(720px, 100%);
+  max-height: min(760px, calc(100vh - 44px));
+  overflow: hidden;
+  border: 1px solid #d6e1ef;
+  border-radius: 24px;
+  background: #f8fbff;
+  box-shadow: 0 30px 90px rgba(2, 8, 23, 0.36);
+}
+
+.tournamentTabsModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 24px 17px;
+  border-bottom: 1px solid #dce5f1;
+}
+
+.tournamentTabsModalHeader span {
+  display: block;
+  margin-bottom: 4px;
+  color: #1553d8;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.tournamentTabsModalHeader h2 {
+  margin: 0;
+  color: #0f1d31;
+  font-size: clamp(22px, 4vw, 30px);
+  line-height: 1.05;
+}
+
+.tournamentTabsModalHeader p {
+  margin: 7px 0 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.tournamentTabsModalHeader > button {
+  display: grid !important;
+  width: 38px !important;
+  min-width: 38px !important;
+  height: 38px !important;
+  padding: 0 !important;
+  place-items: center !important;
+  border: 1px solid #d5e0ee !important;
+  border-radius: 12px !important;
+  color: #52657f !important;
+  background: #fff !important;
+  box-shadow: none !important;
+}
+
+.tournamentTabsModalHeader > button svg { width: 17px; height: 17px; }
+
+.tournamentTabsSearch {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 17px 24px 12px;
+  padding: 0 14px;
+  border: 1px solid #cddbea;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 5px 15px rgba(15, 23, 42, 0.04);
+}
+
+.tournamentTabsSearch:focus-within {
+  border-color: #5f8fe8;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.tournamentTabsSearch svg { width: 17px; height: 17px; color: #6d7f96; }
+.tournamentTabsSearch input {
+  width: 100%;
+  height: 46px;
+  padding: 0 !important;
+  border: 0 !important;
+  outline: 0 !important;
+  color: #17263a !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 13px !important;
+}
+
+.tournamentTabsModalList {
+  display: grid;
+  gap: 9px;
+  max-height: min(520px, calc(100vh - 235px));
+  padding: 5px 24px 24px;
+  overflow-y: auto;
+}
+
+.tournamentTabsModalItem {
+  --tournament-tab-color: #2563eb;
+  display: grid;
+  grid-template-columns: 5px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 10px 11px 10px 0;
+  overflow: hidden;
+  border: 1px solid #dce5f0;
+  border-radius: 15px;
+  background: #fff;
+}
+
+.tournamentTabsModalItem.active {
+  border-color: color-mix(in srgb, var(--tournament-tab-color) 45%, #dce5f0);
+  background: color-mix(in srgb, var(--tournament-tab-color) 7%, #fff);
+}
+
+.tournamentTabsModalItemColor {
+  align-self: stretch;
+  border-radius: 0 5px 5px 0;
+  background: var(--tournament-tab-color);
+}
+
+.tournamentTabsModalItemCopy { min-width: 0; }
+.tournamentTabsModalItemCopy strong {
+  display: block;
+  overflow: hidden;
+  color: #17263a;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournamentTabsModalItemCopy span {
+  display: block;
+  margin-top: 3px;
+  overflow: hidden;
+  color: #718096;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tournamentTabsOpenBadge {
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--tournament-tab-color);
+  background: color-mix(in srgb, var(--tournament-tab-color) 10%, #fff);
+  font-size: 9px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.tournamentTabsModalItem > button {
+  min-width: 82px !important;
+  min-height: 36px !important;
+  padding: 8px 12px !important;
+  border: 0 !important;
+  border-radius: 11px !important;
+  color: #fff !important;
+  background: var(--tournament-tab-color) !important;
+  box-shadow: none !important;
+  font-size: 10.5px !important;
+  font-weight: 900 !important;
+}
+
+.tournamentTabsModalItem > button:disabled {
+  color: #66758a !important;
+  background: #e4eaf2 !important;
+  opacity: 1 !important;
+}
+
+.tournamentTabsEmpty {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  color: #74849a;
+  text-align: center;
+}
+
+.tournamentTabsEmpty svg { width: 32px; height: 32px; color: #8ca6c8; }
+.tournamentTabsEmpty strong { color: #283a51; font-size: 14px; }
+.tournamentTabsEmpty span { font-size: 11px; }
+
+.tournamentTabCloseOverlay { z-index: 31000; }
+.tournamentTabCloseModal {
+  width: min(430px, 100%);
+  padding: 28px;
+  border: 1px solid #d9e2ef;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 28px 80px rgba(2, 8, 23, 0.4);
+  text-align: center;
+}
+
+.tournamentTabCloseIcon {
+  display: inline-grid;
+  width: 52px;
+  height: 52px;
+  margin-bottom: 13px;
+  place-items: center;
+  border-radius: 16px;
+  color: #c2410c;
+  background: #fff0e7;
+}
+
+.tournamentTabCloseIcon svg { width: 23px; height: 23px; }
+.tournamentTabCloseModal h2 { margin: 0; color: #15243a; font-size: 23px; }
+.tournamentTabCloseModal p { margin: 10px 0 22px; color: #64748b; font-size: 12.5px; line-height: 1.55; }
+.tournamentTabCloseModal p strong { color: #25364d; }
+.tournamentTabCloseActions { display: grid; grid-template-columns: 1fr 1.3fr; gap: 9px; }
+.tournamentTabCloseActions button {
+  min-height: 43px !important;
+  border: 1px solid #d5dfeb !important;
+  border-radius: 12px !important;
+  color: #34465e !important;
+  background: #f7f9fc !important;
+  box-shadow: none !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+.tournamentTabCloseActions button.confirm {
+  border-color: #c2410c !important;
+  color: #fff !important;
+  background: #c2410c !important;
+}
+
+html[data-theme="dark"] .tournamentWorkspaceTabsShell {
+  border-color: #26384d;
+  background: rgba(10, 19, 33, 0.96);
+  box-shadow: 0 7px 22px rgba(0, 0, 0, 0.22);
+}
+
+html[data-theme="dark"] .openTournamentTab,
+html[data-theme="dark"] .tournamentTabsScrollButton,
+html[data-theme="dark"] .allOpenTournamentsButton {
+  border-color: #30445b !important;
+  background: #162334 !important;
+}
+
+html[data-theme="dark"] .openTournamentTab.active {
+  border-color: color-mix(in srgb, var(--tournament-tab-color) 66%, #30445b) !important;
+  background: color-mix(in srgb, var(--tournament-tab-color) 14%, #142133) !important;
+}
+
+html[data-theme="dark"] .openTournamentTabMain { color: #c9d5e4 !important; }
+html[data-theme="dark"] .openTournamentTab.active .openTournamentTabMain { color: #fff !important; }
+html[data-theme="dark"] .openTournamentTabClose { color: #8ea0b6 !important; }
+html[data-theme="dark"] .tournamentTabsScrollButton,
+html[data-theme="dark"] .allOpenTournamentsButton { color: #c5d2e1 !important; }
+html[data-theme="dark"] .allOpenTournamentsButton span { background: #223b63; color: #9bc0ff; }
+html[data-theme="dark"] .openTournamentTabsViewport { scrollbar-color: #4f657e transparent; }
+
+html[data-theme="dark"] .tournamentTabsModal,
+html[data-theme="dark"] .tournamentTabCloseModal {
+  border-color: #31445b;
+  background: #111d2c;
+}
+
+html[data-theme="dark"] .tournamentTabsModalHeader { border-color: #2c3e54; }
+html[data-theme="dark"] .tournamentTabsModalHeader h2,
+html[data-theme="dark"] .tournamentTabCloseModal h2 { color: #f5f8fc; }
+html[data-theme="dark"] .tournamentTabsModalHeader p,
+html[data-theme="dark"] .tournamentTabCloseModal p { color: #9eafc3; }
+html[data-theme="dark"] .tournamentTabsModalHeader > button,
+html[data-theme="dark"] .tournamentTabsSearch,
+html[data-theme="dark"] .tournamentTabsModalItem {
+  border-color: #30445b !important;
+  background: #172536 !important;
+}
+html[data-theme="dark"] .tournamentTabsSearch input { color: #eef4fb !important; }
+html[data-theme="dark"] .tournamentTabsModalItem.active {
+  background: color-mix(in srgb, var(--tournament-tab-color) 15%, #172536) !important;
+}
+html[data-theme="dark"] .tournamentTabsModalItemCopy strong,
+html[data-theme="dark"] .tournamentTabsEmpty strong,
+html[data-theme="dark"] .tournamentTabCloseModal p strong { color: #edf3fa; }
+html[data-theme="dark"] .tournamentTabsModalItemCopy span,
+html[data-theme="dark"] .tournamentTabsEmpty { color: #96a8bd; }
+html[data-theme="dark"] .tournamentTabsOpenBadge {
+  background: color-mix(in srgb, var(--tournament-tab-color) 19%, #172536);
+}
+html[data-theme="dark"] .tournamentTabCloseIcon { color: #fdba74; background: #3a251b; }
+html[data-theme="dark"] .tournamentTabCloseActions button {
+  border-color: #344960 !important;
+  color: #cfdae6 !important;
+  background: #19283a !important;
+}
+
+@media (max-width: 1100px) {
+  .addOpenTournamentButton span { display: none; }
+  .addOpenTournamentButton { width: 42px !important; min-width: 42px !important; padding: 0 !important; }
+}
+
+@media (max-width: 700px) {
+  .tournamentWorkspaceTabsShell {
+    top: 52px;
+    padding: 8px 12px;
+  }
+
+  .desktopTournamentTabs { display: none; }
+  .mobileTournamentSwitcherButton {
+    display: grid !important;
+    width: 100% !important;
+    min-height: 48px !important;
+    grid-template-columns: 5px minmax(0, 1fr) auto auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 7px 11px 7px 6px !important;
+    overflow: hidden !important;
+    border: 1px solid #d5e0ee !important;
+    border-radius: 14px !important;
+    color: #263850 !important;
+    background: #fff !important;
+    text-align: left !important;
+  }
+
+  .mobileTournamentSwitcherColor {
+    align-self: stretch;
+    border-radius: 999px;
+    background: var(--tournament-tab-color);
+  }
+
+  .mobileTournamentSwitcherCopy { min-width: 0; }
+  .mobileTournamentSwitcherCopy small {
+    display: block;
+    margin-bottom: 1px;
+    color: #7a8ca2;
+    font-size: 8px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .mobileTournamentSwitcherCopy strong {
+    display: block;
+    overflow: hidden;
+    color: #17263a;
+    font-size: 11.5px;
+    font-weight: 950;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mobileTournamentSwitcherCount {
+    display: grid;
+    min-width: 23px;
+    height: 23px;
+    padding: 0 5px;
+    place-items: center;
+    border-radius: 999px;
+    color: #1553d8;
+    background: #e8f0ff;
+    font-size: 9px;
+    font-weight: 950;
+  }
+  .mobileTournamentSwitcherButton > svg { width: 16px; height: 16px; color: #60748d; }
+
+  html[data-theme="dark"] .mobileTournamentSwitcherButton {
+    border-color: #30445b !important;
+    color: #dce6f1 !important;
+    background: #162334 !important;
+  }
+  html[data-theme="dark"] .mobileTournamentSwitcherCopy strong { color: #f3f7fb; }
+  html[data-theme="dark"] .mobileTournamentSwitcherCopy small { color: #91a3b8; }
+  html[data-theme="dark"] .mobileTournamentSwitcherCount { color: #a9c8ff; background: #233c63; }
+
+  .tournamentTabsModalOverlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .tournamentTabsModal {
+    width: 100%;
+    max-height: min(86vh, 760px);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .tournamentTabsModalHeader { padding: 19px 17px 14px; }
+  .tournamentTabsModalHeader p { font-size: 10.5px; }
+  .tournamentTabsSearch { margin: 13px 16px 9px; }
+  .tournamentTabsModalList {
+    max-height: calc(86vh - 205px);
+    padding: 4px 16px calc(20px + env(safe-area-inset-bottom));
+  }
+  .tournamentTabsModalItem {
+    grid-template-columns: 5px minmax(0, 1fr) auto;
+    gap: 9px;
+  }
+  .tournamentTabsOpenBadge { display: none; }
+  .tournamentTabsModalItem > button { min-width: 70px !important; padding-inline: 9px !important; }
+
+  .tournamentTabCloseOverlay { align-items: center; padding: 18px; }
+  .tournamentTabCloseModal { padding: 23px 19px; border-radius: 22px; }
+  .tournamentTabCloseActions { grid-template-columns: 1fr; }
+}
+
 /* Cabeçalho dos torneios e circuitos vistos pelo visitante. */
 @media (min-width: 980px) {
   .publicPage > .publicHeaderWithLogo:not(.publicArenaHeader) {
@@ -21324,4 +21942,81 @@ html[data-theme="dark"] .courtEditorNumberInput > strong {
     justify-content: flex-end !important;
     gap: 8px !important;
   }
+}
+
+/* Visibilidade final da central: regras posteriores do layout nao podem exibir
+   simultaneamente a barra desktop e o seletor compacto. */
+@media (min-width: 701px) {
+  .proDashboard .tournamentWorkspaceTabsShell { top: 76px !important; }
+  .proDashboard button.mobileTournamentSwitcherButton { display: none !important; }
+  .proDashboard .desktopTournamentTabs { display: flex !important; }
+}
+
+@media (max-width: 700px) {
+  .proDashboard .tournamentWorkspaceTabsShell { top: 70px !important; }
+  .proDashboard .desktopTournamentTabs { display: none !important; }
+  .proDashboard button.mobileTournamentSwitcherButton { display: grid !important; }
+}
+
+.proDashboard.playAppShell button.openTournamentTabMain,
+.proDashboard.playAppShell button.openTournamentTabClose {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.proDashboard.playAppShell button.openTournamentTabMain { color: #26364c !important; }
+.proDashboard.playAppShell .openTournamentTab.active button.openTournamentTabMain { color: #0b1729 !important; }
+.proDashboard.playAppShell button.openTournamentTabClose { color: #8291a6 !important; }
+.proDashboard.playAppShell button.openTournamentTabClose:hover {
+  color: #b42318 !important;
+  background: rgba(180, 35, 24, 0.08) !important;
+}
+
+.proDashboard.playAppShell button.tournamentTabsScrollButton {
+  color: #47617f !important;
+  border: 1px solid #d7e1ef !important;
+  background: #fff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.proDashboard.playAppShell button.allOpenTournamentsButton {
+  color: #25364d !important;
+  border: 1px solid #d7e1ef !important;
+  background: #fff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.proDashboard.playAppShell button.addOpenTournamentButton {
+  color: #fff !important;
+  border: 0 !important;
+  background: linear-gradient(135deg, #1553d8, #0aaed0) !important;
+  box-shadow: 0 8px 18px rgba(21, 83, 216, 0.2) !important;
+}
+
+.proDashboard.playAppShell button.mobileTournamentSwitcherButton {
+  color: #263850 !important;
+  border: 1px solid #d5e0ee !important;
+  background: #fff !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .proDashboard.playAppShell button.openTournamentTabMain { color: #c9d5e4 !important; }
+html[data-theme="dark"] .proDashboard.playAppShell .openTournamentTab.active button.openTournamentTabMain { color: #fff !important; }
+html[data-theme="dark"] .proDashboard.playAppShell button.openTournamentTabClose { color: #8ea0b6 !important; }
+html[data-theme="dark"] .proDashboard.playAppShell button.tournamentTabsScrollButton,
+html[data-theme="dark"] .proDashboard.playAppShell button.allOpenTournamentsButton {
+  color: #c5d2e1 !important;
+  border-color: #30445b !important;
+  background: #162334 !important;
+  background-image: none !important;
+}
+html[data-theme="dark"] .proDashboard.playAppShell button.mobileTournamentSwitcherButton {
+  color: #dce6f1 !important;
+  border-color: #30445b !important;
+  background: #162334 !important;
+  background-image: none !important;
 }

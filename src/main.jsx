@@ -6,7 +6,9 @@ import {
   AtSign,
   Camera,
   CalendarDays,
+  ChevronLeft,
   ChevronDown,
+  ChevronRight,
   ClipboardPaste,
   Clock3,
   Copy,
@@ -27,6 +29,7 @@ import {
   Moon,
   PlusCircle,
   Printer,
+  Search,
   Settings,
   Shapes,
   Share2,
@@ -602,6 +605,80 @@ function savePublicViewStorage(key, value) {
 }
 
 const USER_APP_STATE_STORAGE_PREFIX = "torneio360:user-app-state:v2:";
+const OPEN_TOURNAMENTS_STORAGE_PREFIX = "torneio360:open-tournaments:v1:";
+const OPEN_TOURNAMENT_NAV_STORAGE_PREFIX = "torneio360:open-tournament-navigation:v1:";
+const DEFAULT_TOURNAMENT_NAVIGATION = Object.freeze({
+  tournamentTab: "participantes",
+  matchesTab: "grupos",
+  scrollY: 0,
+});
+const TOURNAMENT_TAB_COLORS = Object.freeze([
+  "#2563eb",
+  "#7c3aed",
+  "#0891b2",
+  "#ea580c",
+  "#db2777",
+  "#0f766e",
+  "#9333ea",
+  "#ca8a04",
+]);
+
+function getOpenTournamentsStorageKey(userId) {
+  return `${OPEN_TOURNAMENTS_STORAGE_PREFIX}${userId || "anonymous"}`;
+}
+
+function getOpenTournamentNavigationStorageKey(userId) {
+  return `${OPEN_TOURNAMENT_NAV_STORAGE_PREFIX}${userId || "anonymous"}`;
+}
+
+function readOpenTournamentIds(userId) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(getOpenTournamentsStorageKey(userId)) || "[]");
+    return Array.isArray(parsed)
+      ? [...new Set(parsed.filter((id) => typeof id === "string" && id.trim()))].slice(0, 50)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveOpenTournamentIds(userId, ids) {
+  try {
+    const normalized = [...new Set((ids || []).filter(Boolean))].slice(0, 50);
+    localStorage.setItem(getOpenTournamentsStorageKey(userId), JSON.stringify(normalized));
+  } catch {
+    // A central continua funcionando durante a sessao mesmo sem armazenamento local.
+  }
+}
+
+function readOpenTournamentNavigation(userId) {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(getOpenTournamentNavigationStorageKey(userId)) || "{}");
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveOpenTournamentNavigation(userId, navigation) {
+  try {
+    localStorage.setItem(
+      getOpenTournamentNavigationStorageKey(userId),
+      JSON.stringify(navigation && typeof navigation === "object" ? navigation : {})
+    );
+  } catch {
+    // A troca de torneios continua disponivel mesmo sem armazenamento local.
+  }
+}
+
+function getTournamentTabColor(tournamentId) {
+  const value = String(tournamentId || "torneio");
+  let hash = 0;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = ((hash << 5) - hash + value.charCodeAt(index)) | 0;
+  }
+  return TOURNAMENT_TAB_COLORS[Math.abs(hash) % TOURNAMENT_TAB_COLORS.length];
+}
 
 function getUserAppStateStorageKey(userId) {
   return `${USER_APP_STATE_STORAGE_PREFIX}${userId}`;
@@ -5626,6 +5703,251 @@ function FreeTrialNotice({ details }) {
   );
 }
 
+function TournamentWorkspaceTabs({
+  tournaments,
+  openTournamentIds,
+  activeTournamentId,
+  onSelectTournament,
+  onCloseTournament,
+}) {
+  const [managerOpen, setManagerOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
+  const [closeTarget, setCloseTarget] = useState(null);
+  const [busyTournamentId, setBusyTournamentId] = useState(null);
+  const tabsViewportRef = useRef(null);
+  const activeTabRef = useRef(null);
+
+  const tournamentsById = useMemo(
+    () => new Map((tournaments || []).map((tournament) => [tournament.id, tournament])),
+    [tournaments]
+  );
+  const openTournaments = useMemo(
+    () => (openTournamentIds || []).map((id) => tournamentsById.get(id)).filter(Boolean),
+    [openTournamentIds, tournamentsById]
+  );
+  const filteredTournaments = useMemo(() => {
+    const normalizedSearch = searchValue.trim().toLocaleLowerCase("pt-BR");
+    if (!normalizedSearch) return tournaments || [];
+    return (tournaments || []).filter((tournament) => {
+      const searchable = [
+        tournament.name,
+        getModalityDisplayName(tournament.type),
+        tournament.data?.gender,
+        tournament.data?.eventName,
+      ].filter(Boolean).join(" ").toLocaleLowerCase("pt-BR");
+      return searchable.includes(normalizedSearch);
+    });
+  }, [searchValue, tournaments]);
+
+  useEffect(() => {
+    if (!activeTabRef.current) return;
+    activeTabRef.current.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [activeTournamentId, openTournamentIds]);
+
+  useEffect(() => {
+    if (!managerOpen && !closeTarget) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key !== "Escape") return;
+      if (closeTarget) setCloseTarget(null);
+      else setManagerOpen(false);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [managerOpen, closeTarget]);
+
+  async function selectTournament(tournament) {
+    if (!tournament?.id || busyTournamentId) return;
+    setBusyTournamentId(tournament.id);
+    const opened = await onSelectTournament(tournament);
+    setBusyTournamentId(null);
+    if (opened !== false) {
+      setManagerOpen(false);
+      setSearchValue("");
+    }
+  }
+
+  async function confirmCloseTournament() {
+    if (!closeTarget || busyTournamentId) return;
+    setBusyTournamentId(closeTarget.id);
+    const closed = await onCloseTournament(closeTarget);
+    setBusyTournamentId(null);
+    if (closed !== false) setCloseTarget(null);
+  }
+
+  function scrollTabs(direction) {
+    tabsViewportRef.current?.scrollBy({ left: direction * 320, behavior: "smooth" });
+  }
+
+  const activeTournament = tournamentsById.get(activeTournamentId);
+
+  return (
+    <>
+      <nav className="tournamentWorkspaceTabsShell" aria-label="Torneios abertos">
+        <div className="desktopTournamentTabs">
+          <button
+            type="button"
+            className="tournamentTabsScrollButton"
+            onClick={() => scrollTabs(-1)}
+            aria-label="Ver torneios anteriores"
+          >
+            <ChevronLeft aria-hidden="true" />
+          </button>
+
+          <div className="openTournamentTabsViewport" ref={tabsViewportRef}>
+            <div className="openTournamentTabsTrack">
+              {openTournaments.map((tournament) => {
+                const isActive = tournament.id === activeTournamentId;
+                return (
+                  <div
+                    key={tournament.id}
+                    ref={isActive ? activeTabRef : null}
+                    className={`openTournamentTab ${isActive ? "active" : ""}`}
+                    style={{ "--tournament-tab-color": getTournamentTabColor(tournament.id) }}
+                  >
+                    <button
+                      type="button"
+                      className="openTournamentTabMain"
+                      onClick={() => selectTournament(tournament)}
+                      title={tournament.name}
+                      aria-current={isActive ? "page" : undefined}
+                    >
+                      <span className="openTournamentTabDot" aria-hidden="true" />
+                      <span className="openTournamentTabName">{tournament.name}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="openTournamentTabClose"
+                      onClick={() => setCloseTarget(tournament)}
+                      aria-label={`Remover ${tournament.name} das abas abertas`}
+                      title="Remover da barra"
+                    >
+                      <X aria-hidden="true" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="tournamentTabsScrollButton"
+            onClick={() => scrollTabs(1)}
+            aria-label="Ver próximos torneios"
+          >
+            <ChevronRight aria-hidden="true" />
+          </button>
+
+          <button type="button" className="allOpenTournamentsButton" onClick={() => setManagerOpen(true)}>
+            Todos <span>{openTournaments.length}</span>
+          </button>
+          <button type="button" className="addOpenTournamentButton" onClick={() => setManagerOpen(true)}>
+            <PlusCircle aria-hidden="true" />
+            <span>Adicionar torneio</span>
+          </button>
+        </div>
+
+        <button type="button" className="mobileTournamentSwitcherButton" onClick={() => setManagerOpen(true)}>
+          <span
+            className="mobileTournamentSwitcherColor"
+            style={{ "--tournament-tab-color": getTournamentTabColor(activeTournamentId) }}
+            aria-hidden="true"
+          />
+          <span className="mobileTournamentSwitcherCopy">
+            <small>Torneio atual</small>
+            <strong>{activeTournament?.name || "Escolher torneio"}</strong>
+          </span>
+          <span className="mobileTournamentSwitcherCount">{openTournaments.length}</span>
+          <ChevronDown aria-hidden="true" />
+        </button>
+      </nav>
+
+      {managerOpen ? createPortal(
+        <div className="tournamentTabsModalOverlay" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setManagerOpen(false);
+        }}>
+          <section className="tournamentTabsModal" role="dialog" aria-modal="true" aria-labelledby="open-tournaments-title">
+            <header className="tournamentTabsModalHeader">
+              <div>
+                <span>Central de torneios</span>
+                <h2 id="open-tournaments-title">Abrir ou trocar torneio</h2>
+                <p>Os torneios permanecem salvos mesmo quando você os remove desta barra.</p>
+              </div>
+              <button type="button" onClick={() => setManagerOpen(false)} aria-label="Fechar">
+                <X aria-hidden="true" />
+              </button>
+            </header>
+
+            <label className="tournamentTabsSearch">
+              <Search aria-hidden="true" />
+              <input
+                type="search"
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+                placeholder="Buscar por nome, modalidade ou categoria"
+                autoFocus
+              />
+            </label>
+
+            <div className="tournamentTabsModalList">
+              {filteredTournaments.length ? filteredTournaments.map((tournament) => {
+                const isOpen = openTournamentIds.includes(tournament.id);
+                const isActive = tournament.id === activeTournamentId;
+                const isBusy = tournament.id === busyTournamentId;
+                return (
+                  <article
+                    key={tournament.id}
+                    className={`tournamentTabsModalItem ${isActive ? "active" : ""}`}
+                    style={{ "--tournament-tab-color": getTournamentTabColor(tournament.id) }}
+                  >
+                    <span className="tournamentTabsModalItemColor" aria-hidden="true" />
+                    <div className="tournamentTabsModalItemCopy">
+                      <strong>{tournament.name}</strong>
+                      <span>{getModalityDisplayName(tournament.type)}{tournament.data?.gender ? ` · ${tournament.data.gender}` : ""}</span>
+                    </div>
+                    {isOpen ? <span className="tournamentTabsOpenBadge">{isActive ? "Em uso" : "Aberto"}</span> : null}
+                    <button type="button" onClick={() => selectTournament(tournament)} disabled={isBusy || isActive}>
+                      {isBusy ? "Abrindo..." : isActive ? "Atual" : isOpen ? "Trocar" : "Adicionar"}
+                    </button>
+                  </article>
+                );
+              }) : (
+                <div className="tournamentTabsEmpty">
+                  <Trophy aria-hidden="true" />
+                  <strong>Nenhum torneio encontrado</strong>
+                  <span>Tente outro nome ou modalidade.</span>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>,
+        document.body
+      ) : null}
+
+      {closeTarget ? createPortal(
+        <div className="tournamentTabsModalOverlay tournamentTabCloseOverlay" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setCloseTarget(null);
+        }}>
+          <section className="tournamentTabCloseModal" role="dialog" aria-modal="true" aria-labelledby="close-tournament-tab-title">
+            <span className="tournamentTabCloseIcon"><X aria-hidden="true" /></span>
+            <h2 id="close-tournament-tab-title">Remover da barra?</h2>
+            <p>
+              <strong>{closeTarget.name}</strong> será fechado somente nesta central. O torneio não será apagado e continuará disponível no painel.
+            </p>
+            <div className="tournamentTabCloseActions">
+              <button type="button" onClick={() => setCloseTarget(null)}>Cancelar</button>
+              <button type="button" className="confirm" onClick={confirmCloseTournament} disabled={Boolean(busyTournamentId)}>
+                {busyTournamentId ? "Salvando..." : "Remover da barra"}
+              </button>
+            </div>
+          </section>
+        </div>,
+        document.body
+      ) : null}
+    </>
+  );
+}
+
 function Dashboard({ profile, user, onProfileChange }) {
   const [tournaments, setTournaments] = useState([]);
   const [trashTournaments, setTrashTournaments] = useState([]);
@@ -5635,6 +5957,9 @@ function Dashboard({ profile, user, onProfileChange }) {
   const [selectedArenaTournaments, setSelectedArenaTournaments] = useState([]);
   const [selectedArenaLoading, setSelectedArenaLoading] = useState(false);
   const [selected, setSelected] = useState(null);
+  const [openTournamentIds, setOpenTournamentIds] = useState(() => readOpenTournamentIds(user.id));
+  const tournamentNavigationGuardRef = useRef(null);
+  const openTournamentNavigationRef = useRef(readOpenTournamentNavigation(user.id));
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("");
 const [newGender, setNewGender] = useState("");
@@ -5900,6 +6225,24 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   function toggleColorMode() {
     setColorMode((currentMode) => currentMode === "dark" ? "light" : "dark");
   }
+
+  useEffect(() => {
+    saveOpenTournamentIds(user.id, openTournamentIds);
+  }, [openTournamentIds, user.id]);
+
+  useEffect(() => {
+    if (!selected?.id) return;
+    setOpenTournamentIds((currentIds) => currentIds.includes(selected.id)
+      ? currentIds
+      : [...currentIds, selected.id].slice(-50));
+  }, [selected?.id]);
+
+  useEffect(() => {
+    if (!tournaments.length || !openTournamentIds.length) return;
+    const availableIds = new Set(tournaments.map((tournament) => tournament.id));
+    const validIds = openTournamentIds.filter((id) => availableIds.has(id));
+    if (validIds.length !== openTournamentIds.length) setOpenTournamentIds(validIds);
+  }, [tournaments, openTournamentIds]);
 
   useEffect(() => {
     try {
@@ -7350,7 +7693,10 @@ const [newPublicInfo, setNewPublicInfo] = useState({
           status: getAutomaticEventStatus(newEndDate),
         }];
 
-    const { error } = await supabase.from("tournaments").insert(rowsToInsert);
+    const { data: createdTournaments, error } = await supabase
+      .from("tournaments")
+      .insert(rowsToInsert)
+      .select("*");
 
     setSaving(false);
 
@@ -7388,6 +7734,14 @@ setNewPublicInfo({
     const refreshedTournaments = await loadTournaments();
     await syncPublicArenaDirectory(refreshedTournaments || [], circuits);
     showNotice("success", isMultiCategory ? "Torneios criados" : "Torneio criado", isMultiCategory ? "As categorias foram criadas como torneios separados dentro do mesmo evento." : "O torneio foi criado com sucesso.");
+
+    const createdIds = (createdTournaments || []).map((tournament) => tournament.id).filter(Boolean);
+    if (createdIds.length) {
+      setOpenTournamentIds((currentIds) => [...new Set([...currentIds, ...createdIds])].slice(-50));
+      const firstCreatedTournament = (refreshedTournaments || []).find((tournament) => tournament.id === createdIds[0])
+        || createdTournaments[0];
+      await activateTournament(firstCreatedTournament, { skipSaveGuard: true });
+    }
   }
 
   async function confirmDeleteTournament() {
@@ -7454,7 +7808,46 @@ setNewPublicInfo({
     return Math.max(0, Math.ceil((expiresAt - Date.now()) / (24 * 60 * 60 * 1000)));
   }
 
-  async function openTournament(tournament) {
+  function registerTournamentNavigationGuard(guard) {
+    tournamentNavigationGuardRef.current = typeof guard === "function" ? guard : null;
+  }
+
+  function persistTournamentNavigation(tournamentId, updates = {}) {
+    if (!tournamentId) return;
+    const nextNavigation = {
+      ...openTournamentNavigationRef.current,
+      [tournamentId]: {
+        ...(openTournamentNavigationRef.current[tournamentId] || {}),
+        ...updates,
+        updatedAt: new Date().toISOString(),
+      },
+    };
+    openTournamentNavigationRef.current = nextNavigation;
+    saveOpenTournamentNavigation(user.id, nextNavigation);
+  }
+
+  function captureCurrentTournamentNavigation() {
+    if (!selected?.id) return;
+    const params = new URLSearchParams(window.location.search);
+    persistTournamentNavigation(selected.id, {
+      tournamentTab: params.get("tab") || "participantes",
+      matchesTab: params.get("partidas") || "grupos",
+      scrollY: Math.max(0, Math.round(window.scrollY || 0)),
+    });
+  }
+
+  async function activateTournament(tournament, { skipSaveGuard = false } = {}) {
+    if (!tournament?.id) return false;
+    if (selected?.id === tournament.id) return true;
+
+    if (!skipSaveGuard && selected?.id) {
+      captureCurrentTournamentNavigation();
+      const canNavigate = tournamentNavigationGuardRef.current
+        ? await tournamentNavigationGuardRef.current()
+        : true;
+      if (!canNavigate) return false;
+    }
+
     const { data, error } = await supabase
       .from("tournaments")
       .select("*")
@@ -7465,16 +7858,59 @@ setNewPublicInfo({
     if (error) {
       showNotice("error", "Erro ao abrir", "Não foi possível abrir este torneio.");
       console.error(error);
-      return;
+      return false;
     }
+
+    const savedNavigation = openTournamentNavigationRef.current[data.id] || {};
 
     updateAppUrl({
       activePanel: "criar",
       selectedTournamentId: data.id,
-      tournamentTab: "participantes",
-      matchesTab: "grupos",
+      tournamentTab: savedNavigation.tournamentTab || DEFAULT_TOURNAMENT_NAVIGATION.tournamentTab,
+      matchesTab: savedNavigation.matchesTab || DEFAULT_TOURNAMENT_NAVIGATION.matchesTab,
     });
+    setOpenTournamentIds((currentIds) => currentIds.includes(data.id)
+      ? currentIds
+      : [...currentIds, data.id].slice(-50));
     setSelected(data);
+    queueScrollRestore(savedNavigation.scrollY || 0);
+    return true;
+  }
+
+  async function openTournament(tournament) {
+    return activateTournament(tournament);
+  }
+
+  async function closeOpenTournament(tournament) {
+    if (!tournament?.id) return false;
+    const closingIndex = openTournamentIds.indexOf(tournament.id);
+    const remainingIds = openTournamentIds.filter((id) => id !== tournament.id);
+
+    if (selected?.id !== tournament.id) {
+      setOpenTournamentIds(remainingIds);
+      return true;
+    }
+
+    captureCurrentTournamentNavigation();
+    const canNavigate = tournamentNavigationGuardRef.current
+      ? await tournamentNavigationGuardRef.current()
+      : true;
+    if (!canNavigate) return false;
+
+    tournamentNavigationGuardRef.current = null;
+    const fallbackId = remainingIds[Math.min(Math.max(closingIndex, 0), remainingIds.length - 1)]
+      || remainingIds[remainingIds.length - 1];
+    const fallbackTournament = tournaments.find((item) => item.id === fallbackId);
+
+    if (fallbackTournament) {
+      const switched = await activateTournament(fallbackTournament, { skipSaveGuard: true });
+      if (!switched) return false;
+    } else {
+      closeSelectedTournament();
+    }
+
+    setOpenTournamentIds((currentIds) => currentIds.filter((id) => id !== tournament.id));
+    return true;
   }
 
   async function saveTournament(updated) {
@@ -7703,12 +8139,19 @@ setNewPublicInfo({
     showNotice("success", "Ordem atualizada", "A posição dos torneios será mantida ao atualizar a página.");
   }
   function closeSelectedTournament() {
+    captureCurrentTournamentNavigation();
+    tournamentNavigationGuardRef.current = null;
     updateAppUrl({ activePanel: "criar", selectedTournamentId: null });
     saveUserAppState({ activePanel: "criar", selectedTournamentId: null });
     setSelected(null);
   }
 
   function rememberTournamentNavigation({ tournamentId, tournamentTab, matchesTab }) {
+    persistTournamentNavigation(tournamentId, {
+      tournamentTab: tournamentTab || "participantes",
+      matchesTab: matchesTab || "grupos",
+      scrollY: Math.max(0, Math.round(window.scrollY || 0)),
+    });
     saveUserAppState({
       activePanel: "criar",
       selectedTournamentId: tournamentId,
@@ -7844,9 +8287,17 @@ setNewPublicInfo({
   if (selected) {
     return (
       <div className={`playAppShell proDashboard theme-${colorMode}`}>
+        <NoticeModal notice={notice} onClose={() => setNotice(null)} />
         {renderAppSidebar()}
         <div className="playMain">
           {renderAppTopbar()}
+          <TournamentWorkspaceTabs
+            tournaments={tournaments}
+            openTournamentIds={openTournamentIds}
+            activeTournamentId={selected.id}
+            onSelectTournament={openTournament}
+            onCloseTournament={closeOpenTournament}
+          />
           <main className="playContent tournamentWorkspaceContent">
             <TournamentErrorBoundary tournamentId={selected.id} onBack={closeSelectedTournament}>
               <TournamentScreen
@@ -7856,6 +8307,7 @@ setNewPublicInfo({
                 onBack={closeSelectedTournament}
                 onSave={saveTournament}
                 onNavigationStateChange={rememberTournamentNavigation}
+                onRegisterNavigationGuard={registerTournamentNavigationGuard}
               />
             </TournamentErrorBoundary>
           </main>
@@ -9595,7 +10047,14 @@ class TournamentErrorBoundary extends React.Component {
   }
 }
 
-function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStateChange }) {
+function TournamentScreen({
+  tournament,
+  userId,
+  onBack,
+  onSave,
+  onNavigationStateChange,
+  onRegisterNavigationGuard,
+}) {
   const config = modalityConfig[tournament.type];
 
   if (!config) {
@@ -9858,8 +10317,9 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
     };
   }, []);
 
-  async function handleBack() {
+  async function flushPendingTournamentSave() {
     if (saveTimerRef.current) clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = null;
 
     if (hasUnsavedChangesRef.current) {
       setSavingStatus("Salvando antes de sair...");
@@ -9876,9 +10336,22 @@ function TournamentScreen({ tournament, userId, onBack, onSave, onNavigationStat
           "Dados ainda não sincronizados",
           "A tela foi mantida aberta para proteger placares, confrontos e rankings. Verifique a conexão e tente novamente."
         );
-        return;
+        return false;
       }
     }
+
+    return true;
+  }
+
+  useEffect(() => {
+    if (typeof onRegisterNavigationGuard !== "function") return undefined;
+    onRegisterNavigationGuard(flushPendingTournamentSave);
+    return () => onRegisterNavigationGuard(null);
+  }, []);
+
+  async function handleBack() {
+    const canLeave = await flushPendingTournamentSave();
+    if (!canLeave) return;
 
     onBack();
   }
