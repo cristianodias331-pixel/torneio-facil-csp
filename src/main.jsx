@@ -721,6 +721,73 @@ function isPublicItemFinished(item, kind = "tournament") {
   return getAutomaticEventStatus(endDate) === "finished";
 }
 
+function getTournamentEventSortKey(tournament) {
+  const details = tournament?.data || {};
+  const eventDate = String(details.eventDate || details.eventStartDate || "").slice(0, 10);
+  const rawTime = String(details.eventStartTime || "").trim();
+  const eventTime = /^\d{2}:\d{2}/.test(rawTime) ? rawTime.slice(0, 5) : "23:59";
+  return eventDate ? `${eventDate}T${eventTime}` : "9999-12-31T23:59";
+}
+
+function compareTournamentsByEventSchedule(first, second) {
+  const scheduleComparison = getTournamentEventSortKey(first).localeCompare(getTournamentEventSortKey(second));
+  if (scheduleComparison !== 0) return scheduleComparison;
+
+  const createdComparison = String(first?.created_at || "").localeCompare(String(second?.created_at || ""));
+  if (createdComparison !== 0) return createdComparison;
+
+  return String(first?.name || "").localeCompare(String(second?.name || ""), "pt-BR");
+}
+
+function sortTournamentsByEventSchedule(items) {
+  return [...(items || [])].sort(compareTournamentsByEventSchedule);
+}
+
+function sortTournamentsByDisplayOrder(items) {
+  return (items || [])
+    .map((item, originalIndex) => ({ item, originalIndex }))
+    .sort((first, second) => {
+      const firstOrder = Number(first.item.data?.displayOrder);
+      const secondOrder = Number(second.item.data?.displayOrder);
+      const firstHasOrder = Number.isFinite(firstOrder);
+      const secondHasOrder = Number.isFinite(secondOrder);
+
+      if (firstHasOrder && secondHasOrder && firstOrder !== secondOrder) return firstOrder - secondOrder;
+      if (firstHasOrder !== secondHasOrder) return firstHasOrder ? -1 : 1;
+      return first.originalIndex - second.originalIndex;
+    })
+    .map(({ item }) => item);
+}
+
+function hasSavedManualTournamentOrder(items) {
+  if (!items?.length) return false;
+  const orders = items
+    .map((item) => Number(item.data?.displayOrder))
+    .filter((order) => Number.isInteger(order))
+    .sort((first, second) => first - second);
+
+  return orders.length === items.length && orders.every((order, index) => order === index);
+}
+
+function sortTournamentsForDisplay(items) {
+  return hasSavedManualTournamentOrder(items)
+    ? sortTournamentsByDisplayOrder(items)
+    : sortTournamentsByEventSchedule(items);
+}
+
+function insertTournamentsByEventSchedule(currentItems, incomingItems) {
+  const incomingIds = new Set((incomingItems || []).map((item) => item.id));
+  const ordered = (currentItems || []).filter((item) => !incomingIds.has(item.id));
+
+  sortTournamentsByEventSchedule(incomingItems).forEach((incoming) => {
+    const insertionIndex = ordered.findIndex((item) => compareTournamentsByEventSchedule(incoming, item) < 0);
+    if (insertionIndex < 0) ordered.push(incoming);
+    else ordered.splice(insertionIndex, 0, incoming);
+  });
+
+  return ordered;
+}
+
 function getTournamentRegistrationDeadline(tournament) {
   return tournament?.data?.registrationDeadline
     || tournament?.registrationDeadline
@@ -7718,21 +7785,22 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   function sortTournamentsByStoredOrder(items) {
-    return (items || [])
-      .map((item, originalIndex) => ({ item, originalIndex }))
-      .sort((first, second) => {
-        const firstOrder = Number(first.item.data?.displayOrder);
-        const secondOrder = Number(second.item.data?.displayOrder);
-        const firstHasOrder = Number.isFinite(firstOrder);
-        const secondHasOrder = Number.isFinite(secondOrder);
+    return sortTournamentsForDisplay(items);
+  }
 
-        if (firstHasOrder && secondHasOrder && firstOrder !== secondOrder) {
-          return firstOrder - secondOrder;
-        }
-        if (firstHasOrder !== secondHasOrder) return firstHasOrder ? -1 : 1;
-        return first.originalIndex - second.originalIndex;
-      })
-      .map(({ item }) => item);
+  async function persistTournamentOrderSequence(items) {
+    const orderedTournaments = (items || []).map((tournament, displayOrder) => ({
+      ...tournament,
+      data: { ...(tournament.data || {}), displayOrder },
+    }));
+
+    if (orderedTournaments.length === 0) return { tournaments: [], error: null };
+
+    const { error } = await supabase.rpc("set_tournament_order", {
+      p_tournament_ids: orderedTournaments.map((tournament) => tournament.id),
+    });
+
+    return { tournaments: orderedTournaments, error };
   }
 
   async function loadTournaments() {
@@ -7767,9 +7835,15 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     const validTournaments = allTournaments.filter((item) => !item.data?.deletedAt || item.data.deletedAt >= deleteLimit);
-    const activeTournaments = sortTournamentsByStoredOrder(
-      validTournaments.filter((item) => !item.data?.deletedAt)
-    );
+    const activeSource = validTournaments.filter((item) => !item.data?.deletedAt);
+    let activeTournaments = sortTournamentsByStoredOrder(activeSource);
+
+    if (!hasSavedManualTournamentOrder(activeSource) && activeTournaments.length > 0) {
+      const normalizedOrder = await persistTournamentOrderSequence(activeTournaments);
+      if (normalizedOrder.error) console.error("Erro ao normalizar a ordem cronológica dos torneios:", normalizedOrder.error);
+      else activeTournaments = normalizedOrder.tournaments;
+    }
+
     setTournaments(activeTournaments);
     setTrashTournaments(validTournaments.filter((item) => item.data?.deletedAt));
     return activeTournaments;
@@ -7897,15 +7971,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return;
     }
 
-    const storedDisplayOrders = tournaments
-      .map((tournament) => Number(tournament.data?.displayOrder))
-      .filter((order) => Number.isFinite(order));
-    const firstExistingDisplayOrder = storedDisplayOrders.length
-      ? Math.min(...storedDisplayOrders)
-      : 0;
-    const newTournamentCount = isMultiCategory ? validCategorySchedules.length : 1;
-    const firstNewDisplayOrder = firstExistingDisplayOrder - newTournamentCount;
-
     setSaving(true);
 
     const baseData = {
@@ -7926,7 +7991,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     };
 
     const rowsToInsert = isMultiCategory
-      ? validCategorySchedules.map((item, itemIndex) => ({
+      ? validCategorySchedules.map((item) => ({
           user_id: user.id,
           public_id: generatePublicId(),
           is_public: true,
@@ -7935,7 +8000,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
           data: {
             ...createInitialData(newType, config),
             ...baseData,
-            displayOrder: firstNewDisplayOrder + itemIndex,
             gender: item.category.trim(),
             eventDate: item.date || newDate,
             eventDay: getWeekdayBR(item.date || newDate),
@@ -7952,7 +8016,6 @@ const [newPublicInfo, setNewPublicInfo] = useState({
           data: {
             ...createInitialData(newType, config),
             ...baseData,
-            displayOrder: firstNewDisplayOrder,
             gender: newGender,
             eventDate: newDate,
             eventDay: getWeekdayBR(newDate),
@@ -7973,6 +8036,10 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       console.error(error);
       return;
     }
+
+    const chronologicalInsertion = insertTournamentsByEventSchedule(tournaments, createdTournaments || []);
+    const savedOrder = await persistTournamentOrderSequence(chronologicalInsertion);
+    if (savedOrder.error) console.error("Erro ao posicionar os novos torneios por data e hora:", savedOrder.error);
 
     setNewName("");
     setNewType("");
@@ -8034,6 +8101,11 @@ setNewPublicInfo({
       return;
     }
 
+    const remainingOrder = await persistTournamentOrderSequence(
+      tournaments.filter((tournament) => tournament.id !== deleteTarget.id)
+    );
+    if (remainingOrder.error) console.error("Erro ao compactar a ordem após excluir o torneio:", remainingOrder.error);
+
     setDeleteTarget(null);
     const refreshedTournaments = await loadTournaments();
     const { circuits: rankedCircuits } = await persistCircuitRankings(refreshedTournaments || [], circuits, deleteTarget.id);
@@ -8061,6 +8133,16 @@ setNewPublicInfo({
       console.error(error);
       return;
     }
+
+    const restoredTournament = {
+      ...tournament,
+      is_public: true,
+      data: restoredData,
+    };
+    const restoredOrder = await persistTournamentOrderSequence(
+      insertTournamentsByEventSchedule(tournaments, [restoredTournament])
+    );
+    if (restoredOrder.error) console.error("Erro ao posicionar o torneio recuperado:", restoredOrder.error);
 
     const refreshedTournaments = await loadTournaments();
     const { circuits: rankedCircuits } = await persistCircuitRankings(refreshedTournaments || [], circuits, tournament.id);
@@ -8315,15 +8397,21 @@ setNewPublicInfo({
       return;
     }
 
-    const nextTournaments = tournaments.map((t) => (t.id === updated.id ? updated : t));
-    setTournaments(nextTournaments);
-    const criteriaCircuits = await syncAutomaticCircuitCriteria(nextTournaments);
+    const nextTournaments = insertTournamentsByEventSchedule(
+      tournaments.filter((tournament) => tournament.id !== updated.id),
+      [updated]
+    );
+    const savedOrder = await persistTournamentOrderSequence(nextTournaments);
+    const orderedTournaments = savedOrder.error ? nextTournaments : savedOrder.tournaments;
+    if (savedOrder.error) console.error("Erro ao reposicionar o torneio atualizado:", savedOrder.error);
+    setTournaments(orderedTournaments);
+    const criteriaCircuits = await syncAutomaticCircuitCriteria(orderedTournaments);
     const { circuits: rankedCircuits, success: circuitRankingSaved } = await persistCircuitRankings(
-      nextTournaments,
+      orderedTournaments,
       criteriaCircuits || circuits,
       updated.id
     );
-    await syncPublicArenaDirectory(nextTournaments, rankedCircuits);
+    await syncPublicArenaDirectory(orderedTournaments, rankedCircuits);
     setEditTarget(null);
     setEditForm(null);
     showNotice(
@@ -8386,16 +8474,10 @@ setNewPublicInfo({
 
     const [item] = list.splice(fromIndex, 1);
     list.splice(toIndex, 0, item);
-    const orderedTournaments = list.map((tournament, displayOrder) => ({
-      ...tournament,
-      data: { ...(tournament.data || {}), displayOrder },
-    }));
+    setTournaments(list);
 
-    setTournaments(orderedTournaments);
-
-    const { error } = await supabase.rpc("set_tournament_order", {
-      p_tournament_ids: orderedTournaments.map((tournament) => tournament.id),
-    });
+    const savedOrder = await persistTournamentOrderSequence(list);
+    const { error } = savedOrder;
 
     if (error) {
       console.error("Erro ao salvar a ordem dos torneios:", error);
@@ -8403,6 +8485,8 @@ setNewPublicInfo({
       showNotice("error", "Ordem não salva", "Não foi possível manter a nova posição dos torneios.");
       return;
     }
+
+    setTournaments(savedOrder.tournaments);
 
     showNotice("success", "Ordem atualizada", "A posição dos torneios será mantida ao atualizar a página.");
   }
@@ -13547,7 +13631,7 @@ function PublicArenaPage({ arenaId = null, publicId = null }) {
   }
 
   const profile = bundle.profile;
-  const tournaments = Array.isArray(bundle.tournaments) ? bundle.tournaments : [];
+  const tournaments = sortTournamentsForDisplay(Array.isArray(bundle.tournaments) ? bundle.tournaments : []);
   const circuits = Array.isArray(bundle.circuits) ? bundle.circuits : [];
   const arenaName = profile.arena_name || profile.name || "Arena Torneio360";
   const organizer = {
@@ -13837,6 +13921,7 @@ function PublicTournamentPage({ publicId }) {
 
   const anchorData = normalizeTournamentData(anchorTournament.type, anchorTournament.data);
   const publicOrganizer = anchorData.publicInfo?.organizer || {};
+  const orderedPublicTournaments = sortTournamentsForDisplay(tournaments);
   if (selectedCircuit) {
     return (
       <PublicCircuitScreen
@@ -13847,10 +13932,10 @@ function PublicTournamentPage({ publicId }) {
     );
   }
   const activeItems = activeArenaTab === "tournaments"
-    ? tournaments.filter((item) => !isPublicItemFinished(item, "tournament"))
+    ? orderedPublicTournaments.filter((item) => !isPublicItemFinished(item, "tournament"))
     : circuits.filter((item) => !isPublicItemFinished(item, "circuit"));
   const finishedItems = activeArenaTab === "tournaments"
-    ? tournaments.filter((item) => isPublicItemFinished(item, "tournament"))
+    ? orderedPublicTournaments.filter((item) => isPublicItemFinished(item, "tournament"))
     : circuits.filter((item) => isPublicItemFinished(item, "circuit"));
   const visibleItems = activeStatusTab === "finished" ? finishedItems : activeItems;
   const arenaName = publicOrganizer.arenaName || anchorTournament.name || "Arena Torneio360";
