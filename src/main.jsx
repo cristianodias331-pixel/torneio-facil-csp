@@ -174,18 +174,80 @@ function truncateCanvasText(context, value, maxWidth) {
   return `${shortened}…`;
 }
 
-async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUrl, rankingCriteria, groups = [] }) {
-  const criteria = getRankingCriteria(rankingCriteria);
-  const normalizedGroups = groups
+const RANKING_SHARE_CANVAS_HEIGHT = 1350;
+const RANKING_SHARE_CONTENT_HEIGHT = 810;
+const RANKING_SHARE_ROW_HEIGHT = 60;
+const RANKING_SHARE_GROUP_OVERHEAD = 86;
+
+function normalizeRankingExportGroups(groups = []) {
+  return groups
     .map((group) => ({
       title: group?.title || "Ranking",
       rows: Array.isArray(group?.rows) ? group.rows : [],
+      startIndex: Number(group?.startIndex || 0),
     }))
     .filter((group) => group.rows.length > 0);
-  const totalRows = normalizedGroups.reduce((total, group) => total + group.rows.length, 0);
+}
+
+function paginateRankingGroups(groups, {
+  maxHeight,
+  rowHeight,
+  groupOverhead,
+}) {
+  const pages = [];
+  let currentPage = [];
+  let usedHeight = 0;
+
+  function finishPage() {
+    if (currentPage.length > 0) pages.push(currentPage);
+    currentPage = [];
+    usedHeight = 0;
+  }
+
+  groups.forEach((group) => {
+    let rowIndex = 0;
+
+    while (rowIndex < group.rows.length) {
+      const availableHeight = maxHeight - usedHeight - groupOverhead;
+      const availableRows = Math.floor(availableHeight / rowHeight);
+
+      if (availableRows <= 0) {
+        finishPage();
+        continue;
+      }
+
+      const pageRows = group.rows.slice(rowIndex, rowIndex + availableRows);
+      currentPage.push({
+        title: rowIndex > 0 ? `${group.title} — continuação` : group.title,
+        rows: pageRows,
+        startIndex: rowIndex,
+      });
+      usedHeight += groupOverhead + (pageRows.length * rowHeight);
+      rowIndex += pageRows.length;
+
+      if (rowIndex < group.rows.length) finishPage();
+    }
+  });
+
+  finishPage();
+  return pages;
+}
+
+async function createRankingShareFile({
+  title,
+  subtitle,
+  arenaName,
+  arenaPhotoUrl,
+  rankingCriteria,
+  groups = [],
+  pageNumber = 1,
+  totalPages = 1,
+}) {
+  const criteria = getRankingCriteria(rankingCriteria);
+  const normalizedGroups = normalizeRankingExportGroups(groups);
   const canvas = document.createElement("canvas");
   canvas.width = 1080;
-  canvas.height = Math.max(1350, 570 + (normalizedGroups.length * 100) + (totalRows * 64));
+  canvas.height = RANKING_SHARE_CANVAS_HEIGHT;
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Não foi possível preparar a imagem do ranking.");
 
@@ -275,36 +337,41 @@ async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUr
   context.fillText(truncateCanvasText(context, subtitle || "Torneio360", 850), 88, 360);
   context.fillStyle = "#bae6fd";
   context.font = "700 16px Arial";
-  context.fillText(truncateCanvasText(context, `Critério: ${criteria.label}`, 850), 88, 382);
+  context.fillText(truncateCanvasText(context, `Critério: ${criteria.label}`, 670), 88, 382);
+  context.fillStyle = "#fbbf24";
+  context.font = "900 16px Arial";
+  context.textAlign = "right";
+  context.fillText(`PÁGINA ${pageNumber} DE ${totalPages}`, 982, 382);
 
   let y = 432;
   normalizedGroups.forEach((group) => {
-    const panelHeight = 84 + (group.rows.length * 64);
+    const panelHeight = 74 + (group.rows.length * RANKING_SHARE_ROW_HEIGHT);
     drawRoundedRect(context, 52, y, 976, panelHeight, 28, "rgba(255, 255, 255, 0.96)", "rgba(255, 255, 255, 0.35)");
     context.fillStyle = "#111b3f";
     context.font = "900 25px Arial";
     context.textAlign = "left";
     context.fillText(group.title, 84, y + 45);
-    y += 72;
+    y += 64;
 
     group.rows.forEach((row, index) => {
-      const rowFill = index === 0
+      const absoluteIndex = Number(group.startIndex || 0) + index;
+      const rowFill = absoluteIndex === 0
         ? "#fff4c2"
-        : index === 1
+        : absoluteIndex === 1
           ? "#eef2f7"
-          : index === 2
+          : absoluteIndex === 2
             ? "#ffeadb"
-            : index % 2 === 0 ? "#f6f8fc" : "#ffffff";
-      drawRoundedRect(context, 72, y, 936, 52, 15, rowFill);
-      const medalColor = index === 0 ? "#d97706" : index === 1 ? "#64748b" : index === 2 ? "#c2410c" : "#334155";
+            : absoluteIndex % 2 === 0 ? "#f6f8fc" : "#ffffff";
+      drawRoundedRect(context, 72, y, 936, 50, 15, rowFill);
+      const medalColor = absoluteIndex === 0 ? "#d97706" : absoluteIndex === 1 ? "#64748b" : absoluteIndex === 2 ? "#c2410c" : "#334155";
       context.fillStyle = medalColor;
-      context.font = `900 ${index < 3 ? 23 : 20}px Arial`;
+      context.font = `900 ${absoluteIndex < 3 ? 23 : 20}px Arial`;
       context.textAlign = "center";
-      context.fillText(`${index + 1}º`, 112, y + 34);
+      context.fillText(`${absoluteIndex + 1}º`, 112, y + 33);
       context.fillStyle = "#111827";
       context.font = "800 20px Arial";
       context.textAlign = "left";
-      context.fillText(truncateCanvasText(context, row.name, 510), 154, y + 34);
+      context.fillText(truncateCanvasText(context, row.name, 510), 154, y + 33);
 
       const metricText = {
         w: `${Number(row.w || 0)} vit.`,
@@ -317,22 +384,40 @@ async function createRankingShareFile({ title, subtitle, arenaName, arenaPhotoUr
       context.fillStyle = "#475569";
       context.font = "700 16px Arial";
       context.textAlign = "right";
-      context.fillText(truncateCanvasText(context, stats.join("  •  "), 300), 982, y + 33);
-      y += 64;
+      context.fillText(truncateCanvasText(context, stats.join("  •  "), 300), 982, y + 32);
+      y += RANKING_SHARE_ROW_HEIGHT;
     });
-    y += 28;
+    y += 22;
   });
 
   context.fillStyle = "rgba(255, 255, 255, 0.76)";
   context.font = "700 17px Arial";
   context.textAlign = "center";
-  context.fillText("Gerado pelo Torneio360 • torneio360.com", canvas.width / 2, canvas.height - 38);
+  context.fillText(`Gerado pelo Torneio360 • torneio360.com • Página ${pageNumber} de ${totalPages}`, canvas.width / 2, canvas.height - 38);
 
   const blob = await new Promise((resolve, reject) => {
     canvas.toBlob((result) => result ? resolve(result) : reject(new Error("Não foi possível gerar a imagem.")), "image/png", 0.96);
   });
   const safeName = String(title || "ranking").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/gi, "-").replace(/^-|-$/g, "").toLowerCase();
-  return new File([blob], `${safeName || "ranking"}-torneio360.png`, { type: "image/png" });
+  const pageSuffix = totalPages > 1 ? `-${String(pageNumber).padStart(2, "0")}-de-${String(totalPages).padStart(2, "0")}` : "";
+  return new File([blob], `${safeName || "ranking"}-torneio360${pageSuffix}.png`, { type: "image/png" });
+}
+
+async function createRankingShareFiles(config) {
+  const normalizedGroups = normalizeRankingExportGroups(config?.groups);
+  const pages = paginateRankingGroups(normalizedGroups, {
+    maxHeight: RANKING_SHARE_CONTENT_HEIGHT,
+    rowHeight: RANKING_SHARE_ROW_HEIGHT,
+    groupOverhead: RANKING_SHARE_GROUP_OVERHEAD,
+  });
+  const totalPages = Math.max(1, pages.length);
+
+  return Promise.all((pages.length ? pages : [[]]).map((groups, pageIndex) => createRankingShareFile({
+    ...config,
+    groups,
+    pageNumber: pageIndex + 1,
+    totalPages,
+  })));
 }
 
 async function copyRankingImageToClipboard(file) {
@@ -360,34 +445,147 @@ function downloadRankingFile(file) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-function printRankingFile(file) {
+function downloadRankingFiles(files) {
+  files.forEach((file) => downloadRankingFile(file));
+}
+
+function createRankingPrintElement(printDocument, tagName, className, text) {
+  const element = printDocument.createElement(tagName);
+  if (className) element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+}
+
+function printRankingDocument(config) {
+  const normalizedGroups = normalizeRankingExportGroups(config?.groups);
+  if (normalizedGroups.length === 0) return false;
+
   const printWindow = window.open("", "_blank", "width=920,height=860");
   if (!printWindow) return false;
 
   printWindow.opener = null;
-  const url = URL.createObjectURL(file);
-  const style = printWindow.document.createElement("style");
+  const printDocument = printWindow.document;
+  const criteria = getRankingCriteria(config?.rankingCriteria);
+  const printPages = paginateRankingGroups(normalizedGroups, {
+    maxHeight: 20,
+    rowHeight: 1,
+    groupOverhead: 2,
+  });
+  const metricLabels = {
+    w: "Vitórias",
+    pts: "Total de Games",
+    bal: "Saldo de Games",
+  };
+  const style = printDocument.createElement("style");
   style.textContent = `
-    @page { size: A4 portrait; margin: 10mm; }
-    html, body { margin: 0; min-height: 100%; background: #fff; }
-    body { display: grid; place-items: start center; }
-    img { display: block; width: 100%; height: auto; max-width: 190mm; }
-    @media print { img { break-inside: avoid; } }
+    @page { size: A4 portrait; margin: 0; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; font-family: Arial, sans-serif; color: #101a35; }
+    body { background: #dfe7f1; }
+    .rankingPrintPage { position: relative; width: 210mm; min-height: 297mm; margin: 0 auto 8mm; padding: 10mm 11mm 14mm; overflow: hidden; background: #fff; break-after: page; page-break-after: always; }
+    .rankingPrintPage:last-child { margin-bottom: 0; break-after: auto; page-break-after: auto; }
+    .rankingPrintBrand { display: flex; align-items: center; justify-content: space-between; gap: 10mm; min-height: 20mm; padding-bottom: 4mm; border-bottom: 1px solid #dbe3ef; }
+    .rankingPrintLogo { display: block; width: 45mm; height: 16mm; object-fit: contain; object-position: left center; }
+    .rankingPrintArena { display: flex; align-items: center; justify-content: flex-end; gap: 3mm; min-width: 0; text-align: right; }
+    .rankingPrintArenaPhoto { width: 14mm; height: 14mm; border: 1.2mm solid #fbbf24; border-radius: 50%; object-fit: cover; }
+    .rankingPrintArena strong { display: block; max-width: 70mm; overflow-wrap: anywhere; font-size: 10pt; }
+    .rankingPrintArena span { display: block; margin-top: 1mm; color: #64748b; font-size: 7.5pt; font-weight: 700; text-transform: uppercase; }
+    .rankingPrintHeading { margin: 5mm 0 4mm; padding: 4mm 5mm; border-radius: 4mm; background: linear-gradient(135deg, #07163e, #24368f); color: #fff; }
+    .rankingPrintHeading span { color: #fbbf24; font-size: 7.5pt; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+    .rankingPrintHeading h1 { margin: 1.5mm 0 1mm; font-size: 19pt; line-height: 1.05; }
+    .rankingPrintHeading p { margin: .8mm 0 0; color: #dbeafe; font-size: 8.5pt; font-weight: 700; }
+    .rankingPrintGroup { margin-top: 3mm; break-inside: avoid; page-break-inside: avoid; }
+    .rankingPrintGroup h2 { margin: 0; padding: 2.5mm 3mm; border: 1px solid #d9e2ef; border-bottom: 0; border-radius: 3mm 3mm 0 0; background: #edf3fb; font-size: 10pt; }
+    .rankingPrintTable { width: 100%; border-collapse: collapse; table-layout: fixed; }
+    .rankingPrintTable th { padding: 2.2mm 2.4mm; background: #101b3f; color: #fff; font-size: 7.3pt; line-height: 1.1; text-align: center; text-transform: uppercase; }
+    .rankingPrintTable th:nth-child(1) { width: 11mm; }
+    .rankingPrintTable th:nth-child(2) { width: auto; text-align: left; }
+    .rankingPrintTable th:not(:nth-child(-n+2)) { width: 29mm; }
+    .rankingPrintTable td { padding: 2.5mm 2.4mm; border-bottom: 1px solid #dfe6ef; background: #fff; font-size: 8.8pt; font-weight: 700; text-align: center; }
+    .rankingPrintTable tr:nth-child(even) td { background: #f7f9fc; }
+    .rankingPrintTable tr:first-child td { background: #fff8d9; }
+    .rankingPrintTable td:nth-child(2) { overflow-wrap: anywhere; text-align: left; font-size: 9.2pt; font-weight: 800; }
+    .rankingPrintFooter { position: absolute; right: 11mm; bottom: 6mm; left: 11mm; display: flex; justify-content: space-between; gap: 8mm; padding-top: 2mm; border-top: 1px solid #dbe3ef; color: #64748b; font-size: 7pt; font-weight: 700; }
+    @media print {
+      body { background: #fff; }
+      .rankingPrintPage { margin: 0; }
+    }
   `;
-  const image = printWindow.document.createElement("img");
-  image.alt = "Ranking Torneio360";
-  image.src = url;
-  image.addEventListener("load", () => {
-    printWindow.focus();
-    printWindow.print();
-  }, { once: true });
+
+  printPages.forEach((pageGroups, pageIndex) => {
+    const page = createRankingPrintElement(printDocument, "section", "rankingPrintPage");
+    const brand = createRankingPrintElement(printDocument, "header", "rankingPrintBrand");
+    const logo = createRankingPrintElement(printDocument, "img", "rankingPrintLogo");
+    logo.alt = "Torneio360";
+    logo.src = new URL(TORNEIO360_LOGO, window.location.origin).href;
+    brand.appendChild(logo);
+
+    const arena = createRankingPrintElement(printDocument, "div", "rankingPrintArena");
+    const arenaCopy = createRankingPrintElement(printDocument, "div");
+    arenaCopy.appendChild(createRankingPrintElement(printDocument, "strong", "", config?.arenaName || "Arena Torneio360"));
+    arenaCopy.appendChild(createRankingPrintElement(printDocument, "span", "", "Organização"));
+    arena.appendChild(arenaCopy);
+    if (config?.arenaPhotoUrl) {
+      const arenaPhoto = createRankingPrintElement(printDocument, "img", "rankingPrintArenaPhoto");
+      arenaPhoto.alt = "Foto da arena";
+      arenaPhoto.src = config.arenaPhotoUrl;
+      arena.appendChild(arenaPhoto);
+    }
+    brand.appendChild(arena);
+    page.appendChild(brand);
+
+    const heading = createRankingPrintElement(printDocument, "div", "rankingPrintHeading");
+    heading.appendChild(createRankingPrintElement(printDocument, "span", "", "Ranking oficial"));
+    heading.appendChild(createRankingPrintElement(printDocument, "h1", "", config?.title || "Ranking"));
+    heading.appendChild(createRankingPrintElement(printDocument, "p", "", config?.subtitle || "Torneio360"));
+    heading.appendChild(createRankingPrintElement(printDocument, "p", "", `Critério: ${criteria.label}`));
+    page.appendChild(heading);
+
+    pageGroups.forEach((group) => {
+      const groupSection = createRankingPrintElement(printDocument, "section", "rankingPrintGroup");
+      groupSection.appendChild(createRankingPrintElement(printDocument, "h2", "", group.title));
+      const table = createRankingPrintElement(printDocument, "table", "rankingPrintTable");
+      const tableHead = printDocument.createElement("thead");
+      const headRow = printDocument.createElement("tr");
+      ["#", "Nome", ...criteria.order.map((key) => metricLabels[key])].forEach((label) => {
+        headRow.appendChild(createRankingPrintElement(printDocument, "th", "", label));
+      });
+      tableHead.appendChild(headRow);
+      table.appendChild(tableHead);
+
+      const tableBody = printDocument.createElement("tbody");
+      group.rows.forEach((row, rowIndex) => {
+        const absoluteIndex = Number(group.startIndex || 0) + rowIndex;
+        const tableRow = printDocument.createElement("tr");
+        tableRow.appendChild(createRankingPrintElement(printDocument, "td", "", `${absoluteIndex + 1}º`));
+        tableRow.appendChild(createRankingPrintElement(printDocument, "td", "", row.name || "Sem nome"));
+        criteria.order.forEach((key) => {
+          tableRow.appendChild(createRankingPrintElement(printDocument, "td", "", String(Number(row[key] || 0))));
+        });
+        tableBody.appendChild(tableRow);
+      });
+      table.appendChild(tableBody);
+      groupSection.appendChild(table);
+      page.appendChild(groupSection);
+    });
+
+    const footer = createRankingPrintElement(printDocument, "footer", "rankingPrintFooter");
+    footer.appendChild(createRankingPrintElement(printDocument, "span", "", "Gerado pelo Torneio360 • torneio360.com"));
+    footer.appendChild(createRankingPrintElement(printDocument, "span", "", `Página ${pageIndex + 1} de ${printPages.length}`));
+    page.appendChild(footer);
+    printDocument.body.appendChild(page);
+  });
+
+  printDocument.title = `${config?.title || "Ranking"} — Torneio360`;
+  printDocument.head.appendChild(style);
+  printDocument.close();
   printWindow.addEventListener("afterprint", () => {
-    URL.revokeObjectURL(url);
     printWindow.close();
   }, { once: true });
-  printWindow.document.title = "Ranking Torneio360";
-  printWindow.document.head.appendChild(style);
-  printWindow.document.body.appendChild(image);
+  setTimeout(() => {
+    printWindow.focus();
+    printWindow.print();
+  }, 300);
   return true;
 }
 
@@ -396,25 +594,38 @@ function isMobileShareDevice() {
     || (navigator.maxTouchPoints > 1 && window.matchMedia?.("(max-width: 900px)").matches);
 }
 
-async function shareRankingImage(config) {
-  const file = await createRankingShareFile(config);
+function canNativeShareRankingFiles(files) {
+  if (!navigator.share) return false;
+  try {
+    return !navigator.canShare || navigator.canShare({ files });
+  } catch (error) {
+    return false;
+  }
+}
 
-  if (isMobileShareDevice() && navigator.share && (!navigator.canShare || navigator.canShare({ files: [file] }))) {
-    await navigator.share({
-      title: config.title || "Ranking Torneio360",
-      text: `${config.title || "Ranking"} — ${config.arenaName || "Torneio360"}`,
-      files: [file],
-    });
-    return { status: "shared", file: null };
+async function nativeShareRankingFiles(files, config) {
+  if (!canNativeShareRankingFiles(files)) return false;
+  await navigator.share({
+    title: config.title || "Ranking Torneio360",
+    text: `${config.title || "Ranking"} — ${config.arenaName || "Torneio360"}`,
+    files,
+  });
+  return true;
+}
+
+async function shareRankingImages(config) {
+  const files = await createRankingShareFiles(config);
+
+  if (isMobileShareDevice() && await nativeShareRankingFiles(files, config)) {
+    return { status: "shared", files: [] };
   }
 
-  if (isMobileShareDevice()) {
-    downloadRankingFile(file);
-    return { status: "downloaded", file: null };
+  if (files.length === 1 && !isMobileShareDevice()) {
+    const imageCopied = await copyRankingImageToClipboard(files[0]);
+    return { status: imageCopied ? "copied" : "copyError", files };
   }
 
-  const imageCopied = await copyRankingImageToClipboard(file);
-  return { status: imageCopied ? "copied" : "copyError", file };
+  return { status: "ready", files };
 }
 const TORNEIO360_TAGLINE = "Gestão inteligente de torneios";
 
@@ -3870,24 +4081,24 @@ function Info({ title, text }) {
 
 function RankingShareButton({ config, compact = false }) {
   const [status, setStatus] = useState("idle");
-  const [exportFile, setExportFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState("");
+  const [exportFiles, setExportFiles] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
 
   useEffect(() => {
-    if (!exportFile) {
-      setPreviewUrl("");
+    if (exportFiles.length === 0) {
+      setPreviewUrls([]);
       return undefined;
     }
 
-    const url = URL.createObjectURL(exportFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [exportFile]);
+    const urls = exportFiles.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, [exportFiles]);
 
   if (!config?.groups?.some((group) => group?.rows?.length)) return null;
 
   function closeExportDialog() {
-    setExportFile(null);
+    setExportFiles([]);
     setStatus("idle");
   }
 
@@ -3896,10 +4107,10 @@ function RankingShareButton({ config, compact = false }) {
     setStatus("loading");
 
     try {
-      const result = await shareRankingImage(config);
+      const result = await shareRankingImages(config);
       setStatus(result.status);
-      if (result.file) {
-        setExportFile(result.file);
+      if (result.files?.length) {
+        setExportFiles(result.files);
       } else {
         setTimeout(() => setStatus("idle"), 2400);
       }
@@ -3915,15 +4126,17 @@ function RankingShareButton({ config, compact = false }) {
   }
 
   const label = status === "loading"
-    ? "Preparando imagem…"
+    ? "Preparando páginas…"
     : status === "copied"
       ? "Imagem copiada"
     : status === "copyError"
       ? "Opções de exportação"
+    : status === "ready"
+      ? "Ranking preparado"
     : status === "downloaded"
-      ? "Imagem baixada"
-      : status === "shared"
-        ? "Compartilhado"
+      ? "Imagens baixadas"
+    : status === "shared"
+      ? "Compartilhado"
         : status === "error"
           ? "Tentar novamente"
           : "Compartilhar ranking";
@@ -3934,7 +4147,7 @@ function RankingShareButton({ config, compact = false }) {
         <Share2 aria-hidden="true" /> {label}
       </button>
 
-      {exportFile && createPortal(
+      {exportFiles.length > 0 && createPortal(
         <div className="rankingExportOverlay" role="presentation" onMouseDown={closeExportDialog}>
           <section
             className="rankingExportDialog"
@@ -3945,7 +4158,7 @@ function RankingShareButton({ config, compact = false }) {
           >
             <header>
               <div>
-                <span>Ranking preparado</span>
+                <span>{exportFiles.length === 1 ? "Ranking preparado" : `${exportFiles.length} páginas preparadas`}</span>
                 <h2>{config.title || "Ranking Torneio360"}</h2>
               </div>
               <button type="button" className="rankingExportClose" onClick={closeExportDialog} aria-label="Fechar">
@@ -3953,36 +4166,64 @@ function RankingShareButton({ config, compact = false }) {
               </button>
             </header>
 
-            {previewUrl ? <img className="rankingExportPreview" src={previewUrl} alt="Prévia da imagem do ranking" /> : null}
+            {previewUrls.length > 0 ? (
+              <div className="rankingExportPreviewPages" aria-label="Prévias das páginas do ranking">
+                {previewUrls.map((url, index) => (
+                  <figure key={url}>
+                    <img className="rankingExportPreview" src={url} alt={`Prévia da página ${index + 1} do ranking`} />
+                    <figcaption>Página {index + 1} de {previewUrls.length}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            ) : null}
 
             <div className={`rankingExportNotice ${status === "copyError" || status === "error" ? "warning" : "success"}`}>
               {status === "copyError"
-                ? "O navegador não liberou a cópia automática. Você ainda pode baixar o PNG ou imprimir."
+                ? "O navegador não liberou a cópia automática. Você ainda pode compartilhar, baixar ou imprimir."
+                : status === "ready"
+                  ? `${exportFiles.length} página(s) legível(is), sem reduzir o tamanho dos nomes.`
                 : status === "downloaded"
-                  ? "PNG baixado. A imagem também continua disponível para imprimir."
+                  ? "As imagens foram baixadas. Elas também continuam disponíveis para compartilhar ou imprimir."
+                  : status === "shared"
+                    ? "As páginas do ranking foram enviadas para o aplicativo escolhido."
                   : status === "error"
-                    ? "A impressão foi bloqueada pelo navegador. Tente novamente ou baixe o PNG."
+                    ? "A ação foi bloqueada pelo navegador. Tente novamente ou baixe as imagens."
                     : "Imagem copiada. Agora use Ctrl+V para colar diretamente no WhatsApp."}
             </div>
 
             <div className="rankingExportActions">
+              {canNativeShareRankingFiles(exportFiles) ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await nativeShareRankingFiles(exportFiles, config);
+                      setStatus("shared");
+                    } catch (error) {
+                      if (error?.name !== "AbortError") setStatus("error");
+                    }
+                  }}
+                >
+                  <Share2 aria-hidden="true" /> Compartilhar {exportFiles.length > 1 ? `${exportFiles.length} imagens` : "imagem"}
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => {
-                  if (!printRankingFile(exportFile)) setStatus("error");
+                  if (!printRankingDocument(config)) setStatus("error");
                 }}
               >
-                <Printer aria-hidden="true" /> Imprimir / salvar PDF
+                <Printer aria-hidden="true" /> Imprimir / salvar PDF multipágina
               </button>
               <button
                 type="button"
                 className="secondary"
                 onClick={() => {
-                  downloadRankingFile(exportFile);
+                  downloadRankingFiles(exportFiles);
                   setStatus("downloaded");
                 }}
               >
-                <Download aria-hidden="true" /> Baixar PNG
+                <Download aria-hidden="true" /> Baixar {exportFiles.length > 1 ? `${exportFiles.length} PNGs` : "PNG"}
               </button>
             </div>
           </section>
