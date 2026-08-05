@@ -13551,6 +13551,45 @@ function BracketColumn({
   );
 }
 
+function PublicArenaHeroHeader({ arenaName, organizer, label = "Perfil oficial da arena" }) {
+  const location = [organizer?.city, organizer?.state].filter(Boolean).join("/");
+  const hasMetadata = Boolean(organizer?.organizerName || location);
+
+  return (
+    <header className="publicHeader publicHeaderWithLogo publicArenaStandardHeader">
+      <div className="publicBrandRow">
+        <BeachLogo />
+        <div className="brandTaglineOnly"><span>{TORNEIO360_TAGLINE}</span></div>
+      </div>
+
+      <div className="publicTitleBlock publicArenaTitleBlock">
+        <span>{label}</span>
+        <div className="publicArenaTitleMain">
+          {organizer?.photoUrl ? (
+            <img src={organizer.photoUrl} alt={`Foto de ${arenaName}`} />
+          ) : (
+            <span className="publicArenaInitials">{arenaName.slice(0, 2).toUpperCase()}</span>
+          )}
+          <div className="publicArenaTitleCopy">
+            <h1>{arenaName}</h1>
+            {hasMetadata ? (
+              <p className="publicArenaTitleMeta">
+                {organizer?.organizerName ? <span>Organização: {organizer.organizerName}</span> : null}
+                {location ? <span><MapPin aria-hidden="true" /> {location}</span> : null}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="publicTournamentHeaderActions publicArenaHeaderActions">
+        <button type="button" className="publicBackToPlatform" onClick={() => window.location.assign(window.location.origin)}>← Voltar às arenas</button>
+        <button type="button" className="publicOrganizerAccess" onClick={openOrganizerAccess}>Área do organizador</button>
+      </div>
+    </header>
+  );
+}
+
 function PublicArenaPage({ arenaId = null, publicId = null }) {
   const [loading, setLoading] = useState(true);
   const [bundle, setBundle] = useState(null);
@@ -13679,23 +13718,7 @@ function PublicArenaPage({ arenaId = null, publicId = null }) {
 
   return (
     <div className="publicPage publicArenaPage publicArenaRealPage">
-      <header className="publicHeader publicArenaHeader">
-        <div className="publicBrandRow">
-          <button type="button" className="publicBackToPlatform" onClick={() => window.location.assign(window.location.origin)}>← Arenas</button>
-          <BeachLogo />
-          <button type="button" className="publicOrganizerAccess" onClick={openOrganizerAccess}>Área do organizador</button>
-        </div>
-
-        <div className="publicArenaIdentity">
-          {organizer.photoUrl ? <img src={organizer.photoUrl} alt={`Foto de ${arenaName}`} /> : <span className="publicArenaInitials">{arenaName.slice(0, 2).toUpperCase()}</span>}
-          <div>
-            <small>Perfil oficial da arena</small>
-            <h1>{arenaName}</h1>
-            {organizer.organizerName ? <p>Organização: {organizer.organizerName}</p> : null}
-            {organizer.city || organizer.state ? <p><MapPin aria-hidden="true" /> {[organizer.city, organizer.state].filter(Boolean).join("/")}</p> : null}
-          </div>
-        </div>
-      </header>
+      <PublicArenaHeroHeader arenaName={arenaName} organizer={organizer} />
 
       <main className="publicContent publicArenaContent">
         <section className="card publicArenaContacts">
@@ -13942,28 +13965,7 @@ function PublicTournamentPage({ publicId }) {
 
   return (
     <div className="publicPage publicArenaPage">
-      <header className="publicHeader publicArenaHeader">
-        <div className="publicBrandRow">
-          <BeachLogo />
-          <div className="brandTaglineOnly"><span>{TORNEIO360_TAGLINE}</span></div>
-        </div>
-
-        <div className="publicArenaIdentity">
-          {publicOrganizer.photoUrl ? (
-            <img src={publicOrganizer.photoUrl} alt={`Foto de ${arenaName}`} />
-          ) : (
-            <span className="publicArenaInitials">{arenaName.slice(0, 2).toUpperCase()}</span>
-          )}
-          <div>
-            <small>Perfil da arena</small>
-            <h1>{arenaName}</h1>
-            {publicOrganizer.organizerName ? <p>Organização: {publicOrganizer.organizerName}</p> : null}
-            {publicOrganizer.city || publicOrganizer.state ? (
-              <p><MapPin aria-hidden="true" /> {[publicOrganizer.city, publicOrganizer.state].filter(Boolean).join("/")}</p>
-            ) : null}
-          </div>
-        </div>
-      </header>
+      <PublicArenaHeroHeader arenaName={arenaName} organizer={publicOrganizer} label="Perfil da arena" />
 
       <main className="publicContent publicArenaContent">
         <section className="card publicArenaContacts">
