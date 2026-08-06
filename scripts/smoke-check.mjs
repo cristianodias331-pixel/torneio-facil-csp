@@ -644,6 +644,17 @@ assert.ok(
   "Placares e confrontos ainda não possuem backup local durante uma falha de conexão."
 );
 assert.ok(
+  mainSource.includes("function ConfirmRegenerationModal")
+    && mainSource.includes("function requestShuffleNames()")
+    && mainSource.includes("function requestGenerate()")
+    && mainSource.includes("function requestGenerateBrackets()")
+    && mainSource.includes('action: "shuffle"')
+    && mainSource.includes('action: "generate"')
+    && mainSource.includes('action: "brackets"')
+    && mainSource.includes("Placares e resultados já preenchidos nas chaves podem ser removidos."),
+  "A repetição de sorteios ou gerações não pede confirmação sobre os dados que podem mudar."
+);
+assert.ok(
   mainSource.includes("Salvando antes de sair...")
     && mainSource.includes("A tela foi mantida aberta para proteger placares, confrontos e rankings"),
   "O torneio pode ser fechado antes de concluir o último salvamento."
