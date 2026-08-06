@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { orderFixedMixedPair } from "../src/fixedMixedTeamOrder.mjs";
 import { super12IndividualTemplate } from "../src/super12Schedule.mjs";
 import { super20MixedTemplate } from "../src/super20MixedSchedule.mjs";
 
@@ -143,6 +144,26 @@ for (let first = 1; first <= 12; first += 1) {
 
 assert.ok(mainSource.includes('type: "super12"'), "A modalidade Super 12 individual não está cadastrada.");
 assert.ok(mainSource.includes('config.type === "super12"'), "A geração da tabela fixa do Super 12 está ausente.");
+
+assert.deepEqual(
+  orderFixedMixedPair("Ana Beatriz", "João Pedro"),
+  ["João Pedro", "Ana Beatriz"],
+  "A importação deve colocar o homem no primeiro campo da dupla mista fixa."
+);
+assert.deepEqual(
+  orderFixedMixedPair("Marcos", "Carla"),
+  ["Marcos", "Carla"],
+  "A importação deve manter uma dupla mista que já esteja na ordem correta."
+);
+assert.deepEqual(
+  orderFixedMixedPair("Raquel", "Wadson"),
+  ["Wadson", "Raquel"],
+  "A importação deve reconhecer nomes que não terminam em A ou O."
+);
+assert.ok(
+  mainSource.includes("fixedMixedTeams ? orderFixedMixedPair(...cleanedNames) : cleanedNames"),
+  "O importador em massa não está aplicando a ordem das duplas mistas fixas."
+);
 
 assert.equal(super20MixedTemplate.length, 10, "O Super 20 mista deve possuir 10 rodadas.");
 const super20Partners = new Set();
