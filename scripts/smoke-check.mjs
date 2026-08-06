@@ -66,6 +66,20 @@ assert.ok(
   "A migração perdeu critérios essenciais de ativação, teste ou visibilidade pública."
 );
 
+assert.ok(
+  mainSource.includes("fetchPublicArenaDirectory")
+    && mainSource.includes("ARENA_DIRECTORY_REFRESH_INTERVAL_MS")
+    && mainSource.includes("hasSuccessfulLoad")
+    && mainSource.includes("publicArenaProfilesInFlightRef")
+    && mainSource.includes("refreshVisibleArenas")
+    && mainSource.includes("refreshVisibleProfiles")
+    && mainSource.includes('window.addEventListener("focus", refreshArenas)')
+    && mainSource.includes('document.addEventListener("visibilitychange", handleVisibilityChange)')
+    && mainSource.includes('className="publicArenaDirectoryOrganizer"')
+    && mainSource.includes('className="arenaFeedOrganizer"'),
+  "O diretório de arenas não atualiza automaticamente ou não identifica o organizador nos cartões."
+);
+
 const expectedModalityLabels = [
   "Super 6 (dupla fixa)",
   "Super 8",
