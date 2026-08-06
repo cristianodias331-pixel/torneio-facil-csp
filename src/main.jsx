@@ -44,6 +44,7 @@ import {
   X,
 } from "lucide-react";
 import InstallAppBanner from "./InstallAppBanner.jsx";
+import { orderFixedMixedPair } from "./fixedMixedTeamOrder.mjs";
 import { super12IndividualTemplate } from "./super12Schedule.mjs";
 import { super20MixedTemplate } from "./super20MixedSchedule.mjs";
 import "./style.css";
@@ -12403,6 +12404,10 @@ function isTeamParticipantConfig(config) {
   return config.type === "fixed12" || config.type === "fixed16" || isCupType(config);
 }
 
+function isFixedMixedTeamConfig(config) {
+  return config.type === "fixed12" || config.type === "fixed16";
+}
+
 function prepareParticipantLine(value) {
   let line = String(value || "")
     .normalize("NFKC")
@@ -12433,7 +12438,7 @@ function sanitizeParticipantName(value) {
     .trim();
 }
 
-function parseParticipantList(value, { splitTeams = false } = {}) {
+function parseParticipantList(value, { splitTeams = false, fixedMixedTeams = false } = {}) {
   const names = [];
   let ignored = 0;
   let recognizedTeams = 0;
@@ -12454,7 +12459,12 @@ function parseParticipantList(value, { splitTeams = false } = {}) {
         return;
       }
 
-      if (splitTeams && cleanedNames.length === 2) recognizedTeams += 1;
+      if (splitTeams && cleanedNames.length === 2) {
+        recognizedTeams += 1;
+        names.push(...(fixedMixedTeams ? orderFixedMixedPair(...cleanedNames) : cleanedNames));
+        return;
+      }
+
       names.push(...cleanedNames);
     });
 
@@ -12506,6 +12516,7 @@ function fillParticipantSlots(currentValues, incomingNames, expectedName, replac
   return {
     nextValues,
     imported,
+    importedIndexes: targetIndexes.slice(0, imported),
     preserved: replaceAll ? 0 : currentValues.length - automaticIndexes.length,
     vacancies: targetIndexes.length - imported,
     overflow: Math.max(0, incomingNames.length - targetIndexes.length),
@@ -12552,7 +12563,8 @@ function buildParticipantImportPreview(config, data, drafts, mode) {
   }
 
   if (isTeamParticipantConfig(config)) {
-    const parsed = parseParticipantList(drafts.general, { splitTeams: true });
+    const fixedMixedTeams = isFixedMixedTeamConfig(config);
+    const parsed = parseParticipantList(drafts.general, { splitTeams: true, fixedMixedTeams });
     const currentValues = data.players.teams.flatMap((team) => [team.a, team.b]);
     const result = fillParticipantSlots(
       currentValues,
@@ -12560,10 +12572,22 @@ function buildParticipantImportPreview(config, data, drafts, mode) {
       (index) => `Atleta ${(index % 2) + 1} da dupla ${Math.floor(index / 2) + 1}`,
       replaceAll
     );
-    const nextTeams = data.players.teams.map((_, teamIndex) => ({
-      a: result.nextValues[teamIndex * 2],
-      b: result.nextValues[(teamIndex * 2) + 1],
-    }));
+    const importedTeamIndexes = new Set(result.importedIndexes.map((index) => Math.floor(index / 2)));
+    const nextTeams = data.players.teams.map((_, teamIndex) => {
+      const team = {
+        a: result.nextValues[teamIndex * 2],
+        b: result.nextValues[(teamIndex * 2) + 1],
+      };
+
+      if (!fixedMixedTeams || !importedTeamIndexes.has(teamIndex)) return team;
+
+      const automaticA = isAutomaticParticipantName(team.a, `Atleta 1 da dupla ${teamIndex + 1}`);
+      const automaticB = isAutomaticParticipantName(team.b, `Atleta 2 da dupla ${teamIndex + 1}`);
+      if (automaticA || automaticB) return team;
+
+      const [a, b] = orderFixedMixedPair(team.a, team.b);
+      return { a, b };
+    });
 
     return {
       nextPlayers: { teams: nextTeams },
@@ -12608,6 +12632,7 @@ function ParticipantImportModal({ type, data, onClose, onApply }) {
   const config = modalityConfig[type];
   const isMixed = isMixedParticipantConfig(config);
   const isTeams = isTeamParticipantConfig(config);
+  const isFixedMixedTeams = isFixedMixedTeamConfig(config);
   const [drafts, setDrafts] = useState({ general: "", men: "", women: "" });
   const [mode, setMode] = useState("available");
   const [replaceConfirmed, setReplaceConfirmed] = useState(false);
@@ -12661,7 +12686,9 @@ function ParticipantImportModal({ type, data, onClose, onApply }) {
             <span>Participantes</span>
             <h2 id="participant-import-title">Colar lista de nomes</h2>
             <p>
-              {isTeams
+              {isFixedMixedTeams
+                ? "Uma dupla mista por linha. O homem será colocado no primeiro campo e a mulher no segundo. Separe os nomes por +, /, -, e ou &."
+                : isTeams
                 ? "Uma dupla por linha. Separe os dois nomes por +, /, -, e ou &. Espaços dentro do nome continuam sendo nome e sobrenome."
                 : "Numeração, marcadores e emojis serão retirados automaticamente."}
             </p>
@@ -12706,7 +12733,9 @@ function ParticipantImportModal({ type, data, onClose, onApply }) {
               <textarea
                 value={drafts.general}
                 onChange={(event) => updateDraft("general", event.target.value)}
-                placeholder={isTeams
+                placeholder={isFixedMixedTeams
+                  ? "Ana + João\nCarla / Marcos\nBeatriz e Pedro"
+                  : isTeams
                   ? "Ana + Carla\nBeatriz / Fernanda\nJoão e Marcos\nPaulo-Sérgio\n\nSem separador: João da Silva"
                   : "1. Ana\n2. Beatriz\n3. Carla"}
               />
