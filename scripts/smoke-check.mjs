@@ -498,6 +498,29 @@ assert.ok(
   "O status encerrado dos circuitos não recebeu a identificação laranja."
 );
 assert.ok(
+  mainSource.includes('const [tournamentStatusFilter, setTournamentStatusFilter] = useState("active")')
+    && mainSource.includes('const [circuitStatusFilter, setCircuitStatusFilter] = useState("active")')
+    && mainSource.includes('aria-pressed={tournamentStatusFilter === "finished"}')
+    && mainSource.includes('aria-pressed={circuitStatusFilter === "upcoming"}')
+    && mainSource.includes("function getCircuitLifecycleStatus(circuit)"),
+  "Os status de torneios e circuitos não funcionam como filtros completos."
+);
+assert.ok(
+  styleSource.includes(".tournamentStatusSummary button.finished.selected")
+    && styleSource.includes("background: #dc2626")
+    && styleSource.includes(".proDashboard .eventManagerToolbar > button")
+    && styleSource.includes("linear-gradient(135deg, #f97316, #ea580c)"),
+  "Os encerrados não estão vermelhos ou os botões de criação não estão destacados em laranja."
+);
+assert.ok(
+  mainSource.includes("setTournaments(optimisticTournaments)")
+    && mainSource.includes("setTournaments(remainingTournaments)")
+    && mainSource.includes("setTrashTournaments((current) => [")
+    && mainSource.includes("protectConcurrentData: true")
+    && mainSource.includes('directoryUpdate = directoryUpdate.eq("updated_at", item.updated_at)'),
+  "Criar e mover para a lixeira voltaram a aguardar sincronizações secundárias antes de atualizar a tela."
+);
+assert.ok(
   mainSource.includes("Quero me inscrever em")
     && mainSource.includes("registrationDeadline: details.registrationDeadline || \"\"")
     && styleSource.includes("PERFIL PÚBLICO DA ARENA — INSCRIÇÕES E MOBILE FINAL"),

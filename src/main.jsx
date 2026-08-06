@@ -776,6 +776,15 @@ function isPublicItemFinished(item, kind = "tournament") {
   return getAutomaticEventStatus(endDate) === "finished";
 }
 
+function getCircuitLifecycleStatus(circuit) {
+  const today = getBrazilTodayISO();
+  const startDate = String(circuit?.start_date || circuit?.startDate || "").slice(0, 10);
+
+  if (isPublicItemFinished(circuit, "circuit")) return "finished";
+  if (startDate && startDate > today) return "upcoming";
+  return "active";
+}
+
 function isTournamentEventGroupFinished(item, allTournaments = []) {
   const details = item?.data || {};
   if (details.multiCategoryEvent !== true || !details.eventGroupKey) {
@@ -6454,9 +6463,9 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   const [draggedTournamentId, setDraggedTournamentId] = useState(null);
   const [dragOverTournamentId, setDragOverTournamentId] = useState(null);
   const [createTournamentOpen, setCreateTournamentOpen] = useState(false);
-  const [showFinishedTournaments, setShowFinishedTournaments] = useState(false);
+  const [tournamentStatusFilter, setTournamentStatusFilter] = useState("active");
   const [createCircuitOpen, setCreateCircuitOpen] = useState(false);
-  const [showFinishedCircuits, setShowFinishedCircuits] = useState(false);
+  const [circuitStatusFilter, setCircuitStatusFilter] = useState("active");
   const [notice, setNotice] = useState(null);
   const [profileSubtab, setProfileSubtab] = useState(() => {
     const params = new URLSearchParams(window.location.search);
@@ -6957,7 +6966,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     return counts;
   }, { active: 0, upcoming: 0, finished: 0, seen: new Set() });
   const organizerVisibleTournaments = tournaments.filter((item) => (
-    showFinishedTournaments || getTournamentEventGroupLifecycleStatus(item, tournaments) !== "finished"
+    getTournamentEventGroupLifecycleStatus(item, tournaments) === tournamentStatusFilter
   ));
   const groupedTournaments = organizerVisibleTournaments.reduce((groups, item) => {
     const groupKey = item.data?.multiCategoryEvent === true && item.data?.eventGroupKey
@@ -6974,10 +6983,13 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
   const multiTournamentGroups = groupedTournaments.filter((group) => group.items.length > 1);
   const isolatedTournaments = groupedTournaments.flatMap((group) => group.items.length === 1 ? group.items : []);
-  const activeCircuitCount = circuits.filter((circuit) => !isPublicItemFinished(circuit, "circuit")).length;
-  const finishedCircuitCount = circuits.length - activeCircuitCount;
+  const circuitLifecycleCounts = circuits.reduce((counts, circuit) => {
+    const status = getCircuitLifecycleStatus(circuit);
+    counts[status] += 1;
+    return counts;
+  }, { active: 0, upcoming: 0, finished: 0 });
   const visibleOrganizerCircuits = circuits.filter((circuit) => (
-    showFinishedCircuits || !isPublicItemFinished(circuit, "circuit")
+    getCircuitLifecycleStatus(circuit) === circuitStatusFilter
   ));
 
   const filteredArenaProfiles = publicArenaProfiles.filter((arena) => {
@@ -7704,7 +7716,11 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     return false;
   }
 
-  async function syncPublicArenaDirectory(nextTournaments = tournaments, nextCircuits = circuits) {
+  async function syncPublicArenaDirectory(
+    nextTournaments = tournaments,
+    nextCircuits = circuits,
+    { updateLocalState = true, protectConcurrentData = false } = {}
+  ) {
     const activeTournaments = (nextTournaments || []).filter((item) => !item.data?.deletedAt);
     if (!activeTournaments.length) return [];
 
@@ -7739,7 +7755,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         publicArenaCircuits: circuitDirectory,
       };
 
-      const { error } = await supabase
+      let directoryUpdate = supabase
         .from("tournaments")
         .update({
           public_id: item.public_id,
@@ -7748,6 +7764,10 @@ const [newPublicInfo, setNewPublicInfo] = useState({
         })
         .eq("id", item.id)
         .eq("user_id", user.id);
+      if (protectConcurrentData && item.updated_at) {
+        directoryUpdate = directoryUpdate.eq("updated_at", item.updated_at);
+      }
+      const { error } = await directoryUpdate;
 
       if (error) {
         console.warn("Não foi possível atualizar o diretório público da arena:", error);
@@ -7757,7 +7777,7 @@ const [newPublicInfo, setNewPublicInfo] = useState({
       return { ...item, data: nextData };
     }));
 
-    setTournaments(updatedTournaments);
+    if (updateLocalState) setTournaments(updatedTournaments);
     return updatedTournaments;
   }
 
@@ -8223,10 +8243,13 @@ const [newPublicInfo, setNewPublicInfo] = useState({
 
     const manualOrderActive = hasSavedManualTournamentOrder(tournaments);
     const chronologicalInsertion = insertTournamentsByEventSchedule(tournaments, createdTournaments || []);
-    if (manualOrderActive) {
-      const savedOrder = await persistTournamentOrderSequence(chronologicalInsertion, { manual: true });
-      if (savedOrder.error) console.error("Erro ao posicionar os novos torneios por data e hora:", savedOrder.error);
-    }
+    const optimisticTournaments = manualOrderActive
+      ? chronologicalInsertion.map((tournament, displayOrder) => ({
+          ...tournament,
+          data: { ...(tournament.data || {}), displayOrder, displayOrderMode: "manual" },
+        }))
+      : chronologicalInsertion;
+    setTournaments(optimisticTournaments);
 
     setNewName("");
     setNewType("");
@@ -8264,55 +8287,101 @@ setNewPublicInfo({
   showMapsLink: true,
   showCityState: true,
 });
-    const refreshedTournaments = await loadTournaments();
-    await syncPublicArenaDirectory(refreshedTournaments || [], circuits);
     setCreateTournamentOpen(false);
     showNotice("success", isMultiCategory ? "Torneios criados" : "Torneio criado", isMultiCategory ? "As categorias foram criadas como torneios separados dentro do mesmo evento." : "O torneio foi criado com sucesso.");
 
     const createdIds = (createdTournaments || []).map((tournament) => tournament.id).filter(Boolean);
     if (createdIds.length) {
       setOpenTournamentIds((currentIds) => [...new Set([...currentIds, ...createdIds])].slice(-50));
-      const firstCreatedTournament = (refreshedTournaments || []).find((tournament) => tournament.id === createdIds[0])
+      const firstCreatedTournament = optimisticTournaments.find((tournament) => tournament.id === createdIds[0])
         || createdTournaments[0];
-      await activateTournament(firstCreatedTournament, { skipSaveGuard: true });
+      const savedNavigation = openTournamentNavigationRef.current[firstCreatedTournament.id] || {};
+      updateAppUrl({
+        activePanel: "criar",
+        selectedTournamentId: firstCreatedTournament.id,
+        tournamentTab: savedNavigation.tournamentTab || DEFAULT_TOURNAMENT_NAVIGATION.tournamentTab,
+        matchesTab: savedNavigation.matchesTab || DEFAULT_TOURNAMENT_NAVIGATION.matchesTab,
+      });
+      setSelected(firstCreatedTournament);
+      queueScrollRestore(savedNavigation.scrollY || 0);
     }
+
+    void (async () => {
+      let tournamentsForDirectory = optimisticTournaments;
+      if (manualOrderActive) {
+        const savedOrder = await persistTournamentOrderSequence(optimisticTournaments, { manual: true });
+        if (savedOrder.error) console.error("Erro ao posicionar os novos torneios por data e hora:", savedOrder.error);
+        else tournamentsForDirectory = savedOrder.tournaments;
+      }
+      await syncPublicArenaDirectory(tournamentsForDirectory, circuits, {
+        updateLocalState: false,
+        protectConcurrentData: true,
+      });
+    })().catch((backgroundError) => {
+      console.error("Erro na sincronização posterior à criação do torneio:", backgroundError);
+    });
   }
 
   async function confirmDeleteTournament() {
     if (!deleteTarget) return;
 
+    const target = deleteTarget;
+    const previousTournaments = tournaments;
+    const previousTrashTournaments = trashTournaments;
+    const previousOpenTournamentIds = openTournamentIds;
+    const deletedAt = new Date().toISOString();
+    const deletedTournament = {
+      ...target,
+      is_public: false,
+      data: { ...(target.data || {}), deletedAt },
+      updated_at: deletedAt,
+    };
+    const remainingTournaments = tournaments.filter((tournament) => tournament.id !== target.id);
+
+    setDeleteTarget(null);
+    setTournaments(remainingTournaments);
+    setTrashTournaments((current) => [
+      deletedTournament,
+      ...current.filter((tournament) => tournament.id !== target.id),
+    ]);
+    setOpenTournamentIds((current) => current.filter((id) => id !== target.id));
+
     const { error } = await supabase
       .from("tournaments")
       .update({
         is_public: false,
-        data: {
-          ...(deleteTarget.data || {}),
-          deletedAt: new Date().toISOString(),
-        },
-        updated_at: new Date().toISOString(),
+        data: deletedTournament.data,
+        updated_at: deletedAt,
       })
-      .eq("id", deleteTarget.id)
+      .eq("id", target.id)
       .eq("user_id", user.id);
 
     if (error) {
+      setTournaments(previousTournaments);
+      setTrashTournaments(previousTrashTournaments);
+      setOpenTournamentIds(previousOpenTournamentIds);
       showNotice("error", "Erro ao mover", "Não foi possível mover este torneio para a lixeira.");
       console.error(error);
       return;
     }
 
-    if (hasSavedManualTournamentOrder(tournaments)) {
-      const remainingOrder = await persistTournamentOrderSequence(
-        tournaments.filter((tournament) => tournament.id !== deleteTarget.id),
-        { manual: true }
-      );
-      if (remainingOrder.error) console.error("Erro ao compactar a ordem após excluir o torneio:", remainingOrder.error);
-    }
-
-    setDeleteTarget(null);
-    const refreshedTournaments = await loadTournaments();
-    const { circuits: rankedCircuits } = await persistCircuitRankings(refreshedTournaments || [], circuits, deleteTarget.id);
-    await syncPublicArenaDirectory(refreshedTournaments || [], rankedCircuits);
     showNotice("success", "Torneio movido para a lixeira", "Você pode recuperar este torneio em até 30 dias.");
+
+    void (async () => {
+      let tournamentsForDirectory = remainingTournaments;
+      if (hasSavedManualTournamentOrder(previousTournaments)) {
+        const remainingOrder = await persistTournamentOrderSequence(remainingTournaments, { manual: true });
+        if (remainingOrder.error) console.error("Erro ao compactar a ordem após excluir o torneio:", remainingOrder.error);
+        else tournamentsForDirectory = remainingOrder.tournaments;
+      }
+      const { circuits: rankedCircuits } = await persistCircuitRankings(tournamentsForDirectory, circuits, target.id);
+      await syncPublicArenaDirectory(tournamentsForDirectory, rankedCircuits, {
+        updateLocalState: false,
+        protectConcurrentData: true,
+      });
+    })().catch((backgroundError) => {
+      console.error("Erro na sincronização posterior ao envio para a lixeira:", backgroundError);
+    });
   }
 
   async function restoreTournament(tournament) {
@@ -9575,18 +9644,22 @@ setNewPublicInfo({
 
 <section id="historico-torneios" className="card">
   <h2>Torneios cadastrados</h2>
-  <div className="tournamentStatusSummary" aria-label="Resumo dos torneios">
-    <span className="active"><strong>{tournamentLifecycleCounts.active}</strong> Em andamento</span>
-    <span className="upcoming"><strong>{tournamentLifecycleCounts.upcoming}</strong> Próximos</span>
-    <button type="button" className={showFinishedTournaments ? "finished open" : "finished"} onClick={() => setShowFinishedTournaments((current) => !current)}>
-      <strong>{tournamentLifecycleCounts.finished}</strong> {showFinishedTournaments ? "Ocultar encerrados" : "Mostrar encerrados"}
+  <div className="tournamentStatusSummary" aria-label="Filtrar torneios por situação">
+    <button type="button" className={`active ${tournamentStatusFilter === "active" ? "selected" : ""}`} aria-pressed={tournamentStatusFilter === "active"} onClick={() => setTournamentStatusFilter("active")}>
+      <strong>{tournamentLifecycleCounts.active}</strong> Em andamento
+    </button>
+    <button type="button" className={`upcoming ${tournamentStatusFilter === "upcoming" ? "selected" : ""}`} aria-pressed={tournamentStatusFilter === "upcoming"} onClick={() => setTournamentStatusFilter("upcoming")}>
+      <strong>{tournamentLifecycleCounts.upcoming}</strong> Próximos
+    </button>
+    <button type="button" className={`finished ${tournamentStatusFilter === "finished" ? "selected" : ""}`} aria-pressed={tournamentStatusFilter === "finished"} onClick={() => setTournamentStatusFilter("finished")}>
+      <strong>{tournamentLifecycleCounts.finished}</strong> Encerrados
     </button>
   </div>
 
   {tournaments.length === 0 ? (
     <p>Nenhum torneio criado ainda.</p>
-  ) : (false) ? (
-    <p></p>
+  ) : organizerVisibleTournaments.length === 0 ? (
+    <p className="eventStatusEmpty">Nenhum torneio {tournamentStatusFilter === "active" ? "em andamento" : tournamentStatusFilter === "upcoming" ? "próximo" : "encerrado"}.</p>
   ) : (
     <div className="eventGroupList">
       {isolatedTournaments.length > 0 && (
@@ -9858,19 +9931,24 @@ setNewPublicInfo({
   <section className="card circuitsOverviewCard">
     <div className="circuitsList">
       <h2>Circuitos cadastrados</h2>
-      <div className="tournamentStatusSummary circuitStatusSummary">
-        <span className="active"><strong>{activeCircuitCount}</strong> Em andamento</span>
-        <button type="button" className="finished" onClick={() => setShowFinishedCircuits((current) => !current)}>
-          <strong>{finishedCircuitCount}</strong> {showFinishedCircuits ? "Ocultar encerrados" : "Mostrar encerrados"}
+      <div className="tournamentStatusSummary circuitStatusSummary" aria-label="Filtrar circuitos por situação">
+        <button type="button" className={`active ${circuitStatusFilter === "active" ? "selected" : ""}`} aria-pressed={circuitStatusFilter === "active"} onClick={() => setCircuitStatusFilter("active")}>
+          <strong>{circuitLifecycleCounts.active}</strong> Em andamento
+        </button>
+        <button type="button" className={`upcoming ${circuitStatusFilter === "upcoming" ? "selected" : ""}`} aria-pressed={circuitStatusFilter === "upcoming"} onClick={() => setCircuitStatusFilter("upcoming")}>
+          <strong>{circuitLifecycleCounts.upcoming}</strong> Próximos
+        </button>
+        <button type="button" className={`finished ${circuitStatusFilter === "finished" ? "selected" : ""}`} aria-pressed={circuitStatusFilter === "finished"} onClick={() => setCircuitStatusFilter("finished")}>
+          <strong>{circuitLifecycleCounts.finished}</strong> Encerrados
         </button>
       </div>
       {circuits.length === 0 ? (
         <p>Nenhum circuito criado ainda.</p>
       ) : visibleOrganizerCircuits.length === 0 ? (
-        <p>Nenhum circuito em andamento. Use “Mostrar encerrados” para consultar o histórico.</p>
+        <p className="eventStatusEmpty">Nenhum circuito {circuitStatusFilter === "active" ? "em andamento" : circuitStatusFilter === "upcoming" ? "próximo" : "encerrado"}.</p>
       ) : visibleOrganizerCircuits.map((circuit) => {
         const selectedNames = getCircuitSelectedTournaments(circuit);
-        const circuitStatus = normalizeCircuitStatus(getAutomaticEventStatus(circuit.endDate));
+        const circuitStatus = getCircuitLifecycleStatus(circuit);
         const isExpanded = expandedCircuitId === circuit.id;
         return (
           <article className={`circuitItem ${isExpanded ? "expanded" : ""}`} key={circuit.id}>
@@ -9886,7 +9964,7 @@ setNewPublicInfo({
                   <div className="circuitTitleLine">
                     <h3>{circuit.name}</h3>
                     <span className={`circuitStatus circuitStatus-${circuitStatus}`}>
-                      {circuitStatus === "closed" ? "Encerrado" : "Em andamento"}
+                      {circuitStatus === "finished" ? "Encerrado" : circuitStatus === "upcoming" ? "Próximo" : "Em andamento"}
                     </span>
                   </div>
                   <p><CalendarDays aria-hidden="true" /> {circuit.startDate ? formatDateBR(circuit.startDate) : "Sem início"} até {circuit.endDate ? formatDateBR(circuit.endDate) : "sem fim definido"}</p>
