@@ -77,6 +77,7 @@ const expectedModalityLabels = [
   "Super 20 mista",
   "Simples 8 (1 contra 1 por jogo)",
   "Torneio modelo Campeonato Cearense",
+  "Modelo Play Ranking",
 ];
 
 for (const label of expectedModalityLabels) {
@@ -101,6 +102,15 @@ const premiumOrder = [
 const premiumPositions = premiumOrder.map((type) => premiumModalities.indexOf(type));
 assert.ok(premiumPositions.every((position) => position >= 0), "A lista Premium perdeu uma modalidade obrigatória.");
 assert.deepEqual([...premiumPositions].sort((a, b) => a - b), premiumPositions, "A ordem das modalidades está incorreta.");
+assert.ok(premiumModalities.includes('"Modelo Play Ranking"'), "O Modelo Play Ranking não está liberado no plano Premium.");
+
+assert.ok(mainSource.includes('type: "playranking"'), "A configuração do Modelo Play Ranking está ausente.");
+assert.ok(mainSource.includes("function getPlayRankingOpeningLosses"), "A transferência das derrotadas da primeira fase está ausente.");
+assert.ok(mainSource.includes("function buildPlayRankingParallelRounds"), "A chave paralela especial do Modelo Play Ranking está ausente.");
+assert.ok(mainSource.includes("function TournamentFormatInfoButton"), "A explicação dinâmica dos modelos está ausente.");
+assert.ok(mainSource.includes("getCearenseFormatSummary(teamCount, isPlayRanking)"), "A explicação não acompanha a quantidade escolhida.");
+assert.ok(mainSource.includes("publicView />"), "A explicação do formato não está acessível ao visitante.");
+assert.ok(styleSource.includes(".formatInfoDialog"), "A explicação dinâmica está sem acabamento responsivo.");
 
 for (const removedType of ["Copa - 12 ou 24 duplas", "Copa - 21 duplas", "Copinha - grupos de 3"]) {
   assert.ok(!premiumModalities.includes(`"${removedType}"`), `A modalidade removida ainda pode ser criada: ${removedType}`);
