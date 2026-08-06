@@ -4557,6 +4557,33 @@ function ConfirmClearTableModal({ open, onCancel, onConfirm }) {
   );
 }
 
+function ConfirmRegenerationModal({ confirmation, onCancel, onConfirm }) {
+  if (!confirmation) return null;
+
+  return createPortal(
+    <div className="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="regeneration-confirm-title">
+      <div className="confirmBox regenerationConfirmBox">
+        <div className="confirmIcon" aria-hidden="true">{"\u26a0\ufe0f"}</div>
+        <span className="confirmEyebrow">Atenção antes de continuar</span>
+        <h2 id="regeneration-confirm-title">{confirmation.title}</h2>
+        <p>{confirmation.message}</p>
+
+        <ul className="regenerationImpactList">
+          {confirmation.impacts.map((impact) => <li key={impact}>{impact}</li>)}
+        </ul>
+
+        <div className="confirmActions">
+          <button type="button" className="secondaryBtn" onClick={onCancel}>Cancelar</button>
+          <button type="button" className="regenerationConfirmBtn" onClick={onConfirm}>
+            {confirmation.confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 function PlanCard({ title, tag, badge, price, text, items }) {
   return (
     <div className="planCard">
@@ -11077,6 +11104,7 @@ function normalizeTournamentData(type, rawData) {
     ...source,
     rankingCriteria: validRankingCriteria ? source.rankingCriteria : defaults.rankingCriteria,
     winningScore: validWinningScore ? Number(source.winningScore) : defaults.winningScore,
+    namesShuffled: Boolean(source.namesShuffled),
     schedule: normalizeSchedule(source.schedule),
     courtNumbers: normalizeCourtNumbers(sourceCourtNumbers, courtCount),
   };
@@ -11275,6 +11303,7 @@ function TournamentScreen({
   const [shuffleOverlay, setShuffleOverlay] = useState(null);
   const [tieBreakDraw, setTieBreakDraw] = useState(null);
   const [notice, setNotice] = useState(null);
+  const [regenerationConfirm, setRegenerationConfirm] = useState(null);
   const [clearScoresOpen, setClearScoresOpen] = useState(false);
   const [clearTableOpen, setClearTableOpen] = useState(false);
   const [participantImportOpen, setParticipantImportOpen] = useState(false);
@@ -12031,6 +12060,8 @@ function TournamentScreen({
       copy.brackets = [];
       copy.groupsShuffled = true;
       resetCopinhaTieBreaks(copy);
+    } else {
+      copy.namesShuffled = true;
     }
 
     setData(copy);
@@ -12173,6 +12204,96 @@ function generateBrackets() {
   );
 }
 
+function requestShuffleNames() {
+  const alreadyUsed = isCupType(config)
+    ? Boolean(data.groupsShuffled || data.schedule?.length || data.brackets?.length)
+    : Boolean(data.namesShuffled || data.schedule?.length);
+
+  if (!alreadyUsed) {
+    shuffleNames();
+    return;
+  }
+
+  setRegenerationConfirm(isCupType(config) ? {
+    action: "shuffle",
+    title: "Sortear os grupos novamente?",
+    message: "Um novo sorteio muda a posição das duplas e refaz a organização da fase de grupos.",
+    impacts: [
+      "As rodadas e os jogos atuais serão apagados.",
+      "Placares e chaves finais já gerados serão removidos.",
+      "Os participantes cadastrados serão mantidos.",
+    ],
+    confirmLabel: "Sim, sortear novamente",
+  } : {
+    action: "shuffle",
+    title: "Sortear os nomes novamente?",
+    message: "Um novo sorteio altera a ordem atual dos participantes.",
+    impacts: [
+      "As rodadas, os jogos e os placares atuais serão apagados.",
+      "Os nomes cadastrados serão mantidos.",
+      "Depois será necessário criar novamente as rodadas e os jogos.",
+    ],
+    confirmLabel: "Sim, sortear novamente",
+  });
+}
+
+function requestGenerate() {
+  if (!data.schedule?.length) {
+    generate();
+    return;
+  }
+
+  setRegenerationConfirm(isCupType(config) ? {
+    action: "generate",
+    title: "Gerar a fase de grupos novamente?",
+    message: "A fase de grupos atual será substituída por uma nova tabela.",
+    impacts: [
+      "Rodadas, jogos e placares atuais serão recriados.",
+      "As chaves finais já geradas serão removidas.",
+      "Participantes e grupos sorteados serão mantidos.",
+    ],
+    confirmLabel: "Sim, gerar novamente",
+  } : {
+    action: "generate",
+    title: "Criar rodadas e jogos novamente?",
+    message: "A tabela atual será substituída pela mesma lógica de geração da modalidade.",
+    impacts: [
+      "Rodadas, jogos e placares atuais serão recriados.",
+      "Os participantes cadastrados serão mantidos.",
+      "A ação não poderá recuperar os placares substituídos.",
+    ],
+    confirmLabel: "Sim, criar novamente",
+  });
+}
+
+function requestGenerateBrackets() {
+  if (!data.brackets?.length) {
+    generateBrackets();
+    return;
+  }
+
+  setRegenerationConfirm({
+    action: "brackets",
+    title: "Gerar as chaves finais novamente?",
+    message: "As chaves serão recalculadas a partir da classificação atual da fase de grupos.",
+    impacts: [
+      "Confrontos das eliminatórias podem mudar.",
+      "Placares e resultados já preenchidos nas chaves podem ser removidos.",
+      "A fase de grupos e seus placares serão mantidos.",
+    ],
+    confirmLabel: "Sim, gerar novamente",
+  });
+}
+
+function confirmRegeneration() {
+  const action = regenerationConfirm?.action;
+  setRegenerationConfirm(null);
+
+  if (action === "shuffle") shuffleNames();
+  if (action === "generate") generate();
+  if (action === "brackets") generateBrackets();
+}
+
 function updateScore(roundIndex, gameIndex, field, value) {
   const copy = structuredClone(data);
   const winningScore = getWinningScore(copy);
@@ -12287,6 +12408,12 @@ const courtEditorUsedNumbers = courtEditorContext.peers
 return (
   <>
     <NoticeModal notice={notice} onClose={() => setNotice(null)} />
+
+    <ConfirmRegenerationModal
+      confirmation={regenerationConfirm}
+      onCancel={() => setRegenerationConfirm(null)}
+      onConfirm={confirmRegeneration}
+    />
 
     {participantImportOpen && createPortal(
       <ParticipantImportModal
@@ -12499,8 +12626,8 @@ return (
 
           {!isCupType(config) && (
             <div className="actions">
-              <button type="button" onClick={shuffleNames}>Sortear nomes</button>
-              <button type="button" onClick={generate}>Criar rodadas e jogos</button>
+              <button type="button" onClick={requestShuffleNames}>Sortear nomes</button>
+              <button type="button" onClick={requestGenerate}>Criar rodadas e jogos</button>
             </div>
           )}
         </section>
@@ -12513,8 +12640,8 @@ return (
             </div>
             <p>Use o sorteio para embaralhar as duplas e depois gere a fase de grupos.</p>
             <div className="actions">
-              <button type="button" onClick={shuffleNames}>Sortear grupos</button>
-              <button type="button" onClick={generate}>Gerar fase de grupos</button>
+              <button type="button" onClick={requestShuffleNames}>Sortear grupos</button>
+              <button type="button" onClick={requestGenerate}>Gerar fase de grupos</button>
             </div>
             {cupGroupRankings.length > 0 && (
               <div className="groupsPreviewBox">
@@ -12602,7 +12729,7 @@ return (
               />
 
               <div className="actions">
-                <button type="button" onClick={generateBrackets}>
+                <button type="button" onClick={requestGenerateBrackets}>
                   Gerar chaves finais
                 </button>
               </div>
@@ -12611,7 +12738,14 @@ return (
             <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "chaves" ? undefined : "none" }}>
               <div className="cardTitleRow">
                 <h2>Chaves finais</h2>
-                <SavingStatusBadge />
+                <div className="cardTitleControls">
+                  {currentBrackets && (
+                    <button type="button" className="secondaryBtn compactRegenerateBtn" onClick={requestGenerateBrackets}>
+                      Gerar chaves novamente
+                    </button>
+                  )}
+                  <SavingStatusBadge />
+                </div>
               </div>
 
               {!currentBrackets ? (
@@ -12622,7 +12756,7 @@ return (
                   </p>
 
                   <div className="actions">
-                    <button type="button" onClick={generateBrackets}>
+                    <button type="button" onClick={requestGenerateBrackets}>
                       Gerar chaves finais
                     </button>
                   </div>
@@ -12694,14 +12828,21 @@ return (
             <section className="card" style={{ display: activeTournamentTab === "partidas" && activeMatchesTab === "paralela" ? undefined : "none" }}>
               <div className="cardTitleRow">
                 <h2>{data.cupConfig?.repechageName || "Disputa Paralela"}</h2>
-                <SavingStatusBadge />
+                <div className="cardTitleControls">
+                  {currentBrackets && (
+                    <button type="button" className="secondaryBtn compactRegenerateBtn" onClick={requestGenerateBrackets}>
+                      Gerar chaves novamente
+                    </button>
+                  )}
+                  <SavingStatusBadge />
+                </div>
               </div>
               {!currentBrackets ? (
                 <>
                   <p>Gere as chaves finais para visualizar a disputa paralela.</p>
 
                   <div className="actions">
-                    <button type="button" onClick={generateBrackets}>
+                    <button type="button" onClick={requestGenerateBrackets}>
                       Gerar chaves finais
                     </button>
                   </div>

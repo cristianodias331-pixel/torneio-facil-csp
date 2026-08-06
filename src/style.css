@@ -7365,6 +7365,48 @@ body {
   flex: 0 0 auto;
 }
 
+.cardTitleControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.compactRegenerateBtn {
+  min-height: 36px !important;
+  padding: 7px 12px !important;
+  border-radius: 11px !important;
+  font-size: 12px !important;
+}
+
+.regenerationConfirmBox {
+  max-width: 540px;
+}
+
+.regenerationImpactList {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0 22px;
+  padding: 14px 16px 14px 34px;
+  border: 1px solid var(--ui-border, #cbd5e1);
+  border-radius: 16px;
+  background: var(--ui-surface-muted, #f8fafc);
+  color: var(--ui-text, #334155);
+  text-align: left;
+}
+
+.regenerationImpactList li::marker {
+  color: #f97316;
+}
+
+.regenerationConfirmBtn {
+  border-color: #ea580c !important;
+  background: linear-gradient(135deg, #f97316, #ea580c) !important;
+  color: #ffffff !important;
+}
+
 @media (max-width: 720px) {
   .cardTitleRow {
     align-items: flex-start;
@@ -7374,6 +7416,16 @@ body {
   .cardTitleRow .savingBadge {
     width: auto;
     margin-left: 0;
+  }
+
+  .cardTitleControls {
+    width: 100%;
+    justify-content: space-between;
+    margin-left: 0;
+  }
+
+  .compactRegenerateBtn {
+    width: auto !important;
   }
 }
 
