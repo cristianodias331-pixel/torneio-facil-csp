@@ -18025,23 +18025,23 @@ html[data-theme="dark"] .rankingExportNotice.warning {
 }
 
 .proDashboard .circuitStatus-upcoming {
-  border-color: color-mix(in srgb, #0284c7 48%, var(--ui-border)) !important;
-  background: color-mix(in srgb, #0284c7 15%, var(--ui-surface-raised)) !important;
-  color: #0369a1 !important;
+  border-color: color-mix(in srgb, #22c55e 48%, var(--ui-border)) !important;
+  background: color-mix(in srgb, #22c55e 15%, var(--ui-surface-raised)) !important;
+  color: #15803d !important;
 }
 
 .proDashboard .circuitStatus-finished {
-  border-color: color-mix(in srgb, #dc2626 48%, var(--ui-border)) !important;
-  background: color-mix(in srgb, #dc2626 14%, var(--ui-surface-raised)) !important;
-  color: #b91c1c !important;
+  border-color: color-mix(in srgb, #fb923c 48%, var(--ui-border)) !important;
+  background: color-mix(in srgb, #fb923c 15%, var(--ui-surface-raised)) !important;
+  color: #c2410c !important;
 }
 
 .proDashboard.theme-dark .circuitStatus-closed {
   color: #fdba74 !important;
 }
 
-.proDashboard.theme-dark .circuitStatus-upcoming { color: #7dd3fc !important; }
-.proDashboard.theme-dark .circuitStatus-finished { color: #fca5a5 !important; }
+.proDashboard.theme-dark .circuitStatus-upcoming { color: #86efac !important; }
+.proDashboard.theme-dark .circuitStatus-finished { color: #fdba74 !important; }
 
 .proDashboard .circuitItemMain p {
   display: inline-flex !important;
@@ -18106,9 +18106,9 @@ html[data-theme="dark"] .rankingExportNotice.warning {
   justify-content: flex-end !important;
   gap: 9px !important;
   width: auto !important;
-  margin: 16px 18px 18px !important;
-  padding: 14px 0 0 !important;
-  border-top: 1px solid var(--ui-border-soft) !important;
+  margin: 14px 18px 0 !important;
+  padding: 0 0 14px !important;
+  border-bottom: 1px solid var(--ui-border-soft) !important;
   background: transparent !important;
 }
 
@@ -22627,12 +22627,12 @@ html[data-theme="dark"] .proDashboard.playAppShell button.mobileTournamentSwitch
 .proDashboard .eventManagerToolbar > button {
   min-width: 156px;
   min-height: 46px;
-  border: 1px solid #fb923c;
-  background: linear-gradient(135deg, #f97316, #ea580c);
-  color: #ffffff;
-  box-shadow: 0 12px 26px rgba(234, 88, 12, .24);
+  border: 1px solid #fb923c !important;
+  background: linear-gradient(135deg, #fb923c, #f97316) !important;
+  color: #ffffff !important;
+  box-shadow: 0 12px 26px rgba(234, 88, 12, .30) !important;
 }
-.proDashboard .eventManagerToolbar > button:hover { background: linear-gradient(135deg, #fb923c, #f97316); }
+.proDashboard .eventManagerToolbar > button:hover { background: linear-gradient(135deg, #f97316, #ea580c) !important; }
 .managerEyebrow { color: #2563eb; font-size: .72rem; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
 
 .eventEditorOverlay {
@@ -22706,17 +22706,17 @@ html[data-theme="dark"] .proDashboard.playAppShell button.mobileTournamentSwitch
   font-weight: 900;
 }
 .tournamentStatusSummary .active,
-.tournamentLifecycleBadge.active { color: #6d28d9; background: #f3e8ff; border-color: #d8b4fe; }
+.tournamentLifecycleBadge.active { color: #6d28d9 !important; background: #f3e8ff !important; border-color: #c4b5fd !important; }
 .tournamentStatusSummary .upcoming,
-.tournamentLifecycleBadge.upcoming { color: #075985; background: #e0f2fe; border-color: #7dd3fc; }
+.tournamentLifecycleBadge.upcoming { color: #166534 !important; background: #dcfce7 !important; border-color: #86efac !important; }
 .tournamentStatusSummary .finished,
-.tournamentLifecycleBadge.finished { color: #b91c1c; background: #fee2e2; border-color: #fca5a5; }
+.tournamentLifecycleBadge.finished { color: #c2410c !important; background: #ffedd5 !important; border-color: #fdba74 !important; }
 .tournamentStatusSummary button { cursor: pointer; transition: transform .16s ease, box-shadow .16s ease, background .16s ease; }
 .tournamentStatusSummary button:hover { transform: translateY(-1px); }
-.tournamentStatusSummary button.selected { color: #ffffff; box-shadow: 0 0 0 3px rgba(255, 255, 255, .75), 0 8px 18px rgba(15, 23, 42, .18); }
-.tournamentStatusSummary button.active.selected { background: #7c3aed; border-color: #7c3aed; }
-.tournamentStatusSummary button.upcoming.selected { background: #0284c7; border-color: #0284c7; }
-.tournamentStatusSummary button.finished.selected { background: #dc2626; border-color: #dc2626; }
+.tournamentStatusSummary button.selected { color: #ffffff !important; box-shadow: 0 0 0 3px rgba(255, 255, 255, .75), 0 8px 18px rgba(15, 23, 42, .18) !important; }
+.tournamentStatusSummary button.active.selected { background: #8b5cf6 !important; border-color: #a78bfa !important; }
+.tournamentStatusSummary button.upcoming.selected { background: #22c55e !important; border-color: #4ade80 !important; }
+.tournamentStatusSummary button.finished.selected { background: #fb923c !important; border-color: #fdba74 !important; }
 .eventStatusEmpty { margin: 18px 0 4px; padding: 16px; border: 1px dashed #cbd5e1; border-radius: 14px; color: #64748b; text-align: center; }
 .proDashboard .tournamentTitleRow { align-items: center; }
 .proDashboard .tournamentLifecycleBadge { width: max-content; min-height: 25px; padding: 4px 8px; font-size: .66rem; }
@@ -22781,7 +22781,13 @@ html[data-theme="dark"] .proDashboard .eventEditorSheet,
 html[data-theme="dark"] .proDashboard .eventManagerToolbar p,
 .proDashboard.theme-dark .eventManagerToolbar p { color: #aebed2; }
 html[data-theme="dark"] .tournamentStatusSummary button.selected,
-.proDashboard.theme-dark .tournamentStatusSummary button.selected { box-shadow: 0 0 0 3px rgba(15, 23, 42, .9), 0 8px 18px rgba(0, 0, 0, .3); }
+.proDashboard.theme-dark .tournamentStatusSummary button.selected { box-shadow: 0 0 0 3px rgba(15, 23, 42, .9), 0 8px 18px rgba(0, 0, 0, .3) !important; }
+html[data-theme="dark"] .tournamentStatusSummary button.active:not(.selected),
+.proDashboard.theme-dark .tournamentStatusSummary button.active:not(.selected) { color: #ddd6fe !important; background: rgba(139, 92, 246, .18) !important; border-color: #7c3aed !important; }
+html[data-theme="dark"] .tournamentStatusSummary button.upcoming:not(.selected),
+.proDashboard.theme-dark .tournamentStatusSummary button.upcoming:not(.selected) { color: #bbf7d0 !important; background: rgba(34, 197, 94, .16) !important; border-color: #16a34a !important; }
+html[data-theme="dark"] .tournamentStatusSummary button.finished:not(.selected),
+.proDashboard.theme-dark .tournamentStatusSummary button.finished:not(.selected) { color: #fed7aa !important; background: rgba(251, 146, 60, .17) !important; border-color: #ea580c !important; }
 html[data-theme="dark"] .eventStatusEmpty,
 .proDashboard.theme-dark .eventStatusEmpty { border-color: #3b5069; color: #aebed2; }
 html[data-theme="dark"] .categoryScheduleItem.categoryTournamentCard,

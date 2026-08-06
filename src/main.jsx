@@ -9975,6 +9975,13 @@ setNewPublicInfo({
             </button>
 
             {isExpanded ? (
+              <div className="circuitItemActions circuitItemActionsTop" aria-label={`Ações do circuito ${circuit.name}`}>
+                <button type="button" className="editBtn" onClick={() => editCircuit(circuit)}>Editar circuito</button>
+                <button type="button" className="deleteBtn" onClick={() => setCircuitDeleteTarget(circuit)}>Excluir circuito</button>
+              </div>
+            ) : null}
+
+            {isExpanded ? (
               <section className="circuitStagesSummary">
                 <div><span>Etapas</span><h4>Torneios do circuito</h4></div>
                 {selectedNames.length ? (
@@ -10073,12 +10080,6 @@ setNewPublicInfo({
               ) : null;
             })() : null}
 
-            {isExpanded ? (
-              <div className="circuitItemActions">
-                <button type="button" className="editBtn" onClick={() => editCircuit(circuit)}>Editar circuito</button>
-                <button type="button" className="deleteBtn" onClick={() => setCircuitDeleteTarget(circuit)}>Excluir circuito</button>
-              </div>
-            ) : null}
           </article>
         );
       })}

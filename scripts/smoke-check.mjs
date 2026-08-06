@@ -507,10 +507,20 @@ assert.ok(
 );
 assert.ok(
   styleSource.includes(".tournamentStatusSummary button.finished.selected")
-    && styleSource.includes("background: #dc2626")
+    && styleSource.includes("background: #8b5cf6 !important")
+    && styleSource.includes("background: #22c55e !important")
+    && styleSource.includes("background: #fb923c !important")
     && styleSource.includes(".proDashboard .eventManagerToolbar > button")
-    && styleSource.includes("linear-gradient(135deg, #f97316, #ea580c)"),
-  "Os encerrados não estão vermelhos ou os botões de criação não estão destacados em laranja."
+    && styleSource.includes("linear-gradient(135deg, #fb923c, #f97316) !important"),
+  "As cores dos filtros ou o destaque laranja dos botões de criação foram sobrescritos."
+);
+const circuitActionsPosition = mainSource.indexOf('className="circuitItemActions circuitItemActionsTop"');
+const circuitRankingPosition = mainSource.indexOf('className="circuitRankingBox"', circuitActionsPosition);
+assert.ok(
+  circuitActionsPosition >= 0
+    && circuitRankingPosition > circuitActionsPosition
+    && styleSource.includes("border-bottom: 1px solid var(--ui-border-soft) !important"),
+  "Editar e excluir circuito precisam aparecer antes do ranking no circuito expandido."
 );
 assert.ok(
   mainSource.includes("setTournaments(optimisticTournaments)")
