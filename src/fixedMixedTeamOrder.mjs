@@ -1,9 +1,9 @@
 const masculineFirstNames = new Set([
   "adriano", "alex", "alexandre", "anderson", "andre", "antonio", "atila",
-  "bruno", "caio", "carlos", "charles", "cristiano", "daniel", "davi",
+  "bruno", "caio", "calos", "carlo", "carlos", "charles", "cristiano", "daniel", "davi",
   "diego", "eduardo", "elton", "fabio", "felipe", "fernando", "francisco",
   "gabriel", "gilberto", "guilherme", "gustavo", "henrique", "igor", "joao",
-  "jorge", "jose", "julio", "kaio", "leandro", "leo", "leonardo", "lucas",
+  "jorge", "jose", "julio", "junior", "kaio", "leandro", "leo", "leonardo", "lucas",
   "luca", "luiz", "marcelo", "marcio", "marcos", "mateus", "matheus",
   "miguel", "murilo", "nicolas", "nicola", "oseias", "patrick", "paulo",
   "pedro", "rafael", "renato", "ricardo", "roberto", "rodrigo", "samuel",
@@ -41,19 +41,13 @@ export function classifyParticipantGender(value) {
   if (masculineFirstNames.has(firstName)) return "masculine";
   if (feminineFirstNames.has(firstName)) return "feminine";
 
-  // Fallback conservador para nomes brasileiros comuns que não estejam nas listas.
-  if (/(?:a|elle|elly|ine|ise|ice|iz|ys|ah)$/u.test(firstName)) return "feminine";
-  if (/(?:o|os|son|ton|el|eu|io|us|or|er|im)$/u.test(firstName)) return "masculine";
   return "unknown";
 }
 
 export function orderFixedMixedPair(firstParticipant, secondParticipant) {
   const firstGender = classifyParticipantGender(firstParticipant);
   const secondGender = classifyParticipantGender(secondParticipant);
-  const shouldSwap = (
-    (firstGender === "feminine" && secondGender !== "feminine")
-    || (secondGender === "masculine" && firstGender !== "masculine")
-  );
+  const shouldSwap = firstGender === "feminine" && secondGender === "masculine";
 
   return shouldSwap
     ? [secondParticipant, firstParticipant]
