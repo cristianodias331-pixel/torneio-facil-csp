@@ -14189,7 +14189,6 @@ html[data-theme="dark"] {
   color: var(--danger-text) !important;
 }
 
-.proDashboard.playAppShell button.shareTournamentBtn,
 .proDashboard.playAppShell button.shareHighlightBtn,
 .proDashboard.playAppShell button.sharePrimaryAction {
   border-color: rgba(31, 95, 196, 0.28) !important;
@@ -22624,7 +22623,7 @@ html[data-theme="dark"] .proDashboard.playAppShell button.mobileTournamentSwitch
 }
 .proDashboard .eventManagerToolbar h2 { margin: 3px 0 4px; font-size: clamp(1.35rem, 2vw, 1.85rem); }
 .proDashboard .eventManagerToolbar p { margin: 0; color: #64748b; font-weight: 650; }
-.proDashboard .eventManagerToolbar > button {
+.proDashboard.playAppShell .eventManagerToolbar > button {
   min-width: 156px;
   min-height: 46px;
   border: 1px solid #fb923c !important;
@@ -22632,7 +22631,7 @@ html[data-theme="dark"] .proDashboard.playAppShell button.mobileTournamentSwitch
   color: #ffffff !important;
   box-shadow: 0 12px 26px rgba(234, 88, 12, .30) !important;
 }
-.proDashboard .eventManagerToolbar > button:hover { background: linear-gradient(135deg, #f97316, #ea580c) !important; }
+.proDashboard.playAppShell .eventManagerToolbar > button:hover { background: linear-gradient(135deg, #f97316, #ea580c) !important; }
 .managerEyebrow { color: #2563eb; font-size: .72rem; font-weight: 950; letter-spacing: .12em; text-transform: uppercase; }
 
 .eventEditorOverlay {
@@ -22717,6 +22716,9 @@ html[data-theme="dark"] .proDashboard.playAppShell button.mobileTournamentSwitch
 .tournamentStatusSummary button.active.selected { background: #8b5cf6 !important; border-color: #a78bfa !important; }
 .tournamentStatusSummary button.upcoming.selected { background: #22c55e !important; border-color: #4ade80 !important; }
 .tournamentStatusSummary button.finished.selected { background: #fb923c !important; border-color: #fdba74 !important; }
+.proDashboard.playAppShell .tournamentStatusSummary > button.active:not(.selected) { color: #6d28d9 !important; background: #f3e8ff !important; border-color: #c4b5fd !important; }
+.proDashboard.playAppShell .tournamentStatusSummary > button.upcoming:not(.selected) { color: #166534 !important; background: #dcfce7 !important; border-color: #86efac !important; }
+.proDashboard.playAppShell .tournamentStatusSummary > button.finished:not(.selected) { color: #c2410c !important; background: #ffedd5 !important; border-color: #fdba74 !important; }
 .eventStatusEmpty { margin: 18px 0 4px; padding: 16px; border: 1px dashed #cbd5e1; border-radius: 14px; color: #64748b; text-align: center; }
 .proDashboard .tournamentTitleRow { align-items: center; }
 .proDashboard .tournamentLifecycleBadge { width: max-content; min-height: 25px; padding: 4px 8px; font-size: .66rem; }
@@ -23534,7 +23536,7 @@ html[data-theme="dark"] .publicPage .bracketTree .bracketRoundHeader h3,
 
 /* Chave compacta: evita sobreposições e preserva mais área para os nomes. */
 .bracketColumn.bracketTree {
-  --bracket-node-height: 172px;
+  --bracket-node-height: 192px;
 }
 
 .proDashboard .bracketTree .bracketRoundHeader,
@@ -23660,13 +23662,13 @@ html[data-theme="dark"] .publicPage .cupBrackets .bracketColumn.bracketTree .bra
 
 @media (max-width: 820px) {
   .bracketColumn.bracketTree {
-    --bracket-node-height: 170px;
+    --bracket-node-height: 192px;
   }
 }
 
 @media (max-width: 520px) {
   .bracketColumn.bracketTree {
-    --bracket-node-height: 168px;
+    --bracket-node-height: 192px;
   }
 
   .bracketTree .matchTeamName {
@@ -23715,44 +23717,103 @@ html[data-theme="dark"] .publicPage .cupBrackets .bracketColumn.bracketTree .bra
   -webkit-text-fill-color: #bfdbfe !important;
 }
 
-.bracketTree .universalMatchCard .matchCallButton {
-  min-height: 22px !important;
-  padding: 3px 5px !important;
-  border-radius: 7px !important;
-  font-size: 8px !important;
+.proDashboard.playAppShell .bracketTree button.matchCallButton,
+.proDashboard .bracketTree .universalMatchCard button.matchCallButton {
+  width: auto !important;
+  max-width: 92px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  max-height: 24px !important;
+  padding: 0 7px !important;
+  gap: 4px !important;
+  border-radius: 999px !important;
+  font-size: 8.5px !important;
   line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
 }
 
 /* Na primeira fase, aproxima os jogos do mesmo confronto seguinte e separa os pares. */
-.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(odd) > .universalMatchCard {
-  transform: translateY(6px);
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode.hasNext:nth-child(odd) > .universalMatchCard {
+  transform: translateY(4px);
 }
 
-.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(even) > .universalMatchCard {
-  transform: translateY(-6px);
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode.hasNext:nth-child(even) > .universalMatchCard {
+  transform: translateY(-4px);
 }
 
-.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(odd).hasNext::after {
-  top: calc(50% + 6px);
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode.hasNext:nth-child(odd)::after {
+  top: calc(50% + 4px);
 }
 
-.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(even).hasNext::after {
-  top: calc(50% - 6px);
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode.hasNext:nth-child(even)::after {
+  top: calc(50% - 4px);
 }
 
-.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(odd).hasNext.isTopSeed::after {
-  height: calc(100% - 10px);
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode.hasNext.isTopSeed::after {
+  height: calc(100% - 8px);
 }
 
 /* Pequena sobreposição elimina falhas de subpixel nos encontros das linhas. */
-.bracketTree .bracketMatchNode.hasNext.isBottomSeed::after {
-  right: calc((var(--bracket-gutter) / -2) - 2px);
-  width: calc((var(--bracket-gutter) / 2) + 2px);
+.bracketTree .bracketMatchNode.hasNext::after {
+  right: calc(var(--bracket-gutter) / -2);
+  width: calc((var(--bracket-gutter) / 2) + 1px);
+  border-radius: 0 !important;
+  box-sizing: border-box;
 }
 
 .bracketTree .bracketMatchNode.hasPrevious::before {
-  left: calc((var(--bracket-gutter) / -2) - 2px);
-  width: calc((var(--bracket-gutter) / 2) + 2px);
+  left: calc(var(--bracket-gutter) / -2);
+  width: calc((var(--bracket-gutter) / 2) + 1px);
+  border-radius: 0 !important;
+  box-sizing: border-box;
+}
+
+/* O maior cartao (sem BYE) define o espaco de cada posicao da chave. */
+.proDashboard .bracketTree .bracketMatchNode > .gameCard.universalMatchCard,
+.publicPage .bracketTree .bracketMatchNode > .gameCard.universalMatchCard {
+  align-self: center !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Jogos comuns usam controles menores; a chave mantem a Quadra como esta. */
+.proDashboard.playAppShell .schedule > .roundCard:not(.bracketRoundLane) .universalMatchCard button.courtNameBadge,
+.proDashboard.playAppShell .schedule > .roundCard:not(.bracketRoundLane) .universalMatchCard button.matchCallButton {
+  width: auto !important;
+  height: 30px !important;
+  min-height: 30px !important;
+  max-height: 30px !important;
+  padding: 0 9px !important;
+  gap: 5px !important;
+  border-radius: 999px !important;
+  font-size: 10px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+  box-shadow: none !important;
+}
+
+/* Acoes com significado conservam sua cor nos temas claro e escuro. */
+.proDashboard.playAppShell button.shareTournamentBtn {
+  border-color: #16a34a !important;
+  background: linear-gradient(135deg, #16a34a, #22c55e) !important;
+  color: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.proDashboard.playAppShell button.shareTournamentBtn:hover {
+  border-color: #15803d !important;
+  background: linear-gradient(135deg, #22c55e, #15803d) !important;
+}
+
+.proDashboard.playAppShell .tournamentActions button.shareTournamentBtn {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 42px !important;
+  padding: 8px 12px !important;
+  font-size: 12px !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
 }
 
 @media (max-width: 520px) {
