@@ -91,7 +91,7 @@ const expectedModalityLabels = [
   "Super 20 mista",
   "Simples 8 (1 contra 1 por jogo)",
   "Torneio modelo Campeonato Cearense",
-  "Modelo Play Ranking",
+  "Modelo Torneio 360",
 ];
 
 for (const label of expectedModalityLabels) {
@@ -117,6 +117,10 @@ const premiumPositions = premiumOrder.map((type) => premiumModalities.indexOf(ty
 assert.ok(premiumPositions.every((position) => position >= 0), "A lista Premium perdeu uma modalidade obrigatória.");
 assert.deepEqual([...premiumPositions].sort((a, b) => a - b), premiumPositions, "A ordem das modalidades está incorreta.");
 assert.ok(premiumModalities.includes('"Modelo Play Ranking"'), "O Modelo Play Ranking não está liberado no plano Premium.");
+assert.ok(
+  mainSource.includes('"Modelo Play Ranking": "Modelo Torneio 360"'),
+  "O nome público do Modelo Torneio 360 não preserva a modalidade interna existente."
+);
 
 assert.ok(mainSource.includes('type: "playranking"'), "A configuração do Modelo Play Ranking está ausente.");
 assert.ok(mainSource.includes("function getPlayRankingOpeningLosses"), "A transferência das derrotadas da primeira fase está ausente.");
@@ -653,6 +657,17 @@ assert.ok(
     && mainSource.includes('action: "brackets"')
     && mainSource.includes("Placares e resultados já preenchidos nas chaves podem ser removidos."),
   "A repetição de sorteios ou gerações não pede confirmação sobre os dados que podem mudar."
+);
+assert.ok(
+  mainSource.includes("const SHUFFLE_DURATION_SECONDS = 5")
+    && mainSource.includes("function moveShuffleAnimationItems(items)")
+    && mainSource.includes("items: moveShuffleAnimationItems(prev.items)")
+    && mainSource.includes("window.innerWidth <= 760")
+    && mainSource.includes("{shuffleOverlay && createPortal(")
+    && styleSource.includes("z-index: 20000")
+    && styleSource.includes("animation: shuffleProgressFill 5s linear forwards")
+    && styleSource.includes("max-width: 29vw"),
+  "O sorteio visual não está animado por 5 segundos ou ainda pode ficar coberto no celular."
 );
 assert.ok(
   mainSource.includes("Salvando antes de sair...")
