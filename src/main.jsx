@@ -9724,7 +9724,7 @@ setNewPublicInfo({
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={shareArenaProfile}><Share2 aria-hidden="true" /> Compartilhar perfil</button>
+                    <button type="button" className="shareTournamentBtn" onClick={shareArenaProfile}><Share2 aria-hidden="true" /> Compartilhar</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
@@ -9801,7 +9801,7 @@ setNewPublicInfo({
                   <div className="tournamentActions">
                     <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
                     <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-                    <button type="button" className="shareTournamentBtn" onClick={shareArenaProfile}><Share2 aria-hidden="true" /> Compartilhar perfil</button>
+                    <button type="button" className="shareTournamentBtn" onClick={shareArenaProfile}><Share2 aria-hidden="true" /> Compartilhar</button>
                     <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
                   </div>
                 </div>
@@ -10311,7 +10311,7 @@ setNewPublicInfo({
             <div className="tournamentActions">
               <button type="button" className="editBtn" onClick={() => openEditTournament(t)}>Editar</button>
               <button type="button" onClick={() => openTournament(t)}>Abrir</button>
-              <button type="button" className="shareTournamentBtn" onClick={shareArenaProfile}><Share2 aria-hidden="true" /> Compartilhar perfil</button>
+              <button type="button" className="shareTournamentBtn" onClick={shareArenaProfile}><Share2 aria-hidden="true" /> Compartilhar</button>
               <button type="button" className="deleteBtn" onClick={() => setDeleteTarget(t)}>Excluir</button>
             </div>
           </article>
