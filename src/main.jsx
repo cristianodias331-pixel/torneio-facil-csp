@@ -709,6 +709,34 @@ function getArenaPublicShareMessage(arenaId) {
 ${url}`;
 }
 
+const ARENA_DIRECTORY_REFRESH_INTERVAL_MS = 60_000;
+const ARENA_DIRECTORY_RETRY_DELAY_MS = 450;
+
+async function fetchPublicArenaDirectory({ search = null, limit = 250 } = {}) {
+  let lastError = null;
+
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const result = await supabase.rpc("list_public_arenas", {
+      p_search: search,
+      p_limit: limit,
+    });
+
+    if (!result.error) {
+      return {
+        data: Array.isArray(result.data) ? result.data : [],
+        error: null,
+      };
+    }
+
+    lastError = result.error;
+    if (attempt === 0) {
+      await new Promise((resolve) => setTimeout(resolve, ARENA_DIRECTORY_RETRY_DELAY_MS));
+    }
+  }
+
+  return { data: [], error: lastError };
+}
+
 function getAutomaticEventStatus(endDate) {
   if (!endDate) return "active";
   return String(endDate) < getBrazilTodayISO() ? "finished" : "active";
@@ -5292,37 +5320,51 @@ function PublicArenaDirectorySection({ title = "Encontre uma arena", description
 
   useEffect(() => {
     let active = true;
+    let requestInFlight = false;
+    let hasSuccessfulLoad = false;
 
-    async function loadArenas() {
-      setLoading(true);
-      const rpcResult = await supabase.rpc("list_public_arenas", {
-        p_search: null,
-        p_limit: 250,
-      });
+    async function loadArenas({ silent = false } = {}) {
+      if (requestInFlight) return;
+      requestInFlight = true;
+      if (!silent) setLoading(true);
 
-      let rows = rpcResult.data || [];
-      let loadError = rpcResult.error;
+      try {
+        const result = await fetchPublicArenaDirectory({ limit: 250 });
+        if (!active) return;
+        if (result.error) {
+          if (!hasSuccessfulLoad) setError("Não foi possível carregar as arenas agora.");
+          return;
+        }
 
-      // Compatibilidade durante a aplicação da migração: instalações antigas
-      // ainda conseguem listar os perfis que já estavam marcados como públicos.
-      if (loadError) {
-        const fallback = await supabase
-          .from("profiles")
-          .select("id, name, arena_name, city, state, photo_url")
-          .eq("is_public", true)
-          .order("arena_name", { ascending: true });
-        rows = fallback.data || [];
-        loadError = fallback.error;
+        hasSuccessfulLoad = true;
+        setArenas((result.data || []).filter((arena) => arena?.id));
+        setError("");
+      } finally {
+        requestInFlight = false;
+        if (active) setLoading(false);
       }
-
-      if (!active) return;
-      setArenas(rows.filter((arena) => arena?.id));
-      setError(loadError ? "Não foi possível carregar as arenas agora." : "");
-      setLoading(false);
     }
 
     void loadArenas();
-    return () => { active = false; };
+
+    const refreshArenas = () => void loadArenas({ silent: true });
+    const refreshVisibleArenas = () => {
+      if (document.visibilityState === "visible") refreshArenas();
+    };
+    const handleVisibilityChange = () => {
+      refreshVisibleArenas();
+    };
+    const refreshTimer = window.setInterval(refreshVisibleArenas, ARENA_DIRECTORY_REFRESH_INTERVAL_MS);
+
+    window.addEventListener("focus", refreshArenas);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshArenas);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   const filteredArenas = arenas.filter((arena) => {
@@ -5346,7 +5388,7 @@ function PublicArenaDirectorySection({ title = "Encontre uma arena", description
         <input
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Busque pelo nome da arena, cidade ou estado"
+          placeholder="Busque por arena, organizador, cidade ou estado"
         />
         <span aria-hidden="true">🔎</span>
       </label>
@@ -5373,7 +5415,8 @@ function PublicArenaDirectorySection({ title = "Encontre uma arena", description
                 <div className="publicArenaDirectoryInfo">
                   <small>Perfil da arena</small>
                   <h3>{arenaName}</h3>
-                  <p><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</p>
+                  <p className="publicArenaDirectoryOrganizer"><UserRound aria-hidden="true" /> Organizador: {arena.name || "Não informado"}</p>
+                  <p className="publicArenaDirectoryLocation"><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</p>
                 </div>
                 <button type="button" onClick={() => window.location.assign(getArenaPublicUrl(arena.id))}>
                   Ver perfil e eventos
@@ -6735,6 +6778,10 @@ function Dashboard({ profile, user, onProfileChange }) {
   const [openTournamentIds, setOpenTournamentIds] = useState(() => readOpenTournamentIds(user.id));
   const tournamentNavigationGuardRef = useRef(null);
   const openTournamentNavigationRef = useRef(readOpenTournamentNavigation(user.id));
+  const publicArenaProfilesLoaderRef = useRef(null);
+  const publicArenaProfilesInFlightRef = useRef(false);
+  const publicArenaProfilesRequestRef = useRef(0);
+  const publicArenaProfilesMountedRef = useRef(true);
   const [newName, setNewName] = useState("");
   const [newType, setNewType] = useState("");
 const [newGender, setNewGender] = useState("");
@@ -8356,40 +8403,51 @@ const [newPublicInfo, setNewPublicInfo] = useState({
   }
 
   async function loadPublicArenaProfiles() {
-    const currentArenaProfile = {
-      id: user.id,
-      name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
-      arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
-      city: organizerProfile.city || profile.city || "",
-      state: organizerProfile.state || profile.state || "",
-      photo_url: organizerProfile.photoUrl || profile.photo_url || "",
-      phone: organizerProfile.whatsapp || profile.phone || "",
-      address: organizerProfile.address || profile.address || "",
-      maps_link: organizerProfile.mapsLink || profile.maps_link || "",
-      instagram_handle: organizerProfile.instagramHandle || profile.instagram_handle || "",
-      instagram_link: organizerProfile.instagramLink || profile.instagram_link || "",
-      whatsapp_group_link: organizerProfile.whatsappGroupLink || profile.whatsapp_group_link || "",
-      is_public: true,
-    };
+    if (publicArenaProfilesInFlightRef.current) return;
+    publicArenaProfilesInFlightRef.current = true;
+    const requestId = publicArenaProfilesRequestRef.current + 1;
+    publicArenaProfilesRequestRef.current = requestId;
 
-    const { data, error } = await supabase.rpc("list_public_arenas", {
-      p_search: null,
-      p_limit: 250,
-    });
+    try {
+      const currentArenaProfile = {
+        id: user.id,
+        name: organizerProfile.organizerName || profile.name || user.email || "Organizador",
+        arena_name: organizerProfile.arenaName || profile.arena_name || profile.name || "Minha arena",
+        city: organizerProfile.city || profile.city || "",
+        state: organizerProfile.state || profile.state || "",
+        photo_url: organizerProfile.photoUrl || profile.photo_url || "",
+        phone: organizerProfile.whatsapp || profile.phone || "",
+        address: organizerProfile.address || profile.address || "",
+        maps_link: organizerProfile.mapsLink || profile.maps_link || "",
+        instagram_handle: organizerProfile.instagramHandle || profile.instagram_handle || "",
+        instagram_link: organizerProfile.instagramLink || profile.instagram_link || "",
+        whatsapp_group_link: organizerProfile.whatsappGroupLink || profile.whatsapp_group_link || "",
+        is_public: true,
+      };
 
-    if (error) {
-      console.error("Erro ao carregar perfis públicos:", error);
-      setPublicArenaProfiles([currentArenaProfile]);
-      return;
+      const { data, error } = await fetchPublicArenaDirectory({ limit: 250 });
+      if (!publicArenaProfilesMountedRef.current || requestId !== publicArenaProfilesRequestRef.current) return;
+
+      if (error) {
+        console.error("Erro ao carregar perfis públicos:", error);
+        setPublicArenaProfiles((currentProfiles) => (
+          currentProfiles.length > 0 ? currentProfiles : [currentArenaProfile]
+        ));
+        return;
+      }
+
+      const profiles = (data || [])
+        .filter((item) => item?.id)
+        .map((item) => ({ ...item, is_public: true }));
+
+      const withoutCurrent = profiles.filter((item) => item.id !== user.id);
+      setPublicArenaProfiles([currentArenaProfile, ...withoutCurrent]);
+    } finally {
+      publicArenaProfilesInFlightRef.current = false;
     }
-
-    const profiles = (data || [])
-      .filter((item) => item?.id)
-      .map((item) => ({ ...item, is_public: true }));
-
-    const withoutCurrent = profiles.filter((item) => item.id !== user.id);
-    setPublicArenaProfiles([currentArenaProfile, ...withoutCurrent]);
   }
+
+  publicArenaProfilesLoaderRef.current = loadPublicArenaProfiles;
 
 
   useEffect(() => {
@@ -8414,6 +8472,37 @@ const [newPublicInfo, setNewPublicInfo] = useState({
     }
 
     void loadDashboardData();
+  }, []);
+
+  useEffect(() => {
+    publicArenaProfilesMountedRef.current = true;
+    let refreshInFlight = false;
+
+    const refreshProfiles = () => {
+      if (refreshInFlight) return;
+      refreshInFlight = true;
+      Promise.resolve(publicArenaProfilesLoaderRef.current?.())
+        .catch((error) => console.error("Erro ao atualizar diretório de arenas:", error))
+        .finally(() => { refreshInFlight = false; });
+    };
+    const refreshVisibleProfiles = () => {
+      if (document.visibilityState === "visible") refreshProfiles();
+    };
+    const handleVisibilityChange = () => {
+      refreshVisibleProfiles();
+    };
+    const refreshTimer = window.setInterval(refreshVisibleProfiles, ARENA_DIRECTORY_REFRESH_INTERVAL_MS);
+
+    window.addEventListener("focus", refreshProfiles);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      publicArenaProfilesMountedRef.current = false;
+      publicArenaProfilesRequestRef.current += 1;
+      window.clearInterval(refreshTimer);
+      window.removeEventListener("focus", refreshProfiles);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   async function createTournament() {
@@ -9673,6 +9762,7 @@ setNewPublicInfo({
           {arena.photo_url ? <img src={arena.photo_url} alt={arena.arena_name || arena.name || "Arena"} /> : <span>{(arena.arena_name || arena.name || "Arena").slice(0, 2).toUpperCase()}</span>}
         </div>
         <strong>{arena.arena_name || arena.name || "Arena cadastrada"}</strong>
+        <small className="arenaFeedOrganizer"><UserRound aria-hidden="true" /> Organizador: {arena.name || "Não informado"}</small>
         <small><MapPin aria-hidden="true" /> {[arena.city, arena.state].filter(Boolean).join("/") || "Local não informado"}</small>
         <button type="button" onClick={() => openArenaProfile(arena)}>Acessar arena</button>
       </article>

@@ -16525,7 +16525,9 @@ html[data-theme="dark"] .proDashboard.playAppShell .tournamentItem.dragMode .mov
 .publicArenaDirectoryPhoto span { display: grid; width: 100%; height: 100%; place-items: center; color: #fff; font-size: 1.65rem; font-weight: 900; }
 .publicArenaDirectoryInfo small { color: #62cdf0; font-weight: 900; text-transform: uppercase; }
 .publicArenaDirectoryInfo h3 { margin: 8px 0; color: #fff; font-size: 1.2rem; }
-.publicArenaDirectoryInfo p { display: flex; gap: 7px; align-items: center; margin: 0 0 20px; color: #aabdd1; }
+.publicArenaDirectoryInfo p { display: flex; gap: 7px; align-items: center; color: #aabdd1; }
+.publicArenaDirectoryInfo .publicArenaDirectoryOrganizer { margin: 0 0 7px; color: #d8e6f3; font-size: 0.88rem; font-weight: 800; }
+.publicArenaDirectoryInfo .publicArenaDirectoryLocation { margin: 0 0 20px; }
 .publicArenaDirectoryInfo svg { width: 16px; flex: 0 0 auto; }
 .publicArenaDirectoryCard > button { min-height: 46px; border: 0; border-radius: 14px; color: #fff; background: linear-gradient(135deg, #1768df, #05bcd4); font-weight: 900; cursor: pointer; }
 .publicDirectoryState { padding: 36px; border: 1px dashed rgba(126, 173, 217, 0.3); border-radius: 18px; color: #b9c9da; text-align: center; }
@@ -17832,6 +17834,11 @@ html[data-theme="dark"] .rankingExportNotice.warning {
 .proDashboard .arenaPublicTournamentCard small,
 .proDashboard .arenaPublicPublicationsHeader span {
   color: var(--ui-muted) !important;
+}
+
+.proDashboard .arenaFeedCard .arenaFeedOrganizer {
+  color: var(--ui-text) !important;
+  font-weight: 850 !important;
 }
 
 .proDashboard .arenaPublicHero {
