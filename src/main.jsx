@@ -1576,6 +1576,7 @@ const modalityDisplayNames = {
   "Super 16 Mista (Dupla Fixa)": "Super 8 (dupla fixa)",
   "Simples 8": "Simples 8 (1 contra 1 por jogo)",
   "Campeonato Cearense": "Torneio modelo Campeonato Cearense",
+  "Modelo Play Ranking": "Modelo Torneio 360",
 };
 
 function getModalityDisplayName(type) {
@@ -5973,7 +5974,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 6, Super 8, Super 12, modalidades mistas, Simples 8, Copa 18, Torneio modelo Campeonato Cearense ou Modelo Play Ranking conforme a realidade do evento.
+                Selecione Super 6, Super 8, Super 12, modalidades mistas, Simples 8, Copa 18, Torneio modelo Campeonato Cearense ou Modelo Torneio 360 conforme a realidade do evento.
               </p>
             </div>
 
@@ -6166,7 +6167,7 @@ function Login({
             />
 
             <Info
-              title="Modelo Play Ranking"
+              title="Modelo Torneio 360"
               text="Mantém a fase de grupos e os critérios do modelo Campeonato Cearense, mas acrescenta uma segunda oportunidade: as duplas derrotadas somente na primeira fase efetivamente jogada da Eliminatória Principal também entram na Disputa Paralela. Elas são ordenadas pela qualidade da derrota e recebem prioridade na montagem da nova chave."
             />
           </div>
@@ -10607,7 +10608,7 @@ setNewPublicInfo({
 
     {allowedTypes.includes("Modelo Play Ranking") && (
       <Info
-        title="Modelo Play Ranking"
+        title="Modelo Torneio 360"
         text="Usa a mesma fase de grupos do modelo Campeonato Cearense. A diferença é que as duplas derrotadas somente na primeira fase jogada da Eliminatória Principal também seguem para a Disputa Paralela, com prioridade e sem confronto direto entre elas na estreia sempre que houver uma dupla vinda dos grupos disponível."
       />
     )}
@@ -11217,6 +11218,52 @@ function getShuffleNames(data, config) {
   }
 
   return data.players || [];
+}
+
+const SHUFFLE_DURATION_SECONDS = 5;
+const SHUFFLE_MOVEMENT_INTERVAL_MS = 620;
+
+function createShuffleSlots(count, compact = false) {
+  const maxColumns = compact ? 3 : 5;
+  const columns = Math.min(count, Math.max(2, Math.min(maxColumns, Math.ceil(Math.sqrt(count * 1.35)))));
+  const rows = Math.max(1, Math.ceil(count / columns));
+
+  return Array.from({ length: count }, (_, index) => {
+    const column = index % columns;
+    const row = Math.floor(index / columns);
+    const rowItems = Math.min(columns, count - row * columns);
+    const rowOffset = (columns - rowItems) / 2;
+
+    return {
+      left: 7 + ((column + rowOffset + 0.5) / columns) * 86,
+      top: 8 + ((row + 0.5) / rows) * 84,
+    };
+  });
+}
+
+function createShuffleAnimationItems(names) {
+  const compact = typeof window !== "undefined" && window.innerWidth <= 760;
+  const slots = shuffleArray(createShuffleSlots(names.length, compact));
+
+  return names.map((name, index) => ({
+    id: `shuffle-name-${index}`,
+    name,
+    ...slots[index],
+    rotation: (index % 2 === 0 ? -1 : 1) * (1 + (index % 3)),
+  }));
+}
+
+function moveShuffleAnimationItems(items) {
+  if (items.length < 2) return items;
+
+  const offset = 1 + Math.floor(Math.random() * (items.length - 1));
+  const positions = items.map(({ left, top }) => ({ left, top }));
+
+  return items.map((item, index) => ({
+    ...item,
+    ...positions[(index + offset) % positions.length],
+    rotation: -item.rotation + (index % 2 === 0 ? 1 : -1),
+  }));
 }
 
 class TournamentErrorBoundary extends React.Component {
@@ -12077,15 +12124,19 @@ function shuffleNames() {
     return;
   }
 
-  let seconds = 10;
-  let animationNames = shuffleArray(names);
+  let seconds = SHUFFLE_DURATION_SECONDS;
 
-  setShuffleOverlay({ seconds, names: animationNames });
+  setShuffleOverlay({
+    seconds,
+    items: createShuffleAnimationItems(names),
+  });
 
   const interval = setInterval(() => {
-    animationNames = shuffleArray(names);
-    setShuffleOverlay((prev) => (prev ? { ...prev, names: animationNames } : null));
-  }, 250);
+    setShuffleOverlay((prev) => (prev ? {
+      ...prev,
+      items: moveShuffleAnimationItems(prev.items),
+    } : null));
+  }, SHUFFLE_MOVEMENT_INTERVAL_MS);
   shuffleAnimationTimerRef.current = interval;
 
   const countdown = setInterval(() => {
@@ -12118,7 +12169,7 @@ function generate() {
       "Rodadas e jogos criados",
       isCearenseData(data)
         ? isPlayRankingData(data)
-          ? "A fase de grupos do Modelo Play Ranking foi montada com sucesso."
+          ? "A fase de grupos do Modelo Torneio 360 foi montada com sucesso."
           : "A fase de grupos do Campeonato Cearense foi montada com sucesso."
         : "A fase de grupos da Copa foi montada com sucesso."
     );
@@ -12467,39 +12518,42 @@ return (
       onConfirm={clearTable}
     />
 
-    {shuffleOverlay && (
-      <div className="shuffleOverlay">
+    {shuffleOverlay && createPortal(
+      <div className="shuffleOverlay" role="dialog" aria-modal="true" aria-label="Sorteio dos participantes">
         <div className="shuffleBox">
           <div className="shuffleHeader">
             <div>
-              <h2>Sorteando nomes...</h2>
-              <p>Os participantes estão sendo embaralhados.</p>
+              <span className="shuffleEyebrow">Sorteio em andamento</span>
+              <h2>{isCupType(config) ? "Sorteando grupos..." : "Sorteando nomes..."}</h2>
+              <p>Os participantes estão trocando de posição até a formação final.</p>
             </div>
 
-            <div className="shuffleTimer">{shuffleOverlay.seconds}s</div>
+            <div className="shuffleTimer" aria-live="polite">{shuffleOverlay.seconds}s</div>
           </div>
 
           <div className="shuffleStage">
-            {shuffleOverlay.names.map((name, index) => (
+            {shuffleOverlay.items.map((item) => (
               <div
                 className="floatingName"
-                key={index + "-" + name}
+                key={item.id}
+                title={item.name}
                 style={{
-                  left: `${8 + ((index * 17) % 76)}%`,
-                  top: `${12 + ((index * 29) % 70)}%`,
-                  animationDelay: `${(index % 6) * 0.08}s`,
+                  left: `${item.left}%`,
+                  top: `${item.top}%`,
+                  transform: `translate(-50%, -50%) rotate(${item.rotation}deg)`,
                 }}
               >
-                {name}
+                <span>{item.name}</span>
               </div>
             ))}
           </div>
 
           <div className="shuffleProgress">
-            <div style={{ width: `${((10 - shuffleOverlay.seconds) / 10) * 100}%` }} />
+            <div />
           </div>
         </div>
-      </div>
+      </div>,
+      document.body
     )}
 
     <div className="appPage">
@@ -12939,7 +12993,7 @@ function TournamentFormatInfoButton({ data, config, publicView = false }) {
             <header className="formatInfoHeader">
               <div>
                 <span>Formato calculado para {summary.teamCount} duplas</span>
-                <h2>{isPlayRanking ? "Modelo Play Ranking" : "Torneio modelo Campeonato Cearense"}</h2>
+                <h2>{isPlayRanking ? "Modelo Torneio 360" : "Torneio modelo Campeonato Cearense"}</h2>
                 <p>Veja o caminho das duplas desde os grupos até as duas chaves eliminatórias.</p>
               </div>
               <button ref={closeRef} type="button" onClick={() => setOpen(false)} aria-label="Fechar explicação">×</button>
@@ -12984,7 +13038,7 @@ function TournamentFormatInfoButton({ data, config, publicView = false }) {
                 <article className="formatInfoTransfer">
                   <span className="formatInfoStep">4</span>
                   <div>
-                    <h3>A diferença do Modelo Play Ranking</h3>
+                    <h3>A diferença do Modelo Torneio 360</h3>
                     <p>Quando todos os placares de {summary.mainOpeningRound} estiverem preenchidos, as <strong>{summary.transferredCount} duplas derrotadas nos jogos dessa primeira fase</strong> também entram na Disputa Paralela.</p>
                     <p>As derrotadas das fases seguintes continuam eliminadas da Principal e não mudam mais de chave.</p>
                     <p>Entre elas, fica à frente quem perdeu pela menor diferença de games; depois, quem fez mais games na derrota e, em seguida, quem teve a melhor campanha nos grupos.</p>

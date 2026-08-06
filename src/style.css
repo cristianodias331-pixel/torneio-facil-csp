@@ -980,21 +980,28 @@ tbody tr:hover {
 .shuffleOverlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 20000;
   background: rgba(2, 6, 23, 0.82);
   backdrop-filter: blur(10px);
   display: grid;
   place-items: center;
-  padding: 22px;
+  padding: max(14px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  overflow: auto;
 }
 
 .shuffleBox {
   width: min(900px, 100%);
-  height: min(620px, 88vh);
+  height: min(620px, calc(100vh - 28px));
+  height: min(620px, calc(100dvh - 28px));
+  max-height: calc(100vh - 28px);
+  max-height: calc(100dvh - 28px);
   border-radius: 36px;
   padding: 22px;
   color: white;
   overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 16px;
   background:
     radial-gradient(circle at 20% 20%, rgba(236, 72, 153, 0.2), transparent 30%),
     radial-gradient(circle at 80% 70%, rgba(34, 197, 94, 0.2), transparent 30%),
@@ -1008,7 +1015,17 @@ tbody tr:hover {
   justify-content: space-between;
   gap: 16px;
   align-items: center;
-  margin-bottom: 18px;
+  margin: 0;
+}
+
+.shuffleEyebrow {
+  display: block;
+  margin-bottom: 5px;
+  color: #67e8f9;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
 }
 
 .shuffleHeader h2 {
@@ -1036,7 +1053,8 @@ tbody tr:hover {
 
 .shuffleStage {
   position: relative;
-  height: calc(100% - 140px);
+  min-height: 0;
+  height: auto;
   border-radius: 24px;
   background:
     radial-gradient(circle at 20% 30%, rgba(56, 189, 248, 0.18), transparent 28%),
@@ -1047,41 +1065,51 @@ tbody tr:hover {
 
 .floatingName {
   position: absolute;
-  transform: translate(-50%, -50%);
   background: white;
   color: #0f172a;
   border-radius: 999px;
   padding: 10px 14px;
   font-weight: 950;
   white-space: nowrap;
+  max-width: clamp(90px, 18vw, 190px);
   border: 1px solid rgba(226, 232, 240, 0.9);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
-  animation: floatName 0.8s ease-in-out infinite alternate;
+  transition:
+    left 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.58s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.58s ease;
+  will-change: left, top, transform;
 }
 
-@keyframes floatName {
-  from {
-    transform: translate(-50%, -50%) scale(0.9) rotate(-2deg);
-  }
-
-  to {
-    transform: translate(-50%, -50%) scale(1.08) rotate(2deg);
-  }
+.floatingName span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .shuffleProgress {
   height: 10px;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.16);
-  margin-top: 18px;
+  margin: 0;
   overflow: hidden;
 }
 
 .shuffleProgress div {
+  width: 100%;
   height: 100%;
   background: linear-gradient(90deg, #22c55e, #38bdf8);
   border-radius: inherit;
-  transition: width 0.25s linear;
+  transform: scaleX(0);
+  transform-origin: left center;
+  animation: shuffleProgressFill 5s linear forwards;
+}
+
+@keyframes shuffleProgressFill {
+  to {
+    transform: scaleX(1);
+  }
 }
 
 /* =========================
@@ -1104,6 +1132,63 @@ tbody tr:hover {
 }
 
 @media (max-width: 760px) {
+  .shuffleOverlay {
+    place-items: center;
+    padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left));
+  }
+
+  .shuffleBox {
+    height: min(570px, calc(100vh - 20px));
+    height: min(570px, calc(100dvh - 20px));
+    max-height: calc(100vh - 20px);
+    max-height: calc(100dvh - 20px);
+    padding: 14px;
+    gap: 11px;
+    border-radius: 24px;
+  }
+
+  .shuffleHeader {
+    gap: 10px;
+  }
+
+  .shuffleHeader h2 {
+    font-size: clamp(20px, 6vw, 25px);
+  }
+
+  .shuffleHeader p {
+    max-width: 230px;
+    margin-top: 3px;
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .shuffleEyebrow {
+    font-size: 9px;
+  }
+
+  .shuffleTimer {
+    width: 58px;
+    height: 58px;
+    flex: 0 0 58px;
+    border-radius: 18px;
+    font-size: 20px;
+  }
+
+  .shuffleStage {
+    border-radius: 18px;
+  }
+
+  .floatingName {
+    max-width: 29vw;
+    padding: 7px 9px;
+    font-size: 11px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.24);
+  }
+
+  .shuffleProgress {
+    height: 8px;
+  }
+
   .loginPage {
     padding: 18px;
     align-items: start;
