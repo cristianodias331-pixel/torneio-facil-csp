@@ -23673,3 +23673,91 @@ html[data-theme="dark"] .publicPage .cupBrackets .bracketColumn.bracketTree .bra
     font-size: 12.5px;
   }
 }
+
+/* Hierarquia da chave: a fase aparece uma única vez no topo de cada coluna. */
+.bracketTree .matchCardPhase {
+  display: none !important;
+}
+
+.bracketTree .matchCardMeta {
+  min-height: 19px;
+  justify-content: flex-end;
+}
+
+.proDashboard .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3,
+.publicPage .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3 {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #174ea6 !important;
+  -webkit-text-fill-color: #174ea6 !important;
+  font-size: 12.5px !important;
+  font-weight: 950 !important;
+  letter-spacing: .025em !important;
+  text-transform: uppercase !important;
+}
+
+.proDashboard .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3::before,
+.publicPage .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3::before {
+  content: "" !important;
+  display: block !important;
+  width: 4px !important;
+  height: 15px !important;
+  flex: 0 0 4px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(180deg, #2563eb, #14b8d4) !important;
+}
+
+html[data-theme="dark"] .proDashboard .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3,
+html[data-theme="dark"] .publicPage .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3,
+.proDashboard.theme-dark .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3 {
+  color: #bfdbfe !important;
+  -webkit-text-fill-color: #bfdbfe !important;
+}
+
+.bracketTree .universalMatchCard .matchCallButton {
+  min-height: 22px !important;
+  padding: 3px 5px !important;
+  border-radius: 7px !important;
+  font-size: 8px !important;
+  line-height: 1 !important;
+}
+
+/* Na primeira fase, aproxima os jogos do mesmo confronto seguinte e separa os pares. */
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(odd) > .universalMatchCard {
+  transform: translateY(6px);
+}
+
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(even) > .universalMatchCard {
+  transform: translateY(-6px);
+}
+
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(odd).hasNext::after {
+  top: calc(50% + 6px);
+}
+
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(even).hasNext::after {
+  top: calc(50% - 6px);
+}
+
+.bracketTreeCanvas > .bracketRoundLane:first-child .bracketMatchNode:nth-child(odd).hasNext.isTopSeed::after {
+  height: calc(100% - 10px);
+}
+
+/* Pequena sobreposição elimina falhas de subpixel nos encontros das linhas. */
+.bracketTree .bracketMatchNode.hasNext.isBottomSeed::after {
+  right: calc((var(--bracket-gutter) / -2) - 2px);
+  width: calc((var(--bracket-gutter) / 2) + 2px);
+}
+
+.bracketTree .bracketMatchNode.hasPrevious::before {
+  left: calc((var(--bracket-gutter) / -2) - 2px);
+  width: calc((var(--bracket-gutter) / 2) + 2px);
+}
+
+@media (max-width: 520px) {
+  .proDashboard .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3,
+  .publicPage .cupBrackets .bracketColumn.bracketTree .bracketRoundHeader h3 {
+    font-size: 12px !important;
+  }
+}
