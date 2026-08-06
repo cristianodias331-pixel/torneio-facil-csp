@@ -13159,6 +13159,118 @@ function ConfirmDuplicateCourtModal({ kind, number, onCancel, onConfirm }) {
   );
 }
 
+function UniversalMatchCard({
+  game,
+  phaseLabel,
+  courtNumbers = [],
+  winningScore = 4,
+  readOnly = false,
+  blocked = false,
+  isBye = false,
+  onEditCourt = null,
+  onScoreChange = null,
+  onCallGame = null,
+}) {
+  const winnerSide = isBye ? null : getScoreWinnerSide(game, winningScore);
+  const isFinished = winnerSide !== null;
+  const hasScore = game?.s1 !== "" && game?.s1 != null && game?.s2 !== "" && game?.s2 != null;
+  const qualifiedTeam = game?.ids1?.length
+    ? game?.team1
+    : game?.ids2?.length
+      ? game?.team2
+      : null;
+  const team1 = isBye
+    ? qualifiedTeam
+    : game?.team1;
+  const team2 = isBye
+    ? ["BYE"]
+    : game?.team2;
+  const teamName = (team, fallback = "Aguardando") => {
+    if (Array.isArray(team)) {
+      const names = team.filter(Boolean);
+      return names.length > 0 ? names.join(" + ") : fallback;
+    }
+    return team ? String(team) : fallback;
+  };
+  const statusLabel = isBye
+    ? "BYE"
+    : isFinished
+      ? "Finalizado"
+      : blocked
+        ? "Aguardando definição"
+        : "Aguardando placar";
+
+  const renderScore = (field, value, side) => {
+    if (isBye) {
+      return side === "team2"
+        ? <span className="matchByeScore">BYE</span>
+        : <span className="matchScorePlaceholder" aria-hidden="true">—</span>;
+    }
+
+    if (readOnly) {
+      return hasScore
+        ? <output className="matchScoreOutput">{value}</output>
+        : <span className="matchScorePlaceholder" aria-label="Placar ainda não informado">—</span>;
+    }
+
+    return (
+      <input
+        className="matchScoreInput"
+        type="text"
+        min="0"
+        max={getMaxScore(winningScore)}
+        inputMode="numeric"
+        pattern="[0-9]*"
+        value={value ?? ""}
+        onChange={(event) => onScoreChange?.(field, event.target.value)}
+        disabled={blocked}
+        aria-label={`Placar de ${teamName(side === "team1" ? team1 : team2)}`}
+      />
+    );
+  };
+
+  return (
+    <article
+      className={`gameCard universalMatchCard ${isBye ? "byeGameCard universalMatchCard--bye" : ""} ${isFinished || isBye ? "gameFinished universalMatchCard--finished" : "gameWaiting"} ${readOnly ? "publicReadOnlyGame universalMatchCard--readonly" : ""}`}
+      aria-label={`${phaseLabel}: ${teamName(team1)} versus ${teamName(team2)}`}
+    >
+      <div className="matchCardMeta">
+        <span className="matchCardPhase">{phaseLabel}</span>
+        <span className={`matchCardStatus ${isBye ? "is-bye" : isFinished ? "is-finished" : "is-waiting"}`}>{statusLabel}</span>
+      </div>
+
+      {!isBye ? (
+        <div className="matchCardControls">
+          <CourtBadge
+            label={getGameCourtLabel(game, courtNumbers)}
+            editable={!readOnly && Boolean(onEditCourt)}
+            onClick={onEditCourt || undefined}
+          />
+          {!readOnly && onCallGame ? (
+            <button type="button" className="voiceBtn matchCallButton" onClick={onCallGame} disabled={blocked}>
+              🔊 Chamar jogo
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="matchTeamStack">
+        <div className={`matchTeamRow ${winnerSide === "team1" ? "is-winner" : winnerSide === "team2" ? "is-loser" : ""}`}>
+          <span className="matchTeamName">{teamName(team1)}</span>
+          <span className="matchScoreCell">{renderScore("s1", game?.s1, "team1")}</span>
+        </div>
+
+        <div className="matchVsDivider" aria-hidden="true"><span>VS</span></div>
+
+        <div className={`matchTeamRow ${isBye ? "is-bye" : winnerSide === "team2" ? "is-winner" : winnerSide === "team1" ? "is-loser" : ""}`}>
+          <span className="matchTeamName">{teamName(team2)}</span>
+          <span className="matchScoreCell">{renderScore("s2", game?.s2, "team2")}</span>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function ScheduleView({
   schedule,
   updateScore = () => {},
@@ -13212,91 +13324,23 @@ function ScheduleView({
           </div>
 
           {round.map((game, gameIndex) => {
-            const winnerSide = getScoreWinnerSide(game, winningScore);
-            const isFinished = winnerSide !== null;
-            const hasPublicScore = readOnly && game.s1 !== "" && game.s1 != null && game.s2 !== "" && game.s2 != null;
-
             return (
-            <div className={`gameCard ${isFinished ? "gameFinished" : "gameWaiting"} ${readOnly ? "publicReadOnlyGame" : ""}`} key={gameIndex}>
-              <div className={`gameTopLine ${readOnly ? "publicGameTopLine" : ""}`}>
-                {showGroupName && game.groupName ? <span className="gameGroupLabel">{game.groupName}</span> : null}
-                <CourtBadge
-                  label={getGameCourtLabel(game, courtNumbers)}
-                  editable={!readOnly && Boolean(onEditCourt)}
-                  onClick={() => onEditCourt?.({ scope: "schedule", roundIndex, gameIndex, game })}
-                />
-              </div>
-
-              <div className={`gameTeams ${readOnly ? "publicGameTeams" : ""}`}>
-                <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1.join(" + ")}</div>
-                <span>x</span>
-                <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2.join(" + ")}</div>
-              </div>
-
-              <div
-                className={`scoreRow ${readOnly ? "publicReadOnlyScoreRow" : ""}`}
-                aria-label={readOnly ? (hasPublicScore ? `Placar: ${game.s1} a ${game.s2}` : "Placar ainda não informado") : undefined}
-              >
-                {readOnly ? (
-                  hasPublicScore ? (
-                    <>
-                      <output className="publicScoreValue">{game.s1}</output>
-                      <span aria-hidden="true">—</span>
-                      <output className="publicScoreValue">{game.s2}</output>
-                    </>
-                  ) : (
-                    <span className="publicScorePending">Aguardando placar</span>
-                  )
-                ) : (
-                  <>
-           <input
-  type="text"
-  min="0"
- max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s1}
-  onChange={(e) => updateScore(roundIndex, gameIndex, "s1", e.target.value)}
-  readOnly={readOnly}
-  disabled={readOnly}
-/>
-
-                <span>—</span>
-
-               <input
-  type="text"
-  min="0"
-  max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s2}
-  onChange={(e) => updateScore(roundIndex, gameIndex, "s2", e.target.value)}
-  readOnly={readOnly}
-  disabled={readOnly}
-/>
-                  </>
-                )}
-              </div>
-
-              {!readOnly ? (
-                <div className="voiceActions gameVoiceActions">
-                  <button
-                    type="button"
-                    className="voiceBtn"
-                    onClick={() =>
-                      speakGame(game, {
-                        roundLabel: `Rodada ${roundIndex + 1}`,
-                        includeGroup: showGroupName,
-                        repeat: voiceRepeat,
-                        courtNumbers,
-                      })
-                    }
-                  >
-                    🔊 Chamar jogo
-                  </button>
-                </div>
-              ) : null}
-            </div>
+              <UniversalMatchCard
+                key={gameIndex}
+                game={game}
+                phaseLabel={showGroupName && game.groupName ? `${game.groupName} · Rodada ${roundIndex + 1}` : `Rodada ${roundIndex + 1}`}
+                courtNumbers={courtNumbers}
+                winningScore={winningScore}
+                readOnly={readOnly}
+                onEditCourt={!readOnly && onEditCourt ? () => onEditCourt({ scope: "schedule", roundIndex, gameIndex, game }) : null}
+                onScoreChange={!readOnly ? (field, value) => updateScore(roundIndex, gameIndex, field, value) : null}
+                onCallGame={!readOnly ? () => speakGame(game, {
+                  roundLabel: `Rodada ${roundIndex + 1}`,
+                  includeGroup: showGroupName,
+                  repeat: voiceRepeat,
+                  courtNumbers,
+                }) : null}
+              />
             );
           })}
         </div>
@@ -13809,7 +13853,7 @@ function CupBracketView({
         setVoiceRepeat={setVoiceRepeat}
       />
 
-      <div className="cupBrackets">
+      <div className="cupBrackets bracketTreeCollection">
         {groupedBrackets.main?.length > 0 && (
           <BracketColumn
             title={data.cupConfig?.mainBracketName || "Principal"}
@@ -13847,124 +13891,101 @@ function BracketColumn({
   courtNumbers = [],
   onEditCourt = null,
 }) {
+  const isPlacementRound = (round) => {
+    const normalizedTitle = String(round?.title || "").toLocaleLowerCase("pt-BR");
+    return normalizedTitle.includes("3º")
+      || normalizedTitle.includes("3°")
+      || normalizedTitle.includes("terceiro");
+  };
+  const treeRounds = rounds.filter((round) => !isPlacementRound(round));
+  const placementRounds = rounds.filter(isPlacementRound);
+  const openingGames = Math.max(1, treeRounds[0]?.games?.length || 1);
+
+  const renderBracketGame = (game, round) => {
+    const blocked =
+      game.isBye
+      || !game.ids1?.length
+      || !game.ids2?.length
+      || game.team1?.[0] === "Aguardando"
+      || game.team2?.[0] === "Aguardando";
+
+    return (
+      <UniversalMatchCard
+        game={game}
+        phaseLabel={round.title === "Disputa Paralela" ? title : round.title}
+        courtNumbers={courtNumbers}
+        winningScore={winningScore}
+        blocked={blocked}
+        isBye={Boolean(game.isBye)}
+        onEditCourt={onEditCourt && !game.isBye ? () => onEditCourt({ scope: "bracket", matchKey: game.matchKey, game }) : null}
+        onScoreChange={!game.isBye ? (field, value) => updateBracketScore(game.matchKey, field, value) : null}
+        onCallGame={!game.isBye ? () => speakGame(game, {
+          roundLabel: `${round.title} da chave ${title}`,
+          includeGroup: false,
+          repeat: voiceRepeat,
+        }) : null}
+      />
+    );
+  };
+
   return (
-    <div className={`bracketColumn ${rounds?.[0]?.games?.[0]?.phase === "repechage" ? "repechageBracket" : "mainBracket"}`}>
-      <h3>{title}</h3>
+    <section className={`bracketColumn bracketTree ${rounds?.[0]?.games?.[0]?.phase === "repechage" ? "repechageBracket" : "mainBracket"}`}>
+      <div className="bracketTreeHeading">
+        <div>
+          <span>Chave eliminatória</span>
+          <h3>{title}</h3>
+        </div>
+        <span className="bracketSwipeHint">Deslize para acompanhar as fases →</span>
+      </div>
 
-      {rounds.map((round, roundIndex) => (
-        <div className="roundCard" key={roundIndex}>
-          <div className="roundHeader">
-            <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
-
-            <div className="voiceActions">
-              <button
-                type="button"
-                className="voiceBtn"
-                onClick={() => speakBracketRound(round, voiceRepeat, courtNumbers)}
-              >
-                🔊 Chamar fase
-              </button>
-
-              <button
-                type="button"
-                className="secondaryBtn stopBtn"
-                onClick={stopSpeech}
-              >
-                ⏹️ Parar
-              </button>
-            </div>
-          </div>
-
-          {round.games.map((game) => {
-            const blocked =
-              game.isBye ||
-              !game.ids1?.length ||
-              !game.ids2?.length ||
-              game.team1?.[0] === "Aguardando" ||
-              game.team2?.[0] === "Aguardando";
-
-            const winnerSide = getScoreWinnerSide(game, winningScore);
-            const isFinished = winnerSide !== null || game.isBye;
-
-            return (
-              <div className={`gameCard ${game.isBye ? "byeGameCard" : ""} ${isFinished ? "gameFinished" : "gameWaiting"}`} key={game.matchKey}>
-                <div className="gameTopLine">
-                  <CourtBadge
-                    label={getGameCourtLabel(game, courtNumbers)}
-                    editable={Boolean(onEditCourt) && !game.isBye}
-                    onClick={() => onEditCourt?.({ scope: "bracket", matchKey: game.matchKey, game })}
-                  />
-                </div>
-
-                {game.isBye ? (
-                  <div className="gameTeams byeGameTeams">
-                    <div className="byeQualifiedTeam">
-                      {game.ids1?.length
-                        ? game.team1?.join(" + ")
-                        : game.ids2?.length
-                          ? game.team2?.join(" + ")
-                          : "Aguardando"}
-                    </div>
-                    <strong className="byeBadge">BYE</strong>
-                  </div>
-                ) : (
-                  <div className="gameTeams">
-                    <div className={winnerSide === "team1" ? "winnerTeam" : winnerSide === "team2" ? "loserTeam" : ""}>{game.team1?.join(" + ") || "Aguardando"}</div>
-                    <span>x</span>
-                    <div className={winnerSide === "team2" ? "winnerTeam" : winnerSide === "team1" ? "loserTeam" : ""}>{game.team2?.join(" + ") || "Aguardando"}</div>
-                  </div>
-                )}
-
-                {!game.isBye ? (
-                <div className="scoreRow">
-                  <input
-  type="text"
-  min="0"
-  max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s1}
-  onChange={(e) => updateBracketScore(game.matchKey, "s1", e.target.value)}
-  disabled={blocked}
-/>
-
-                  <span>—</span>
-
-            <input
-  type="text"
-  min="0"
-  max={getMaxScore(winningScore)}
-  inputMode="numeric"
-  pattern="[0-9]*"
-  value={game.s2}
-  onChange={(e) => updateBracketScore(game.matchKey, "s2", e.target.value)}
-  disabled={blocked}
-/>
-                </div>
-                ) : null}
-
-                <div className="voiceActions gameVoiceActions">
-                  <button
-                    type="button"
-                    className="voiceBtn"
-                    onClick={() =>
-                      speakGame(game, {
-                        roundLabel: `${round.title} da chave ${title}`,
-                        includeGroup: false,
-                        repeat: voiceRepeat,
-                      })
-                    }
-                    disabled={blocked}
-                  >
-                    🔊 Chamar jogo
+      <div className="bracketTreeViewport" tabIndex="0" aria-label={`Chave ${title}. Role horizontalmente para acompanhar as fases.`}>
+        <div className="bracketTreeCanvas" style={{ "--bracket-opening-games": openingGames }}>
+          {treeRounds.map((round, roundIndex) => (
+            <section className="roundCard bracketRoundLane" key={`${round.title}-${roundIndex}`}>
+              <div className="roundHeader bracketRoundHeader">
+                <h3>{round.title === "Disputa Paralela" ? title : round.title}</h3>
+                <div className="voiceActions bracketRoundActions">
+                  <button type="button" className="voiceBtn" onClick={() => speakBracketRound(round, voiceRepeat, courtNumbers)}>
+                    🔊 Chamar fase
                   </button>
+                  <button type="button" className="secondaryBtn stopBtn" onClick={stopSpeech}>⏹️ Parar</button>
                 </div>
               </div>
-            );
-          })}
+
+              <div className="bracketRoundTrack">
+                {round.games.map((game, gameIndex) => (
+                  <div
+                    className={`bracketMatchNode ${roundIndex > 0 ? "hasPrevious" : ""} ${roundIndex < treeRounds.length - 1 ? "hasNext" : ""} ${gameIndex % 2 === 0 ? "isTopSeed" : "isBottomSeed"}`}
+                    key={game.matchKey}
+                  >
+                    {renderBracketGame(game, round)}
+                  </div>
+                ))}
+              </div>
+            </section>
+          ))}
         </div>
-      ))}
-    </div>
+      </div>
+
+      {placementRounds.length > 0 ? (
+        <div className="bracketPlacementSection">
+          {placementRounds.map((round, roundIndex) => (
+            <section className="roundCard bracketPlacementRound" key={`${round.title}-placement-${roundIndex}`}>
+              <div className="roundHeader bracketRoundHeader">
+                <h3>{round.title}</h3>
+                <div className="voiceActions bracketRoundActions">
+                  <button type="button" className="voiceBtn" onClick={() => speakBracketRound(round, voiceRepeat, courtNumbers)}>🔊 Chamar fase</button>
+                  <button type="button" className="secondaryBtn stopBtn" onClick={stopSpeech}>⏹️ Parar</button>
+                </div>
+              </div>
+              <div className="bracketPlacementGames">
+                {round.games.map((game) => <div key={game.matchKey}>{renderBracketGame(game, round)}</div>)}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -14933,30 +14954,19 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
 
 function PublicScheduleView({ schedule, showGroupName = false, courtNumbers = [] }) {
   return (
-    <div className="schedule">
+    <div className="schedule readOnlySchedule publicSchedule">
       {schedule.map((round, roundIndex) => (
-        <div className="roundCard" key={roundIndex}>
-          <h3>Rodada {roundIndex + 1}</h3>
+        <div className="roundCard readOnlyRoundCard publicReadOnlyRound" key={roundIndex}>
+          <div className="roundHeader"><h3>Rodada {roundIndex + 1}</h3></div>
 
           {round.map((game, gameIndex) => (
-            <div className="gameCard" key={gameIndex}>
-              {showGroupName && game.groupName ? <span className="gameGroupLabel">{game.groupName}</span> : null}
-              <CourtBadge label={getGameCourtLabel(game, courtNumbers)} />
-
-              <div className="gameTeams">
-                <div>{game.team1.join(" + ")}</div>
-                <span>x</span>
-                <div>{game.team2.join(" + ")}</div>
-              </div>
-
-              <div className="publicScore">
-                {game.s1 === "" || game.s2 === "" ? (
-                  <span>Aguardando placar</span>
-                ) : (
-                  <strong>{game.s1} — {game.s2}</strong>
-                )}
-              </div>
-            </div>
+            <UniversalMatchCard
+              key={gameIndex}
+              game={game}
+              phaseLabel={showGroupName && game.groupName ? `${game.groupName} · Rodada ${roundIndex + 1}` : `Rodada ${roundIndex + 1}`}
+              courtNumbers={courtNumbers}
+              readOnly
+            />
           ))}
         </div>
       ))}
@@ -14976,7 +14986,7 @@ function PublicCupBracketView({
   if (mainRounds.length === 0 && repechageRounds.length === 0) return null;
 
   return (
-    <div className="cupBrackets publicCupBrackets">
+    <div className="cupBrackets publicCupBrackets bracketTreeCollection">
       {mainRounds.length > 0 ? (
         <PublicBracketColumn
           rounds={mainRounds}
@@ -15000,35 +15010,68 @@ function PublicCupBracketView({
 function PublicBracketColumn({ rounds = [], title, variant, courtNumbers = [] }) {
   if (rounds.length === 0) return null;
 
+  const isPlacementRound = (round) => {
+    const normalizedTitle = String(round?.title || "").toLocaleLowerCase("pt-BR");
+    return normalizedTitle.includes("3º")
+      || normalizedTitle.includes("3°")
+      || normalizedTitle.includes("terceiro");
+  };
+  const treeRounds = rounds.filter((round) => !isPlacementRound(round));
+  const placementRounds = rounds.filter(isPlacementRound);
+  const openingGames = Math.max(1, treeRounds[0]?.games?.length || 1);
+
+  const renderPublicBracketGame = (game, round) => (
+    <UniversalMatchCard
+      game={game}
+      phaseLabel={round.title || title}
+      courtNumbers={courtNumbers}
+      readOnly
+      isBye={Boolean(game.isBye)}
+    />
+  );
+
   return (
-    <section className={`bracketColumn publicBracketColumn publicBracketColumn--${variant || "main"}`}>
-      {title ? <h3 className="publicBracketTitle">{title}</h3> : null}
+    <section className={`bracketColumn bracketTree publicBracketColumn publicBracketColumn--${variant || "main"}`}>
+      <div className="bracketTreeHeading">
+        <div>
+          <span>Chave eliminatória</span>
+          {title ? <h3 className="publicBracketTitle">{title}</h3> : null}
+        </div>
+        <span className="bracketSwipeHint">Deslize para acompanhar as fases →</span>
+      </div>
 
-      {rounds.map((round, roundIndex) => (
-        <div className="roundCard publicBracketRound" key={roundIndex}>
-          <h3>{round.title || title}</h3>
-
-          {round.games.map((game) => (
-            <div className="gameCard publicBracketGame" key={game.matchKey}>
-              <CourtBadge label={getGameCourtLabel(game, courtNumbers)} />
-
-              <div className="gameTeams publicBracketTeams">
-                <div>{game.team1?.join(" + ") || "Aguardando"}</div>
-                <span>x</span>
-                <div>{game.team2?.join(" + ") || "Aguardando"}</div>
+      <div className="bracketTreeViewport" tabIndex="0" aria-label={`Chave ${title}. Role horizontalmente para acompanhar as fases.`}>
+        <div className="bracketTreeCanvas" style={{ "--bracket-opening-games": openingGames }}>
+          {treeRounds.map((round, roundIndex) => (
+            <section className="roundCard publicBracketRound bracketRoundLane" key={`${round.title}-${roundIndex}`}>
+              <div className="roundHeader bracketRoundHeader"><h3>{round.title || title}</h3></div>
+              <div className="bracketRoundTrack">
+                {round.games.map((game, gameIndex) => (
+                  <div
+                    className={`bracketMatchNode ${roundIndex > 0 ? "hasPrevious" : ""} ${roundIndex < treeRounds.length - 1 ? "hasNext" : ""} ${gameIndex % 2 === 0 ? "isTopSeed" : "isBottomSeed"}`}
+                    key={game.matchKey}
+                  >
+                    {renderPublicBracketGame(game, round)}
+                  </div>
+                ))}
               </div>
-
-              <div className="publicScore publicBracketScore">
-                {game.s1 === "" || game.s2 === "" ? (
-                  <span>Aguardando placar</span>
-                ) : (
-                  <strong>{game.s1} — {game.s2}</strong>
-                )}
-              </div>
-            </div>
+            </section>
           ))}
         </div>
-      ))}
+      </div>
+
+      {placementRounds.length > 0 ? (
+        <div className="bracketPlacementSection publicBracketPlacementSection">
+          {placementRounds.map((round, roundIndex) => (
+            <section className="roundCard publicBracketRound bracketPlacementRound" key={`${round.title}-placement-${roundIndex}`}>
+              <div className="roundHeader bracketRoundHeader"><h3>{round.title}</h3></div>
+              <div className="bracketPlacementGames">
+                {round.games.map((game) => <div key={game.matchKey}>{renderPublicBracketGame(game, round)}</div>)}
+              </div>
+            </section>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }

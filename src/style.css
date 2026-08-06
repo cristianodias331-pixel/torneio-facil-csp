@@ -22840,3 +22840,694 @@ html[data-theme="dark"] .circuitStageList button,
 html[data-theme="dark"] .circuitStageList button small,
 .proDashboard.theme-dark .circuitStageList button small { color: #b4c2d4; }
 @media (max-width: 620px) { .circuitStageList { grid-template-columns: 1fr; } }
+
+/* =========================================================
+   CARTÃO UNIVERSAL DE PARTIDA + CHAVE VISUAL DE COPA
+   Camada exclusivamente visual. Reaproveita jogos e placares
+   existentes sem alterar sorteios, confrontos ou classificação.
+   ========================================================= */
+
+.gameCard.universalMatchCard {
+  --match-card-bg: #ffffff;
+  --match-card-border: #d7e3f1;
+  --match-card-text: #12213a;
+  --match-card-muted: #64748b;
+  --match-row-bg: #f8fbff;
+  --match-row-border: #dbe6f2;
+  --match-divider: #cad8e8;
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 8px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 11px !important;
+  overflow: hidden !important;
+  border: 1px solid var(--match-card-border) !important;
+  border-radius: 17px !important;
+  background: var(--match-card-bg) !important;
+  color: var(--match-card-text) !important;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, .07) !important;
+}
+
+.universalMatchCard::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, #2563eb, #22c55e);
+}
+
+.matchCardMeta,
+.matchCardControls,
+.matchTeamRow,
+.matchVsDivider {
+  min-width: 0;
+}
+
+.matchCardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.matchCardPhase,
+.matchCardStatus {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 23px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 9px;
+  font-weight: 950;
+  line-height: 1.1;
+  letter-spacing: .055em;
+  text-transform: uppercase;
+}
+
+.matchCardPhase {
+  overflow: hidden;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.matchCardStatus {
+  flex: 0 0 auto;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.matchCardStatus.is-finished {
+  border-color: #86efac;
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.matchCardStatus.is-bye {
+  border-color: #fbbf24;
+  background: #fff7d6;
+  color: #a34b00;
+}
+
+.matchCardControls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid var(--match-row-border);
+}
+
+.universalMatchCard .courtNameBadge,
+.universalMatchCard button.courtNameBadge {
+  min-height: 29px !important;
+  padding: 5px 10px !important;
+  font-size: 10px !important;
+}
+
+.universalMatchCard .matchCallButton {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 31px !important;
+  margin: 0 !important;
+  padding: 6px 10px !important;
+  border-radius: 10px !important;
+  font-size: 10px !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
+}
+
+.matchTeamStack {
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.matchTeamRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 7px 7px 7px 11px;
+  border: 1px solid var(--match-row-border);
+  border-radius: 12px;
+  background: var(--match-row-bg);
+  color: var(--match-card-text);
+  transition: border-color .18s ease, background .18s ease, color .18s ease;
+}
+
+.matchTeamRow.is-winner {
+  border-color: #86efac;
+  border-left: 4px solid #22c55e;
+  padding-left: 8px;
+  background: #ecfdf5;
+  color: #166534;
+}
+
+.matchTeamRow.is-loser {
+  border-left: 4px solid #cbd5e1;
+  padding-left: 8px;
+  background: #f8fafc;
+  color: #64748b;
+}
+
+.matchTeamRow.is-bye {
+  border-color: #f6c85f;
+  background: #fff9e6;
+  color: #9a4d00;
+}
+
+.matchTeamName {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.22;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.matchScoreCell {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  min-width: 42px;
+}
+
+.matchScoreInput,
+.matchScoreOutput,
+.matchScorePlaceholder,
+.matchByeScore {
+  display: grid !important;
+  width: 38px !important;
+  height: 38px !important;
+  min-width: 38px !important;
+  min-height: 38px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  place-items: center !important;
+  border: 1px solid #b9c9dc !important;
+  border-radius: 10px !important;
+  background: #ffffff !important;
+  color: #13233b !important;
+  font: 950 14px/1 inherit !important;
+  text-align: center !important;
+  box-shadow: none !important;
+}
+
+.matchScoreInput:focus {
+  border-color: #2563eb !important;
+  outline: 3px solid rgba(37, 99, 235, .13) !important;
+}
+
+.matchScoreInput:disabled {
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+.matchScorePlaceholder {
+  border-style: dashed !important;
+  color: #94a3b8 !important;
+}
+
+.matchByeScore {
+  border-color: #f59e0b !important;
+  background: linear-gradient(180deg, #fff7cc, #fde68a) !important;
+  color: #92400e !important;
+  font-size: 9px !important;
+  letter-spacing: .06em;
+}
+
+.matchVsDivider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  height: 18px;
+  color: #d95b13;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+
+.matchVsDivider::before,
+.matchVsDivider::after {
+  content: "";
+  height: 1px;
+  background: var(--match-divider);
+}
+
+.universalMatchCard--readonly .matchCardControls {
+  justify-content: flex-start;
+}
+
+.universalMatchCard--bye::before {
+  background: linear-gradient(180deg, #fbbf24, #f59e0b);
+}
+
+/* Rodadas comuns usam os mesmos cartões em uma grade compacta. */
+.schedule > .roundCard:not(.bracketRoundLane) {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 13px !important;
+  min-width: 0 !important;
+}
+
+.schedule > .roundCard:not(.bracketRoundLane) > .roundHeader,
+.schedule > .roundCard:not(.bracketRoundLane) > h3 {
+  grid-column: 1 / -1 !important;
+}
+
+/* Cada disputa é uma árvore independente; a rolagem pertence só à chave. */
+.cupBrackets.bracketTreeCollection {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 22px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+.bracketColumn.bracketTree {
+  --bracket-round-width: clamp(252px, 22vw, 286px);
+  --bracket-gutter: 54px;
+  --bracket-node-height: 202px;
+  --bracket-line: #8da5c1;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 12px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  margin: 0 !important;
+  padding: 15px !important;
+  overflow: hidden !important;
+  border: 1px solid #d4e1ef !important;
+  border-radius: 20px !important;
+  background: linear-gradient(180deg, #f8fbff, #f2f7fc) !important;
+}
+
+.bracketTreeHeading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 1px 2px 10px;
+  border-bottom: 1px solid #dbe5f0;
+}
+
+.bracketTreeHeading > div { min-width: 0; }
+.bracketTreeHeading span:first-child {
+  display: block;
+  margin-bottom: 3px;
+  color: #2563eb;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.bracketTreeHeading h3 {
+  margin: 0 !important;
+  color: #14233a !important;
+  font-size: clamp(17px, 2vw, 22px) !important;
+  line-height: 1.1 !important;
+}
+.bracketSwipeHint {
+  flex: 0 0 auto;
+  color: #64748b !important;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: normal !important;
+  text-transform: none !important;
+}
+
+.bracketTreeViewport {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 2px 2px 13px;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: #60a5fa #dbe7f3;
+  scrollbar-width: thin;
+}
+
+.bracketTreeViewport:focus-visible {
+  border-radius: 12px;
+  outline: 3px solid rgba(37, 99, 235, .18);
+  outline-offset: 2px;
+}
+
+.bracketTreeViewport::-webkit-scrollbar { height: 9px; }
+.bracketTreeViewport::-webkit-scrollbar-track { border-radius: 999px; background: #dbe7f3; }
+.bracketTreeViewport::-webkit-scrollbar-thumb { border-radius: 999px; background: linear-gradient(90deg, #2563eb, #14b8d4); }
+
+.bracketTreeCanvas {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: var(--bracket-round-width) !important;
+  gap: var(--bracket-gutter) !important;
+  width: max-content !important;
+  min-width: 100% !important;
+  align-items: stretch !important;
+}
+
+.bracketTree .roundCard.bracketRoundLane {
+  display: grid !important;
+  grid-template-rows: auto 1fr !important;
+  gap: 8px !important;
+  width: var(--bracket-round-width) !important;
+  min-width: var(--bracket-round-width) !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.bracketTree .bracketRoundHeader {
+  display: grid !important;
+  align-content: start !important;
+  gap: 7px !important;
+  min-height: 79px !important;
+  margin: 0 !important;
+  padding: 9px 10px !important;
+  border: 1px solid #d7e3f1 !important;
+  border-radius: 13px !important;
+  background: #ffffff !important;
+}
+
+.bracketTree .bracketRoundHeader h3 {
+  margin: 0 !important;
+  color: #182840 !important;
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+}
+
+.bracketRoundActions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+.bracketRoundActions button {
+  width: auto !important;
+  min-width: 0 !important;
+  min-height: 29px !important;
+  margin: 0 !important;
+  padding: 5px 8px !important;
+  border-radius: 9px !important;
+  font-size: 9px !important;
+}
+
+.bracketRoundTrack {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  min-height: calc(var(--bracket-opening-games) * var(--bracket-node-height)) !important;
+}
+
+.bracketMatchNode {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1 1 0;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--bracket-node-height);
+}
+
+.bracketMatchNode > .universalMatchCard { z-index: 2; }
+
+.bracketMatchNode.hasPrevious::before,
+.bracketMatchNode.hasNext::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  z-index: 0;
+  width: calc(var(--bracket-gutter) / 2);
+  border-top: 2px solid var(--bracket-line);
+}
+
+.bracketMatchNode.hasPrevious::before { left: calc(var(--bracket-gutter) / -2); }
+.bracketMatchNode.hasNext::after { right: calc(var(--bracket-gutter) / -2); }
+.bracketMatchNode.hasNext.isTopSeed::after {
+  height: 100%;
+  border-right: 2px solid var(--bracket-line);
+  border-radius: 0 9px 9px 0;
+}
+
+.bracketPlacementSection {
+  display: grid;
+  gap: 10px;
+  padding-top: 3px;
+}
+.bracketPlacementRound {
+  display: grid !important;
+  gap: 11px !important;
+  margin: 0 !important;
+  padding: 13px !important;
+  border: 1px dashed #d6a84f !important;
+  border-radius: 16px !important;
+  background: #fffbeb !important;
+}
+.bracketPlacementRound .bracketRoundHeader {
+  min-height: 0 !important;
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+.bracketPlacementGames {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Tema escuro: contraste preservado sem apagar nomes ou placares. */
+html[data-theme="dark"] .gameCard.universalMatchCard,
+.proDashboard.theme-dark .gameCard.universalMatchCard {
+  --match-card-bg: #101b29;
+  --match-card-border: #30445c;
+  --match-card-text: #f1f5f9;
+  --match-card-muted: #a9b8ca;
+  --match-row-bg: #172536;
+  --match-row-border: #334a63;
+  --match-divider: #3c526d;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, .24) !important;
+}
+
+html[data-theme="dark"] .matchCardPhase,
+.proDashboard.theme-dark .matchCardPhase {
+  border-color: #365f9d;
+  background: #172b49;
+  color: #93c5fd;
+}
+html[data-theme="dark"] .matchCardStatus,
+.proDashboard.theme-dark .matchCardStatus {
+  border-color: #41566f;
+  background: #182638;
+  color: #b7c5d6;
+}
+html[data-theme="dark"] .matchCardStatus.is-finished,
+.proDashboard.theme-dark .matchCardStatus.is-finished {
+  border-color: #267a59;
+  background: #103027;
+  color: #86efac;
+}
+html[data-theme="dark"] .matchCardStatus.is-bye,
+.proDashboard.theme-dark .matchCardStatus.is-bye {
+  border-color: #b7791f;
+  background: #3b2a0c;
+  color: #fde68a;
+}
+html[data-theme="dark"] .matchTeamRow.is-winner,
+.proDashboard.theme-dark .matchTeamRow.is-winner {
+  border-color: #28785a;
+  border-left-color: #34d399;
+  background: #103128;
+  color: #dcfce7;
+}
+html[data-theme="dark"] .matchTeamRow.is-loser,
+.proDashboard.theme-dark .matchTeamRow.is-loser {
+  border-left-color: #52657b;
+  background: #131f2e;
+  color: #a7b5c6;
+}
+html[data-theme="dark"] .matchTeamRow.is-bye,
+.proDashboard.theme-dark .matchTeamRow.is-bye {
+  border-color: #9b6b1d;
+  background: #35270e;
+  color: #fde68a;
+}
+html[data-theme="dark"] .matchScoreInput,
+html[data-theme="dark"] .matchScoreOutput,
+html[data-theme="dark"] .matchScorePlaceholder,
+.proDashboard.theme-dark .matchScoreInput,
+.proDashboard.theme-dark .matchScoreOutput,
+.proDashboard.theme-dark .matchScorePlaceholder {
+  border-color: #48617d !important;
+  background: #0b1522 !important;
+  color: #f8fafc !important;
+}
+html[data-theme="dark"] .matchByeScore,
+.proDashboard.theme-dark .matchByeScore {
+  border-color: #d69422 !important;
+  background: linear-gradient(180deg, #4a350c, #38270a) !important;
+  color: #fde68a !important;
+}
+html[data-theme="dark"] .bracketColumn.bracketTree,
+.proDashboard.theme-dark .bracketColumn.bracketTree {
+  --bracket-line: #58708d;
+  border-color: #2e435a !important;
+  background: linear-gradient(180deg, #111d2c, #0d1724) !important;
+}
+html[data-theme="dark"] .bracketTreeHeading,
+.proDashboard.theme-dark .bracketTreeHeading { border-color: #30445c; }
+html[data-theme="dark"] .bracketTreeHeading h3,
+.proDashboard.theme-dark .bracketTreeHeading h3 { color: #f8fafc !important; }
+html[data-theme="dark"] .bracketSwipeHint,
+.proDashboard.theme-dark .bracketSwipeHint { color: #a7b6c8 !important; }
+html[data-theme="dark"] .bracketTree .bracketRoundHeader,
+.proDashboard.theme-dark .bracketTree .bracketRoundHeader {
+  border-color: #324961 !important;
+  background: #172536 !important;
+}
+html[data-theme="dark"] .bracketTree .bracketRoundHeader h3,
+.proDashboard.theme-dark .bracketTree .bracketRoundHeader h3 { color: #f1f5f9 !important; }
+html[data-theme="dark"] .bracketPlacementRound,
+.proDashboard.theme-dark .bracketPlacementRound {
+  border-color: #9a6a1e !important;
+  background: #2b220f !important;
+}
+
+@media (max-width: 820px) {
+  .schedule > .roundCard:not(.bracketRoundLane) {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .bracketColumn.bracketTree {
+    --bracket-round-width: min(78vw, 278px);
+    --bracket-gutter: 42px;
+    --bracket-node-height: 198px;
+    padding: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .bracketTreeHeading { align-items: start; }
+  .bracketSwipeHint { max-width: 128px; text-align: right; }
+  .bracketTreeCanvas { scroll-snap-type: x proximity; }
+  .bracketRoundLane { scroll-snap-align: start; }
+  .bracketPlacementGames { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 520px) {
+  .gameCard.universalMatchCard {
+    padding: 10px !important;
+    border-radius: 15px !important;
+  }
+  .matchCardMeta { align-items: flex-start; }
+  .matchCardPhase { max-width: calc(100% - 92px); }
+  .matchCardControls { gap: 6px; }
+  .universalMatchCard .matchCallButton {
+    padding-inline: 8px !important;
+    font-size: 9px !important;
+  }
+  .matchTeamRow {
+    grid-template-columns: minmax(0, 1fr) 40px;
+    min-height: 41px;
+    padding-left: 9px;
+  }
+  .matchTeamName { font-size: 11.5px; }
+  .matchScoreCell { width: 40px; min-width: 40px; }
+  .matchScoreInput,
+  .matchScoreOutput,
+  .matchScorePlaceholder,
+  .matchByeScore {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    min-height: 36px !important;
+  }
+  .bracketColumn.bracketTree {
+    --bracket-round-width: min(80vw, 270px);
+    --bracket-node-height: 194px;
+    padding: 10px !important;
+  }
+  .bracketTreeHeading { display: grid; gap: 6px; }
+  .bracketSwipeHint { max-width: none; text-align: left; }
+  .bracketRoundActions { grid-template-columns: minmax(0, 1fr) auto !important; }
+}
+
+/* Neutraliza grades antigas das partidas sem afetar outros cartões do painel. */
+.proDashboard .schedule .gameCard.universalMatchCard,
+.publicPage .schedule .gameCard.universalMatchCard,
+.proDashboard .bracketTree .gameCard.universalMatchCard,
+.publicPage .bracketTree .gameCard.universalMatchCard {
+  display: grid !important;
+  grid-template-areas: none !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-auto-columns: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: auto !important;
+  padding: 11px !important;
+}
+
+.proDashboard .bracketTree .roundCard.bracketRoundLane,
+.publicPage .bracketTree .roundCard.bracketRoundLane {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto 1fr !important;
+  border: 0 !important;
+  border-left: 0 !important;
+}
+
+.proDashboard .bracketTree .roundCard.bracketRoundLane::before,
+.proDashboard .bracketTree .roundCard.bracketRoundLane::after,
+.publicPage .bracketTree .roundCard.bracketRoundLane::before,
+.publicPage .bracketTree .roundCard.bracketRoundLane::after {
+  content: none !important;
+  display: none !important;
+}
+
+.proDashboard .bracketTree .bracketRoundHeader h3,
+.publicPage .bracketTree .bracketRoundHeader h3 {
+  display: block !important;
+  width: auto !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #182840 !important;
+  -webkit-text-fill-color: #182840 !important;
+  text-shadow: none !important;
+  filter: none !important;
+  box-shadow: none !important;
+}
+
+html[data-theme="dark"] .proDashboard .bracketTree .bracketRoundHeader h3,
+html[data-theme="dark"] .publicPage .bracketTree .bracketRoundHeader h3,
+.proDashboard.theme-dark .bracketTree .bracketRoundHeader h3 {
+  color: #f1f5f9 !important;
+  -webkit-text-fill-color: #f1f5f9 !important;
+}
