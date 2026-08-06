@@ -10,6 +10,7 @@ import {
   ChevronDown,
   ChevronRight,
   ClipboardPaste,
+  CircleHelp,
   Clock3,
   Copy,
   Dices,
@@ -1600,6 +1601,7 @@ const allowedByPlan = {
     "Simples 8",
     "Copa - 18 duplas",
     "Campeonato Cearense",
+    "Modelo Play Ranking",
   ],
 };
 
@@ -1718,6 +1720,16 @@ const modalityConfig = {
     defaultRepechageName: "Disputa Paralela",
     courts: 6,
   },
+
+  "Modelo Play Ranking": {
+    type: "playranking",
+    cupMode: "playranking",
+    allowedTeamCounts: Array.from({ length: 29 }, (_, index) => index + 4),
+    defaultTeams: 4,
+    defaultMainBracketName: "Eliminatória Principal",
+    defaultRepechageName: "Disputa Paralela",
+    courts: 6,
+  },
 };
 
 function getWinningScore(data) {
@@ -1750,7 +1762,7 @@ function isGameFinished(game, winningScore = 4) {
 }
 
 function isCupType(config) {
-  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha" || config?.type === "cearense";
+  return config?.type === "cup" || config?.type === "cup18" || config?.type === "cup21" || config?.type === "copinha" || config?.type === "cearense" || config?.type === "playranking";
 }
 
 function isMixedType(config) {
@@ -1955,8 +1967,56 @@ function createCearenseGroups(teamCount) {
   });
 }
 
+function describeCearenseGroupSizes(groups) {
+  const countsBySize = groups.reduce((summary, group) => {
+    const size = group.teamIds.length;
+    summary[size] = (summary[size] || 0) + 1;
+    return summary;
+  }, {});
+
+  return Object.entries(countsBySize)
+    .sort(([firstSize], [secondSize]) => Number(firstSize) - Number(secondSize))
+    .map(([size, count]) => `${count} ${count === 1 ? "grupo" : "grupos"} de ${size} duplas`)
+    .join(" e ");
+}
+
+function getCearenseFormatSummary(teamCount, playRanking = false) {
+  const safeTeamCount = Math.max(4, Math.min(32, Number(teamCount) || 4));
+  const groups = createCearenseGroups(safeTeamCount);
+  const groupSizes = groups.map((group) => group.teamIds.length);
+  const gamesPerTeam = [...new Set(groupSizes.map((size) => size - 1))].sort((a, b) => a - b);
+  const groupMatches = groupSizes.reduce((total, size) => total + (size * (size - 1)) / 2, 0);
+  const mainCount = groups.length * 2;
+  const initialParallelCount = safeTeamCount - mainCount;
+  const mainBracketSize = getNextPowerOfTwo(mainCount);
+  const mainByes = mainBracketSize - mainCount;
+  const openingMainGames = mainCount - mainBracketSize / 2;
+  const transferredCount = playRanking ? openingMainGames : 0;
+  const finalParallelCount = initialParallelCount + transferredCount;
+  const parallelBracketSize = finalParallelCount >= 2 ? getNextPowerOfTwo(finalParallelCount) : finalParallelCount;
+  const parallelByes = Math.max(0, parallelBracketSize - finalParallelCount);
+
+  return {
+    teamCount: safeTeamCount,
+    groupCount: groups.length,
+    groupDescription: describeCearenseGroupSizes(groups),
+    gamesPerTeamDescription: gamesPerTeam.join(" ou "),
+    groupMatches,
+    mainCount,
+    initialParallelCount,
+    mainBracketSize,
+    mainOpeningRound: getEliminationRoundName(mainBracketSize),
+    mainByes,
+    openingMainGames,
+    transferredCount,
+    finalParallelCount,
+    parallelBracketSize,
+    parallelByes,
+  };
+}
+
 function createCupGroups(teamCount, format = "") {
-  if (format === "cearense") {
+  if (format === "cearense" || format === "playranking") {
     return createCearenseGroups(teamCount);
   }
 
@@ -2033,7 +2093,7 @@ function generateCupGroupSchedule(players, cupConfig) {
   const teamCount = cupConfig.teamCount || 12;
   const format = cupConfig.format || cupConfig.cupMode || "";
 
-  if (format === "cearense") {
+  if (format === "cearense" || format === "playranking") {
     return generateCearenseGroupSchedule(players, cupConfig);
   }
 
@@ -2085,7 +2145,11 @@ function isCopinhaData(data) {
 }
 
 function isCearenseData(data) {
-  return getCupFormat(data) === "cearense";
+  return getCupFormat(data) === "cearense" || getCupFormat(data) === "playranking";
+}
+
+function isPlayRankingData(data) {
+  return getCupFormat(data) === "playranking";
 }
 
 function resetCopinhaTieBreaks(data) {
@@ -2662,7 +2726,7 @@ function getCupQualified(data) {
   const format = getCupFormat(data);
   const teamCount = data.cupConfig?.teamCount || 12;
 
-  if (format === "cearense") {
+  if (format === "cearense" || format === "playranking") {
     return getCearenseQualified(data);
   }
 
@@ -3448,6 +3512,235 @@ function buildCearenseEliminationRounds(entries, bracketType, bracketTitle, incl
   return rounds;
 }
 
+function takeCompatibleParallelOpponent(entries, referenceEntry, fromEnd = true) {
+  if (!entries.length) return null;
+
+  const indexes = fromEnd
+    ? Array.from({ length: entries.length }, (_, index) => entries.length - 1 - index)
+    : Array.from({ length: entries.length }, (_, index) => index);
+  const compatibleIndex = indexes.find((index) => entries[index]?.groupId !== referenceEntry?.groupId);
+  const selectedIndex = compatibleIndex ?? indexes[0];
+
+  return entries.splice(selectedIndex, 1)[0] || null;
+}
+
+function pairPlayRankingTransferredEntries(transferredEntries, originalEntries) {
+  const ownerByOriginalIndex = Array(originalEntries.length).fill(-1);
+
+  function findOpponent(transferIndex, visitedOriginals) {
+    for (let originalIndex = originalEntries.length - 1; originalIndex >= 0; originalIndex -= 1) {
+      if (visitedOriginals.has(originalIndex)) continue;
+      if (originalEntries[originalIndex]?.groupId === transferredEntries[transferIndex]?.groupId) continue;
+
+      visitedOriginals.add(originalIndex);
+      const currentOwner = ownerByOriginalIndex[originalIndex];
+
+      if (currentOwner < 0 || findOpponent(currentOwner, visitedOriginals)) {
+        ownerByOriginalIndex[originalIndex] = transferIndex;
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  transferredEntries.forEach((_, transferIndex) => {
+    findOpponent(transferIndex, new Set());
+  });
+
+  const opponentIndexByTransfer = Array(transferredEntries.length).fill(-1);
+  ownerByOriginalIndex.forEach((transferIndex, originalIndex) => {
+    if (transferIndex >= 0) opponentIndexByTransfer[transferIndex] = originalIndex;
+  });
+  const usedOriginals = new Set(opponentIndexByTransfer.filter((index) => index >= 0));
+  const remainingOriginals = originalEntries.filter((_, index) => !usedOriginals.has(index));
+
+  const pairs = transferredEntries.map((entry, transferIndex) => {
+    const matchedOriginalIndex = opponentIndexByTransfer[transferIndex];
+    const opponent = matchedOriginalIndex >= 0
+      ? originalEntries[matchedOriginalIndex]
+      : takeCompatibleParallelOpponent(remainingOriginals, entry, true);
+
+    return [entry, opponent];
+  });
+
+  return { pairs, remainingOriginals };
+}
+
+function spreadPlayRankingOpeningPairs(pairs) {
+  if (pairs.length <= 2) return pairs;
+
+  const seedOrder = getBracketSeedOrder(pairs.length);
+  const spread = Array(pairs.length).fill(null);
+
+  pairs.forEach((pair, index) => {
+    spread[seedOrder[index] - 1] = pair;
+  });
+
+  return spread;
+}
+
+function buildPlayRankingParallelRounds(transferredEntries, originalEntries, bracketTitle) {
+  const transferred = [...transferredEntries];
+  const originals = [...originalEntries];
+  const totalEntries = transferred.length + originals.length;
+
+  if (totalEntries < 2) return [];
+
+  const bracketSize = getNextPowerOfTwo(totalEntries);
+  const openingGameCount = totalEntries - bracketSize / 2;
+  const transferredGamesCount = Math.min(openingGameCount, transferred.length, originals.length);
+  const transferredByeCount = transferred.length - transferredGamesCount;
+  const originalByeCount = originals.length - (transferredGamesCount + (openingGameCount - transferredGamesCount) * 2);
+  const openingPairs = [];
+
+  transferred.splice(0, transferredByeCount).forEach((entry) => {
+    openingPairs.push([entry, null]);
+  });
+
+  originals.splice(0, Math.max(0, originalByeCount)).forEach((entry) => {
+    openingPairs.push([entry, null]);
+  });
+
+  const transferPairing = pairPlayRankingTransferredEntries(transferred, originals);
+  openingPairs.push(...transferPairing.pairs);
+  originals.splice(0, originals.length, ...transferPairing.remainingOriginals);
+
+  while (originals.length > 1) {
+    const first = originals.shift();
+    openingPairs.push([first, takeCompatibleParallelOpponent(originals, first, true)]);
+  }
+
+  if (originals.length === 1) openingPairs.push([originals.shift(), null]);
+
+  while (openingPairs.length < bracketSize / 2) openingPairs.push([null, null]);
+
+  const openingRoundName = getEliminationRoundName(bracketSize);
+  const openingGames = spreadPlayRankingOpeningPairs(openingPairs).map(([entry1, entry2], index) => ({
+    ...createCopinhaBracketGame({
+      bracketType: "repechage",
+      roundName: openingRoundName,
+      matchKey: `repechage_r${bracketSize}_${index + 1}`,
+      entry1,
+      entry2,
+      court: index + 1,
+    }),
+    isBye: Boolean(entry1) !== Boolean(entry2),
+  }));
+  const rounds = [{ title: openingRoundName, bracketTitle, games: openingGames }];
+  let currentGames = openingGames;
+  let currentTeamCount = bracketSize;
+
+  while (currentGames.length > 1) {
+    const nextTeamCount = currentTeamCount / 2;
+    const nextRoundName = getEliminationRoundName(nextTeamCount);
+    const nextGames = buildNextRound(
+      currentGames,
+      "repechage",
+      nextRoundName,
+      `r${nextTeamCount}`
+    );
+
+    rounds.push({ title: nextRoundName, bracketTitle, games: nextGames });
+    currentGames = nextGames;
+    currentTeamCount = nextTeamCount;
+  }
+
+  return rounds;
+}
+
+function getPlayRankingOpeningLosses(data, mainRounds, qualifiedMain) {
+  const openingRound = mainRounds?.[0];
+
+  if (!openingRound) {
+    return { ready: false, roundName: "Primeira fase", losses: [] };
+  }
+
+  const storedGames = Array.isArray(data.brackets) ? data.brackets : [];
+  const storedByKey = new Map(storedGames.map((game) => [game.matchKey, game]));
+  const playedOpeningGames = openingRound.games
+    .filter((game) => !game.isBye && game.ids1?.length && game.ids2?.length)
+    .map((game) => {
+      const stored = storedByKey.get(game.matchKey) || {};
+      return {
+        ...game,
+        s1: stored.s1 ?? "",
+        s2: stored.s2 ?? "",
+      };
+    });
+
+  const ready = playedOpeningGames.length > 0 && playedOpeningGames.every((game) => (
+    isGameFinished(game, getWinningScore(data))
+  ));
+
+  if (!ready) {
+    return { ready: false, roundName: openingRound.title, losses: [] };
+  }
+
+  const entryById = new Map(qualifiedMain.map((entry) => [entry.id, entry]));
+  const seedIndexById = new Map(qualifiedMain.map((entry, index) => [entry.id, index]));
+  const losses = playedOpeningGames
+    .map((game) => {
+      const loserId = getGameLoserId(game, data);
+      const winnerSide = getScoreWinnerSide(game, getWinningScore(data));
+      const entry = entryById.get(loserId);
+
+      if (!entry || !winnerSide) return null;
+
+      const loserGames = winnerSide === "team1" ? Number(game.s2) : Number(game.s1);
+      const winnerGames = winnerSide === "team1" ? Number(game.s1) : Number(game.s2);
+
+      return {
+        ...entry,
+        playRankingOrigin: "main-opening-loss",
+        openingLossMargin: Math.abs(winnerGames - loserGames),
+        openingLossGames: loserGames,
+      };
+    })
+    .filter(Boolean)
+    .sort((first, second) => {
+      const marginDifference = first.openingLossMargin - second.openingLossMargin;
+      if (marginDifference !== 0) return marginDifference;
+
+      const gamesDifference = second.openingLossGames - first.openingLossGames;
+      if (gamesDifference !== 0) return gamesDifference;
+
+      const campaignDifference = compareCearenseCampaignMetrics(first, second);
+      if (campaignDifference !== 0) return campaignDifference;
+
+      const seedDifference = seedIndexById.get(first.id) - seedIndexById.get(second.id);
+      if (seedDifference !== 0) return seedDifference;
+
+      return first.name.localeCompare(second.name);
+    });
+
+  return { ready: true, roundName: openingRound.title, losses };
+}
+
+function generatePlayRankingBrackets(data) {
+  const qualified = getCearenseQualified(data);
+  const cupConfig = data.cupConfig || {};
+  const mainName = cupConfig.mainBracketName || "Eliminatória Principal";
+  const repechageName = cupConfig.repechageName || "Disputa Paralela";
+  const mainRounds = buildCearenseEliminationRounds(qualified.main, "main", mainName, true);
+  const openingLosses = getPlayRankingOpeningLosses(data, mainRounds, qualified.main);
+  const repechageRounds = openingLosses.ready
+    ? buildPlayRankingParallelRounds(openingLosses.losses, qualified.repechage, repechageName)
+    : [];
+  const allGames = [...mainRounds, ...repechageRounds].flatMap((round) => round.games);
+
+  return {
+    main: mainRounds.map((round) => ({
+      ...round,
+      games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+    })),
+    repechage: repechageRounds.map((round) => ({
+      ...round,
+      games: round.games.map((game) => resolveBracketGame(game, allGames, data)),
+    })),
+  };
+}
+
 function generateCearenseBrackets(data) {
   const qualified = getCearenseQualified(data);
   const cupConfig = data.cupConfig || {};
@@ -3497,6 +3790,10 @@ function generateCopinhaBrackets(data) {
 }
 
 function generateCupBrackets(data) {
+  if (isPlayRankingData(data)) {
+    return generatePlayRankingBrackets(data);
+  }
+
   if (isCearenseData(data)) {
     return generateCearenseBrackets(data);
   }
@@ -3783,7 +4080,21 @@ function rebuildCupBracketGames(currentData, existingScores = {}) {
 
   // Resolve novamente depois de reaplicar os placares. Assim, o vencedor de
   // uma fase anterior aparece imediatamente na fase seguinte.
-  return baseGames.map((game) => resolveBracketGame(game, baseGames, currentData));
+  const resolvedGames = baseGames.map((game) => resolveBracketGame(game, baseGames, currentData));
+  const safeGames = isPlayRankingData(currentData)
+    ? resolvedGames.map((game) => {
+        const stored = existingScores[game.matchKey];
+        const sameParticipants = stored
+          && JSON.stringify(stored.ids1 || []) === JSON.stringify(game.ids1 || [])
+          && JSON.stringify(stored.ids2 || []) === JSON.stringify(game.ids2 || []);
+
+        if (game.phase !== "repechage" || !stored || sameParticipants) return game;
+
+        return { ...game, s1: "", s2: "" };
+      })
+    : resolvedGames;
+
+  return safeGames.map((game) => resolveBracketGame(game, safeGames, currentData));
 }
 
 function syncCupBracketScores(currentData) {
@@ -3794,6 +4105,8 @@ function syncCupBracketScores(currentData) {
     existingScores[game.matchKey] = {
       s1: game.s1,
       s2: game.s2,
+      ids1: game.ids1,
+      ids2: game.ids2,
       courtNumberOverride: game.courtNumberOverride,
     };
   });
@@ -5590,7 +5903,7 @@ function Login({
               <div>2</div>
               <h3>Escolha o formato</h3>
               <p>
-                Selecione Super 6, Super 8, Super 12, modalidades mistas, Simples 8, Copa 18 ou Torneio modelo Campeonato Cearense conforme a realidade do evento.
+                Selecione Super 6, Super 8, Super 12, modalidades mistas, Simples 8, Copa 18, Torneio modelo Campeonato Cearense ou Modelo Play Ranking conforme a realidade do evento.
               </p>
             </div>
 
@@ -5780,6 +6093,11 @@ function Login({
             <Info
               title="Torneio modelo Campeonato Cearense"
               text="Formato para 4 a 32 duplas, com fase de grupos, Eliminatória Principal para os dois primeiros de cada grupo e Disputa Paralela para os demais. As comparações entre grupos usam percentual de vitórias, saldo médio e média de games para equilibrar grupos de tamanhos diferentes."
+            />
+
+            <Info
+              title="Modelo Play Ranking"
+              text="Mantém a fase de grupos e os critérios do modelo Campeonato Cearense, mas acrescenta uma segunda oportunidade: as duplas derrotadas somente na primeira fase efetivamente jogada da Eliminatória Principal também entram na Disputa Paralela. Elas são ordenadas pela qualidade da derrota e recebem prioridade na montagem da nova chave."
             />
           </div>
         </section>
@@ -10169,6 +10487,13 @@ setNewPublicInfo({
         text="Formato de 4 a 32 duplas. Os dois primeiros de cada grupo seguem para a Eliminatória Principal e os demais para a Disputa Paralela. Entre grupos, a ordem é equilibrada por percentual de vitórias, saldo médio e média de games por partida."
       />
     )}
+
+    {allowedTypes.includes("Modelo Play Ranking") && (
+      <Info
+        title="Modelo Play Ranking"
+        text="Usa a mesma fase de grupos do modelo Campeonato Cearense. A diferença é que as duplas derrotadas somente na primeira fase jogada da Eliminatória Principal também seguem para a Disputa Paralela, com prioridade e sem confronto direto entre elas na estreia sempre que houver uma dupla vinda dos grupos disponível."
+      />
+    )}
   </div>
 </section>
 )}
@@ -11671,7 +11996,9 @@ function generate() {
       "success",
       "Rodadas e jogos criados",
       isCearenseData(data)
-        ? "A fase de grupos do Campeonato Cearense foi montada com sucesso."
+        ? isPlayRankingData(data)
+          ? "A fase de grupos do Modelo Play Ranking foi montada com sucesso."
+          : "A fase de grupos do Campeonato Cearense foi montada com sucesso."
         : "A fase de grupos da Copa foi montada com sucesso."
     );
     return;
@@ -11747,7 +12074,13 @@ function generateBrackets() {
   const copy = syncCupBracketScores(data);
   setData(copy);
 
-  showNotice("success", "Chaves geradas", "As chaves finais foram montadas com sucesso.");
+  showNotice(
+    "success",
+    "Chaves geradas",
+    isPlayRankingData(copy)
+      ? "A Eliminatória Principal foi montada. A Disputa Paralela será completada automaticamente após todos os placares da primeira fase da chave principal."
+      : "As chaves finais foram montadas com sucesso."
+  );
 }
 
 function updateScore(roundIndex, gameIndex, field, value) {
@@ -11796,6 +12129,8 @@ copy.brackets = copy.brackets.map((game) =>
       existingScores[game.matchKey] = {
         s1: game.s1,
         s2: game.s2,
+        ids1: game.ids1,
+        ids2: game.ids2,
         courtNumberOverride: game.courtNumberOverride,
       };
     });
@@ -12284,7 +12619,9 @@ return (
               ) : currentBrackets.repechage?.length > 0 ? (
                 <CupBracketView groupedBrackets={{ main: [], repechage: currentBrackets.repechage }} data={data} updateBracketScore={updateBracketScore} voiceRepeat={voiceRepeat} setVoiceRepeat={setVoiceRepeat} winningScore={getWinningScore(data)} onEditCourt={setCourtEditor} />
               ) : (
-                <p>Com 2 grupos, a Copinha segue o modelo da planilha e não possui chave de consolação.</p>
+                <p>{isPlayRankingData(data)
+                  ? "A Disputa Paralela será montada automaticamente quando todos os placares da primeira fase da Eliminatória Principal estiverem preenchidos."
+                  : "Com 2 grupos, a Copinha segue o modelo da planilha e não possui chave de consolação."}</p>
               )}
             </section>
           </>
@@ -12308,6 +12645,154 @@ return (
   );
 }
 
+function TournamentFormatInfoButton({ data, config, publicView = false }) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef(null);
+  const closeRef = useRef(null);
+  const isPlayRanking = config.type === "playranking";
+  const isSupported = config.type === "cearense" || isPlayRanking;
+  const teamCount = data.cupConfig?.teamCount || config.defaultTeams;
+  const summary = useMemo(
+    () => getCearenseFormatSummary(teamCount, isPlayRanking),
+    [teamCount, isPlayRanking]
+  );
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    document.body.style.overflow = "hidden";
+    document.addEventListener("keydown", handleKeyDown);
+    window.setTimeout(() => closeRef.current?.focus(), 0);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      document.removeEventListener("keydown", handleKeyDown);
+      window.setTimeout(() => triggerRef.current?.focus(), 0);
+    };
+  }, [open]);
+
+  if (!isSupported) return null;
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`formatInfoTrigger ${publicView ? "public" : ""}`}
+        onClick={() => setOpen(true)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+      >
+        <CircleHelp aria-hidden="true" />
+        <span>Como funciona com {summary.teamCount} duplas</span>
+      </button>
+
+      {open && createPortal(
+        <div
+          className="formatInfoOverlay"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setOpen(false);
+          }}
+        >
+          <section
+            className="formatInfoDialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Explicação do formato ${getModalityDisplayName(config.type === "playranking" ? "Modelo Play Ranking" : "Campeonato Cearense")}`}
+          >
+            <header className="formatInfoHeader">
+              <div>
+                <span>Formato calculado para {summary.teamCount} duplas</span>
+                <h2>{isPlayRanking ? "Modelo Play Ranking" : "Torneio modelo Campeonato Cearense"}</h2>
+                <p>Veja o caminho das duplas desde os grupos até as duas chaves eliminatórias.</p>
+              </div>
+              <button ref={closeRef} type="button" onClick={() => setOpen(false)} aria-label="Fechar explicação">×</button>
+            </header>
+
+            <div className={`formatInfoHighlights ${isPlayRanking ? "hasTransfer" : ""}`} aria-label="Resumo do formato">
+              <div><strong>{summary.groupCount}</strong><span>{summary.groupCount === 1 ? "grupo" : "grupos"}</span></div>
+              <div><strong>{summary.mainCount}</strong><span>na principal</span></div>
+              <div><strong>{summary.initialParallelCount}</strong><span>na paralela após os grupos</span></div>
+              {isPlayRanking ? <div><strong>+{summary.transferredCount}</strong><span>vindas da primeira fase</span></div> : null}
+            </div>
+
+            <div className="formatInfoSections">
+              <article>
+                <span className="formatInfoStep">1</span>
+                <div>
+                  <h3>Fase de grupos</h3>
+                  <p>As {summary.teamCount} duplas serão distribuídas em <strong>{summary.groupDescription}</strong>.</p>
+                  <p>Cada dupla fará <strong>{summary.gamesPerTeamDescription} jogos</strong> na fase de grupos, totalizando {summary.groupMatches} partidas.</p>
+                </div>
+              </article>
+
+              <article>
+                <span className="formatInfoStep">2</span>
+                <div>
+                  <h3>Destino depois dos grupos</h3>
+                  <p>O 1º e o 2º lugar de cada grupo avançam. Assim, <strong>{summary.mainCount} duplas</strong> entram na Eliminatória Principal.</p>
+                  <p>As outras <strong>{summary.initialParallelCount} duplas</strong> entram inicialmente na Disputa Paralela.</p>
+                </div>
+              </article>
+
+              <article>
+                <span className="formatInfoStep">3</span>
+                <div>
+                  <h3>Eliminatória Principal</h3>
+                  <p>A chave começa em <strong>{summary.mainOpeningRound}</strong>, com tamanho de {summary.mainBracketSize} posições.</p>
+                  <p>{summary.mainByes > 0 ? `${summary.mainByes} dupla${summary.mainByes === 1 ? " recebe" : "s recebem"} BYE nessa abertura.` : "A primeira fase começa sem BYEs."}</p>
+                </div>
+              </article>
+
+              {isPlayRanking ? (
+                <article className="formatInfoTransfer">
+                  <span className="formatInfoStep">4</span>
+                  <div>
+                    <h3>A diferença do Modelo Play Ranking</h3>
+                    <p>Quando todos os placares de {summary.mainOpeningRound} estiverem preenchidos, as <strong>{summary.transferredCount} duplas derrotadas nos jogos dessa primeira fase</strong> também entram na Disputa Paralela.</p>
+                    <p>As derrotadas das fases seguintes continuam eliminadas da Principal e não mudam mais de chave.</p>
+                    <p>Entre elas, fica à frente quem perdeu pela menor diferença de games; depois, quem fez mais games na derrota e, em seguida, quem teve a melhor campanha nos grupos.</p>
+                    <p>Elas recebem prioridade na montagem. Quando precisam jogar na abertura da Paralela, enfrentam uma dupla que já veio dos grupos — nunca outra transferida, sempre que matematicamente possível.</p>
+                  </div>
+                </article>
+              ) : null}
+
+              <article>
+                <span className="formatInfoStep">{isPlayRanking ? 5 : 4}</span>
+                <div>
+                  <h3>Disputa Paralela</h3>
+                  <p>A chave terá <strong>{summary.finalParallelCount} duplas</strong>{isPlayRanking ? `: ${summary.initialParallelCount} vindas dos grupos e ${summary.transferredCount} da primeira fase da Principal` : " vindas da fase de grupos"}.</p>
+                  <p>{summary.parallelByes > 0 ? `A chave terá ${summary.parallelBracketSize} posições e ${summary.parallelByes} BYE${summary.parallelByes === 1 ? "" : "s"}.` : `A chave terá ${summary.parallelBracketSize} posições, sem BYEs.`} Sempre que possível, o sistema também evita um confronto imediato entre duplas do mesmo grupo.</p>
+                </div>
+              </article>
+
+              <article>
+                <span className="formatInfoStep">{isPlayRanking ? 6 : 5}</span>
+                <div>
+                  <h3>Critérios e independência das chaves</h3>
+                  <p>Dentro de cada grupo continuam valendo os critérios escolhidos pelo organizador. Entre grupos, o sistema compara percentual de vitórias, saldo médio e média de games.</p>
+                  <p>A Eliminatória Principal e a Disputa Paralela seguem separadas, cada uma com seus confrontos, resultados, campeão e vice-campeão.</p>
+                </div>
+              </article>
+            </div>
+
+            <footer className="formatInfoFooter">
+              {publicView ? <span>Esta explicação é somente para consulta.</span> : <span>O resumo se atualiza automaticamente quando a quantidade de duplas muda.</span>}
+              <button type="button" onClick={() => setOpen(false)}>Entendi</button>
+            </footer>
+          </section>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+}
+
 function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   const cupConfig = data.cupConfig || {};
   const isFixedCupSize = config.type === "cup18" || config.type === "cup21";
@@ -12315,6 +12800,8 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
   const isCup21 = config.type === "cup21";
   const isCopinha = config.type === "copinha";
   const isCearense = config.type === "cearense";
+  const isPlayRanking = config.type === "playranking";
+  const isCearenseFamily = isCearense || isPlayRanking;
 
   return (
     <div className="cupConfigBox">
@@ -12330,6 +12817,9 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
               <option key={count} value={count}>{count} duplas</option>
             ))}
           </select>
+          {showInfo && isCearenseFamily ? (
+            <TournamentFormatInfoButton data={data} config={config} />
+          ) : null}
         </div>
 
         <div>
@@ -12342,26 +12832,18 @@ function CupConfigPanel({ data, config, updateCupConfig, showInfo = true }) {
         </div>
 
         <div>
-          <label>{isCopinha ? "Nome da consolação" : isCearense || isCup18 || isCup21 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
+          <label>{isCopinha ? "Nome da consolação" : isCearenseFamily || isCup18 || isCup21 ? "Nome da disputa paralela" : "Nome da repescagem"}</label>
           <input
             value={cupConfig.repechageName || config.defaultRepechageName}
             onChange={(e) => updateCupConfig("repechageName", e.target.value)}
-            placeholder={isCopinha ? "Consolação" : isCearense || isCup18 || isCup21 ? "Disputa Paralela" : "Repescagem"}
+            placeholder={isCopinha ? "Consolação" : isCearenseFamily || isCup18 || isCup21 ? "Disputa Paralela" : "Repescagem"}
           />
         </div>
       </div>
 
-      {showInfo && (
+      {showInfo && !isCearenseFamily && (
         <div className="infoBox">
-          {isCearense ? (
-          <>
-            <p><strong>Formato:</strong> de 4 a 32 duplas, distribuídas em grupos de 3 ou 4. Com 4 ou 5 duplas, há um grupo único.</p>
-            <p><strong>Dentro de cada grupo:</strong> classificação pelo critério escolhido entre Vitórias, Saldo e Total de Games.</p>
-            <p><strong>Entre grupos:</strong> percentual de vitórias, saldo médio por partida e média de games vencidos por partida.</p>
-            <p><strong>Eliminatória Principal:</strong> 1º e 2º de cada grupo; campeões recebem as melhores sementes e os primeiros BYEs.</p>
-            <p><strong>Disputa Paralela:</strong> todas as duplas abaixo do 2º lugar, em chave independente.</p>
-          </>
-        ) : isCup18 ? (
+          {isCup18 ? (
           <>
             <p><strong>Formato:</strong> 18 duplas divididas em 6 grupos de 3.</p>
             <p><strong>Fase de grupos:</strong> cada dupla joga 2 partidas.</p>
@@ -14837,6 +15319,11 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
             <h2>Participantes</h2>
             <span className="readOnlyBadge">Somente visualização</span>
           </div>
+          {config.type === "cearense" || config.type === "playranking" ? (
+            <div className="formatInfoPublicPlacement">
+              <TournamentFormatInfoButton data={data} config={config} publicView />
+            </div>
+          ) : null}
           <div className="publicAthletesGrid organizerLikeParticipants">
             {publicAthletes.map((group) => (
               <div className="publicAthleteGroup" key={group.title}>
@@ -14921,7 +15408,9 @@ function PublicTournamentScreen({ tournament, organizer: liveOrganizer = null, o
                       courtNumbers={data.courtNumbers || []}
                     />
                   )
-                  : <p>Esta Copinha de 2 grupos não possui chave de consolação.</p>}
+                  : <p>{isPlayRankingData(data)
+                    ? "A Disputa Paralela aparecerá aqui após o preenchimento de todos os placares da primeira fase da Eliminatória Principal."
+                    : "Esta Copinha de 2 grupos não possui chave de consolação."}</p>}
             </div>
           ) : null}
         </section>
