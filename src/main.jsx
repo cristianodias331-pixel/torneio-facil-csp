@@ -12516,7 +12516,6 @@ function fillParticipantSlots(currentValues, incomingNames, expectedName, replac
   return {
     nextValues,
     imported,
-    importedIndexes: targetIndexes.slice(0, imported),
     preserved: replaceAll ? 0 : currentValues.length - automaticIndexes.length,
     vacancies: targetIndexes.length - imported,
     overflow: Math.max(0, incomingNames.length - targetIndexes.length),
@@ -12572,22 +12571,10 @@ function buildParticipantImportPreview(config, data, drafts, mode) {
       (index) => `Atleta ${(index % 2) + 1} da dupla ${Math.floor(index / 2) + 1}`,
       replaceAll
     );
-    const importedTeamIndexes = new Set(result.importedIndexes.map((index) => Math.floor(index / 2)));
-    const nextTeams = data.players.teams.map((_, teamIndex) => {
-      const team = {
-        a: result.nextValues[teamIndex * 2],
-        b: result.nextValues[(teamIndex * 2) + 1],
-      };
-
-      if (!fixedMixedTeams || !importedTeamIndexes.has(teamIndex)) return team;
-
-      const automaticA = isAutomaticParticipantName(team.a, `Atleta 1 da dupla ${teamIndex + 1}`);
-      const automaticB = isAutomaticParticipantName(team.b, `Atleta 2 da dupla ${teamIndex + 1}`);
-      if (automaticA || automaticB) return team;
-
-      const [a, b] = orderFixedMixedPair(team.a, team.b);
-      return { a, b };
-    });
+    const nextTeams = data.players.teams.map((_, teamIndex) => ({
+      a: result.nextValues[teamIndex * 2],
+      b: result.nextValues[(teamIndex * 2) + 1],
+    }));
 
     return {
       nextPlayers: { teams: nextTeams },

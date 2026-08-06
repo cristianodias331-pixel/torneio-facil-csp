@@ -160,6 +160,26 @@ assert.deepEqual(
   ["Wadson", "Raquel"],
   "A importação deve reconhecer nomes que não terminam em A ou O."
 );
+assert.deepEqual(
+  orderFixedMixedPair("Ana", "Carla"),
+  ["Ana", "Carla"],
+  "Duas mulheres devem permanecer na ordem em que foram coladas."
+);
+assert.deepEqual(
+  orderFixedMixedPair("João", "Marcos"),
+  ["João", "Marcos"],
+  "Dois homens devem permanecer na ordem em que foram colados."
+);
+assert.deepEqual(
+  orderFixedMixedPair("Gaivola", "Junior"),
+  ["Gaivola", "Junior"],
+  "Um nome desconhecido não deve ser reorganizado por suposição."
+);
+assert.deepEqual(
+  orderFixedMixedPair("Maria", "Carlo"),
+  ["Carlo", "Maria"],
+  "Uma mulher seguida de um homem reconhecido deve ser invertida."
+);
 assert.ok(
   mainSource.includes("fixedMixedTeams ? orderFixedMixedPair(...cleanedNames) : cleanedNames"),
   "O importador em massa não está aplicando a ordem das duplas mistas fixas."
