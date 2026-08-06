@@ -477,6 +477,20 @@ assert.ok(
     && typeof appVersion.version === "string",
   "O app instalado não possui verificação profissional de novas versões."
 );
+const expandedCircuitLayout = styleSource.match(/\.circuitManagerPage \.circuitItem\.expanded \{([\s\S]*?)\}/)?.[1] || "";
+assert.ok(
+  expandedCircuitLayout.includes("position: relative")
+    && !expandedCircuitLayout.includes("position: fixed")
+    && !expandedCircuitLayout.includes("100vmax"),
+  "O circuito expandido voltou a ser exibido como uma camada sobreposta ao painel."
+);
+const eventEditorLayout = styleSource.match(/\.eventEditorOverlay \{([\s\S]*?)\}/)?.[1] || "";
+assert.ok(
+  eventEditorLayout.includes("position: relative")
+    && !eventEditorLayout.includes("position: fixed")
+    && !eventEditorLayout.includes("backdrop-filter: blur"),
+  "A criação de torneios e circuitos voltou a cobrir o painel com uma janela sobreposta."
+);
 assert.ok(
   styleSource.includes(".proDashboard .circuitStatus-closed")
     && styleSource.includes(".publicCircuitStatus.closed")
