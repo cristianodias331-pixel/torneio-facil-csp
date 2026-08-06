@@ -180,6 +180,11 @@ assert.deepEqual(
   ["Carlo", "Maria"],
   "Uma mulher seguida de um homem reconhecido deve ser invertida."
 );
+assert.deepEqual(
+  orderFixedMixedPair("Giovana", "Junior"),
+  ["Junior", "Giovana"],
+  "A ordem da linha colada deve preencher o homem antes da mulher."
+);
 assert.ok(
   mainSource.includes("fixedMixedTeams ? orderFixedMixedPair(...cleanedNames) : cleanedNames"),
   "O importador em massa não está aplicando a ordem das duplas mistas fixas."
