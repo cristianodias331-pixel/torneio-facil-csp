@@ -670,6 +670,14 @@ assert.ok(
   "O sorteio visual não está animado por 5 segundos ou ainda pode ficar coberto no celular."
 );
 assert.ok(
+  styleSource.includes("JOGOS NO CELULAR — CABEÇALHO EM DUAS LINHAS")
+    && styleSource.includes('"match-meta"')
+    && styleSource.includes('"match-controls"')
+    && styleSource.includes('"match-teams"')
+    && styleSource.includes("padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important"),
+  "Os cartões dos jogos podem voltar a sobrepor fase, status, quadra e chamada no celular."
+);
+assert.ok(
   mainSource.includes("Salvando antes de sair...")
     && mainSource.includes("A tela foi mantida aberta para proteger placares, confrontos e rankings"),
   "O torneio pode ser fechado antes de concluir o último salvamento."

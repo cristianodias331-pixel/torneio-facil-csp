@@ -14018,7 +14018,7 @@ function UniversalMatchCard({
       aria-label={`${phaseLabel}: ${teamName(team1)} versus ${teamName(team2)}`}
     >
       <div className="matchCardMeta">
-        <span className="matchCardPhase">{phaseLabel}</span>
+        <span className="matchCardPhase" title={phaseLabel}>{phaseLabel}</span>
         <span className={`matchCardStatus ${isBye ? "is-bye" : isFinished ? "is-finished" : "is-waiting"}`}>{statusLabel}</span>
       </div>
 
