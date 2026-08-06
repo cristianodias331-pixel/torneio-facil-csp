@@ -5,6 +5,7 @@
   "packageManager": "pnpm@11.9.0",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/write-build-version.mjs",
     "build": "vite build",
     "preview": "vite preview",
     "test": "node scripts/smoke-check.mjs",

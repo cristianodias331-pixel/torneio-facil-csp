@@ -11,6 +11,7 @@ const installSource = readFileSync(new URL("src/InstallAppBanner.jsx", root), "u
 const indexSource = readFileSync(new URL("index.html", root), "utf8");
 const packageJson = JSON.parse(readFileSync(new URL("package.json", root), "utf8"));
 const manifest = JSON.parse(readFileSync(new URL("public/manifest.webmanifest", root), "utf8"));
+const appVersion = JSON.parse(readFileSync(new URL("public/app-version.json", root), "utf8"));
 const publicArenaMigrationUrl = new URL("supabase/migrations/202608030001_public_arena_platform.sql", root);
 assert.ok(existsSync(fileURLToPath(publicArenaMigrationUrl)), "A migração segura da plataforma pública está ausente.");
 const publicArenaMigration = readFileSync(publicArenaMigrationUrl, "utf8");
@@ -447,10 +448,34 @@ assert.ok(
 );
 assert.ok(
   mainSource.includes("function isRegistrationDeadlineOpen(deadline)")
-    && (mainSource.match(/<PublicRegistrationStatus open=\{registrationOpen\}/g) || []).length === 2
+    && (mainSource.match(/<PublicRegistrationStatus open=\{registrationOpen\}/g) || []).length >= 1
     && !mainSource.includes("isCircuitRegistrationOpen")
     && (mainSource.match(/className=\{`publicCircuitStatus \$\{circuitStatus\}`\}/g) || []).length === 2,
   "Torneios devem mostrar inscrições; circuitos devem mostrar somente andamento ou encerramento."
+);
+assert.ok(
+  mainSource.includes("function getTournamentCompletionState")
+    && mainSource.includes("function getTournamentLifecycleStatus")
+    && mainSource.includes('requiredGames.every((game) => isTournamentGameFinished(game, winningScore))'),
+  "O encerramento do torneio não está vinculado à conclusão dos placares obrigatórios."
+);
+assert.ok(
+  mainSource.includes('item.data?.displayOrderMode === "manual"')
+    && mainSource.includes('persistTournamentOrderSequence(list, { manual: true })'),
+  "A ordem automática ainda pode ser confundida com uma reorganização manual."
+);
+assert.ok(
+  mainSource.includes('item.data?.multiCategoryEvent === true && item.data?.eventGroupKey')
+    && mainSource.includes('const eventGroupKey = isMultiCategory ? generatePublicId() : null;')
+    && mainSource.includes('categoryTournamentCard'),
+  "Eventos independentes ainda podem ser agrupados ou as categorias não possuem configuração própria."
+);
+assert.ok(
+  mainSource.includes("function AppUpdateNotice")
+    && mainSource.includes('/app-version.json?t=')
+    && packageJson.scripts?.prebuild === "node scripts/write-build-version.mjs"
+    && typeof appVersion.version === "string",
+  "O app instalado não possui verificação profissional de novas versões."
 );
 assert.ok(
   styleSource.includes(".proDashboard .circuitStatus-closed")

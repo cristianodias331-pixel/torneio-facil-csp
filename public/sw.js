@@ -1,4 +1,4 @@
-const STATIC_CACHE = "torneio360-brand-v1";
+const STATIC_CACHE = "torneio360-brand-v2";
 const STATIC_ASSETS = [
   "/manifest.webmanifest",
   "/torneio360-app-icon-192.png",
@@ -32,4 +32,8 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin || !STATIC_ASSETS.includes(url.pathname)) return;
 
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request)));
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") self.skipWaiting();
 });
